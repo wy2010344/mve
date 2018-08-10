@@ -1,0 +1,23 @@
+{
+  "name": "mve",
+  "version": "1.0.0",
+  "description": "以vue依赖统计为核心的mve",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wangyang2010344/mve.git"
+  },
+  "keywords": [
+    "mve",
+    "vue"
+  ],
+  "author": "wangy",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/wangyang2010344/mve/issues"
+  },
+  "homepage": "https://github.com/wangyang2010344/mve#readme"
+}
