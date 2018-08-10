@@ -1,0 +1,43 @@
+({
+    data:{
+        conf:function(suc){
+            mb.task.all({
+                data:{
+                    jsdom:function(notice){
+                        mb.ajax.require.async({
+                            url:cp.libUrl()+"jsdom.js",
+                            notice:notice
+                        });
+                    },
+                    mve:function(notice){
+                        mb.ajax.require.async({
+                            url:cp.libUrl()+"mve/index.js",
+                            notice:notice,
+                            baseUrl:cp.libUrl()
+                        });
+                    },
+                    JSON:function(notice){
+                        if(window.JSON){
+                            notice(window.JSON);
+                        }else{
+                            mb.ajax.require.getTxt(cp.libUrl()+"json2.js",function(txt){
+                                eval(txt);
+                                notice(JSON);
+                            });
+                        }
+                    }
+                },
+                success:suc
+            });
+        }
+    },
+    /**
+     * init:最终执行的方法
+     */
+    success:function(p){
+        window.JSON=lib.conf.JSON;
+        window.jsdom=lib.conf.jsdom;
+        window.mve=lib.conf.mve;
+        p.init();
+    }
+});
