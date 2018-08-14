@@ -56,227 +56,271 @@
 				(bind watch value f)
 			}
 		)
+	} build-locsize {
+		(let (locsize json fun) args)
+		(forEach locsize {
+			(let 
+				(str) args
+				vf (kvs-find1st json str)
+			)
+			(if-run (exist? vf)
+				(fun str vf)
+			)
+		})
 	}
 )
-(let replaceWith 
-	{
-		(let (old-e new-e) args)
-		(js-call 
-			(js-attr old-e 'parentNode)
-			'replaceChild
-			(list new-e old-e)
-		)
-	}
-)
-(let Parse-fun 
-	{
-		(let (fun watch init destroy mve change) args)
-		(watch 'exp fun 'after 
-			{
-				(let (element) args)
-				(let newObj 
-					(mve 
-						{ 
-							[ element 'element] 
-						}
+{
+	(let (DOM build-children locsize) args)
+	`对函数`
+	(let Parse-fun 
+		{
+			(let (fun watch init destroy mve) args)
+			(let change (cache []))
+			(watch 'exp fun 'after 
+				{
+					(let (element) args)
+					(let newObj 
+						(mve 
+							{ 
+								[ element 'element] 
+							}
+						)
 					)
-				)
-				(let obj (change))
-				(change newObj)
-				(let newObj* newObj)
-				(if-run (exist? obj)
-					{
-						(let obj* obj)
-						(replaceWith 
-							(obj.getElement)
-							(newObj.getElement)
-						)
-						(if-run (exist? obj.destroy) obj.destroy)
-						(if-run (exist? newObj.init) newObj.init)
-					}
-					{
-						(if-run (exist? newObj.init)
-							{
-								(init 
-									(extend newObj.init (init))
-								)
-							}
-						)
-						(if-run (exist? newObj.destroy)
-							{
-								(destroy 
-									(extend newObj.destroy (destroy))
-								)
-							}
-						)
-					}
-				)
-			}
-		)
-	}
-)
-(let Parse {
-		(let (json watch init destroy mve) args Parse this)
-		(let json (default json ""))
-		(if-run (list? json)
-			{
-				`列表情况，对应js中字典`
-				(let j* json)
-				(if-run (function? j.type)
+					(let obj (change))
+					(change newObj)
+					(let newObj* newObj)
+					(if-run (exist? obj)
 						{
-							`自定义组件`
-							(let obj* (j.type j.params))
-							(if-run (exist? obj.init)
+							`非第一次生成`
+							(let obj* obj)
+							(DOM 
+								'replaceWith 
+								(obj.getElement)
+								(newObj.getElement)
+							)
+							(if-run (exist? obj.destroy) obj.destroy)
+							(if-run (exist? newObj.init) newObj.init)
+						}
+						{
+							`第一次生成`
+							(if-run (exist? newObj.init)
 								{
 									(init 
-										(extend obj.init (init))
+										(extend newObj.init (init))
 									)
 								}
 							)
-							(if-run (exist? obj.destroy)
-								{
-									(destroy 
-										(extend obj.destroy (destroy))
+						}
+					)
+				}
+			)
+			`销毁最后一个`
+			(destroy
+				(extend 
+					{
+						((default 
+							(kvs-find1st (change) 'destroy)
+							empty-fun
+						))
+					} 
+					(destroy)
+				)
+			)
+			change
+		}
+	)
+	`对列表`
+	(let Parse {
+			(let (json watch k init destroy mve) args Parse this)
+			(let json (default json ""))
+			(if-run (list? json)
+				{
+					`列表情况，对应js中字典`
+					(let j* json)
+					(if-run (function? j.type)
+							{
+								`自定义组件`
+								(let obj* (j.type j.params))
+								(if-run (exist? obj.init)
+									{
+										(init 
+											(extend obj.init (init))
+										)
+									}
+								)
+								(if-run (exist? obj.destroy)
+									{
+										(destroy 
+											(extend obj.destroy (destroy))
+										)
+									}
+								)
+								`绑定id`
+								(if-run (exist? j.id)
+									{
+										(k (kvs-extend j.id obj (k)))
+									}
+								)
+								(let e (obj.getElement ))
+								`绑定locsize`
+								(build-locsize locsize json {
+									(let (str vf) args
+										 ef (default (obj str) empty-fun)
 									)
-								}
-							)
-							(obj.getElement )
+									(bind watch vf {
+										(let (v) args)
+										(ef v)
+										(DOM 'style e str (str-join ['v px]))
+									})
+								})
+								e
+							}
+							{
+								`原生组件`
+								(let e 
+									(DOM 
+										'createElement 
+										j.type
+									)
+								)
+								`绑定id`
+								(if-run (exist? j.id)
+									{
+										(k (kvs-extend j.id e (k)))
+									}
+								)
+								`attr属性`
+								(bindMap watch j.attr 
+									{
+										(let (k v) args)
+										(DOM 'attr e k v)
+									}
+								)
+								`style属性`
+								(bindMap watch j.style
+									{
+										(let (k v) args)
+										(DOM 'style e k v)
+									}
+								)
+								`动作`
+								(bindEvent j.action
+									{
+										(let (k v) args)
+										(DOM 'action e k v)
+									}
+								)
+								`内部字符`
+								(if-bind watch j.text 
+									{
+										(let (v) args)
+										(DOM 'text e v)
+									}
+								)
+								`内部值`
+								(if-bind watch j.value
+									{
+										(let (v) args)
+										(DOM 'value e v)
+									}
+								)
+								`innerHTML`
+								(if-bind watch j.html
+									{
+										(let (v) args)
+										(DOM 'html e v)
+									}
+								)
+								`children`
+								(if-run 
+									(function? j.children)
+									{
+										`children是函数，即repeat`
+										(build-children e j.children init destroy mve)
+									}
+									{
+										`children是列表`
+										(forEach j.children 
+											{
+												(let (child) args)
+												(let ce (Parse child watch k init destroy mve))
+												(DOM 'appendChild e ce)
+											}
+										)
+									}
+								)
+								`绑定locsize`
+								(build-locsize locsize json {
+									(let (str vf) args)
+									(bind watch vf {
+										(let (v) args)
+										(DOM 'style e str (str-join ['v px]))
+									})
+								})
+
+								e
+							}
+					)
+				}
+				{
+					(if-run (function? json)
+						{
+							`函数节点`
+							(let change (Parse-fun json watch init destroy mve))
+							((kvs-find1st (change) 'getElement))
 						}
 						{
-							`原生组件`
-							(let e 
-								(js-call 'document 'createElement 
-									(list j.type)
-								)
-							)
-							`attr属性`
-							(bindMap watch j.attr 
-								{
-									(let (k v) args)
-									(js-call e 'setAttribute (list k v ))
-								}
-							)
-							`style属性`
-							(let style (js-attr e 'style))
-							(bindMap watch j.style
-								{
-									(let (k v) args)
-									(js-attr style k v)
-								}
-							)
-							`动作`
-							(bindEvent j.action
-								{
-									(let (k v) args)
-									(js-call 'mb.DOM 'addEvent (list e k v))
-								}
-							)
-							`内部字符`
-							(if-bind watch j.text 
-								{
-									(let (v) args)
-									(js-attr e 'innerText v)
-								}
-							)
-							`内部值`
-							(if-bind watch j.value
-								{
-									(let (v) args)
-									(js-attr e 'value v)
-								}
-							)
-							`innerHTML`
-							(if-bind watch j.html
-								{
-									(let (v) args)
-									(js-attr e 'innerHTML v)
-								}
-							)
-							`children`
-							(if-run 
-								(function? j.children)
-								{
-									`children是函数，即repeat`
-								}
-								{
-									`children是列表`
-									(forEach j.children 
-										{
-											(let (child) args)
-											(let ce (Parse child watch init destroy mve))
-											(js-call e 'appendChild (list ce))
-										}
-									)
-								}
-							)
-							e
+							`值节点`
+							(DOM 'createTextNode json)
 						}
-				)
-			}
-			{
+					)
+				}
+			)
+		}
+	)
+
+	{
+		(let 
+			(json watch k mve) args
+			inits (cache []) 
+			destroys (cache []) 
+			getElement  
 				(if-run (function? json)
 					{
 						`function`
-						(let change (cache []))
-						(Parse-fun json watch init destroy mve change)
-						(log (change))
-						((kvs-find1st (change) 'getElement))
+						(let change (Parse-fun json watch inits destroys mve))
+						{
+							((kvs-find1st (change) 'getElement))
+						}
 					}
 					{
-						`值节点`
-						(js-call 'document 'createTextNode 
-							(list json)
+						(let el 
+							(Parse json watch k inits destroys mve)
 						)
+						{
+							el
+						}
+					}
+				)
+		)
+		[
+			getElement 'getElement
+			init {
+				(forEach (inits) 
+					{
+						(let (x) args)
+						(x)
 					}
 				)
 			}
-		)
-	}
-)
-
-{
-	(let me* args)
-	(let 
-		init (cache []) 
-		destroy (cache []) 
-	)
-	(let getElement
-		(if-run (function? me.element)
-			{
-				`function`
-				(let c-el (cache []))
-				(Parse-fun me.element me.Watch init destroy me.mve c-el)
-				{
-					((kvs-find1st (c-el) 'getElement))
-				}
-			}
-			{
-				(let el 
-					(Parse me.element me.Watch init destroy me.mve)
+			destroy {			
+				(forEach (destroys)
+					{
+						(let (x) args)
+						(x)
+					}
 				)
-				{
-					el
-				}
 			}
-		)
-	)
-	[
-		getElement 'getElement
-		init {
-			(forEach (init) 
-				{
-					(let (x) args)
-					(x)
-				}
-			)
-		}
-		destroy {			
-			(forEach (destroy)
-				{
-					(let (x) args)
-					(x)
-				}
-			)
-		}
-	]
+		]
+	}
 }

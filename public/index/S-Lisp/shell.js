@@ -189,7 +189,7 @@
                                     children:[
                                         {
                                             type:"button",
-                                            text:"s-lisp",
+                                            text:"ctrl+enter",
                                             action:{
                                                 click:run_s_lisp
                                             }

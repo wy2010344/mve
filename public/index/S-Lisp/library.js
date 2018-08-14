@@ -32,7 +32,6 @@
             return init;
         };
 		var library={
-            "null":null,
             "false":false,
             "true":true,
 			log:function(node){
@@ -84,29 +83,6 @@
             "parseInt":function(node){
                 return parseInt(node.First());
             },
-            join:function(node){
-                var array=node.First();
-                var split=null;
-                var has_split=false;
-                if(node.Rest()!=null){
-                    has_split=true;
-                    split=node.Rest().First();
-                }
-                var r=null;
-                for(var t=array;t!=null;t=t.Rest()){
-                    var cs=t.First();
-                    for(var x=cs;x!=null;x=x.Rest()){
-                        r=new Node(x.First(),r);
-                    }
-                    if(has_split){
-                        r=new Node(split,r);
-                    }
-                }
-                if(has_split && ret!=null){
-                    ret=ret.Rest();
-                }
-                return reverse(ret);
-            },
             "kvs-find1st":function(node){
                 var kvs=node.First();
                 node=node.Rest();
@@ -146,6 +122,14 @@
                     r=r+t.First()+split;
                 }
                 return r.substr(0,r.length-split.length);
+            },
+            "str-trim":function(node) {
+                var str=node.First();
+                return str.trim();
+            },
+            "str-length":function(node) {
+                var str=node.First();
+                return str.length;
             },
 			"+":function(node){
                 return reduce(node,0,function(last,now){

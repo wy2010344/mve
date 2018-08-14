@@ -8,6 +8,13 @@
 	success:function(p) {
         var cache=[];//缓存池
         var views=[];//在界面上的缓存池
+
+        var update_views=function(array) {
+            //更新视图上数据
+            for(var i=0;i<views.length;i++){
+                views[i].row.data(array[i]);
+            }
+        };
 		return {
 			destroy:function() {
 				
@@ -27,10 +34,7 @@
                         var value=views.pop();
                         p.removeChild(value);
                     }
-                    //更新视图上数据
-                    for(var i=0;i<views.length;i++){
-                        views[i].row.data(array[i]);
-                    }
+                    update_views(array);
                 }else
                 {
                     //向视图上增加，>
@@ -41,9 +45,7 @@
                             views.push(value);
                             p.appendChild(value);
                         }
-                        for(var i=0;i<views.length;i++){
-                            views[i].row.data(array[i]);
-                        }
+                        update_views(array);
                     }else{
                         //从cache向视图上增加的部分
                         for(var i=views.length;i<cache.length;i++){
@@ -52,9 +54,7 @@
                             p.appendChild(value);
                         }
                         //更新cache的数据
-                        for(var i=0;i<views.length;i++){
-                            views[i].row.data(array[i]);
-                        }
+                        update_views(array);
                         //新增加，同时增加进cache和views
                         for(var i=cache.length;i<array.length;i++){
                             var value=p.build(array[i],i);

@@ -1,11 +1,7 @@
 ({
-    baseUrl:cp.libUrl(),
-    data:{
-        parse_base:"mve/parse/index.js"
-    },
     delay:true,
     success:function(){
-        return lib.parse_base({
+        return {
             createElement:function(type,NS){
                 if(NS){
                     return document.createElementNS(NS,type);
@@ -58,6 +54,6 @@
             html:function(el,value) {
                 el.innerHTML=value;
             }
-        });
+        };
     }
 });

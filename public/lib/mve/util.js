@@ -107,20 +107,16 @@
                  };
              },
              Exp:function(Parse){
-                 var ret=function(func){
-                     var me={
-                        k:{}
-                     };
-                     me.Value=mve.Value;
-                     
+                 var mvvm=function(user_func){
+                     var k={};
                      var watchPool=[];
-                     me.Watch=function(p){
+                     var Watch=function(p){
                          var w=mve.Watcher(p);
                          watchPool.push(w);
                          return w;
                      };
-                     me.Cache=function(exp){
-                         return mve.Cache(me.Watch,exp);
+                     var Cache=function(exp){
+                         return mve.Cache(Watch,exp);
                      };
                      /**
                      element
@@ -131,64 +127,64 @@
 
                      mve.util.locsize:[]
                      */
-                     var json=func(me);//这个函数应该返回布局，而不再显式提供Parse
-                     if(json.out){
-                        mb.Object.forEach(json.out,function(v,k){
+                     var user_result=user_func({
+                        k:k,
+                        Value:mve.Value,
+                        Watch:Watch,
+                        Cache:Cache
+                     });
+                     //这个函数应该返回布局，而不再显式提供Parse
+                     var me={};
+                     mb.Array.forEach(
+                        mve.locsize, 
+                        function(str){
+                            var v;
+                            if(user_result[str]){
+                                v=user_result[str];
+                            }else{
+                                v=mve.Value(0);
+                            }
+                            me[str]=v;
+                         }
+                     );
+                     //如果也在out中定义，会被out中相关覆盖
+                     if(user_result.out){
+                        mb.Object.forEach(user_result.out,function(v,k){
                             me[k]=v;
                         });
                      }
-                     mb.Array.forEach(mve.util.locsize, function(str){
-                        if(json[str]){
-                            me[str]=json[str];
-                        }else{
-                            me[str]=me.Value(0);
+                    var element_result=Parse(
+                        user_result.element,
+                        Watch,
+                        k,
+                        mvvm
+                    );
+                    var user_init=user_result.init||mb.emptyFunc;
+                     var user_destroy=user_result.destroy||mb.emptyFunc;
+                     var element_init=element_result.init||mb.emptyFunc;
+                     var element_destroy=element_result.destroy||mb.emptyFunc;
+
+                     me.getElement=element_result.getElement;
+                     me.init=function() {
+                        element_init();
+                        user_init();
+                     };
+                     me.destroy=function() {
+                        user_destroy();
+                        element_destroy();
+                        var w;
+                        while((w=watchPool.shift())!=null){
+                            w.disable();
                         }
-                     });
-                     me.init=json.init;
-                     me.destroy=json.destroy;
-                     //
-                     me.getElement=Parse(json.element,me,ret,mve);
-                     //销毁
-                     var destroy=me.destroy||mb.emptyFunc;
-                     me.destroy=function(){
-                         var w;
-                         while((w=watchPool.shift())!=null){
-                             w.disable();
-                         }
-                         destroy();
                      };
                      return me;
                  };
-                 ret.NS={
+                 mvvm.NS={
                     svg:"http://www.w3.org/2000/svg"
                  };
-                 return ret;
+                 return mvvm;
              },
-             util:{
-                locsize:["width","height","left","top","right","bottom"],
-                buildInit:function(obj,me){
-                     if(obj.init){
-                         var init=me.init||mb.emptyFunc;
-                         me.init=function(){
-                             obj.init();
-                             init();
-                         };
-                     }
-                },
-                buildDestroy:function(obj,me){
-                     if(obj.destroy){
-                         var destroy=me.destroy||mb.emptyFunc;
-                         me.destroy=function(){
-                             destroy();
-                             obj.destroy();
-                         };
-                     }
-                },
-                buildAlive:function(obj,me){
-                    mve.util.buildInit(obj,me);
-                    mve.util.buildDestroy(obj,me);
-                }
-             }
+             locsize:["width","height","left","top","right","bottom"]
         };
         
         return mve;

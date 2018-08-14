@@ -19,6 +19,7 @@
 		(log (a))
 		(a (+ (a) 1))
 		(log (a))
+		(let array (me.Value [a b c d e f g h]))
 		[
 			element [
 				type div
@@ -80,11 +81,11 @@
 						children [
 							[
 								type li
-								text 我是中国人
+								text 试用S-Lisp
 							]
 							[
 								type li
-								text 你也说中文
+								text 试用mve
 							]
 						]
 					]
@@ -98,7 +99,70 @@
 							x y z
 						]
 					]
-					"中国人"
+					"感谢支持"
+
+					'测试children-repeat
+					[
+						type div
+						children [
+							[
+								type input
+								id ipx
+							]
+							[
+								type button
+								text {
+									(str-join [(len (array)) 条记录])
+								}
+								action [
+									click {
+										(let el (me.k 'ipx))
+										(let v (js-attr el 'value))
+										(if-run (= 0 (str-length (str-trim v)))
+											{
+												(js-call 'window 'alert [无内容])
+											}
+											{
+												(array (extend v (array)))
+												(js-attr el 'value "")
+											}
+										)
+									}
+								]
+							]
+						]
+					]
+					[
+						type ul
+						children {
+							[
+								array 'array
+								repeat {
+									(let o* (first args))
+									[
+										type li
+										children [
+											[
+												type button text x 
+												action [
+													click {
+														(array (splice (array) (o.index) 1))
+													}
+												]
+											]
+											{
+												(o.index)
+											}
+											------
+											{
+												(o.data)
+											}
+										]
+									]
+								}
+							]
+						}
+					]
 				]
 			]
 		]

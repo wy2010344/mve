@@ -1,7 +1,5 @@
 ({
-    baseUrl:cp.libUrl(),
     data:{
-        parse_base:"mve/parse/index.js",
         $:function(notice){
             mb.ajax.require.getTxt(
                     cp.libUrl()+"jquery/jquery-1.3.2.min.js",
@@ -12,7 +10,7 @@
     delay:true,
     success:function(){
         eval(lib.$);
-        return lib.parse_base({
+        return {
             createElement:function(type){
                 return $(document.createElement(type));
             },
@@ -60,6 +58,6 @@
             html:function(el,value) {
                 el.html(value);
             }
-        });
+        };
     }
 });

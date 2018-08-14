@@ -120,6 +120,9 @@
 			(cache)
 		}
 	}
+	locsize [
+		width height left top right bottom
+	]
 )
 
 [
@@ -131,10 +134,12 @@
 
 	Cache (quote Cache)
 
+	locsize (quote locsize)
+
 	Exp {
 		(let (Parse) args)
 		(let ret {
-			(let (func) args mve this)
+			(let (user-func) args mve this)
 			(let watchPool (cache null))
 			(let Watch 
 				{
@@ -152,37 +157,67 @@
 					(Cache Watch (first args))
 				}
 			)
+			(let k (cache []))
 			`用户函数返回`
-			(let result* 
-				(func 
-					'k (cache null)
+			(let user-result 
+				(user-func 
+					'k {
+						(let (str) args)
+						(kvs-find1st (k) str)
+					}
 					'Value Value
 					'Watch Watch
 					'Cache Cache
 				)
 			)
-			(let json* 
+			`locsize部分`
+			(let me  
+				(reduce locsize 
+					{
+						(let (init str) args)
+						(let fun (kvs-find1st user-result str))
+						(kvs-extend 
+							str 
+							(if-run (exist? fun)
+								{fun}
+								{(Value 0)}
+							) 
+							init
+						)
+					}
+				)
+			)
+			(let user-result* user-result)
+			(let me
+				(kvs-reduce user-result.out
+					{
+						(let (init v k) args)
+						(kvs-extend v k init)
+					}
+					me
+				)
+			)
+			(let element-result* 
 				(Parse 
-					'element result.element
-					'Value Value
-					'Watch Watch
-					'Cache Cache
-					'mve mve
+					user-result.element
+					Watch
+					k
+					mve
 				)
 			)
 			(let 
-				user-init (default result.init empty-fun)
-				element-init (default json.init empty-fun)
-				user-destroy (default result.destroy empty-fun)
-				element-destroy (default json.destroy empty-fun)
+				user-init (default user-result.init empty-fun)
+				element-init (default element-result.init empty-fun)
+				user-destroy (default user-result.destroy empty-fun)
+				element-destroy (default element-result.destroy empty-fun)
 			)
-			[
-				getElement (quote json.getElement)
-				init {
+			(kvs-extends 
+				'getElement (quote element-result.getElement)
+				'init {
 					(element-init)
 					(user-init)
 				}
-				destroy {
+				'destroy {
 					(user-destroy)
 					(element-destroy)
 					(forEach (watchPool) 
@@ -192,7 +227,8 @@
 						}
 					)
 				}
-			]
+				me
+			)
 		})
 		ret
 	}
