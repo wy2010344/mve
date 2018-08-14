@@ -1,16 +1,13 @@
 ({
-    data:{
-        nokey:"mve/parse/nokey.js"
-    },
     /**
      * 改变行的data()，需要逆向改变数组
      */
-    success:function(mvvm,DOM,util){
-        var build=function(repeat){
+    success:function(Value,Watcher,DOM,nokey){
+        var build=function(repeat,mvvm){
             return function(row,i){
                 var o={
-                    data:util.Value(row),
-                    index:util.Value(i)
+                    data:Value(row),
+                    index:Value(i)
                 };
                 var value={
                     row:o,
@@ -25,9 +22,9 @@
                 return value;
             };
         };
-        var buildChildren=function(pel,params){
-            var bc=lib.nokey({
-                build:build(params.repeat),
+        var buildChildren=function(pel,children,inits,destroys,mvvm){
+            var bc=nokey({
+                build:build(children.repeat,mvvm),
                 after:function(value){
                     if(isInit){
                         //直接初始化
@@ -36,7 +33,9 @@
                         }
                     }else{
                         //附加于父层去初始化
-                        util.util.buildInit(value.obj,me);
+                        if(value.obj.init){
+                            inits.push(value.obj.init);
+                        }
                     }
                 },
                 appendChild:function(value){
@@ -48,30 +47,29 @@
             });
             /*
             暂时不考虑区分 
-            if (params.key) {
-                //bc=lib.key(p,parseRow,buildOne,pel,params);
+            if (children.key) {
+                //bc=lib.key(p,parseRow,buildOne,pel,children);
             }else{
             }
             */
             var isInit=false;
-            var me={
-                init:function(){
-                    isInit=true;
-                },
-                destroy:function(){
-                    watch.disable();
-                    bc.destroy();
-                }
-            };
-            var watch=util.Watcher({
+            //初始化、销毁附加到全局
+            inits.push(function() {
+                isInit=true;
+            });
+            destroys.push(function() {
+                watch.disable();
+                bc.destroy();
+            });
+
+            var watch=Watcher({
                 exp:function(){
-                    return params.array();
+                    return children.array();
                 },
                 after:function(array){
                     bc.after(array);
                 }
             });
-            return me;
         };
         return buildChildren;
     }

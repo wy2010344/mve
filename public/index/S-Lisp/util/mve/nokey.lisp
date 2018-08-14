@@ -1,0 +1,109 @@
+
+{
+	`与js的array不同，使用倒置的顺序`
+	(let p* args)
+	(let 
+		caches (cache [])
+		views (cache [])
+		update-views {
+			(let (array) args)
+			({
+				(let (vs as) args circle this)
+				(if-run (exist? vs)
+					{
+						(let (v ...vs) vs (a ...as) as)
+						(kvs-path-run  v [row data] a)
+						(circle vs as)
+					}
+				)
+			} (views) array)
+		}
+		len-c {
+			(len 
+				((first args))
+			)
+		}
+	)
+	[
+		destroy {
+			(forEach (caches)
+				{
+					(let (c) args)
+					(let destroy 
+						(kvs-path c [obj destroy])
+					)
+					(if-run (exist? destroy) destroy)
+				}
+			)
+		}
+
+		after {
+			(let (array) args)
+			(if-run 
+				(< (len array)(len-c views) )
+				{
+					`多出的`
+					(let more (slice-from (views) (len array)))
+					`移除视图上的元素`
+					(forEach more 
+						{
+							(let (v) args)
+							(p.removeChild v)
+						}
+					)
+					`更新视图上数据`
+					(views (slice-to (views) (len array)))
+					(update-views array)
+				}
+				{
+					(if-run 
+						(< (len array) (len-c caches))
+						{
+							`向caches上增加`
+							(let new-view (slice-to (caches) (len array)))
+							(let more (slice-from new-view (len-c views)))
+							(forEach more
+								{
+									(let (v) args)
+									(p.appendChild v)
+								}
+							)
+							(views new-view)
+							(update-views array)
+						}
+						{
+							`从caches向视图上增加`
+							(let more (slice-from (caches) (len-c views)))
+							(forEach more
+								{
+									(let (v i) args)
+									(p.appendChild v)
+								}
+							)
+							(views (caches))
+							(update-views array)
+							`新增加`
+							(let 
+								c-l  (len-c caches)
+								more (slice-from array c-l)
+							)
+							(let 
+								more-k (map more
+									{
+										(let (a i) args)
+										(let v (p.build a (+ i c-l)))
+										(p.appendChild v)
+										(p.after v)
+										v
+									}
+								)
+							)
+							(caches (combine-two (caches) more-k))
+							(views (caches))
+						}
+					)
+				}
+			)
+		}
+	]
+}
