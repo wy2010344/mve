@@ -1,122 +1,134 @@
 
 
 
-(let Dep-target (cache null))
+(let Dep-target (cache []))
 
 (let Dep ({
 		(let uid (cache 0))
 		{
-			(let subs  (cache null))
+			(let subs  (cache []))
+			`subs中已经包含`
+			(let contain {
+				(let (target-id) (first args))
+				(some (subs) 
+					{
+						(let (id) (first args))
+						(= id target-id)
+					}
+				)
+			})
 			(uid (+ uid 1))
     		[
-				id (uid)
-    			depend {
+    			`depend`
+    			{
     				(if-run (exist? (Dep-target))
-							 {
-							 		(subs
-								 		(kvs-extend  
-							 				(kvs-find1st (Dep-target) 'id) 
-											(Dep-target)
-							 				(subs) 
-										)
-									)
-							 }
+						{
+						 	(if-run (contain (Dep-target))
+						 		{
+						 			(log '已经包含了)
+						 		}
+						 		{
+						 			(subs 
+						 				(extend 
+						 					(Dep-target) 
+						 					(subs)
+						 				)
+						 			)
+						 		}
+						 	)
+						}
 					)
     			}
-    			notify {
+    			`notify` 
+    			{
     				(let old_subs (subs))
     				(subs [])
-    				(kvs-forEach old_subs 
+    				(forEach old_subs 
     					{
-    						(let (v k) args)
-    						(let update 
-    							(kvs-find1st v 'update)
-    						)
+    						(let (id update) (first args))
     						(update)
     					}
     				)
     			}
+    			`id`
+    			(uid)
     		]
 		}
 	})
 	`值节点`
 	Value {
-		(let dep* (Dep))
-		(let v 
-			(cache 
-				(if (exist? args) (first args) null)
-			)
-		)
+		(let (dep-depend dep-notify dep-id) (Dep))
+		(let v (apply cache args))
 		{
-			(let ags args)
-			(if-run (empty? ags)
-					{
-						(dep.depend)
-						(v)
-					}
-					{
-						(if-run (exist? (Dep-target))
-								{
-									(log '计算期间不允许修改)
-								}
-								{
-									(v (first ags))
-									(dep.notify)
-								}
-						)
-					}
+			(let xs args)
+			(if-run (exist? xs)
+				{
+					(if-run (exist? (Dep-target))
+						{
+							(log '计算期间不允许修改)
+						}
+						{
+							(v (first xs))
+							(dep-notify)
+						}
+					)
+				}
+				{
+					(dep-depend)
+					(v)
+				}
 			)
 		}
 	}
 	Watcher ({
 		(let uid (cache 0))
 		{
-			(let p* args)
+			(let (p-before p-exp p-after) args)
 			(let  
-				before  (default p.before empty-fun) 
-				after (default p.after empty-fun)
+				before  (default p-before empty-fun) 
+				after (default p-after empty-fun)
 			)
 
 			(let enable (cache true))
 			(uid (+ (uid) 1))
-			(let me (cache null))
+			(let id (uid))
 			(let update 
 				{
+					(let update this)
 					(if-run (enable)
-							{
-								(let bo (before))
-								(Dep-target (me))
-								(let ao (p.exp bo))
-								(Dep-target null)
-								(after ao)
-							}
+						{
+							(let bo (before))
+							(Dep-target ['id 'update])
+							(let ao (p-exp bo))
+							(Dep-target [])
+							(after ao)
+						}
 					)
 				}
 			)
-			(me [
-				id (uid)
+			(update)
+			[
+				id 'id
 				update 'update
 				disable {
 					(enable false)
 				}
-			])
-			(update)
-			(me)
+			]
 		}
 	})
 
 	Cache {
-		(let dep* (Dep))
+		(let (dep-depend dep-notify dep-id) (Dep))
 		(let (watch func) args)
-		(let cache (cache null))
+		(let cache (cache []))
 		(watch [
 			exp {
 				(cache (func ))
-				(dep.notify)
+				(dep-notify)
 			}
 		])
 		{
-			(dep.depend)
+			(dep-depend)
 			(cache)
 		}
 	}
@@ -126,8 +138,6 @@
 )
 
 [
-	Dep (quote Dep)
-	
 	Value (quote Value)
 
 	Watcher (quote Watcher)
@@ -140,10 +150,17 @@
 		(let (Parse) args)
 		(let ret {
 			(let (user-func) args mve this)
-			(let watchPool (cache null))
+			(let watchPool (cache []))
 			(let Watch 
 				{
-					(let w (apply Watcher args))
+					(let kvf (kvs-match args))
+					(let w 
+						(Watcher 
+							(kvf 'before)
+							(kvf 'exp)
+							(kvf 'after)
+						)
+					)
 					(watchPool 
 						(extend w 
 							(watchPool)
@@ -187,9 +204,9 @@
 					}
 				)
 			)
-			(let user-result* user-result)
+			(let user-result (kvs-match user-result))
 			(let me
-				(kvs-reduce user-result.out
+				(kvs-reduce (user-result 'out)
 					{
 						(let (init v k) args)
 						(kvs-extend v k init)
@@ -197,35 +214,49 @@
 					me
 				)
 			)
-			(let element-result* 
+			(let 
+				(getElement element-init element-destroy) 
 				(Parse 
-					user-result.element
-					Watch
+					(user-result 'element)
+					`Watch 给内部使用的`
+					{
+						(let w  (apply Watcher args))
+						(watchPool 
+							(extend w 
+								(watchPool)
+							)
+						)
+						w
+					}
 					k
 					mve
 				)
 			)
 			(let 
-				user-init (default user-result.init empty-fun)
-				element-init (default element-result.init empty-fun)
-				user-destroy (default user-result.destroy empty-fun)
-				element-destroy (default element-result.destroy empty-fun)
+				user-init (default (user-result 'init) empty-fun)
+				user-destroy (default (user-result 'destroy) empty-fun)
 			)
-			(kvs-extends 
-				'getElement (quote element-result.getElement)
-				'init {
-					(element-init)
-					(user-init)
-				}
-				'destroy {
-					(user-destroy)
-					(element-destroy)
-					(forEach (watchPool) 
-						{
-							(let w* (first args))
-							(w.disable)
-						}
-					)
+			(kvs-reduce 
+				[
+					getElement (quote getElement)
+					init {
+						(element-init)
+						(user-init)
+					}
+					destroy {
+						(user-destroy)
+						(element-destroy)
+						(forEach (watchPool) 
+							{
+								(let disable (kvs-find1st (first args) 'disable))
+								(disable)
+							}
+						)
+					}
+				]
+				{
+					(let (init v k) args)
+					(kvs-extend k v init)
 				}
 				me
 			)

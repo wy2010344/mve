@@ -1,7 +1,7 @@
 
 {
 	`与js的array不同，使用倒置的顺序`
-	(let p* args)
+	(let (p-build p-after p-appendChild p-removeChild) args)
 	(let 
 		caches (cache [])
 		views (cache [])
@@ -25,19 +25,8 @@
 		}
 	)
 	[
-		destroy {
-			(forEach (caches)
-				{
-					(let (c) args)
-					(let destroy 
-						(kvs-path c [obj destroy])
-					)
-					(if-run (exist? destroy) destroy)
-				}
-			)
-		}
-
-		after {
+		`after` 
+		{
 			(let (array) args)
 			(if-run 
 				(< (len array)(len-c views) )
@@ -48,7 +37,7 @@
 					(forEach more 
 						{
 							(let (v) args)
-							(p.removeChild v)
+							(p-removeChild v)
 						}
 					)
 					`更新视图上数据`
@@ -65,7 +54,7 @@
 							(forEach more
 								{
 									(let (v) args)
-									(p.appendChild v)
+									(p-appendChild v)
 								}
 							)
 							(views new-view)
@@ -77,7 +66,7 @@
 							(forEach more
 								{
 									(let (v i) args)
-									(p.appendChild v)
+									(p-appendChild v)
 								}
 							)
 							(views (caches))
@@ -87,21 +76,34 @@
 								c-l  (len-c caches)
 								more (slice-from array c-l)
 							)
-							(let 
-								more-k (map more
+							(let more-k (reduce more
 									{
-										(let (a i) args)
-										(let v (p.build a (+ i c-l)))
-										(p.appendChild v)
-										(p.after v)
-										v
+										(let (init a i) args)
+										(let v (p-build a (+ i c-l)))
+										(p-appendChild v)
+										(p-after v)
+										`因为把新增加的追加到后面了`
+										(extend v init)
 									}
+									[]
 								)
 							)
-							(caches (combine-two (caches) more-k))
+							(caches (combine-two (caches) (reverse more-k)))
 							(views (caches))
 						}
 					)
+				}
+			)
+		}
+		`destroy`
+		{
+			(forEach (caches)
+				{
+					(let (c) args)
+					(let destroy 
+						(kvs-path c [obj destroy])
+					)
+					(if-run (exist? destroy) destroy)
 				}
 			)
 		}

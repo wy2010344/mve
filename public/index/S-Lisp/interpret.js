@@ -17,32 +17,8 @@
 			}
 			return ret;
 		};
-
-		var buildBracket=function(cs,vs,scope){
-			var max=cs.children.length-1;
-			mb.Array.forEach(cs.children,function(c,i){
-				var v=null;
-				if(i==max && c.value.startsWith("...")){
-					//最后的省略号
-					var k=c.value.slice(3);
-					if(isID(k)){
-						scope=lib.util.kvs_extend(k,vs,scope);
-					}else{
-						throw k+"不是合法的ID4";
-					}
-				}else
-				if (c.type=="id"&&isID(c.value)) {
-					if(vs!=null){
-						v=vs.First();
-						vs=vs.Rest();
-					}
-					scope=lib.util.kvs_extend(c.value,v,scope);
-				}
-			});
-			return scope;
-		};
-		var buildMatch=function(c,kvs,scope,buildLibFun){
-			var x=c.value.substr(0,c.value.length-1);
+		var buildKVSMatch=function(scope,x,kvs,buildLibFun){
+			x=x.substr(0,x.length-1);
 			if(isID(x)){
 				scope=lib.util.kvs_extend(
 					x,
@@ -71,7 +47,54 @@
 			}
 			return scope;
 		};
-
+		var buildKVSMatch=function() {
+			throw "为了雪藏的kvs-match，暂时不允许以*号结尾";
+		};
+		var buildBracket=function(cs,vs,scope,buildLibFun){
+			var max=cs.children.length-1;
+			mb.Array.forEach(cs.children,function(c,i){
+				var v=null;
+				if(i==max && c.value.startsWith("...")){
+					//最后的省略号
+					var k=c.value.slice(3);
+					if(k.endsWith("*")){
+						scope=buildKVSMatch(scope,k,kvs,buildLibFun);
+					}else{
+						scope=buildNormal(scope,k,vs);
+					}
+				}else{
+					if(vs!=null){
+						v=vs.First();
+						vs=vs.Rest();
+					}
+					scope=buildMatch(scope,c,v,buildLibFun);
+				}
+			});
+			return scope;
+		};
+		var buildNormal=function(scope,k,v) {
+			if(isID(k)){
+				scope=lib.util.kvs_extend(k,v,scope);
+			}else{
+				throw k+"不是合法的ID1";
+			}
+			return scope;
+		};
+		var buildMatch=function(scope,c,v,buildLibFun) {
+			if(c.type=="()"){
+				scope=buildBracket(c,v,scope,buildLibFun);
+			}else
+			if(c.type=="id"){
+				if(c.value.endsWith("*")){
+					scope=buildKVSMatch(scope,c.value,v,buildLibFun);
+				}else{
+					scope=buildNormal(scope,c.value,v);
+				}
+			}else{
+				throw c.toString()+"不是合法的ID类型";
+			}
+			return scope;
+		};
 		var fun_toString=function(){
 			return this.exp.toString.apply(this.exp,arguments);
 		};
@@ -79,7 +102,6 @@
 			return new UserFun(input,parentScope);
 		};
 		return {
-			isID:isID,
 			buildBracket:buildBracket,
 			buildMatch:buildMatch,
 			util:lib.util

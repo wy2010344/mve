@@ -1,7 +1,8 @@
 ({
     data:{
         s_lisp:"./sync/index.js",
-        s_lisp_library:"./library.js"
+        s_lisp_library:"./library.js",
+        util:"./util.js"
     },
     success:function(){
         return mve(function(me){
@@ -31,18 +32,8 @@
                             ]
                         }));
                         try{
-                            var result=exec(input);                  
-                            mb.log(result);
-                            if(result==null){
-                                result="[]";
-                            }else
-                            if (typeof(result)=='object') {
-                                result=result.toString(true);
-                            }else
-                            if(typeof(result)=='function'){
-                                result=result.toString(true);
-                            }
-
+                            var result=exec(input); 
+                            result=lib.util.log(result);
                             me.k.show.appendChild(jsdom.parseElement({
                                 type:"pre",
                                 style:{

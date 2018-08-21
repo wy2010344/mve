@@ -27,64 +27,88 @@
 		}
 	})
 	{
-		(let (pel children init destroy mve) args)
-		(let c* (children))
-		(let isInit (cache false))
-		(init 
-			(extend {(isInit true)} (init))
-		)
-		(let bc* 
-			(nokey 
-				'build (build c.repeat mve)
-				'after {
-					(let voi 
-						(kvs-path (first args) [obj init])
-					)
-					(if-run (exist? voi)
-						{
-							(if-run (isInit)
-								{
-									(voi)
-								}
-								{
-									(init (extend voi (init)))
-								}
+		(let 
+			(pel children inits destroys mve) args
+			`c.array c.repeat`
+			cd (kvs-match (children))
+			`是否初始化`
+			isInit (cache false)
+			`未初始化时缓存值`
+			c-inits (cache [])
+			(bc-after bc-destroy) 
+				(nokey 
+					`build` 
+					(build (cd 'repeat) mve)
+					`after` 
+					{
+						(let voi 
+							(kvs-path (first args) [obj init])
+						)
+						(if-run (exist? voi)
+							{
+								(if-run (isInit)
+									{(voi)}
+									{
+										(c-inits (extend voi (c-inits)))
+									}
+								)
+							}
+						)
+					}
+					`appendChild` 
+					{
+						(let el 
+							(kvs-path-run (first args)  
+								[obj getElement]
 							)
+						)
+						(DOM 'appendChild pel  el)
+					}
+					`removeChild` 
+					{
+						(DOM 'removeChild pel
+							(kvs-path-run (first args)
+								[obj getElement]
+							)
+						)
+					}
+				)
+			`Array的计算观察`
+			watch 
+				(Watcher 
+					`before`
+					[]
+					`exp`
+					{
+						((cd 'array))
+					}
+					`after` 
+					{
+						(bc-after (first args))
+					}
+				)
+		)
+		(list 
+			`inits`
+			(extend 
+				{
+					(forEach (c-inits)
+						{
+							((first args))
 						}
 					)
-				}
-				'appendChild {
-					(let el 
-						(kvs-path-run (first args)  
-							[obj getElement]
-						)
-					)
-					(DOM 'appendChild pel  el)
-				}
-				'removeChild {
-					(DOM 'removeChild pel
-						(kvs-path-run (first args)
-							[obj getElement]
-						)
-					)
-				}
-			)
-		)
-		(let watch (Watcher 
-			'exp {
-				(c.array)
-			}
-			'after {
-				(bc.after (first args))
-			}
-		))
-		(destroy  
+					(c-inits [])
+					(isInit true)
+				} 
+				inits
+			) 
+			`destroys`
 			(extend 
 				{ 
 					(watch disable) 
-					(bc.destroy)
+					(bc-destroy)
 				} 
-				(destroy)
+				destroys
 			)
 		)
 	}

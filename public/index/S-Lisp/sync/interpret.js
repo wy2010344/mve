@@ -5,7 +5,6 @@
 	},
 	delay:true,
 	success:function() {
-		var isID=lib.interpret.isID;
 		var util=lib.interpret.util;
 		var buildLet=function(node,scope) {
 			var i=1;
@@ -16,22 +15,7 @@
 				i++;
 				var v=interpret(v_r,scope);
 
-				if(c.type=="()"){
-					scope=lib.interpret.buildBracket(c,v,scope);
-				}else
-				if(c.type=="id"){
-					if(c.value.endsWith("*")){
-						scope=lib.interpret.buildMatch(c,v,scope,buildLibFun);
-					}else{
-						if(isID(c.value)){
-							scope=util.kvs_extend(c.value,v,scope);
-						}else{
-							throw c.value+"不是合法的ID1";
-						}
-					}
-				}else{
-					throw c.toString()+"不是合法的ID类型";
-				}
+				scope=lib.interpret.buildMatch(scope,c,v,buildLibFun);
 			}
 			return scope;
 		};
@@ -74,15 +58,20 @@
 					r=rq(c);
 				});
 				return r;
+			},
+			ftype:function() {
+				return this.Function_type.user;
 			}
 		});
 
 		var buildFunc=function(input,parentScope) {
 			return new UserFun(input,parentScope);
 		};
-		var buildLibFun=function(fun) {
-			return new lib.util.LibFun(fun);
+		var buildLibFun=function(k,fun) {
+			return new lib.util.LibFun(k,fun);
 		};
+		buildLibFun.Fun=lib.util.Fun;
+
 		var calNodes=function(node,scope) {
 			var r=null;
 			mb.Array.forEach(node.children,function(c,i) {

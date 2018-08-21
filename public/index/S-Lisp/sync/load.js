@@ -30,6 +30,7 @@
 						util.kvs_extend(
 							"load",
 							lib.interpret.buildLibFun(
+								"load",
 								function(node){
 									return load(path,node.First());
 								}
@@ -48,15 +49,16 @@
 		
 		return function(library) {
 			scope=library(
-				function(fun) {
-					return lib.interpret.buildLibFun(fun);
-				},
-				lib.interpret.buildLibFun(function(node) {
-					var run=node.First();
-					node=node.Rest();
-					var args=node.First();
-					return run.exec(args);
-				})
+				lib.interpret.buildLibFun,
+				lib.interpret.buildLibFun(
+					"apply",
+					function(node) {
+						var run=node.First();
+						node=node.Rest();
+						var args=node.First();
+						return run.exec(args);
+					}
+				)
 			);
 			var r=load(null,"../util/index.lisp");		
 			var t=r;

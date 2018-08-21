@@ -23,6 +23,8 @@
             };
         };
         var buildChildren=function(pel,children,inits,destroys,mvvm){
+            var c_inits=[];
+            var isInit=false;
             var bc=nokey({
                 build:build(children.repeat,mvvm),
                 after:function(value){
@@ -34,7 +36,7 @@
                     }else{
                         //附加于父层去初始化
                         if(value.obj.init){
-                            inits.push(value.obj.init);
+                            c_inits.push(value.obj.init);
                         }
                     }
                 },
@@ -52,15 +54,6 @@
             }else{
             }
             */
-            var isInit=false;
-            //初始化、销毁附加到全局
-            inits.push(function() {
-                isInit=true;
-            });
-            destroys.push(function() {
-                watch.disable();
-                bc.destroy();
-            });
 
             var watch=Watcher({
                 exp:function(){
@@ -69,6 +62,17 @@
                 after:function(array){
                     bc.after(array);
                 }
+            });
+            //初始化、销毁附加到全局
+            inits.push(function() {
+                mb.Array.forEach(c_inits,function(c_i) {
+                    c_i();
+                });
+                isInit=true;
+            });
+            destroys.push(function() {
+                watch.disable();
+                bc.destroy();
             });
         };
         return buildChildren;
