@@ -7,26 +7,24 @@
 		log=log||function(cs){
 			mb.log.apply(null,cs)
 		};
-        var reduce=function(node,init,func){
-            for(var t=node;t!=null;t=t.Rest()){
-                init=func(init,t.First());
-            }
-            return init;
-        };
-        
         var or=function(a,b){
             return a||b;
         };
         var and=function(a,b){
             return a&&b;
         };
-        var compare=function(node,func,is_or){
+        var reduce=function(node,func,init) {
+            for(var t=node;t!=null;t=t.Rest()){
+                init=func(init,t.First());
+            }
+            return init;
+        };
+        var compare=function(node,func){
             var last=node.First();
             var init=true;
-            var c=is_or?or:and;
             for(var t=node.Rest();t!=null;t=t.Rest()){
                 var now=t.First();
-                init=c(init,func(last,now));
+                init=and(init,func(last,now));
                 last=now;
             }
             return init;
@@ -37,7 +35,7 @@
 			log:function(node){
 				var cs=[];
 				for(var t=node;t!=null;t=t.Rest()){
-					cs.push(t.First());
+					cs.push(lib.util.log(t.First()));
 				}
 				log(cs);
 			},
@@ -123,6 +121,13 @@
                 }
                 return r.substr(0,r.length-split.length);
             },
+            toString:function(node){
+                return node.First().toString(true);  
+            },
+            stringify:function(node){
+                //类似于JSON.stringify，没想好用toString还是stringify;
+                return node.First().toString(true);  
+            },
             "str-trim":function(node) {
                 var str=node.First();
                 return str.trim();
@@ -132,26 +137,26 @@
                 return str.length;
             },
 			"+":function(node){
-                return reduce(node,0,function(last,now){
+                return reduce(node,function(last,now){
                     return last+now;
-                });
+                },0);
 			},
 			"-":function(node){
                 var r=node.First();
-                return reduce(node.Rest(),r,function(last,now){
+                return reduce(node.Rest(),function(last,now){
                     return last-now;
-                });
+                },r);
 			},
             "*":function(node){
-                return reduce(node,1,function(last,now){
+                return reduce(node,function(last,now){
                     return last*now;
-                });
+                },1);
             },
             "/":function(node){
                 var r=node.First();
-                return reduce(node.Rest(),r,function(last,now){
+                return reduce(node.Rest(),function(last,now){
                     return last/now;
-                });
+                },r);
             },
             ">":function(node){
                 //数字
@@ -172,14 +177,14 @@
                 });
             },
             and:function(node){
-                return compare(node,function(last,now){
-                    return (last && now);
-                });
+                return reduce(node,function(init,v) {
+                    return and(init,v);
+                },true);
             },
             or:function(node){
-                return compare(node,function(last,now){
-                    return (last || now);
-                },true);
+                return reduce(node,function(init,v) {
+                    return or(init,v);
+                },false);
             },
             not:function(node){
                 return !node.First();
@@ -231,25 +236,39 @@
                     library,
                     function(v,k){
                         if(typeof(v)=='function'){
-                            return libfun(v);
+                            return libfun(k,v);
                         }else{
                             return v;
                         }
                     }
                 )
             );
+            var Cache=function(v) {
+                this.v=v;
+            }
+            Cache.prototype=new libfun.Fun();
+            mb.Object.ember(Cache.prototype,{
+                toString:function() {
+                    return "[]";
+                },
+                ftype:function() {
+                    return this.Function_type.cache;
+                },
+                exec:function(node){
+                    if(node==null){
+                        return this.v;
+                    }else{
+                        this.v=node.First();
+                    }
+                }
+            });
             core=lib.util.kvs_extend(
                 "cache",
                 libfun(
+                    "cache",
                     function(node) {
                         var v=node.First();
-                        return libfun(function(node) {
-                            if(node==null){
-                                return v;
-                            }else{
-                                v=node.First();
-                            }
-                        });
+                        return new Cache(v);
                     }
                 ),
                 core

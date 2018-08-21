@@ -109,29 +109,34 @@
 		var locMsg=function(loc) {
 			return "{"+(loc.row+1)+"行"+(loc.col+1)+"列}";
 		};
+
+		var trans={
+			"r":"\r",
+			"n":"\n",
+			"t":"\t",
+			"\\":"\\",
+			"\"":"\""
+		};
 		var parseStr=function(end,q) {
 			//字符串
 			var loc=q.loc();
 			q.shift();
 			var nobreak=true;
-			var notrans=true;
 			var s="";
 			while(q.current()!=undefined && nobreak){
 
-				if(q.current()==end && notrans){
+				if(q.current()==end){
 					nobreak=false;
 				}else{
-					var add=true;
 					if(q.current()=='\\'){
-						if(notrans){
-							//此时要转义，不添加"\\"
-							add=false;
+						q.shift();
+						var x=trans[q.current()];
+						if(x){
+							s=s+x;
+						}else{
+							throw "不合法的转义"+q.current()+"在位置"+q.locMsg();
 						}
-						notrans=!notrans;
 					}else{
-						notrans=true;
-					}
-					if(add){
 						s=s+q.current();
 					}
 					q.shift();

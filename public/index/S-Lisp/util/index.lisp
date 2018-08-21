@@ -47,6 +47,22 @@
 			{init}
 		)
 	})
+	
+	reduce-right (with-offset {
+		(let (i xs run init) args reduce-right-i this)
+		(if-run (exist? xs)
+			{
+				(let (x ...xs) xs)
+				(run 
+					(reduce-right-i (+ i 1) xs run  init)
+					x
+					i
+				)
+			}
+			{ init }
+		)
+	})
+	
 	kvs-reduce (with-offset {
 		(let (i kvs run init) args kvs-reduce-i this)
 		(if-run (exist? kvs)
@@ -56,6 +72,22 @@
 				(kvs-reduce-i (+ i 1) kvs run init)
 			}
 			{init}
+		)
+	})
+	
+	kvs-reduce-right (with-offset {
+		(let (i kvs run init) args kvs-reduce-right-i this)
+		(if-run (exist? kvs)
+			{
+				(let (k v ...kvs) kvs)
+				(run
+					(kvs-reduce-right-i (+ i 1) kvs run init)
+					v
+					k
+					i
+				)
+			}
+			{ init }
 		)
 	})
 	`切片到某处`
@@ -134,31 +166,6 @@
 	}
 	`如果没有，设置默认值`
 	default 'default
-	`...vs，其实也可以用reduce来做的样子`
-	extends {
-		(let (v ...vs) args extends this)
-		(if-run (exist? vs)
-			{
-				(extend v (apply extends vs))
-			}
-			{
-				v
-			}
-		)
-	}
-	`kvkvkv...kvs，其实也可以用reduce来做的样子`
-	kvs-extends {
-		(let ags args kvs-extends this)
-		(if-run (= (length ags) 1)
-			{
-				(first ags)
-			}
-			{
-				(let (k v ...ags) ags)
-				(kvs-extend k v (apply kvs-extends ags))
-			}
-		)
-	}
 	`从某处开始切片`
 	slice-from {
 		(let (xs from) args slice-from this)
@@ -175,21 +182,19 @@
 	reduce 'reduce
 	`reduce-left就是reduce`
 	reduce-left 'reduce
-	reduce-right (with-offset {
-		(let (i xs run init) args reduce-right-i this)
-		(if-run (exist? xs)
-			{
-				(let (x ...xs) xs)
-				(run 
-					(reduce-right-i (+ i 1) xs run  init)
-					x
-					i
-				)
-			}
-			{ init }
-		)
-	})
+	reduce-right 'reduce-right
+	`与列表的reduce对应`
 	kvs-reduce 'kvs-reduce
+	kvs-reduce-left 'kvs-reduce
+	kvs-reduce-right 'kvs-reduce-right
+	`类似js中的some，已经包含`
+	some {
+		(let (xs run) args)
+		(reduce xs {
+			(let (init x) args)
+			(or init (run x))
+		} false)
+	}
 	`减少循环`
 	forEach (with-offset {
 		(let (i xs run) args forEach-i this)
@@ -201,16 +206,14 @@
 			}
 		)
 	})
-	`map`
-	map (with-offset {
-		(let (i xs run ) args map-i this)
-		(if-run (exist? xs)
-			{
-				(let (x ...xs) xs)
-				(extend (run x i) (map-i (+ i 1) xs run))
-			}
-		)
-	})
+	`map，可以用reduce实现`
+	map {
+		(let (xs run) args)
+		(reduce-right xs {
+			(let (init x i) args)
+			(extend (run x i) init)
+		} [])
+	}
 
 	`筛选`
 	filter (with-offset {
@@ -266,18 +269,48 @@
 		)
 	})
 
-	kvs-map (with-offset {
-		(let (i kvs run) args kvs-map-i this)
-		(if-run (exist? kvs)
+	kvs-map {
+		(let (kvs run) args)
+		(kvs-reduce-right kvs 
 			{
-				(let (k v ...kvs) kvs)
-				(kvs-extend k 
-					(run v k i) 
-					(kvs-map-i (+ i 1) kvs run)
+				(let (init v k i) args)
+				(kvs-extend k (run v k i) init)
+			} 
+			[]
+		)
+	}
+	`接受一组函数，如果一为假，不执行后续返回假；如果全为真，最后返回真`
+	and_q {
+		(let xs args and_q this)
+		(if-run (exist? xs)
+			{
+				(let (x ...xs) xs)
+				(if-run (x)
+					{
+						(apply and_q xs)
+					}
+					{false}
 				)
 			}
+			{true}
 		)
-	})
+	}
+	`接受一组函数，有一个为真，不执行后续返回真；如果全为假，返回假`
+	or_q {
+		(let xs args or_q this)
+		(if-run (exist? xs)
+			{
+				(let (x ...xs) xs)
+				(if-run (x)
+					{true}
+					{
+						(apply or_q xs)
+					}
+				)
+			}
+			{false}
+		)
+	}
 	`条件执行`
 	if-run 'if-run
 	switch {

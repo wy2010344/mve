@@ -19,15 +19,52 @@
 		Node.prototype.Length=function(){
 			return this.length;
 		};
-		Node.prototype.toString = function(bool) {
+		var trans={
+			"\r":"\\r",
+			"\n":"\\n",
+			"\t":"\\t",
+			"\\":"\\\\",
+			"\"":"\\\""
+		};
+		var escape_str=function(str){
+			var s="\"";
+			var i=0;
+			while(i<str.length){
+				var c=str.charAt(i);
+				var x=trans[c];
+				if(x!=null){
+					s=s+x;
+				}else{
+					s=s+c;
+				}
+				i++;
+			}
+			s=s+"\"";
+			return s;
+		};
+		Node.prototype.toString=function(bool) {
 			var v=this.First();
+			if(v==null){
+				v="[]";
+			}else
+			if(v.isFun){
+				//内置库转义
+				if(v.ftype()==v.Function_type.lib){
+					v="'"+v;
+				}
+			}else
+			if(typeof(v)=="string"){
+				//字符串
+				v=escape_str(v);
+			}
+
 			if(this.Rest()){
-				v=v+" "+this.Rest().toString(false);
+				v=v+" "+this.Rest().toString(true);
 			}
 			if(bool){
-				return "["+v+"]";
-			}else{
 				return v;
+			}else{
+				return "["+v+"]";
 			}
 		};
 		Node.prototype.isList=true;
@@ -97,6 +134,16 @@
 		};
 		var me={
 			Node:Node,
+			log:function(o){
+				if(o==null){
+					return "[]";
+				}else
+				if(typeof(o)=="string"){
+					return escape_str(o);
+				}else{
+					return o.toString();
+				}
+			},
 			kvs_extend:kvs_extend,
 			kvs_find1st:kvs_find1st,
 			extend:extend,
