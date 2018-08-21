@@ -16,6 +16,15 @@ mb.log=(function(){
         return mb.emptyFunc;
     }
 })();
+mb.cache=function(obj) {
+    return function() {
+        if(arguments.length==0){
+            return obj;
+        }else{
+            obj=arguments[0];
+        }
+    };
+};
 mb.task={
     /**
      * 

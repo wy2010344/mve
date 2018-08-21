@@ -100,7 +100,7 @@ mve(function(me){
 
 js的函数化语法使这种类似的DSL成为可能，但js还是比较复杂，易出错，所以我总结了S-Lisp语法方案，逐渐发现S-Lisp拥有强大其它方面的潜力，这是后话了。
 
-也简单实现了一个S-Lisp版的mve（感觉比较卡、慢），目前其children的repeat还没做好。
+也简单实现了一个S-Lisp版的mve（感觉比较卡、慢），~~目前其children的repeat还没做好~~。
 
 ## 使用方法
 

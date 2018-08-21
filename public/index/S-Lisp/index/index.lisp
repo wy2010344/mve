@@ -7,19 +7,19 @@
 
 (let a (load './a.lisp) b (load './b.lisp))
 (let mve (load '../util/mve/index.lisp))
-(let x* a)
+(let x (kvs-match a))
 ( (x 'b) )
 {
 	(log 98 7)	
 }
 (mve
 	{
-		(let me* args)
-		(let a (me.Value 9))
+		(let me (kvs-match args))
+		(let a ((me 'Value) 9))
 		(log (a))
 		(a (+ (a) 1))
 		(log (a))
-		(let array (me.Value [a b c d e f g h]))
+		(let array ((me 'Value) [a b c d e f g h]))
 		[
 			element [
 				type div
@@ -91,7 +91,7 @@
 					]
 					[
 						type input
-						value 98
+						value 'a
 					]
 					[
 						type (load './ca.lisp)
@@ -116,7 +116,7 @@
 								}
 								action [
 									click {
-										(let el (me.k 'ipx))
+										(let el ((me 'k) 'ipx))
 										(let v (js-attr el 'value))
 										(if-run (= 0 (str-length (str-trim v)))
 											{
@@ -138,7 +138,7 @@
 							[
 								array 'array
 								repeat {
-									(let o* (first args))
+									(let o (kvs-match (first args)))
 									[
 										type li
 										children [
@@ -146,16 +146,16 @@
 												type button text x 
 												action [
 													click {
-														(array (splice (array) (o.index) 1))
+														(array (splice (array) ((o 'index)) 1))
 													}
 												]
 											]
 											{
-												(o.index)
+												((o 'index))
 											}
 											------
 											{
-												(o.data)
+												((o 'data))
 											}
 										]
 									]
