@@ -2,23 +2,6 @@
 	delay:true,
 	success:function(){
 
-		function Node(v,vs){
-			this.v=v;
-			this.vs=vs;
-			this.length=1;
-			if(vs!=null){
-				this.length=this.length+vs.length;
-			}
-		};
-		Node.prototype.First = function() {
-			return this.v;
-		};
-		Node.prototype.Rest = function() {
-			return this.vs;
-		};
-		Node.prototype.Length=function(){
-			return this.length;
-		};
 		var trans={
 			"\r":"\\r",
 			"\n":"\\n",
@@ -42,39 +25,60 @@
 			s=s+"\"";
 			return s;
 		};
-		Node.prototype.toString=function(bool) {
-			var v=this.First();
-			if(v==null){
-				v="[]";
-			}else
-			if(v.isFun){
-				//内置库转义
-				if(v.ftype()==v.Function_type.lib){
-					v="'"+v;
-				}
-			}else
-			if(typeof(v)=="string"){
-				//字符串
-				v=escape_str(v);
-			}
-
-			if(this.Rest()){
-				v=v+" "+this.Rest().toString(true);
-			}
-			if(bool){
-				return v;
-			}else{
-				return "["+v+"]";
+		function Node(v,vs){
+			this.v=v;
+			this.vs=vs;
+			this.length=1;
+			if(vs!=null){
+				this.length=this.length+vs.length;
 			}
 		};
-		Node.prototype.isList=true;
+		mb.Object.ember(Node.prototype,{
+			First:function() {
+				return this.v;
+			},
+			Rest:function() {
+				return this.vs;
+			},
+			Length:function(){
+				return this.length;
+			},
+			toString:function(bool) {
+				var v=this.First();
+				if(v==null){
+					v="[]";
+				}else
+				if(v.isFun){
+					//内置库转义
+					if(v.ftype()==v.Function_type.lib){
+						v="'"+v;
+					}
+				}else
+				if(typeof(v)=="string"){
+					//字符串
+					v=escape_str(v);
+				}else{
+					//其它类型
+					v=v.toString();
+				}
+
+				if(this.Rest()){
+					v=v+" "+this.Rest().toString(true);
+				}
+				if(bool){
+					return v;
+				}else{
+					return "["+v+"]";
+				}
+			},
+			isList:true
+		});
 		var extend=function(v,vs){
 			return new Node(v,vs);
 		};
 		var kvs_extend=function(key,value,kvs){
 			return extend(key,extend(value,kvs));
 		};
-
         /*
         递归调用可能超过最大堆栈
         */
@@ -111,6 +115,9 @@
 			var t=node;
 			while(t!=null){
 				var v=t.First();
+				if(v==null){
+					r.push(null);
+				}else
 				if(v.isFun){
 					r.push(fun_from_list(v));
 				}else
@@ -132,8 +139,43 @@
 				return fun.exec(args);
 			};
 		};
+
+		var Fun=new Function();
+		Fun.prototype.isFun=true;
+        Fun.prototype.Function_type={
+            lib:0,
+            user:1,
+            cache:2
+        };
+
+        function LibFun(key,fun) {
+            this.fun=fun;
+            this.key=key;
+        }
+        LibFun.prototype=new Fun();
+        mb.Object.ember(LibFun.prototype,{
+            toString:function() {
+                return this.key;
+            },
+            ftype:function() {
+                return this.Function_type.lib;
+            },
+            exec:function(node) {
+                try{
+                    return this.fun(node);
+                }catch(e){
+                    mb.log(e,node.toString(),this.fun.toString());
+                    return null;
+                }
+            }
+        });
 		var me={
 			Node:Node,
+			Fun:Fun,
+			LibFun,LibFun,
+			buildLibFun:function(k,fun) {
+				return new LibFun(k,fun);
+			},
 			log:function(o){
 				if(o==null){
 					return "[]";
@@ -164,6 +206,9 @@
 					n=n.Rest();
 					var v=n.First();
 					n=n.Rest();
+					if(v==null){
+						map[k]=null;
+					}else
 					if(v.isFun){
 						map[k]=fun_from_list(v);
 					}else

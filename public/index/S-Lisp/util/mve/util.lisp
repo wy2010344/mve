@@ -178,13 +178,23 @@
 			`用户函数返回`
 			(let user-result 
 				(user-func 
-					'k {
-						(let (str) args)
-						(kvs-find1st (k) str)
-					}
-					'Value Value
-					'Watch Watch
-					'Cache Cache
+					({
+						(let kvs 
+							(list 
+								'k {
+									(let (str) args)
+									(kvs-find1st (k) str)
+								}
+								'Value Value
+								'Watch Watch
+								'Cache Cache
+							)
+						)
+						{
+							(let (key ...params) args)
+							(apply (kvs-find1st kvs key) params)
+						}
+					})
 				)
 			)
 			`locsize部分`
