@@ -26,7 +26,7 @@
 						br,
 						a("S-Lisp版mve演示","?act=S-Lisp%3Eindex%3Eindex"),
 						br,
-						a("S-Lisp的简单交互","?act=S-Lisp>shell"),
+						a("S-Lisp的简单交互","?act=S-shell"),
 						br,
 						{
 							type:"input",

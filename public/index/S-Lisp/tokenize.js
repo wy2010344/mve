@@ -1,4 +1,7 @@
 ({
+	data:{
+		s:"./s.js"
+	},
 	delay:true,
 	success:function() {
 		var is=(function() {
@@ -95,6 +98,12 @@
 						col++;
 					}
 				},
+				index:function() {
+					return index;
+				},
+				substr:function(a,b) {
+					return txt.substr(a,b);
+				},
 				loc:function() {
 					return {
 						col:col,
@@ -109,79 +118,169 @@
 		var locMsg=function(loc) {
 			return "{"+(loc.row+1)+"行"+(loc.col+1)+"列}";
 		};
-
-		var trans={
-			"r":"\r",
-			"n":"\n",
-			"t":"\t",
-			"\\":"\\",
-			"\"":"\""
+		var trans_map=[
+			"r","\r",
+			"n","\n",
+			"t","\t"
+		];
+		var trans_from_char=function(c) {
+			var x=null;
+			var i=0;
+			while(i<trans_map.length && x==null){
+				var key=trans_map[i];
+				i++;
+				var value=trans_map[i];
+				i++;
+				if(key==c){
+					x=value;
+				}
+			}
+			return x;
 		};
+		var trans_to_char=function(c) {
+			var x=null;
+			var i=0;
+			while(i<trans_map.length && x==null){
+				var value=trans_map[i];
+				i++;
+				var key=trans_map[i];
+				i++;
+				if(key==c){
+					x=value;
+				}
+			}
+			return x;
+		};
+
+		var string_from_trans=function(str,end,trans_time) {
+			var s="";
+			var i=0;
+			var len=str.length;
+			while(i<len){
+				var c=str[i];
+				if(c=='\\'){
+					i++;
+					c=str[i];
+					if(c==end){
+						s=s+end;
+					}else
+					if(c=="\\"){
+						s=s+"\\";
+					}else{
+						var x=trans_from_char(c);
+						if(x){
+							s=s+x;
+						}else{
+							throw "非法转义"+c+"在字符串"+str;
+						}
+					}
+				}else{
+					s=s+c;
+				}
+				i++;
+			}
+			return s;
+		};
+		var string_to_trans=function(str,end) {
+			var s=end;
+			var i=0;
+			var len=str.length;
+			while(i<len){
+				var c=str[i];
+				if(c=="\\"){
+					s=s+"\\\\";
+				}else
+				if(c==end){
+					s=s+"\\"+end;
+				}else{
+					var x=trans_to_char(c);
+					if(x){
+						s=s+"\\"+x;
+					}else{
+						s=s+c;
+					}
+				}
+				i++;
+			}
+			s=s+end;
+			return s;
+		}
 		var parseStr=function(end,q) {
 			//字符串
 			var loc=q.loc();
 			q.shift();
 			var nobreak=true;
-			var s="";
+			var start=q.index();
+			var trans_time=0;
 			while(q.current()!=undefined && nobreak){
-
 				if(q.current()==end){
 					nobreak=false;
 				}else{
 					if(q.current()=='\\'){
 						q.shift();
-						var x=trans[q.current()];
-						if(x){
-							s=s+x;
-						}else{
-							throw "不合法的转义"+q.current()+"在位置"+q.locMsg();
-						}
-					}else{
-						s=s+q.current();
+						trans_time++;
 					}
 					q.shift();
 				}
 			}
 			if(q.current()==undefined){
-				throw "过早结束"+q.locMsg();
+				throw end+"过早结束"+q.locMsg();
 			}else{
+				var s=q.substr(start,q.index()-start);
 				q.shift();
-				return s;
+				if(trans_time!=0){
+					return string_from_trans(s,end,trans_time);
+				}else{
+					return s;
+				}
 			}
 		};
+		var extend=lib.s.extend;
+		function Token(type,value,loc) {
+			this.type=type;
+			this.value=value;
+			this.loc=loc;
+		};
+		mb.Object.ember(Token.prototype,{
+			toString:function() {
+				if(this.type=="quote"){
+					return "'"+this.value;
+				}else
+				if(this.type=="string"){
+					return string_to_trans(this.value,"\"");
+				}else{
+					return this.value;
+				}
+			}
+		});
 		var tokenize=function(txt) {
 			var q=que(txt);
-
-			var tokens=[];
-
-			var jumpBra=function(type) {
-				tokens.push({
-					value:q.current(),
-					type:type,
-					loc:q.loc()
-				});
-				q.shift();
-			};
+			var tokens=null;
 			while(q.current()!=undefined){
 				if(is.whiteSpace(q.current())){
-					while(q.current()!=undefined && is.whiteSpace(q.current())){
-						q.shift();
-					}
+					q.shift();
 				}else
 				if(is.brackets.in(q.current())){
-					jumpBra("brackets_in");
+					tokens=extend(
+						new Token("BraL",q.current(),q.loc()),
+						tokens
+					);
+					q.shift();
 				}else
 				if(is.brackets.out(q.current())){
-					jumpBra("brackets_out");
+					tokens=extend(
+						new Token("BraR",q.current(),q.loc()),
+						tokens
+					);
+					q.shift();
 				}else
 				if(q.current()=='"'){
-
+					var loc=q.loc();
 					var s=parseStr('"',q);
-					tokens.push({
-						value:s,
-						type:"string",
-						loc:loc
-					});
+					tokens=extend(
+						new Token("string",s,loc),
+						tokens
+					);
 				}else
 				if(q.current()=='`'){
 					var s=parseStr('`',q);
@@ -189,46 +288,42 @@
 				}else
 				{
 					//id
-					var s="";
 					var loc=q.loc();
+					var start=q.index();
 					while(q.current()!=undefined && is.notEnd(q.current())){
-						s=s+q.current();
 						q.shift();
 					}
+					var s=q.substr(start,q.index()-start);
 					if(s[0]=='\''){
 						s=s.slice(1);
 						if(s==""){
-							throw "过早结束"+locMsg(loc);
+							throw "ID过早结束"+locMsg(loc);
 						}else{
-							tokens.push({
-								value:s,
-								type:"prevent",
-								loc:loc
-							});
+							tokens=extend(
+								new Token("quote",s,loc),
+								tokens
+							);
 						}
 					}else
 					if(isInt(s)) {
 						//整数
-						tokens.push({
-							value:parseInt(s),
-							type:"int",
-							loc:loc
-						});
+						tokens=extend(
+							new Token("int",parseInt(s),loc),
+							tokens
+						);
 					}else
 					if(isFloat(s)){
 						//浮点数
-						tokens.push({
-							value:parseFloat(s),
-							type:"float",
-							loc:loc
-						});
+						tokens=extend(
+							new Token("float",parseFloat(s),loc),
+							tokens
+						);
 					}else{
 						//纯id
-						tokens.push({
-							value:s,
-							type:"id",
-							loc:loc
-						});
+						tokens=extend(
+							new Token("id",s,loc),
+							tokens
+						);
 					}
 				}
 			}

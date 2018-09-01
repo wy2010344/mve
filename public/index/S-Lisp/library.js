@@ -1,6 +1,6 @@
 ({
 	data:{
-		util:"./util.js"
+		s:"./s.js"
 	},
     //致力于变成多平台通用的文件
 	success:function(log) {
@@ -35,13 +35,13 @@
 			log:function(node){
 				var cs=[];
 				for(var t=node;t!=null;t=t.Rest()){
-					cs.push(lib.util.log(t.First()));
+					cs.push(lib.s.log(t.First()));
 				}
 				log(cs);
 			},
             reverse:function(node){
                 var v=node.First();
-                return lib.util.reverse(node.First());
+                return lib.s.reverse(node.First());
             },
             rest:function(node){
                 var v=node.First();
@@ -73,7 +73,7 @@
                 return node.First().Length();
             },
             extend:function(node){
-            	return lib.util.extend(node.First(),node.Rest().First());
+            	return lib.s.extend(node.First(),node.Rest().First());
             },
 			quote:function(node){
 				return node.First();
@@ -85,7 +85,7 @@
                 var kvs=node.First();
                 node=node.Rest();
                 var key=node.First();
-                return lib.util.kvs_find1st(kvs,key);
+                return lib.s.kvs_find1st(kvs,key);
             },
             "kvs-extend":function(node) {
                 var key=node.First();
@@ -93,7 +93,7 @@
                 var value=node.First();
                 node=node.Rest();
                 var kvs=node.First();
-                return lib.util.kvs_extend(key,value,kvs);
+                return lib.s.kvs_extend(key,value,kvs);
             },
             //a?b:default(null)
             "if":function(node){
@@ -121,12 +121,9 @@
                 }
                 return r.substr(0,r.length-split.length);
             },
-            toString:function(node){
-                return node.First().toString(true);  
-            },
             stringify:function(node){
                 //类似于JSON.stringify，没想好用toString还是stringify;
-                return node.First().toString(true);  
+                return node.First().toString();  
             },
             "str-trim":function(node) {
                 var str=node.First();
@@ -189,6 +186,12 @@
             not:function(node){
                 return !node.First();
             },
+            apply:function(node) {
+                var run=node.First();
+                node=node.Rest();
+                var args=node.First();
+                return run.exec(args);
+            },
             "js-eval":function(node){
                 return eval(node.First());
             },
@@ -203,7 +206,7 @@
                 var as=[];
                 node=node.Rest();
                 if(node){
-                    ps=lib.util.array_from_list(node.First());
+                    ps=lib.s.array_from_list(node.First());
                     for(var i=0;i<ps.length;i++){
                         as.push("ps["+i+"]");
                     }
@@ -229,56 +232,49 @@
                 }
             }
 		};
-
-        return function(libfun,apply) {
-            var core=lib.util.kvs_from_map(
-                mb.Object.map(
-                    library,
-                    function(v,k){
-                        if(typeof(v)=='function'){
-                            return libfun(k,v);
-                        }else{
-                            return v;
-                        }
-                    }
-                )
-            );
-            var Cache=function(v) {
-                this.v=v;
-            }
-            Cache.prototype=new libfun.Fun();
-            mb.Object.ember(Cache.prototype,{
-                toString:function() {
-                    return "[]";
-                },
-                ftype:function() {
-                    return this.Function_type.cache;
-                },
-                exec:function(node){
-                    if(node==null){
-                        return this.v;
+        var core=lib.s.kvs_from_map(
+            mb.Object.map(
+                library,
+                function(v,k){
+                    if(typeof(v)=='function'){
+                        return lib.s.buildLibFun(k,v);
                     }else{
-                        this.v=node.First();
+                        return v;
                     }
                 }
-            });
-            core=lib.util.kvs_extend(
-                "cache",
-                libfun(
-                    "cache",
-                    function(node) {
-                        var v=node.First();
-                        return new Cache(v);
-                    }
-                ),
-                core
-            );
-            core=lib.util.kvs_extend(
-                "apply",
-                apply,
-                core
-            );
-            return core;
+            )
+        );
+        /************Cache函数**************/
+        var Cache=function(v){
+            this.v=v;
         };
+        Cache.prototype=new lib.s.Fun();
+        mb.Object.ember(Cache.prototype,{
+            toString:function() {
+                return "[]";
+            },
+            ftype:function() {
+                return this.Function_type.cache;
+            },
+            exec:function(node){
+                if(node==null){
+                    return this.v;
+                }else{
+                    this.v=node.First();
+                }
+            }
+        });
+        core=lib.s.kvs_extend(
+            "cache",
+            lib.s.buildLibFun(
+                "cache",
+                function(node) {
+                    var v=node.First();
+                    return new Cache(v);
+                }
+            ),
+            core
+        );
+        return core;
 	}
 })
