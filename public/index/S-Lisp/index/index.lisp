@@ -14,12 +14,12 @@
 }
 (mve
 	{
-		(let me (kvs-match args))
-		(let a ((me 'Value) 9))
+		(let (me) args)
+		(let a (me 'Value 9))
 		(log (a))
 		(a (+ (a) 1))
 		(log (a))
-		(let array ((me 'Value) [a b c d e f g h]))
+		(let array (me 'Value [a b c d e f g h]))
 		[
 			element [
 				type div
@@ -116,7 +116,7 @@
 								}
 								action [
 									click {
-										(let el ((me 'k) 'ipx))
+										(let el (me 'k 'ipx))
 										(let v (js-attr el 'value))
 										(if-run (= 0 (str-length (str-trim v)))
 											{

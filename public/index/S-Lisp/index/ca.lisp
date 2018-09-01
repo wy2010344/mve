@@ -5,8 +5,8 @@
 	(let (a b c ) args)
 	(mve
 		{
-			(let me (kvs-match args))
-			(let ak ((me 'Value) 98))
+			(let (me) args)
+			(let ak (me 'Value 98))
 			[
 				init {
 					(log '我是子组件初始化)

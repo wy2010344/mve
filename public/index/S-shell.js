@@ -1,22 +1,35 @@
 ({
     data:{
-        s_lisp:"./sync/index.js",
-        s_lisp_library:"./library.js",
-        util:"./util.js"
+        SLisp:"./S-Lisp/index.js"
     },
     success:function(){
         return mve(function(me){
+            var appendErr=function(e){
+                mb.log(e);
+                me.k.show.appendChild(jsdom.parseElement({
+                    type:"pre",
+                    style:{
+                        color:"red"
+                    },
+                    text:e
+                }));
+            };
+            var appendResult=function(result) {
+                me.k.show.appendChild(jsdom.parseElement({
+                    type:"pre",
+                    style:{
+                        color:"#00BCD4"
+                    },
+                    text:result
+                }));
+            };
+            var appendLog=function(cs){
+                me.k.show.appendChild(jsdom.parseElement({
+                    type:"pre",
+                    text:cs.join("\t")
+                }));
+            };
             var runFunc=function(exec){
-                var appendErr=function(e){
-                    mb.log(e);
-                    me.k.show.appendChild(jsdom.parseElement({
-                        type:"pre",
-                        style:{
-                            color:"red"
-                        },
-                        text:e
-                    }));
-                };
                 return function(){
                     var input=me.k["in"].value;
                     if(input.trim()!=""){
@@ -32,15 +45,7 @@
                             ]
                         }));
                         try{
-                            var result=exec(input); 
-                            result=lib.util.log(result);
-                            me.k.show.appendChild(jsdom.parseElement({
-                                type:"pre",
-                                style:{
-                                    color:"#00BCD4"
-                                },
-                                text:result
-                            }));
+                            exec(input);
                         }catch(e){
                             appendErr(e);
                         }
@@ -50,15 +55,9 @@
                 };
             };
             var run_s_lisp=runFunc(
-                lib.s_lisp(
-                    lib.s_lisp_library(
-                        function(cs) {
-                            me.k.show.appendChild(jsdom.parseElement({
-                                type:"pre",
-                                text:cs.join("\t")
-                            }));
-                        }
-                    )
+                lib.SLisp.shell(
+                    appendLog,
+                    appendResult
                 )
             );
             var height=me.Value(0);
