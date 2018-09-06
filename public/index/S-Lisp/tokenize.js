@@ -118,41 +118,7 @@
 		var locMsg=function(loc) {
 			return "{"+(loc.row+1)+"行"+(loc.col+1)+"列}";
 		};
-		var trans_map=[
-			"r","\r",
-			"n","\n",
-			"t","\t"
-		];
-		var trans_from_char=function(c) {
-			var x=null;
-			var i=0;
-			while(i<trans_map.length && x==null){
-				var key=trans_map[i];
-				i++;
-				var value=trans_map[i];
-				i++;
-				if(key==c){
-					x=value;
-				}
-			}
-			return x;
-		};
-		var trans_to_char=function(c) {
-			var x=null;
-			var i=0;
-			while(i<trans_map.length && x==null){
-				var value=trans_map[i];
-				i++;
-				var key=trans_map[i];
-				i++;
-				if(key==c){
-					x=value;
-				}
-			}
-			return x;
-		};
-
-		var string_from_trans=function(str,end,trans_time) {
+		var string_from_trans=function(str,end,trans_map,trans_time) {
 			var s="";
 			var i=0;
 			var len=str.length;
@@ -167,7 +133,7 @@
 					if(c=="\\"){
 						s=s+"\\";
 					}else{
-						var x=trans_from_char(c);
+						var x=trans_map[c];
 						if(x){
 							s=s+x;
 						}else{
@@ -181,31 +147,7 @@
 			}
 			return s;
 		};
-		var string_to_trans=function(str,end) {
-			var s=end;
-			var i=0;
-			var len=str.length;
-			while(i<len){
-				var c=str[i];
-				if(c=="\\"){
-					s=s+"\\\\";
-				}else
-				if(c==end){
-					s=s+"\\"+end;
-				}else{
-					var x=trans_to_char(c);
-					if(x){
-						s=s+"\\"+x;
-					}else{
-						s=s+c;
-					}
-				}
-				i++;
-			}
-			s=s+end;
-			return s;
-		}
-		var parseStr=function(end,q) {
+		var parseStr=function(end,q,trans_map) {
 			//字符串
 			var loc=q.loc();
 			q.shift();
@@ -229,13 +171,20 @@
 				var s=q.substr(start,q.index()-start);
 				q.shift();
 				if(trans_time!=0){
-					return string_from_trans(s,end,trans_time);
+					return string_from_trans(s,end,trans_map,trans_time);
 				}else{
 					return s;
 				}
 			}
 		};
-		var extend=lib.s.extend;
+		var trans_map={
+			"r":"\r",
+			"n":"\n",
+			"t":"\t"
+		};
+		var extend=function(x,xs){
+			return lib.s.extend(x,xs);
+		};
 		function Token(type,value,loc) {
 			this.type=type;
 			this.value=value;
@@ -247,7 +196,7 @@
 					return "'"+this.value;
 				}else
 				if(this.type=="string"){
-					return string_to_trans(this.value,"\"");
+					return lib.s.string_to_trans(this.value,'"','"');
 				}else{
 					return this.value;
 				}
@@ -276,14 +225,14 @@
 				}else
 				if(q.current()=='"'){
 					var loc=q.loc();
-					var s=parseStr('"',q);
+					var s=parseStr('"',q,trans_map);
 					tokens=extend(
 						new Token("string",s,loc),
 						tokens
 					);
 				}else
 				if(q.current()=='`'){
-					var s=parseStr('`',q);
+					var s=parseStr('`',q,trans_map);
 					//mb.log(s);//注释
 				}else
 				{

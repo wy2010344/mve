@@ -1,6 +1,3 @@
-
-
-(let mve (load '../util/mve/index.lisp))
 {
 	(let (a b c ) args)
 	(mve
