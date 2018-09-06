@@ -22,7 +22,7 @@
 			if(isID(x)){
 				scope=lib.s.kvs_extend(
 					x,
-					lib.s.buildLibFun(function(node){
+					new LibFun("kvs-match",function(node){
 						return lib.s.kvs_find1st(kvs,node.First());
 					}),
 					scope
@@ -119,9 +119,6 @@
 			return r;
 			//return lib.s.reverse(r);
 		};
-		var buildUserFun=function(exp,scope) {
-			return new UserFun(exp,scope);
-		};
 		var interpret=function(input,scope) {
 			if(input.type=="()"){
 				var nodes=calNodes(input.r_children,scope);
@@ -139,7 +136,7 @@
 				return calNodes(input.r_children,scope);
 			}else
 			if(input.type=="{}"){
-				return buildUserFun(input,scope);
+				return new UserFun(input,scope);
 			}else
 			if(input.type=="id"){
 				return lib.s.kvs_find1st(scope,input.value);
@@ -170,12 +167,46 @@
 			}
 		};
 
+		/*基础函数*/
+		var Fun=new Function();
+		Fun.prototype.isFun=true;
+        Fun.prototype.Function_type={
+            lib:0,
+            user:1,
+            cache:2
+        };
+
+        /*库函数*/
+        function LibFun(key,fun) {
+            this.fun=fun;
+            this.key=key;
+        }
+        LibFun.prototype=new Fun();
+        mb.Object.ember(LibFun.prototype,{
+            toString:function() {
+                return this.key;
+            },
+            ftype:function() {
+                return this.Function_type.lib;
+            },
+            exec:function(node) {
+                try{
+                    return this.fun(node);
+                }catch(e){
+                    mb.log(e,node.toString(),this.fun.toString());
+                    return null;
+                }
+            }
+        });
+
+
+
 		/*用户自定义函数*/
 		var UserFun=function(input,parentScope) {
 			this.input=input;
 			this.parentScope=parentScope;
 		};
-		UserFun.prototype=new lib.s.Fun();
+		UserFun.prototype=new Fun();
 		mb.Object.ember(UserFun.prototype,{
 			toString:function() {
 				return this.input.toString();
@@ -192,7 +223,13 @@
 		});
 		return {
 			runQueue:runQueue,
-			buildUserFun:buildUserFun
-		}
+			Fun:Fun,
+			buildLibFun:function(k,fun) {
+				return new LibFun(k,fun);
+			},
+			buildUserFun:function(exp,scope) {
+				return new UserFun(exp,scope);
+			}
+		};
 	}
 })

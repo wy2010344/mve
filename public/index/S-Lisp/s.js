@@ -1,28 +1,32 @@
 ({
 	delay:true,
 	success:function(){
-
-		var trans={
-			"\r":"\\r",
-			"\n":"\\n",
-			"\t":"\\t",
-			"\\":"\\\\",
-			"\"":"\\\""
-		};
-		var escape_str=function(str){
-			var s="\"";
+		var string_to_trans=function(str,start,end,trans_map) {
+			var s=start;
 			var i=0;
-			while(i<str.length){
-				var c=str.charAt(i);
-				var x=trans[c];
-				if(x!=null){
-					s=s+x;
+			var len=str.length;
+			while(i<len){
+				var c=str[i];
+				if(c=="\\"){
+					s=s+"\\\\";
+				}else
+				if(c==end){
+					s=s+"\\"+end;
 				}else{
-					s=s+c;
+					if (trans_map) {
+						var x=trans_map[c];
+						if(x){
+							s=s+"\\"+x;
+						}else{
+							s=s+c;
+						}
+					}else{
+						s=s+c;
+					}
 				}
 				i++;
 			}
-			s=s+"\"";
+			s=s+end;
 			return s;
 		};
 		function Node(v,vs){
@@ -56,7 +60,7 @@
 				}else
 				if(typeof(v)=="string"){
 					//字符串
-					v=escape_str(v);
+					v=string_to_trans(v,'"','"');
 				}else{
 					//其它类型
 					v=v.toString();
@@ -98,6 +102,7 @@
         	}
         	return r;
 		};
+
 		var list_from_array=function(array) {
 			var i=0;
 			var r=null;
@@ -139,53 +144,19 @@
 				return fun.exec(args);
 			};
 		};
-
-		var Fun=new Function();
-		Fun.prototype.isFun=true;
-        Fun.prototype.Function_type={
-            lib:0,
-            user:1,
-            cache:2
-        };
-
-        function LibFun(key,fun) {
-            this.fun=fun;
-            this.key=key;
-        }
-        LibFun.prototype=new Fun();
-        mb.Object.ember(LibFun.prototype,{
-            toString:function() {
-                return this.key;
-            },
-            ftype:function() {
-                return this.Function_type.lib;
-            },
-            exec:function(node) {
-                try{
-                    return this.fun(node);
-                }catch(e){
-                    mb.log(e,node.toString(),this.fun.toString());
-                    return null;
-                }
-            }
-        });
 		var me={
 			Node:Node,
-			Fun:Fun,
-			LibFun,LibFun,
-			buildLibFun:function(k,fun) {
-				return new LibFun(k,fun);
-			},
 			log:function(o){
 				if(o==null){
 					return "[]";
 				}else
 				if(typeof(o)=="string"){
-					return escape_str(o);
+					return string_to_trans(o,'"','"');
 				}else{
 					return o.toString();
 				}
 			},
+			string_to_trans:string_to_trans,
 			kvs_extend:kvs_extend,
 			kvs_find1st:kvs_find1st,
 			extend:extend,

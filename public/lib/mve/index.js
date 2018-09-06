@@ -6,7 +6,6 @@
         nokey:"./parse/nokey.js",
         parse:"./parse/index.js"
     },
-    delay:true,
     success:function(){
         /**
          * repeat生成json结果是被观察的，受哪些影响，重新生成，替换原来的节点。

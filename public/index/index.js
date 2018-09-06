@@ -28,6 +28,8 @@
 						br,
 						a("S-Lisp的简单交互","?act=S-shell"),
 						br,
+						a("s-html测试","?act=s-html&path=index/s-html-test/a.s-html"),
+						br,
 						{
 							type:"input",
 							id:"input"

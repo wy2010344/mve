@@ -218,7 +218,6 @@ mb.ajax=(function(){
              * @param {*路径} url 
              * @param {*模块加载完成，如何处理} notice(success)=>function(){}
              * @param {*}baseUrl
-             * @param {*}doParse
              */
             var loadSingleTxt=function(xp){
                 var value=ret_getUrl(xp.url);
@@ -226,88 +225,52 @@ mb.ajax=(function(){
                     xp.notice(value);
                 }else{
                     ret.getTxt(xp.url,function(txt){
-                            var lib={};
-                            /**
-                             * 从once中获得数据
-                             */
-                            var cp=mb.ajax.require.cp;//全局共享
-                            try{
-                                if(xp.doParse){
-                                    var topMd={
-                                        lib:lib,
-                                        cp:cp
-                                    };
-                                    var result=xp.doParse(txt,topMd);
-                                    txt=result.txt;
-                                    var pkg=result.result();
-                                    topMd.pkg=pkg;
-                                }else{
-                                    txt="//"+xp.url+"\r\n"+"mb.ajax.require"+txt;
-                                    var pkg=eval(txt);
-                                }
-                            }catch(ex){
-                                mb.ajax.require.dealEX(xp.url,"Eval时",ex);
-                            }
-                            pkg.baseUrl=xp.baseUrl||mb.ajax.require.baseUrl;
-                            pkg.doParse=xp.doParse;
-                            pkg.lib=lib;
-                            pkg.required_url=xp.url;
-                            pkg.notice=xp.notice;
-                            pkg.init();
+                        var lib={};
+                        /**
+                         * 从once中获得数据
+                         */
+                        var cp=mb.ajax.require.cp;//全局共享
+                        try{
+                            txt="//"+xp.url+"\r\n"+"mb.ajax.require"+txt;
+                            var init=eval(txt);
+                        }catch(ex){
+                            mb.ajax.require.dealEX(xp.url,"Eval时",ex);
+                        }
+                        init({
+                            baseUrl:xp.baseUrl||mb.ajax.require.baseUrl,
+                            required_url:xp.url,
+                            notice:xp.notice,
+                            lib:lib
+                        });
                     });
                 }
             };
-            /**
-             * 计算绝对路径
-             */
-            var calAbsolutePath=function(base_url,url){
-                var base=base_url.substr(0,base_url.lastIndexOf('/'))+'/'+url;
-                var nodes=base.split('/');
-                var rets=[];
-                var last=null;
-                for(var i=0;i<nodes.length;i++){
-                    var node=nodes[i];
-                    if(node=='..'){
-                        if(last=='..'){
-                            rets.push(node);
-                        }else
-                        if(last==null){
-                            rets.push(node);
-                            last=node;
-                        }else{
-                            rets.pop();
-                            last=rets[rets.length-1];
-                        }
-                    }else
-                    if(node=='.'){
-                        //忽略
-                    }else{
-                        rets.push(node);
-                        last=node;
-                    }
-                }
-                return rets.join('/');
-            };
 
             var ret=function(p){
-                var real_notice=function(success){
-                    ret_saveUrl(me.required_url,success);
-                    if(me.notice){
-                        me.notice(success);
+                var calUrl=function(required_url,baseUrl,v) {
+                    var url="";
+                    if(v[0]=='.'){
+                        url=mb.util.calAbsolutePath(required_url,v);
+                    }else{
+                        url=baseUrl+v;
                     }
+                    return url;
                 };
-                /**
-                 * data执行完后，success可用，可以通知
-                 */
-                var x_notice=function(){
-                       //可以执行了
+                /*
+                * baseUrl
+                * required_url
+                * notice
+                * lib
+                */
+                return function(xp){
+                     /*新调整*/
                     var success;
                     if(typeof(p.success)=='function'){
                         success=function(){
                             try{
                                 return p.success.apply(p.success,arguments);
                             }catch(ex){
-                                mb.ajax.require.dealEX(me.required_url,"运行时",ex);
+                                mb.ajax.require.dealEX(xp.required_url,"运行时",ex);
                             }
                         };
                         if(p.delay){
@@ -316,70 +279,60 @@ mb.ajax=(function(){
                     }else{
                         success=p.success;
                     }
-                    real_notice(success);
-                };
+                    ret_saveUrl(xp.required_url,success);
 
-                var absolute_path=function(v,base){
-                    base=base||me.required_url;
-                    var url="";
-                    if(v[0]=='.'){
-                        //相对路径
-                        url=calAbsolutePath(base,v);
-                    }else{
-                        url=me.baseUrl+v;
-                    }
-                    return url;
-                };
-                var me={
-                    required_url:null,//当前页面的路径
-                    lib:null,//库
-
-                    baseUrl:"",//后继传递的路径前缀
-                    doParse:null,//自定义加载方法
-
-                    notice:null,//外部注入
-                    load:function(v,notice){
-                        loadSingleTxt({
-                            url:absolute_path(v),
-                            notice:notice,
-                            baseUrl:me.baseUrl,
-                            doParse:me.doParse
-                        });
-                    },
-                    absolute_path:absolute_path,
-                    init:function(){
-                        //不再使用once，而是通过data中使用的all将异步库转成标准的require库
-                        if(p.data){
-                            var arr=[];
-                            mb.Object.forEach(p.data, function(v,k){
-                                var tp=typeof(v);
-                                arr.push(function(next){
-                                    var load_success=function(success){
-                                        me.lib[k]=success;
-                                        next();
-                                    };
-                                    if(tp=='string'){
-                                        me.load(v,load_success);
+                    var x_notice=function() {
+                        xp.notice(success);
+                    };
+                    /*结束*/
+                    //不再使用once，而是通过data中使用的all将异步库转成标准的require库
+                    if(p.data){
+                        var arr=[];
+                        mb.Object.forEach(p.data, function(v,k){
+                            var tp=typeof(v);
+                            arr.push(function(next){
+                                var load_success=function(success){
+                                    xp.lib[k]=success;
+                                    next();
+                                };
+                                if(tp=='string'){
+                                    loadSingleTxt({
+                                        url:calUrl(xp.required_url,xp.baseUrl,v),
+                                        notice:load_success,
+                                        baseUrl:xp.baseUrl
+                                    });
+                                }else
+                                if(tp=='function'){
+                                    v(load_success);
+                                }else
+                                if(tp=='object'){
+                                    var url=calUrl(xp.required_url,xp.baseUrl,v.url);
+                                    /*依赖倒置*/
+                                    if(typeof(v.type)=='function'){
+                                        v.type({
+                                            url:url,
+                                            notice:load_success
+                                        });
                                     }else
-                                    if(tp=='function'){
-                                        v(load_success);
-                                    }else{
-                                        //暂时不考虑其它
-                                        mb.log("其它情况");
-                                        next();
+                                    {
+                                        if(v.type=="path"){
+                                            load_success(url);
+                                        }else{
+                                            mb.log("未支持类型")
+                                            load_success(url);
+                                        }
                                     }
-                                });
+                                }
                             });
-                            mb.task.queue({
-                                array:arr,
-                                success:x_notice
-                            });
-                        }else{
-                            x_notice();
-                        }
+                        });
+                        mb.task.queue({
+                            array:arr,
+                            success:x_notice
+                        });
+                    }else{
+                        x_notice();
                     }
                 };
-                return me;
             };
             
             (function(){
@@ -496,6 +449,37 @@ mb.util={
             }
         }
         return xk.join("&");
+    },
+    /**
+     * 计算绝对路径
+     */
+    calAbsolutePath:function(base_url,url){
+        var base=base_url.substr(0,base_url.lastIndexOf('/'))+'/'+url;
+        var nodes=base.split('/');
+        var rets=[];
+        var last=null;
+        for(var i=0;i<nodes.length;i++){
+            var node=nodes[i];
+            if(node=='..'){
+                if(last=='..'){
+                    rets.push(node);
+                }else
+                if(last==null){
+                    rets.push(node);
+                    last=node;
+                }else{
+                    rets.pop();
+                    last=rets[rets.length-1];
+                }
+            }else
+            if(node=='.'){
+                //忽略
+            }else{
+                rets.push(node);
+                last=node;
+            }
+        }
+        return rets.join('/');
     }
 };
 mb.browser=(function(){
