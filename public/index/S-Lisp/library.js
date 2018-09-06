@@ -1,6 +1,7 @@
 ({
 	data:{
-		s:"./s.js"
+		s:"./s.js",
+        interpret:"./interpret.js"
 	},
     //致力于变成多平台通用的文件
 	success:function(log) {
@@ -237,7 +238,7 @@
                 library,
                 function(v,k){
                     if(typeof(v)=='function'){
-                        return lib.s.buildLibFun(k,v);
+                        return lib.interpret.buildLibFun(k,v);
                     }else{
                         return v;
                     }
@@ -248,7 +249,7 @@
         var Cache=function(v){
             this.v=v;
         };
-        Cache.prototype=new lib.s.Fun();
+        Cache.prototype=new lib.interpret.Fun();
         mb.Object.ember(Cache.prototype,{
             toString:function() {
                 return "[]";
@@ -266,7 +267,7 @@
         });
         core=lib.s.kvs_extend(
             "cache",
-            lib.s.buildLibFun(
+            lib.interpret.buildLibFun(
                 "cache",
                 function(node) {
                     var v=node.First();

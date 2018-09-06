@@ -37,7 +37,43 @@
     success:function(p){
         window.JSON=lib.conf.JSON;
         window.jsdom=lib.conf.jsdom;
-        window.mve=lib.conf.mve;
-        p.init();
+        window.mve=lib.conf.mve();
+        p.init(function(success){
+            var obj=success();
+            var root=document.getElementById("root");
+            var body=root.parentElement;
+            
+            var rpd;
+            if(mb.DOM.isMobile() || mb.ext){
+                rpd=0;
+            }else{
+                rpd=10;
+            }
+            root.style.padding=rpd+"px";
+            if(obj.getElement){
+                //传统的jsdom
+                var el=obj.getElement();
+                window.onresize=function(){
+                    var _w=body.clientWidth-(rpd*2);
+                    var _h=body.clientHeight-(rpd*2);
+                    el.style.width=_w+'px';
+                    el.style.height=_h+'px';
+                    if(obj.height){
+                        obj.height(_h);
+                    }
+                    if(obj.width){
+                        obj.width(_w);
+                    }
+                };
+                root.appendChild(el);
+                if(obj.init){
+                    obj.init();
+                }
+                window.onresize();
+            }else{
+                root.appendChild(obj);
+            }
+            mb.log("加载完成");
+        });
     }
 });

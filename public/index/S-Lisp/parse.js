@@ -23,8 +23,12 @@
 			}
 			return right;
 		};
-		var extend=lib.s.extend;
-		var reverse=lib.s.reverse;
+		var extend=function(x,xs){
+			return lib.s.extend(x,xs)
+		};
+		var reverse=function(xs){
+			return lib.s.reverse(xs);
+		};
 
 		function Exp(type,token) {
 			this.token=token;

@@ -65,7 +65,7 @@
 							(let more (slice-from (caches) (len-c views)))
 							(forEach more
 								{
-									(let (v i) args)
+									(let (v) args)
 									(p-appendChild v)
 								}
 							)
@@ -76,16 +76,22 @@
 								c-l  (len-c caches)
 								more (slice-from array c-l)
 							)
-							(let more-k (reduce more
+							(let (more-k) (reduce more
 									{
-										(let (init a i) args)
-										(let v (p-build a (+ i c-l)))
+										(let 
+											((init i) a) args
+											i (+ i c-l 1)
+											v (p-build a i)
+										)
 										(p-appendChild v)
 										(p-after v)
 										`因为把新增加的追加到后面了`
-										(extend v init)
+										(list 
+											(extend v init)
+											i
+										)
 									}
-									[]
+									[[] 0]
 								)
 							)
 							(caches (combine-two (caches) (reverse more-k)))
