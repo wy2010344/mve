@@ -40,27 +40,6 @@
 			{init}
 		)
 	}
-	
-	`异步的reduce`
-	async-reduce {
-		(let (notice xs run init) args async-reduce this)
-		(if-run (exist? xs)
-			{
-				(let (x ...xs) xs)
-				(run 
-					{
-						`单个的notice`
-						(let (init) args)
-						(async-reduce notice xs run init)
-					}
-					init x
-				)
-			}
-			{
-				(notice init)
-			}
-		)
-	}
 
 	reduce-right {
 		(let (xs run init) args reduce-right this)
@@ -85,26 +64,6 @@
 				(kvs-reduce kvs run init)
 			}
 			{init}
-		)
-	}
-
-	async-kvs-reduce {
-		(let (notice kvs run init) args async-kvs-reduce this)
-		(if-run (exist? kvs)
-			{
-				(let (k v ...kvs) kvs)
-				(run 
-					{
-						`单个的notice`
-						(let (init) args)
-						(async-kvs-reduce notice kvs run init)
-					}
-					init v k
-				)
-			}
-			{
-				(notice init)
-			}
 		)
 	}
 	
@@ -189,6 +148,10 @@
 [
 	!= '!=
 	empty-fun 'empty-fun
+	type? {
+		(let (x n) args)
+		(str-eq (type x) n)
+	}
 	`不想使用*的kvs-match，可以用这个kvs-match`
 	kvs-match {
 		(let (kvs) args)
@@ -224,10 +187,54 @@
 	`reduce-left就是reduce`
 	reduce-left 'reduce
 	reduce-right 'reduce-right
+
+	
+	`异步的reduce`
+	async-reduce {
+		(let (notice xs run init) args async-reduce this)
+		(if-run (exist? xs)
+			{
+				(let (x ...xs) xs)
+				(run 
+					{
+						`单个的notice`
+						(let (init) args)
+						(async-reduce notice xs run init)
+					}
+					init x
+				)
+			}
+			{
+				(notice init)
+			}
+		)
+	}
+
 	`与列表的reduce对应`
 	kvs-reduce 'kvs-reduce
 	kvs-reduce-left 'kvs-reduce
 	kvs-reduce-right 'kvs-reduce-right
+
+	async-kvs-reduce {
+		(let (notice kvs run init) args async-kvs-reduce this)
+		(if-run (exist? kvs)
+			{
+				(let (k v ...kvs) kvs)
+				(run 
+					{
+						`单个的notice`
+						(let (init) args)
+						(async-kvs-reduce notice kvs run init)
+					}
+					init v k
+				)
+			}
+			{
+				(notice init)
+			}
+		)
+	}
+
 	`类似js中的some，已经包含`
 	some {
 		(let (xs run) args)

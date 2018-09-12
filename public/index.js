@@ -4,13 +4,13 @@
             mb.task.all({
                 data:{
                     jsdom:function(notice){
-                        mb.ajax.require.async({
+                        mb.ajax.require({
                             url:cp.libUrl()+"jsdom.js",
                             notice:notice
                         });
                     },
                     mve:function(notice){
-                        mb.ajax.require.async({
+                        mb.ajax.require({
                             url:cp.libUrl()+"mve/index.js",
                             notice:notice,
                             baseUrl:cp.libUrl()

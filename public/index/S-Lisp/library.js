@@ -62,13 +62,70 @@
             "exist?":function(node) {
                 return (node.First()!=null);
             },
-            "list?":function(node){
-                var f=node.First();
-                return (f && f.isList);
+            type:function(node) {
+                var n=node.First();
+                if(n==null){
+                    return "list";
+                }else{
+                    if(n.isList){
+                        return "list";
+                    }else
+                    if(n.isFun){
+                        return "function";
+                    }else{
+                        var t=typeof(n);
+                        if(t=="string"){
+                            return "string";
+                        }else
+                        if(t=="boolean"){
+                            return "bool";
+                        }else
+                        if(t=="number"){
+                            if(n%1===0){
+                                return "int";
+                            }else{
+                                return "float";
+                            }
+                        }else{
+                            return t;
+                        }
+                    }
+                }
             },
-            "function?":function(node){
-                var f=node.First();
-                return (f && f.isFun);
+            "str-eq":function(node) {
+                return compare(node,function(last,now){
+                    return (last==now);
+                });
+            },
+            "str-at":function(node) {
+                var str=node.First();
+                node=node.Rest();
+                var index=node.First();  
+                return str[index];
+            },
+            "str-indexOf":function(node) {
+                var str=node.First();
+                node=node.Rest();
+                var v=node.First();
+                return str.indexOf(v);
+            },
+            "str-lastIndexOf":function(node) {
+                var str=node.First();
+                node=node.Rest();
+                var v=node.First();
+                return str.lastIndexOf(v);
+            },
+            "str-startsWith":function(node) {
+                var str=node.First();
+                node=node.Rest();
+                var v=node.First();
+                return str.startsWith(v);
+            },
+            "str-endsWith":function(node) {
+                var str=node.First();
+                node=node.Rest();
+                var v=node.First();
+                return str.endsWith(v);
             },
             length:function(node){
                 return node.First().Length();
@@ -196,6 +253,9 @@
             "js-eval":function(node){
                 return eval(node.First());
             },
+            /*
+            *o k (ps)
+            */
             "js-call":function(node){
                 var o=node.First();
                 if(typeof(o)=='string'){
