@@ -2,7 +2,7 @@
 (let 
 	bind {
 		(let (watch value f) args)
-		(if-run (function? value)
+		(if-run (type? value 'function)
 				{
 					(watch 
 						`before`
@@ -161,11 +161,11 @@
 	(let Parse {
 			(let (json watch k inits destroys mve) args Parse this)
 			(let json (default json ""))
-			(if-run (list? json)
+			(if-run (type? json 'list)
 				{
 					`列表情况，对应js中字典`
 					(let j (kvs-match json))
-					(if-run (function? (j 'type))
+					(if-run (type? (j 'type) 'function)
 							{
 								`自定义组件`
 								(let obj 
@@ -255,7 +255,7 @@
 								)
 								`children`
 								(let (inits destroys) 
-									(if-run (function? (j 'children))
+									(if-run (type? (j 'children) 'function)
 										{
 											`children是函数，即repeat`
 											(build-children e (j 'children) inits destroys mve)
@@ -288,7 +288,7 @@
 					)
 				}
 				{
-					(if-run (function? json)
+					(if-run (type? json 'function)
 						{
 							`函数节点`
 							(let (change inits destroys) (Parse-fun json watch inits destroys mve))
@@ -317,7 +317,7 @@
 			inits (cache []) 
 			destroys (cache [])
 		)
-		(if-run (function? json)
+		(if-run (type? json 'function)
 			{
 				`function`
 				(let (change inits destroys) (Parse-fun json watch [] [] mve))

@@ -76,7 +76,7 @@ window.onload=function(){
             noteJS:function(str) {
                 return function(notice) {
                     var baseUrl=cp.topUrl()+"index/";
-                    mb.ajax.require.async({
+                    mb.ajax.require({
                         url:baseUrl+str,
                         notice:notice,
                         baseUrl:baseUrl
@@ -138,12 +138,12 @@ window.onload=function(){
                 query.act="index";
             }
             var url=cp.baseUrl()+query.act.replace(/>/g,"/")+".js";
-            mb.ajax.require.async({
+            mb.ajax.require({
                 url:cp.topUrl()+"index.js",
                 notice:function(notice){
                     notice({
                         init:function(notice){
-                            mb.ajax.require.async({
+                            mb.ajax.require({
                                 url:url,
                                 notice:function(success){
                                     notice(success);
