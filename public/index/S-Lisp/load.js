@@ -6,11 +6,11 @@
 		s:"./s.js",
 		core:{
 			url:"./core.js",
-			type:function(x) {
-				mb.ajax.get({
-					url:x.url,
-					success:function(xhr){
-						x.notice(JSON.parse(xhr.responseText));
+			type:function(url,notice) {
+				mb.ajax.text({
+					url:url,
+					success:function(text){
+						notice(JSON.parse(text));
 					}
 				});
 			}
@@ -28,6 +28,9 @@
 			if(onload){
 				throw "不允许加载时加载";
 			}else{
+				if (!path.startsWith("index")) {
+					path=path.substr(path.indexOf("index"));
+				}
 				var r=core[path];
 				if(r){
 					return r[0];
@@ -116,6 +119,10 @@
 							scope=lib.s.kvs_extend(def.key,r,scope);
 						}else{
 							scope=appendKVS(r,scope);
+						}
+					}else{
+						if(def.value){
+							scope=lib.s.kvs_extend(def.key,def.value,scope);
 						}
 					}
 				});

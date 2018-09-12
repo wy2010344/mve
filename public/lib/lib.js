@@ -1,5 +1,5 @@
 'use strict';
-var mb={};
+window.mb={};
 mb.emptyFunc=function(item){return item;};
 var emptyFunc=mb.emptyFunc;
 mb.log=(function(){
@@ -219,7 +219,7 @@ mb.ajax=(function(){
              * @param {*模块加载完成，如何处理} notice(success)=>function(){}
              * @param {*}baseUrl
              */
-            var loadSingleTxt=function(xp){
+            var ret=function(xp){
                 var value=ret_getUrl(xp.url);
                 if(value){
                     xp.notice(value);
@@ -231,108 +231,125 @@ mb.ajax=(function(){
                          */
                         var cp=mb.ajax.require.cp;//全局共享
                         try{
-                            txt="//"+xp.url+"\r\n"+"mb.ajax.require"+txt;
-                            var init=eval(txt);
+                            txt="//"+xp.url+"\r\n"+txt;
+                            var body=eval(txt);
                         }catch(ex){
                             mb.ajax.require.dealEX(xp.url,"Eval时",ex);
                         }
-                        init({
-                            baseUrl:xp.baseUrl||mb.ajax.require.baseUrl,
-                            required_url:xp.url,
-                            notice:xp.notice,
-                            lib:lib
-                        });
-                    });
-                }
-            };
-
-            var ret=function(p){
-                var calUrl=function(required_url,baseUrl,v) {
-                    var url="";
-                    if(v[0]=='.'){
-                        url=mb.util.calAbsolutePath(required_url,v);
-                    }else{
-                        url=baseUrl+v;
-                    }
-                    return url;
-                };
-                /*
-                * baseUrl
-                * required_url
-                * notice
-                * lib
-                */
-                return function(xp){
-                     /*新调整*/
-                    var success;
-                    if(typeof(p.success)=='function'){
-                        success=function(){
-                            try{
-                                return p.success.apply(p.success,arguments);
-                            }catch(ex){
-                                mb.ajax.require.dealEX(xp.required_url,"运行时",ex);
+                        var success;
+                        if(typeof(body.success)=='function'){
+                            success=function(){
+                                try{
+                                    return body.success.apply(body.success,arguments);
+                                }catch(ex){
+                                    mb.ajax.require.dealEX(xp.url,"运行时",ex);
+                                }
+                            };
+                            if(body.delay){
+                                success=success();
                             }
-                        };
-                        if(p.delay){
-                            success=success();
+                        }else{
+                            success=body.success;
                         }
-                    }else{
-                        success=p.success;
-                    }
-                    ret_saveUrl(xp.required_url,success);
 
-                    var x_notice=function() {
-                        xp.notice(success);
-                    };
-                    /*结束*/
-                    //不再使用once，而是通过data中使用的all将异步库转成标准的require库
-                    if(p.data){
-                        var arr=[];
-                        mb.Object.forEach(p.data, function(v,k){
-                            var tp=typeof(v);
-                            arr.push(function(next){
-                                var load_success=function(success){
-                                    xp.lib[k]=success;
-                                    next();
-                                };
-                                if(tp=='string'){
-                                    loadSingleTxt({
-                                        url:calUrl(xp.required_url,xp.baseUrl,v),
-                                        notice:load_success,
-                                        baseUrl:xp.baseUrl
-                                    });
-                                }else
-                                if(tp=='function'){
-                                    v(load_success);
-                                }else
-                                if(tp=='object'){
-                                    var url=calUrl(xp.required_url,xp.baseUrl,v.url);
-                                    /*依赖倒置*/
-                                    if(typeof(v.type)=='function'){
-                                        v.type({
-                                            url:url,
-                                            notice:load_success
-                                        });
+                        ret_saveUrl(xp.url,success);
+                        var x_notice=function() {
+                            xp.notice(success);
+                        };
+                        /*结束*/
+                        //不再使用once，而是通过data中使用的all将异步库转成标准的require库
+                        if(body.data){
+                            xp.baseUrl=xp.baseUrl||mb.ajax.require.baseUrl
+                            var arr=[];
+                            /*计算相对路径*/
+                            var calUrl=function(v){
+                                return ret.calUrl(xp.baseUrl,xp.url,v);
+                            };
+                            var getJS=function(url,notice) {
+                                ret({
+                                    baseUrl:xp.baseUrl,
+                                    url:calUrl(url),
+                                    notice:notice
+                                });
+                            };
+                            var getTxt=function(ajax_text,url,notice) {
+                                ajax_text(calUrl(url),notice);
+                            };
+                            var getJSON=function(ajax_text,url,notice) {
+                                getTxt(ajax_text,url,function(txt) {
+                                    notice(JSON.parse(txt));
+                                });
+                            };
+                            mb.Object.forEach(body.data, function(v,k){
+                                var tp=typeof(v);
+                                arr.push(function(next){
+                                    var load_success=function(success){
+                                        lib[k]=success;
+                                        next();
+                                    };
+                                    if(tp=='string'){
+                                        getJS(v,load_success);
                                     }else
-                                    {
-                                        if(v.type=="path"){
-                                            load_success(url);
-                                        }else{
-                                            mb.log("未支持类型")
-                                            load_success(url);
+                                    if(tp=='function'){
+                                        v(load_success);
+                                    }else
+                                    if(tp=='object'){
+                                        if(typeof(v.type)=='function'){
+                                            /*依赖倒置*/
+                                            v.type(calUrl(v.url),load_success);
+                                        }else
+                                        {
+                                            if(v.type=="js"){
+                                                load_success(getJS);
+                                                /*
+                                                *就是mb.ajax.require了
+                                                *如果没有url，就是延迟
+                                                */
+                                            }else
+                                            if(v.type=="path"){
+                                                if(v.url){
+                                                    load_success(calUrl(v.url));
+                                                }else{
+                                                    /*计算路径的函数*/
+                                                    load_success(calUrl);
+                                                }
+                                            }else{
+                                                var ajax_text=v.nocache?ajaxText:ret.getTxt;
+                                                if(v.type=="text"){
+                                                    if(v.url){
+                                                        getTxt(ajax_text,v.url,load_success);
+                                                    }else{
+                                                        load_success(function(url,notice){
+                                                            getTxt(ajax_text,url,notice);
+                                                        });
+                                                    }
+                                                }else
+                                                if(v.type=="json"){
+                                                    if(v.url){
+                                                        getJSON(ajax_text,v.url,load_success);
+                                                    }else{
+                                                        load_success(function(url,notice){
+                                                            getJSON(ajax_text,url,notice);
+                                                        });
+                                                    }
+                                                }else{
+                                                    mb.log("未支持类型")
+                                                    load_success(v.url);
+                                                }
+                                            }
                                         }
                                     }
-                                }
+                                });
                             });
-                        });
-                        mb.task.queue({
-                            array:arr,
-                            success:x_notice
-                        });
-                    }else{
-                        x_notice();
-                    }
-                };
+                            mb.task.queue({
+                                array:arr,
+                                success:x_notice
+                            });
+                        }else{
+                            x_notice();
+                        }
+                    });
+                }
             };
             
             (function(){
@@ -375,6 +392,14 @@ mb.ajax=(function(){
                     });
                 };
             })();
+            ret.calUrl=function(baseUrl,currentUrl,url) {
+                if(url[0]=='.'){
+                    url=mb.util.calAbsolutePath(currentUrl,url);
+                }else{
+                    url=baseUrl+url;
+                }
+                return url;
+            };
             /**
              * 本地缓存，所有地方可用
              */
@@ -401,15 +426,12 @@ mb.ajax=(function(){
             var ret_getUrl=function(k){
                 return _required[k];
             };
-            
-            //
             ret.dealEX=function(url,step,ex) {
                 mb.log(url);
                 mb.log(step);
                 mb.log(JSON.stringify(ex));
                 throw ex;
             };
-            ret.async=loadSingleTxt;
             return ret;
         })()
     };
@@ -794,3 +816,13 @@ mb.Object={
         return ret;
     }
 };
+if(!String.prototype.startsWith){
+    String.prototype.startsWith=function(str) {
+        return (this.indexOf(str)==0);
+    };
+}
+if(!String.prototype.endsWith){
+    String.prototype.endsWith=function(str) {
+        return (this.lastIndexOf(str)==this.length-str.length);
+    };
+}
