@@ -7,12 +7,29 @@
 		core:{
 			url:"./core.js",
 			type:function(url,notice) {
-				mb.ajax.text({
-					url:url,
-					success:function(text){
-						notice(JSON.parse(text));
-					}
-				});
+				if(mb.ext){
+					notice(function(path) {
+						return mb.ext(
+							"readTxt",
+							{
+								path:path
+							}
+						);
+					});
+				}else{
+					mb.ajax.text({
+						url:url,
+						success:function(text){
+							var core=JSON.parse(text);
+							notice(function(path) {
+								if (!path.startsWith("index")) {
+									path=path.substr(path.indexOf("index"));
+								}
+								return core[path];
+							});
+						}
+					});
+				}
 			}
 		},
 		lib_path:{
@@ -24,20 +41,20 @@
 	success:function(){
 		var core={};
 		var onload=false;
-		var load=function(path,scope) {
+		var load=function(path,scope,deal) {
 			if(onload){
 				throw "不允许加载时加载";
 			}else{
-				if (!path.startsWith("index")) {
-					path=path.substr(path.indexOf("index"));
-				}
 				var r=core[path];
 				if(r){
 					return r[0];
 				}else{
 					try{
-						var txt=lib.core[path];
+						var txt=lib.core(path);
 						if(txt){
+							if(deal){
+								txt=deal(path,txt).txt;
+							}
 							onload=true;
 							var fun=lib.interpret.buildUserFun(
 								lib.parse(lib.tokenize(txt)),
@@ -47,12 +64,22 @@
 										"load",
 										function(node){
 											return load(
-												mb.util.calAbsolutePath(path,node.First()),
-												scope
+												mb.ajax.require.calUrl("",path,node.First()),
+												scope,
+												deal
 											);
 										}
 									),
-									scope
+									lib.s.kvs_extend(
+										"pathOf",
+										lib.interpret.buildLibFun(
+											"pathOf",
+											function(node) {
+												return mb.ajax.require.calUrl("",path,node.First());
+											}
+										),
+										scope
+									)
 								)
 							);
 							var r=fun.exec(null);
@@ -88,7 +115,7 @@
 			}
 			return scope;
 		};
-		return function(base_scope,defs) {
+		return function(base_scope,defs,deal) {
 			var scope=base_scope;
 			scope=lib.s.kvs_extend("base-scope",base_scope,scope);
 			scope=lib.s.kvs_extend(
@@ -107,11 +134,11 @@
 				),
 				scope
 			);
-			scope=appendKVS(load(lib.lib_path,scope),scope);
+			scope=appendKVS(load(lib.lib_path,scope,deal),scope);
 			if(defs){
 				mb.Array.forEach(defs,function(def,i) {
 					if(def.url){
-						var r=load(def.url,scope);
+						var r=load(def.url,scope,deal);
 						if(def.delay){
 							r=r.exec(null);
 						}
@@ -129,7 +156,7 @@
 			}
 			return {
 				load:function(path) {
-					return load(path,scope);
+					return load(path,scope,deal);
 				},
 				scope:scope,
 				parse:parse

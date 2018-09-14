@@ -2,10 +2,12 @@
 	(let 
 		(notice) args
 		require-factory (load '../util/require-factory.lisp)
-		mve ((load '../util/mve/index.lisp))
 	)
 	(
 		(require-factory 
+			`全局作用域`
+			(kvs-extend 'mve mve base-scope)
+			`局部处理`
 			{
 				(let (url success) args)
 				(if-run (str-endsWith url "s-html")
@@ -20,10 +22,11 @@
 				)
 			}
 		)
-		index-path 
+		`加载路径`
+		index-path
+		`成功通知` 
 		{
-			(let (success) args)
-			(notice success)
+			(apply notice args)
 		}
 	)
 }
