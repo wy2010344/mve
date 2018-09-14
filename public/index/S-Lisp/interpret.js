@@ -123,13 +123,14 @@
 			if(input.type=="()"){
 				var nodes=calNodes(input.r_children,scope);
 				var first=nodes.First();
-				var first=nodes.First();
 				if(first && first.isFun){
 					return first.exec(nodes.Rest());
 				}else{
 					var key=input.children.First().value;
-					mb.log(key,first,nodes.toString(true),input.toString(true))
-					throw "参数0必须为函数";
+					var sv=input.toString(true);
+					var nv=nodes.toString(true);
+					mb.log(key,first,nv,sv);
+					throw "参数0必须为函数"+nv+":"+sv;
 				}
 			}else
 			if (input.type=="[]") {

@@ -219,7 +219,7 @@
 				(kvs-reduce (user-result 'out)
 					{
 						(let (init v k) args)
-						(kvs-extend v k init)
+						(kvs-extend k v init)
 					}
 					me
 				)

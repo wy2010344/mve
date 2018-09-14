@@ -3,6 +3,10 @@
 		SLisp:"./S-Lisp/index.js",
 		interpret:"./S-Lisp/interpret.js",
 		s:"./S-Lisp/s.js",
+		mve:{
+			url:"./S-Lisp/util/mve/index.lisp",
+			type:"path"
+		},
 		sHtml:{
 			url:"./S-Lisp/index/s-html.lisp",
 			type:"path"
@@ -13,6 +17,11 @@
 			var r=lib.SLisp.run(
 				lib.sHtml,
 				[
+					{
+						url:lib.mve,
+						delay:true,
+						key:"mve"
+					},
 					{
 						value:cp.query.path,
 						key:"index-path"
@@ -28,9 +37,11 @@
 							function(node) {
 								div({
 									type:function() {
-										return lib.s.map_from_kvs(
+										var x=lib.s.map_from_kvs(
 											node.First().exec(null)
 										);
+										document.title=x.title||"";
+										return x;
 									}
 								});
 							}

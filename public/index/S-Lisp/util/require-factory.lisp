@@ -3,7 +3,7 @@
 
 {
 	(let 
-		(doSuccess) args
+		(scope doSuccess) args
 		caches (cache [])
 		getTxt {
 			(js-call 'mb.ajax.require 'getTxt args)
@@ -35,7 +35,7 @@
 								(let (k) args)
 								(kvs-find1st (lib) k)
 							} 
-							base-scope
+							scope
 						)
 						body (parse txt scope)
 						success (doSuccess url (kvs-find1st body 'success))
