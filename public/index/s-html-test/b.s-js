@@ -1,3 +1,11 @@
 success {
-	(log 'ddd')
+
+	(mve {
+		[
+			element [
+				type div
+				text 我是子
+			]
+		]
+	})
 }
