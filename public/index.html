@@ -38,7 +38,7 @@ window.onload=function(){
             };
         }
     }
-    if (window._ini_) {
+    if (window._ini_ && typeof(window._ini_)=='function') {
         ext=function(act,params) {
             try{
                 if(params){
@@ -160,7 +160,7 @@ window.onload=function(){
         eval(txt);
         lib_script.onload();
     }else{
-        lib_script.setAttribute("src",cp.topUrl()+"lib/lib.js");
+        lib_script.setAttribute("src",cp.topUrl()+"lib/lib.js?v="+(new Date()));
     }
 };
 </script>

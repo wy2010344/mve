@@ -276,20 +276,10 @@
 
 	`类似js-Array的splice:list,offset,count,...adds，先不考虑异常`
 	splice  {
-		(let 
-			(xs i count ...adds) args
-			index (+ i count)
-		)
-		(if-run (< index (length xs))
-			{
-				(let olds  (offset xs (+ i count)))
-				(let olds (combine-two adds olds))
-				(combine-two (slice-to xs i) olds)
-			}
-			{
-				(slice-to xs (- i 1))
-			}
-		)
+		(let (xs i count ...adds) args)
+		(let olds  (offset xs (+ i count)))
+		(let olds (combine-two adds olds))
+		(combine-two (slice-to xs i) olds)
 	}
 	
 	`其实是与splice-last对应`
