@@ -17,7 +17,7 @@
 					}
 				)
 			})
-			(uid (+ uid 1))
+			(uid (+ (uid) 1))
     		[
     			`depend`
     			{

@@ -22,9 +22,7 @@
 						success:function(text){
 							var core=JSON.parse(text);
 							notice(function(path) {
-								if (!path.startsWith("index")) {
-									path=path.substr(path.indexOf("index"));
-								}
+								path="index/"+path.substr(path.indexOf("S-Lisp"));
 								return core[path];
 							});
 						}
