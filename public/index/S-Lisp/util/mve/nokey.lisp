@@ -62,7 +62,10 @@
 						}
 						{
 							`从caches向视图上增加`
-							(let more (slice-from (caches) (len-c views)))
+							(let 
+								views-len (len-c views)
+								more (slice-from (caches) views-len)
+							)
 							(forEach more
 								{
 									(let (v) args)
@@ -80,8 +83,8 @@
 									{
 										(let 
 											((init i) a) args
-											i (+ i c-l 1)
 											v (p-build a i)
+											i (+ i c-l 1)
 										)
 										(p-appendChild v)
 										(p-after v)
@@ -91,7 +94,7 @@
 											i
 										)
 									}
-									[[] 0]
+									[[] 'views-len]
 								)
 							)
 							(caches (combine-two (caches) (reverse more-k)))

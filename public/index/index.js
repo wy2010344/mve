@@ -24,7 +24,7 @@
 					children:[
 						a("更新或重打包S-Lisp目录","./S-Lisp/package"),
 						br,
-						a("S-Lisp版mve演示","?act=S-Lisp%3Eindex%3Eindex"),
+						a("S-Lisp版mve演示","?act=S-Lisp>index>index"),
 						br,
 						a("S-Lisp的简单交互","?act=S-shell"),
 						br,
