@@ -1,9 +1,6 @@
 {
-	(let 
-		DOM (load './DOM.lisp)
+	(
+		(load './mve/index.lisp) 
+		(load './DOM.lisp)
 	)
-	[
-		DOM (quote DOM)
-		mve ((load './mve/index.lisp) DOM)
-	] 
 }

@@ -5,19 +5,19 @@
 	(quote 88)
 	(log 988 7)	
 	(let a (load './a.lisp) b (load './b.lisp))
-	(let x (kvs-match (a)))
-	( (x 'b) )
+	(let x (a))
+	(x.b)
 	{
 		(log 98 7)	
 	}
 	(mve
 		{
-			(let (Value k Cache) args)
-			(let a (Value 9))
+			(let me args)
+			(let a (me.Value 9))
 			(log (a))
 			(a (+ (a) 1))
 			(log (a))
-			(let array (Value [a b c d e f g h]))
+			(let array (me.Value [a b c d e f g h]))
 			[
 				element [
 					type div
@@ -114,17 +114,17 @@
 									}
 									action [
 										click {
-											(let el (k 'ipx))
-											(let v (DOM 'value el ))
+											(let el (me.k 'ipx))
+											(let v (me.DOM.value el ))
 											(if-run (= 0 (str-length (str-trim v)))
 												{
-													(DOM 'alert '无内容)
+													(me.DOM.alert '无内容)
 												}
 												{
-													(if-run (DOM 'confirm "确定添加？")
+													(if-run (me.DOM.confirm "确定添加？")
 														{
 																	(array (extend v (array)))
-																	(DOM 'value el "")
+																	(me.DOM.value el "")
 														}
 													)
 												}
@@ -140,7 +140,7 @@
 							children [
 								array 'array
 								repeat {
-									(let (data index) args)
+									(let o args)
 									[
 										type li
 										children [
@@ -148,17 +148,17 @@
 												type button text x 
 												action [
 													click {
-														(log (index))
-														(array (splice (array) (index) 1))
+														(log (o.index))
+														(array (splice (array) (o.index) 1))
 													}
 												]
 											]
 											{
 												(str-join 
 													[
-														(index)
+														(o.index)
 														------
-														(data)
+														(o.data)
 													]
 												)
 											}

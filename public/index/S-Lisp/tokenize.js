@@ -105,10 +105,7 @@
 					return txt.substr(a,b);
 				},
 				loc:function() {
-					return {
-						col:col,
-						row:row
-					};
+					return lib.s.Location(row,col,index);
 				},
 				locMsg:function() {
 					return "{"+(row+1)+"行"+(col+1)+"列}";
