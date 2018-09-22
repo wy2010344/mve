@@ -6,8 +6,8 @@
 			url:"./index.lisp",
 			type:"path"
 		},
-		mve:{
-			url:"../util/mve/index.lisp",
+		mve_DOM:{
+			url:"../util/mve_DOM.lisp",
 			type:"path"
 		}
 	},
@@ -16,13 +16,12 @@
 			lib.path,
 			[
 				{
-					url:lib.mve,
-					delay:true,
-					key:"mve"
+					url:lib.mve_DOM,
+					delay:true
 				}
 			]
 		);
-		var m=lib.s.map_from_kvs(r.exec(null));
-		return m;
+		var xs=r.exec(null);
+		return lib.s.mveToJS(xs);
 	}
 });

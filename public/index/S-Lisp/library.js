@@ -42,7 +42,7 @@
 			},
             reverse:function(node){
                 var v=node.First();
-                return lib.s.reverse(node.First());
+                return lib.s.reverse(v);
             },
             rest:function(node){
                 var v=node.First();

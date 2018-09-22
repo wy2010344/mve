@@ -2,8 +2,8 @@
 	(let (a b c ) args)
 	(mve
 		{
-			(let (me) args)
-			(let ak (me 'Value 98))
+			(let (Value k) args)
+			(let ak (Value 98))
 			[
 				init {
 					(log '我是子组件初始化)

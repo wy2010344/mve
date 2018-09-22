@@ -1,22 +1,26 @@
 
 {
 	`与js的array不同，使用倒置的顺序`
-	(let (p-build p-after p-appendChild p-removeChild) args)
+	(let (p-build p-after p-getDestroy p-appendChild p-removeChild) args)
 	(let 
 		caches (cache [])
 		views (cache [])
 		update-views {
 			(let (array) args)
-			({
-				(let (vs as) args circle this)
-				(if-run (exist? vs)
-					{
-						(let (v ...vs) vs (a ...as) as)
-						(kvs-path-run  v [row data] a)
-						(circle vs as)
-					}
-				)
-			} (views) array)
+			(
+				{
+					(let (vs as) args circle this)
+					(if-run (exist? vs)
+						{
+							(let (v ...vs) vs (a ...as) as)
+							(let ((data index) obj) v)
+							(data a)
+							(circle vs as)
+						}
+					)
+				} 
+				(views) array
+			)
 		}
 		len-c {
 			(len 
@@ -108,11 +112,7 @@
 		{
 			(forEach (caches)
 				{
-					(let (c) args)
-					(let destroy 
-						(kvs-path c [obj destroy])
-					)
-					(if-run (exist? destroy) destroy)
+					((apply p-getDestroy args))
 				}
 			)
 		}
