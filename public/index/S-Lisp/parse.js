@@ -47,10 +47,7 @@
 			if(left){
 				this.loc=left.loc;
 			}else{
-				this.loc={
-					row:0,
-					col:0
-				};
+				this.loc=lib.s.Location(0,0,0);
 			}
 			this.children=children;
 			this.right=right;
@@ -66,15 +63,51 @@
 				}
 			}
 		});
+		function IDExp(token) {
+			this.type="id";
+			this.token=token;
+			var id=token.value;
+			this.value=id;
+			this.loc=token.loc;
+			if(id[0]=='.' || id[id.length-1]=='.'){
+				this.paths=null;
+			}else{
+				var r=null;
+				var i=0;
+				var last_i=0;
+				var has_error=false;
+				while(i<id.length){
+					var c=id[i];
+					if(c=='.'){
+						var node=id.substr(last_i,i-last_i);
+						last_i=i+1;
+						if(node==""){
+							has_error=true;
+						}else{
+							r=lib.s.extend(node,r);
+						}
+					}
+					i++;
+				}
+				r=lib.s.extend(id.substr(last_i),r);
+				if(has_error){
+					throw id+"不是合法的ID，不允许.连续存在";
+				}else{
+					this.paths=lib.s.reverse(r);
+				}
+			}
+		}
+		mb.Object.ember(IDExp.prototype,{
+			toString:function() {
+				return this.value;
+			}
+		});
 		var parse=function(tokens,Node) {
 			var caches=extend({
 				token:{
 					type:"BraR",
 					value:"}",
-					loc:{
-						row:0,
-						col:0
-					}
+					loc:lib.s.Location(0,0,0)
 				},
 				children:null
 			},null);
@@ -142,7 +175,7 @@
 					}else{
 						if("]"==cache.token.value){
 							if(x.type=="quote"){
-								e=new Exp("id",x);
+								e=new IDExp(x);
 							}else
 							if(x.type=="id"){
 								e=new Exp("string",x);
@@ -152,7 +185,7 @@
 								e=new Exp("string",x);
 							}else
 							if(x.type=="id"){
-								e=new Exp("id",x);
+								e=new IDExp(x);
 							}
 						}
 					}
@@ -160,7 +193,7 @@
 						children=extend(e,children);
 					}else{
 						if(x.type!="comment"){
-							throw "出错"+x.type+":"+x.value+":"+JSON.stringify(x.loc);
+							throw "出错"+x.type+":"+x.value+":"+x.loc.toString();
 						}
 					}
 				}

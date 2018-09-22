@@ -141,8 +141,8 @@
 				mb.Array.forEach(defs,function(def,i) {
 					if(def.url){
 						var r=load(def.url,scope,deal);
-						if(def.delay){
-							r=r.exec(null);
+						if(def.delay_args){
+							r=r.exec(lib.s.list_from_array(def.delay_args));
 						}
 						if(def.key){
 							scope=lib.s.kvs_extend(def.key,r,scope);

@@ -4,51 +4,13 @@
 	},
 	delay:true,
 	success:function() {
-		var isID=function(str){
-			var ret=true;
-			for(var i=0;i<str.length;i++){
-				var c=str[i];
-				if(c==' ' || c=='\t' || c=='\n' || c=='\r'){
-					ret=false;
-				}else
-				if(c=='*'||c=='\''){ // || c=='.' 
-					ret=false;
-				}
-			}
-			return ret;
-		};
-		var buildKVSMatch=function(scope,x,kvs){
-			x=x.substr(0,x.length-1);
-			if(isID(x)){
-				scope=lib.s.kvs_extend(
-					x,
-					new LibFun("kvs-match",function(node){
-						return lib.s.kvs_find1st(kvs,node.First());
-					}),
-					scope
-				);
-				/*由于可能重复定义，必须倒转，倒转后是v-k-v-k的形式*/
-				for(var t=lib.s.reverse(kvs);t!=null;t=t.Rest()){
-					var v=t.First();
-					t=t.Rest();
-					if(t==null){
-						throw "过早结束"+n;
-					}else{
-						var k=t.First();
-						if(isID(k)){
-							scope=lib.s.kvs_extend(x+"."+k,v,scope);
-						}else{
-							//忽略
-						}
-					}
-				}
+		var getPath=function(scope) {
+			var pathOf=lib.s.kvs_find1st(scope,"pathOf");
+			if(pathOf && pathOf.isFun){
+				return pathOf.exec(null);
 			}else{
-				throw x+"不是合法的ID2";
+				return "";
 			}
-			return scope;
-		};
-		var buildKVSMatch=function() {
-			throw "为了雪藏的kvs-match，暂时不允许以*号结尾";
 		};
 		var buildBracket=function(cs,vs,scope){
 			while(cs!=null){
@@ -56,11 +18,7 @@
 				if(cs.Rest()==null && c.type=="id" && c.value.startsWith("...")){
 					//最后的省略号
 					var k=c.value.slice(3);
-					if(k.endsWith("*")){
-						scope=buildKVSMatch(scope,k,kvs);
-					}else{
-						scope=buildNormal(scope,k,vs);
-					}
+					scope=buildNormal(scope,k,vs,c.loc);
 				}else{
 					var v=null;//一定要赋值啊
 					if(vs!=null){
@@ -73,11 +31,14 @@
 			}
 			return scope;
 		};
-		var buildNormal=function(scope,k,v) {
-			if(isID(k)){
+		var match_Exception=function(scope,msg,loc){
+			return lib.s.LocationException(getPath(scope)+":\t"+msg,loc);
+		};
+		var buildNormal=function(scope,k,v,loc) {
+			if(k.indexOf('.')<0){
 				scope=lib.s.kvs_extend(k,v,scope);
 			}else{
-				throw k+"不是合法的ID1";
+				throw match_Exception(scope,k+"不是合法的ID1",loc);
 			}
 			return scope;
 		};
@@ -86,13 +47,9 @@
 				scope=buildBracket(c.children,v,scope);
 			}else
 			if(c.type=="id"){
-				if(c.value.endsWith("*")){
-					scope=buildKVSMatch(scope,c.value,v);
-				}else{
-					scope=buildNormal(scope,c.value,v);
-				}
+				scope=buildNormal(scope,c.value,v,c.loc);
 			}else{
-				throw c.toString()+"不是合法的ID类型";
+				throw match_Exception(scope,c.toString()+"不是合法的ID类型",c.loc);
 			}
 			return scope;
 		};
@@ -119,6 +76,9 @@
 			return r;
 			//return lib.s.reverse(r);
 		};
+		var error_throw=function(msg,exp,scope,children) {
+			return lib.s.LocationException(getPath(scope)+":\t"+msg+"\r\n"+exp.toString(true)+"\r\n"+children.toString(true),exp.loc);
+		};
 		var interpret=function(input,scope) {
 			if(input.type=="()"){
 				var nodes=calNodes(input.r_children,scope);
@@ -127,19 +87,15 @@
 					try{
 						return first.exec(nodes.Rest());
 					}catch(err){
-						var pathOf=lib.s.kvs_find1st(scope,"pathOf");
-						if(pathOf){
-							var str=pathOf.exec(null);
-							mb.log(str,"row:",input.loc.row,"col:",input.loc.col);
+						if(err.isLocationException){
+							err.addStack(getPath(scope),input.loc,input.toString());
+							throw err;
+						}else{
+							throw error_throw(err,input,scope,nodes);
 						}
-						throw err;
 					}
 				}else{
-					var key=input.children.First().value;
-					var sv=input.toString(true);
-					var nv=nodes.toString(true);
-					mb.log(key,first,nv,sv);
-					throw "参数0必须为函数:{"+input.loc.row+","+input.loc.col+"}"+sv+":"+nv;
+					throw error_throw("参数0必须为函数",input,scope,nodes);
 				}
 			}else
 			if (input.type=="[]") {
@@ -149,7 +105,26 @@
 				return new UserFun(input,scope);
 			}else
 			if(input.type=="id"){
-				return lib.s.kvs_find1st(scope,input.value);
+				var paths=input.paths;
+				if(paths==null){
+					throw match_Exception(scope,input.value+"不是合法的ID类型23",input.loc);
+				}else{
+					var c_scope=scope;
+					var value=null;
+					while(paths!=null){
+						var key=paths.First();
+						value=lib.s.kvs_find1st(c_scope,key);
+						paths=paths.Rest();
+						if(paths!=null){
+							if(value.isList){
+								c_scope=value;
+							}else{
+								throw match_Exception(scope,"计算"+paths.toString()+",其中"+value+"不是合法的kvs类型:\t"+input.value,input.loc);
+							}
+						}
+					}
+					return value;
+				}
 			}else{
 				return input.value;
 			}
