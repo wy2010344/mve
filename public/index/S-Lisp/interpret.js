@@ -53,7 +53,7 @@
 		var buildBracket=function(cs,vs,scope){
 			while(cs!=null){
 				var c=cs.First();
-				if(cs.Rest()==null && c.value.startsWith("...")){
+				if(cs.Rest()==null && c.type=="id" && c.value.startsWith("...")){
 					//最后的省略号
 					var k=c.value.slice(3);
 					if(k.endsWith("*")){
@@ -124,13 +124,22 @@
 				var nodes=calNodes(input.r_children,scope);
 				var first=nodes.First();
 				if(first && first.isFun){
-					return first.exec(nodes.Rest());
+					try{
+						return first.exec(nodes.Rest());
+					}catch(err){
+						var pathOf=lib.s.kvs_find1st(scope,"pathOf");
+						if(pathOf){
+							var str=pathOf.exec(null);
+							mb.log(str,"row:",input.loc.row,"col:",input.loc.col);
+						}
+						throw err;
+					}
 				}else{
 					var key=input.children.First().value;
 					var sv=input.toString(true);
 					var nv=nodes.toString(true);
 					mb.log(key,first,nv,sv);
-					throw "参数0必须为函数"+nv+":"+sv;
+					throw "参数0必须为函数:{"+input.loc.row+","+input.loc.col+"}"+sv+":"+nv;
 				}
 			}else
 			if (input.type=="[]") {
