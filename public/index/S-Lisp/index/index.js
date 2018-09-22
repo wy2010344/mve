@@ -17,11 +17,12 @@
 			[
 				{
 					url:lib.mve_DOM,
-					delay:true
+					delay_args:[],
+					key:"mve"
 				}
 			]
 		);
 		var xs=r.exec(null);
-		return lib.s.mveToJS(xs);
+		return lib.s.map_from_kvs(xs);
 	}
 });

@@ -19,7 +19,8 @@
 				[
 					{
 						url:lib.mve_DOM,
-						delay:true
+						delay_args:[],
+						key:"mve"
 					},
 					{
 						value:cp.query.path,
@@ -36,7 +37,7 @@
 							function(node) {
 								div({
 									type:function() {
-										var x=lib.s.mveToJS(
+										var x=lib.s.map_from_kvs(
 											node.First().exec(null)
 										);
 										document.title=x.title||"";

@@ -40,6 +40,12 @@
                         }
                     }
                 },
+                update_data:function(value,v){
+                    value.row.data(v);
+                },
+                destroy:function(value){
+                    value.obj.destroy();
+                },
                 appendChild:function(value){
                     DOM.appendChild(pel,value.obj.getElement());
                 },

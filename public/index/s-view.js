@@ -15,7 +15,8 @@
 				[
 					{
 						url:lib.mve_DOM,
-						delay:true
+						delay_args:[],
+						key:"mve"
 					}
 				],
 				function(path,txt) {
@@ -32,7 +33,7 @@
 					element:{
 						type:function() {
 							var o=r.exec(null);
-							var x=lib.s.mveToJS(o);
+							var x=lib.s.map_from_kvs(o);
 							document.title=x.title||"";
 							return x;
 						}

@@ -1,11 +1,13 @@
 success {
 
-	(mve {
-		[
-			element [
-				type div
-				text 我是子
+	(mve 
+		{
+			[
+				element [
+					type div
+					text 我是子
+				]
 			]
-		]
-	})
+		}
+	)
 }

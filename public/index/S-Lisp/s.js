@@ -77,6 +77,43 @@
 			},
 			isList:true
 		});
+
+		function Location(row,col,i){
+			this.row=row;
+			this.col=col;
+			this.i=i;
+		}
+
+		mb.Object.ember(Location.prototype,{
+			isLocation:true,
+			toString:function(){
+				return "在位置{行:"+(this.row+1)+",列:"+(this.col+1)+",第"+(this.i+1)+"个字符}";
+			}
+		});
+
+		function LocationException(msg,loc){
+			this.msg=msg;
+			this.loc=loc;
+			this.stacks=[];
+		}
+		mb.Object.ember(LocationException.prototype,{
+			isLocationException:true,
+			addStack:function(path,loc,exp){
+				this.stacks.push({
+					path:path,
+					loc:loc,
+					exp:exp
+				});
+			},
+			toString:function(){
+				var err="";
+				mb.Array.forEach(this.stacks,function(stack,i){
+					err=stack.path+":\t"+stack.loc.toString()+":\t"+stack.exp+"\r\n";
+				});
+				err=err+this.loc.toString()+":\t"+this.msg;
+				return err;
+			}
+		});
 		var extend=function(v,vs){
 			return new Node(v,vs);
 		};
@@ -144,28 +181,6 @@
 				return fun.exec(args);
 			};
 		};
-		var map_from_kvs=function(kvs){
-			var map={};
-			var n=kvs;
-			while(n!=null){
-				var k=n.First();
-				n=n.Rest();
-				var v=n.First();
-				n=n.Rest();
-				if(v==null){
-					map[k]=null;
-				}else
-				if(v.isFun){
-					map[k]=fun_from_list(v);
-				}else
-				if(v.isList){
-					map[k]=array_from_list(v);
-				}else{
-					map[k]=v;
-				}
-			}
-			return map;
-		};
 		var me={
 			Node:Node,
 			log:function(o){
@@ -177,6 +192,12 @@
 				}else{
 					return o.toString();
 				}
+			},
+			Location:function(row,col,i){
+				return new Location(row,col,i);
+			},
+			LocationException:function(msg,loc){
+				return new LocationException(msg,loc);
 			},
 			string_to_trans:string_to_trans,
 			kvs_extend:kvs_extend,
@@ -191,27 +212,34 @@
 				});
 				return kvs;
 			},
-			map_from_kvs:map_from_kvs,
+			map_from_kvs:function(kvs){
+				var map={};
+				var n=kvs;
+				while(n!=null){
+					var k=n.First();
+					n=n.Rest();
+					var v=n.First();
+					n=n.Rest();
+					if(v==null){
+						map[k]=null;
+					}else
+					if(v.isFun){
+						map[k]=fun_from_list(v);
+					}else
+					if(v.isList){
+						map[k]=array_from_list(v);
+					}else{
+						map[k]=v;
+					}
+				}
+				return map;
+			},
 			reverse:function(node){
 				var r=null;
 				for(var t=node;t!=null;t=t.Rest()){
 					r=extend(t.First(),r);
 				}
 				return r;
-			},
-			mveToJS:function(xs){
-				var getElement=xs.First();
-				xs=xs.Rest();
-				var init=xs.First();
-				xs=xs.Rest();
-				var destroy=xs.First();
-				xs=xs.Rest();
-
-				xs=xs.First();
-				xs=kvs_extend("getElement",getElement,xs);
-				xs=kvs_extend("init",init,xs);
-				xs=kvs_extend("destroy",destroy,xs);
-				return map_from_kvs(xs);
 			}
 		};
 
