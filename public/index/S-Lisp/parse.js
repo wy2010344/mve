@@ -33,6 +33,7 @@
 		function Exp(type,token) {
 			this.token=token;
 			this.type=type;
+			this.loc=token.loc;
 			this.value=token.value;
 		};
 		mb.Object.ember(Exp.prototype,{
@@ -43,6 +44,14 @@
 		function BracketsExp(type,left,children,right,r_children) {
 			this.type=type;
 			this.left=left;
+			if(left){
+				this.loc=left.loc;
+			}else{
+				this.loc={
+					row:0,
+					col:0
+				};
+			}
 			this.children=children;
 			this.right=right;
 			this.r_children=r_children;

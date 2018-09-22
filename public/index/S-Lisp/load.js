@@ -73,7 +73,11 @@
 										lib.interpret.buildLibFun(
 											"pathOf",
 											function(node) {
-												return mb.ajax.require.calUrl("",path,node.First());
+												if(node==null){
+													return path;
+												}else{
+													return mb.ajax.require.calUrl("",path,node.First());
+												}
 											}
 										),
 										scope

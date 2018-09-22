@@ -12,12 +12,12 @@
 	}
 	(mve
 		{
-			(let (me) args)
-			(let a (me 'Value 9))
+			(let (Value k Cache) args)
+			(let a (Value 9))
 			(log (a))
 			(a (+ (a) 1))
 			(log (a))
-			(let array (me 'Value [a b c d e f g h]))
+			(let array (Value [a b c d e f g h]))
 			[
 				element [
 					type div
@@ -114,15 +114,19 @@
 									}
 									action [
 										click {
-											(let el (me 'k 'ipx))
-											(let v (js-attr el 'value))
+											(let el (k 'ipx))
+											(let v (DOM 'value el ))
 											(if-run (= 0 (str-length (str-trim v)))
 												{
-													(js-call 'window 'alert [无内容])
+													(DOM 'alert '无内容)
 												}
 												{
-													(array (extend v (array)))
-													(js-attr el 'value "")
+													(if-run (DOM 'confirm "确定添加？")
+														{
+																	(array (extend v (array)))
+																	(DOM 'value el "")
+														}
+													)
 												}
 											)
 										}
@@ -132,36 +136,40 @@
 						]
 						[
 							type ul
-							children {
-								[
-									array 'array
-									repeat {
-										(let o (kvs-match (first args)))
-										[
-											type li
-											children [
-												[
-													type button text x 
-													action [
-														click {
-															(log ((o 'index)))
-															(array (splice (array) ((o 'index)) 1))
-														}
-													]
+							children-type kvs
+							children [
+								array 'array
+								repeat {
+									(let (data index) args)
+									[
+										type li
+										children [
+											[
+												type button text x 
+												action [
+													click {
+														(log (index))
+														(array (splice (array) (index) 1))
+													}
 												]
-												{
-													((o 'index))
-												}
-												------
-												{
-													((o 'data))
-												}
 											]
+											{
+												(str-join 
+													[
+														(index)
+														------
+														(data)
+													]
+												)
+											}
 										]
-									}
-								]
-							}
+									]
+								}
+							]
 						]
+						{
+							(str-join [共 (len (array)) 条记录])
+						}
 					]
 				]
 			]

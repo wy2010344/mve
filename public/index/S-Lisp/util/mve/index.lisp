@@ -1,9 +1,10 @@
 {
-	(let util (kvs-match (load './util.lisp))
-	 Parse (load './parse.lisp)
-	 DOM (load './DOM.lisp)
-	 build-children (load './build-children.lisp)
-	 nokey (load './nokey.lisp)
+	(let 
+		(DOM) args
+		util (kvs-match (load './util.lisp))
+		Parse (load './parse.lisp)
+		build-children (load './build-children.lisp)
+		nokey (load './nokey.lisp)
 	)
 	((util 'Exp) 
 		(Parse

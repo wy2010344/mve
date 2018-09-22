@@ -144,6 +144,28 @@
 				return fun.exec(args);
 			};
 		};
+		var map_from_kvs=function(kvs){
+			var map={};
+			var n=kvs;
+			while(n!=null){
+				var k=n.First();
+				n=n.Rest();
+				var v=n.First();
+				n=n.Rest();
+				if(v==null){
+					map[k]=null;
+				}else
+				if(v.isFun){
+					map[k]=fun_from_list(v);
+				}else
+				if(v.isList){
+					map[k]=array_from_list(v);
+				}else{
+					map[k]=v;
+				}
+			}
+			return map;
+		};
 		var me={
 			Node:Node,
 			log:function(o){
@@ -169,34 +191,27 @@
 				});
 				return kvs;
 			},
-			map_from_kvs:function(kvs){
-				var map={};
-				var n=kvs;
-				while(n!=null){
-					var k=n.First();
-					n=n.Rest();
-					var v=n.First();
-					n=n.Rest();
-					if(v==null){
-						map[k]=null;
-					}else
-					if(v.isFun){
-						map[k]=fun_from_list(v);
-					}else
-					if(v.isList){
-						map[k]=array_from_list(v);
-					}else{
-						map[k]=v;
-					}
-				}
-				return map;
-			},
+			map_from_kvs:map_from_kvs,
 			reverse:function(node){
 				var r=null;
 				for(var t=node;t!=null;t=t.Rest()){
 					r=extend(t.First(),r);
 				}
 				return r;
+			},
+			mveToJS:function(xs){
+				var getElement=xs.First();
+				xs=xs.Rest();
+				var init=xs.First();
+				xs=xs.Rest();
+				var destroy=xs.First();
+				xs=xs.Rest();
+
+				xs=xs.First();
+				xs=kvs_extend("getElement",getElement,xs);
+				xs=kvs_extend("init",init,xs);
+				xs=kvs_extend("destroy",destroy,xs);
+				return map_from_kvs(xs);
 			}
 		};
 

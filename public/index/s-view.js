@@ -3,8 +3,8 @@
 		SLisp:"./S-Lisp/index.js",
 		interpret:"./S-Lisp/interpret.js",
 		s:"./S-Lisp/s.js",
-		mve:{
-			url:"./S-Lisp/util/mve/index.lisp",
+		mve_DOM:{
+			url:"./S-Lisp/util/mve_DOM.lisp",
 			type:"path"
 		}
 	},
@@ -14,9 +14,8 @@
 				cp.query.path,
 				[
 					{
-						url:lib.mve,
-						delay:true,
-						key:"mve"
+						url:lib.mve_DOM,
+						delay:true
 					}
 				],
 				function(path,txt) {
@@ -33,7 +32,7 @@
 					element:{
 						type:function() {
 							var o=r.exec(null);
-							var x=lib.s.map_from_kvs(o);
+							var x=lib.s.mveToJS(o);
 							document.title=x.title||"";
 							return x;
 						}
