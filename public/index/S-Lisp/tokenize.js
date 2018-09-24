@@ -34,7 +34,7 @@
 					return all;
 				})(),
 				notEnd:function(c) {
-					return !(is.whiteSpace(c) || is.brackets(c));
+					return !(is.whiteSpace(c) || is.brackets(c) || c=='"' || c=='`');
 				},
 				num:function(c) {
 					return ('0'<=c && c<='9');

@@ -62,6 +62,13 @@
 			}
 		)
 	}
+	locsize {
+		(let 
+			(el key value) args
+			style (js-attr el 'style)
+		)
+		(js-attr style key (str-join ['value px]))
+	}
 	prop {
 		(let (el key value) args)
 		(if-run (= (length args) 3)
