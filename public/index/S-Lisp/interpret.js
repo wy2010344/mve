@@ -74,7 +74,6 @@
 				children=children.Rest();
 			}
 			return r;
-			//return lib.s.reverse(r);
 		};
 		var error_throw=function(msg,exp,scope,children) {
 			return lib.s.LocationException(getPath(scope)+":\t"+msg+"\r\n"+exp.toString(true)+"\r\n"+children.toString(true),exp.loc);
