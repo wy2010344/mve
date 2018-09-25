@@ -30,11 +30,11 @@
 			return lib.s.reverse(xs);
 		};
 
-		function Exp(type,token) {
+		function Exp(type,token,value) {
 			this.token=token;
 			this.type=type;
 			this.loc=token.loc;
-			this.value=token.value;
+			this.value=value||token.value;
 		};
 		mb.Object.ember(Exp.prototype,{
 			toString:function() {
@@ -56,8 +56,13 @@
 		mb.Object.ember(BracketsExp.prototype,{
 			toString:function() {
 				//true是因为children是列表类型，要去列表，留下内部
+				var v=this.type;
+				if(this.type=="let" || this.type=="let-()"){
+					v="()";
+				}
+
 				if(this.children){
-					return this.type[0]+this.children.toString(true)+this.type[1];
+					return v[0]+this.children.toString(true)+v[1];
 				}else{
 					return this.type;
 				}
@@ -102,6 +107,95 @@
 				return this.value;
 			}
 		});
+
+		var resetLetID=function(k){
+			if(k.value.indexOf('.')<0){
+				return new Exp("let-id",k.token);
+			}else{
+				throw lib.s.LocationException("let表达式中，"+k.toString()+"不是合法的key-id类型",k.loc);
+			}
+		};
+		var resetLetSmall=function(small){
+			var vs=small.r_children;
+			var children=null;
+			if(vs!=null){
+				var k=vs.First();
+				vs=vs.Rest();
+				if(k.type=="id"){
+					var v=k.value;
+					if(v.startsWith("...")){
+						v=v.substr(3);
+						if(v.indexOf('.')<0){
+							children=extend(
+								new Exp(
+									"let-...",
+									k.token,
+									v
+								),
+								children
+							);
+						}else{
+							throw lib.s.LocationException("let表达式中，不合法的剩余匹配:"+k.toString(),k.loc);
+						}
+					}else{
+						children=extend(resetLetID(k),children);
+					}
+				}
+			}
+			while(vs!=null){
+				var k=vs.First();
+				vs=vs.Rest();
+				if(k.type=="()"){
+					children=extend(resetLetSmall(k),children);
+				}else
+				if(k.type=="id"){
+					children=extend(resetLetID(k),children);
+				}
+			}
+			return new BracketsExp(
+				"let-()",
+				small.left,
+				children,
+				small.right,
+				null
+			);
+		};
+		var resetLetKV=function(vks){
+			var children=null;
+			while(vks!=null){
+				var v=vks.First();
+				children=extend(v,children);
+				vks=vks.Rest();
+				if(vks!=null){
+					var k=vks.First();
+					vks=vks.Rest();
+					if(k.type=="id"){
+						children=extend(resetLetID(k),children);
+					}else
+					if(k.type=="()"){
+						if(k.children==null){
+							mb.log("Let表达式中无意义的空()，请检查" + k.loc.toString() + ":" + v.toString());
+						}
+						children=extend(resetLetSmall(k),children);
+					}else{
+						throw lib.s.LocationException("let表达式中，不合法的key类型:" + k.ToString(),k.loc);
+					}
+				}
+			}
+			return children;
+		};
+		var check_Large=function(vs){
+			while(vs!=null){
+				var v=vs.First();
+				vs=vs.Rest();
+				if(vs!=null){
+					var t=v.type;
+					if(!(t=="let" || t=="()" || t=="[]")){
+						mb.log("warn:函数中定义无意义的表达式，请检查"+v.loc.toString()+":"+v.toString());
+					}
+				}
+			}
+		};
 		var parse=function(tokens,Node) {
 			var caches=extend({
 				token:{
@@ -109,6 +203,7 @@
 					value:"}",
 					loc:lib.s.Location(0,0,0)
 				},
+				value:"{}",
 				children:null
 			},null);
 			var children=null;
@@ -117,9 +212,20 @@
 				var x=xs.First();
 				xs=xs.Rest();
 				if(x.type=="BraR"){
+					var v="";
+					if(x.value==")"){
+						v="()";
+					}else
+					if(x.value=="]"){
+						v="[]";
+					}else
+					if(x.value=="}"){
+						v="{}";
+					}
 					caches=extend(
 						{
 							token:x,
+							value:v,
 							children:children
 						},
 						caches
@@ -131,35 +237,50 @@
 					var c_right=cache.token.value;
 					var right=quoteLeftToRight(x.value);
 					if(c_right==right){
-						var e;
-						if("}"==c_right){
-							e=new BracketsExp(
-								"{}",
-								x,
-								children,
-								cache.token
-							);
-						}else
-						if("]"==c_right){
-							e=new BracketsExp(
-								"[]",
-								x,
-								children,
-								cache.token,
-								reverse(children)
-							);
-						}else
-						if(")"==c_right){
-							e=new BracketsExp(
-								"()",
-								x,
-								children,
-								cache.token,
-								reverse(children)
-							);
+						var r_children=null;
+						var tp=cache.value;
+						if(tp=="{}"){
+							check_Large(children);
+						}else{
+							r_children=lib.s.reverse(children);
 						}
+						var caches_parent=caches.Rest();
+						if(caches_parent!=null){
+							var p_exp=caches_parent.First();
+							if(p_exp.value=="{}"){
+								if(tp=="()"){
+									if(children==null){
+										throw lib.s.LocationException("不允许空的()",cache.token.loc);
+									}else{
+										var first=children.First();
+										if(first.type=="id" && first.value=="let"){
+											tp="let";
+											if(children.Length()==1){
+												throw lib.s.LocationException("不允许空的let表达式",first.loc);
+											}else{
+												children=extend(children.First(),resetLetKV(lib.s.reverse(children.Rest())));
+											}
+										}else{
+											if(!(first.type=="id" || first.type=="{}" || first.type=="()")){
+												throw lib.s.LocationException("函数调用第一个应该是id或{}或()，而不是" + first.ToString(),first.loc);
+											}
+										}
+									}
+								}
+							}
+						}
+
+						children=extend(
+							new BracketsExp(
+								tp,
+								x,
+								children,
+								cache.token,
+								r_children
+							),
+							cache.children
+						);
 						caches=caches.Rest();
-						children=extend(e,cache.children);
 					}else{
 						var msg="括号不对称";
 						throw msg;
@@ -198,6 +319,7 @@
 					}
 				}
 			}
+			check_Large(children);
 			return new BracketsExp("{}",null,children,null);
 		};
 		return parse;

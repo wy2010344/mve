@@ -12,60 +12,10 @@
 				return "";
 			}
 		};
-		var buildBracket=function(cs,vs,scope){
-			while(cs!=null){
-				var c=cs.First();
-				if(cs.Rest()==null && c.type=="id" && c.value.startsWith("...")){
-					//最后的省略号
-					var k=c.value.slice(3);
-					scope=buildNormal(scope,k,vs,c.loc);
-				}else{
-					var v=null;//一定要赋值啊
-					if(vs!=null){
-						v=vs.First();
-						vs=vs.Rest();
-					}
-					scope=buildMatch(scope,c,v);
-				}
-				cs=cs.Rest();
-			}
-			return scope;
-		};
+		
 		var match_Exception=function(scope,msg,loc){
 			return lib.s.LocationException(getPath(scope)+":\t"+msg,loc);
 		};
-		var buildNormal=function(scope,k,v,loc) {
-			if(k.indexOf('.')<0){
-				scope=lib.s.kvs_extend(k,v,scope);
-			}else{
-				throw match_Exception(scope,k+"不是合法的ID1",loc);
-			}
-			return scope;
-		};
-		var buildMatch=function(scope,c,v) {
-			if(c.type=="()"){
-				scope=buildBracket(c.children,v,scope);
-			}else
-			if(c.type=="id"){
-				scope=buildNormal(scope,c.value,v,c.loc);
-			}else{
-				throw match_Exception(scope,c.toString()+"不是合法的ID类型",c.loc);
-			}
-			return scope;
-		};
-		var buildLet=function(kvs,scope) {
-			while(kvs!=null){
-				var k=kvs.First();
-				kvs=kvs.Rest();
-				var v_r=kvs.First();
-				kvs=kvs.Rest();
-				var v=interpret(v_r,scope);
-				scope=buildMatch(scope,k,v);
-			}
-			return scope;
-		};
-
-
 		var calNodes=function(children,scope) {
 			var r=null;
 			while(children!=null){
@@ -129,26 +79,67 @@
 			}
 		};
 
+			
+		var letSmallMatch=function(small,vs,scope){
+			var ks=small.children;
+			if(vs==null || vs.isList){
+				while(ks!=null){
+					var v=null;
+					if(vs!=null){
+						v=vs.First();
+					}
+
+					var k=ks.First();
+					ks=ks.Rest();
+					if(k.type=="let-id"){
+						scope=lib.s.kvs_extend(k.value,v,scope);
+					}else
+					if(k.type=="let-()"){
+						scope=letSmallMatch(k,v,scope);
+					}else
+					if(k.type=="let-..."){
+						scope=lib.s.kvs_extend(k.value,vs,scope);
+					}else{
+						throw lib.s.LocationException("非法"+k.toString(),k.loc);
+					}
+
+					if(vs!=null){
+						vs=vs.Rest();
+					}
+				}
+				return scope;
+			}else{
+				throw lib.s.LocationException(vs.toString()+"不是合法的list类型，无法参与无组匹配："+small.toString(),small.loc);
+			}
+		};
 		var runQueue=function(scope) {
 			return function(exps) {
 				var r=null;
 				while(exps!=null){
 					var exp=exps.First();
-					if(exp.type=="()"){
-						var c1=exp.children.First();
-						if(c1 && c1.type=="id" && c1.value=="let"){
-							scope=buildLet(exp.children.Rest(),scope);
-							r=null;
-						}else{
-							r=interpret(exp,scope);
+					if(exp.type=="let"){
+						var cs=exp.children.Rest();
+						while(cs!=null){
+							var key=cs.First();
+							cs=cs.Rest();
+							var value=interpret(cs.First(),scope);
+							cs=cs.Rest();
+
+							if(key.type=="let-id"){
+								scope=lib.s.kvs_extend(key.value,value,scope);
+							}else
+							if(key.type=="let-()"){
+								scope=letSmallMatch(key,value,scope);
+							}
 						}
+						r=null;
 					}else{
 						r=interpret(exp,scope);
 					}
 					exps=exps.Rest();
 				}
 				return r;
-			}
+			};
 		};
 
 		/*基础函数*/
