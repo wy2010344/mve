@@ -22,7 +22,7 @@
 			[
 				type button
 				text 点击增加
-				action [
+				event [
 					click {
 						(title (+ (title) 1))
 					}

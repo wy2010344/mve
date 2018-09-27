@@ -7,7 +7,7 @@
 			type:"path"
 		},
 		mve_DOM:{
-			url:"../util/mve_DOM.lisp",
+			url:"../util/mve_DOM/index.lisp",
 			type:"path"
 		}
 	},

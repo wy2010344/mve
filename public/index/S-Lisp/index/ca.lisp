@@ -20,7 +20,7 @@
 						children [
 							[
 								type button
-								action [
+								event [
 									click {
 										(ak (+ (ak) 1 ))
 									}
