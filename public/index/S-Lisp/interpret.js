@@ -65,7 +65,7 @@
 						value=lib.s.kvs_find1st(c_scope,key);
 						paths=paths.Rest();
 						if(paths!=null){
-							if(value.isList){
+							if(value==null || value.isList){
 								c_scope=value;
 							}else{
 								throw match_Exception(scope,"计算"+paths.toString()+",其中"+value+"不是合法的kvs类型:\t"+input.value,input.loc);

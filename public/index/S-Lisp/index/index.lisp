@@ -21,7 +21,7 @@
 			[
 				element [
 					type div
-					action [
+					event [
 						click {
 							(log 98)
 						}
@@ -51,7 +51,7 @@
 							text {
 								(a)
 							}
-							action [
+							event [
 								click {
 									(a (+ (a) 1))
 								}
@@ -62,7 +62,7 @@
 							text {
 								(+ (a) 1)
 							}
-							action [
+							event [
 								click {
 									(a (+ (a) 2))
 								}
@@ -112,7 +112,7 @@
 									text {
 										(str-join [(len (array)) 条记录])
 									}
-									action [
+									event [
 										click {
 											(let el (me.k 'ipx))
 											(let v (me.DOM.value el ))
@@ -146,7 +146,7 @@
 										children [
 											[
 												type button text x 
-												action [
+												event [
 													click {
 														(log (o.index))
 														(array (splice (array) (o.index) 1))
