@@ -4,7 +4,7 @@
 		interpret:"./S-Lisp/interpret.js",
 		s:"./S-Lisp/s.js",
 		mve_DOM:{
-			url:"./S-Lisp/util/mve_DOM.lisp",
+			url:"./S-Lisp/util/mve_DOM/index.lisp",
 			type:"path"
 		},
 		sHtml:{

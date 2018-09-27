@@ -20,17 +20,30 @@
             }
             return init;
         };
-        var compare=function(args,func){
+        var compare=function(args,check,func){
             var last=args.First();
             var init=true;
+            check(last);
+            //mb.log(args.toString())
             for(var t=args.Rest();t!=null;t=t.Rest()){
                 var now=t.First();
+                check(now);
                 init=and(init,func(last,now));
                 last=now;
             }
             return init;
         };
-
+        var check_is_number=function(s){
+            if(s==0){
+                return true;
+            }else
+            if(s && s.constructor==Number){
+                return true;
+            }else{
+                mb.log(s+"不是合法的数字类型"+s.constructor);
+                return false;
+            }
+        };
         var kvs_path=function(kvs,paths){
             var value=null;
             while(paths!=null){
@@ -41,6 +54,16 @@
             }
             return value;
         };
+        var eq=function(check){
+            return function(args){
+                //可用于数字，字符串，实体
+                return compare(args,check,function(last,now){
+                    return (last==now);
+                });
+            };
+        };
+
+        
 		var library={
             "false":false,
             "true":true,
@@ -103,11 +126,14 @@
                     }
                 }
             },
-            "str-eq":function(args) {
-                return compare(args,function(last,now){
-                    return (last==now);
-                });
-            },
+            "str-eq":eq(function(s){
+                if(s && s.constructor==String){
+                    return true;
+                }else{
+                    return false;
+                }
+            }),
+            eq:eq(function(){return true;}),
             "str-at":function(args) {
                 var str=args.First();
                 args=args.Rest();
@@ -239,22 +265,17 @@
             },
             ">":function(args){
                 //数字
-                return compare(args,function(last,now){
+                return compare(args,check_is_number,function(last,now){
                     return (last>now);
                 });
             },
             "<":function(args){
                 //数字
-                return compare(args,function(last,now){
+                return compare(args,check_is_number,function(last,now){
                     return (last<now);
                 });
             },
-            "=":function(args){
-                //可用于数字，字符串
-                return compare(args,function(last,now){
-                    return (last==now);
-                });
-            },
+            "=":eq(check_is_number),
             and:function(args){
                 return reduce(args,function(init,v) {
                     return and(init,v);
@@ -272,6 +293,11 @@
                 var run=args.First();
                 args=args.Rest();
                 var args=args.First();
+                return run.exec(args);
+            },
+            call:function(args){
+                var run=args.First();
+                args=args.Rest();
                 return run.exec(args);
             },
             "js-eval":function(args){
