@@ -1,10 +1,10 @@
 {
 	(let 
 		DOM (load './DOM.lisp)
-		util  (load '../mve/util.lisp)
-		Parse (load '../mve/parse.lisp)
+		util  (load (lib-path 'mve/util.lisp))
+		Parse (load (lib-path 'mve/parse.lisp))
 		build-children (
-			(load '../mve/build-children.lisp)
+			(load (lib-path 'mve/build-children.lisp))
 			[
 				key children
 				Value 'util.Value
