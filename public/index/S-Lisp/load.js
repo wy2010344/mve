@@ -22,17 +22,16 @@
 						success:function(text){
 							var core=JSON.parse(text);
 							notice(function(path) {
-								path="index/"+path.substr(path.indexOf("S-Lisp"));
+								var i=path.indexOf("S-Lisp");
+								if(i>-1){
+									path="index/"+path.substr(i);
+								}
 								return core[path];
 							});
 						}
 					});
 				}
 			}
-		},
-		lib_path:{
-			url:"./util/index.lisp",
-			type:"path"
 		}
 	},
 	delay:true,
@@ -117,8 +116,30 @@
 			}
 			return scope;
 		};
+		var getLibPath=function(url){
+			if(url[0]!='.'){
+				url="./"+url;
+			}
+			var xurl="lib-path/";
+			if(mb.ext){
+				xurl=mb.ext("lib-path",{});
+			}
+			url=mb.ajax.require.calUrl("",xurl,url);
+			return url;
+		};
 		return function(base_scope,defs,deal) {
 			var scope=base_scope;
+			scope=lib.s.kvs_extend(
+				"lib-path",
+				lib.interpret.buildLibFun(
+					"lib-path",
+					function(node){
+						var url=node.First();
+						return getLibPath(url);
+					}
+				),
+				scope
+			);
 			scope=lib.s.kvs_extend("base-scope",base_scope,scope);
 			scope=lib.s.kvs_extend(
 				"parse",
@@ -136,7 +157,7 @@
 				),
 				scope
 			);
-			scope=appendKVS(load(lib.lib_path,scope,deal),scope);
+			scope=appendKVS(load(getLibPath("index.lisp"),scope,deal),scope);
 			if(defs){
 				mb.Array.forEach(defs,function(def,i) {
 					if(def.url){

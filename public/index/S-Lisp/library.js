@@ -1,305 +1,12 @@
 ({
 	data:{
 		s:"./s.js",
-        interpret:"./interpret.js"
+        interpret:"./interpret.js",
+        System:"./System.js"
 	},
     //致力于变成多平台通用的文件
 	success:function(log) {
-		log=log||function(cs){
-			mb.log.apply(null,cs)
-		};
-        var or=function(a,b){
-            return a||b;
-        };
-        var and=function(a,b){
-            return a&&b;
-        };
-        var reduce=function(args,func,init) {
-            for(var t=args;t!=null;t=t.Rest()){
-                init=func(init,t.First());
-            }
-            return init;
-        };
-        var compare=function(args,check,func){
-            var last=args.First();
-            var init=true;
-            check(last);
-            //mb.log(args.toString())
-            for(var t=args.Rest();t!=null;t=t.Rest()){
-                var now=t.First();
-                check(now);
-                init=and(init,func(last,now));
-                last=now;
-            }
-            return init;
-        };
-        var check_is_number=function(s){
-            if(s==0){
-                return true;
-            }else
-            if(s && s.constructor==Number){
-                return true;
-            }else{
-                mb.log(s+"不是合法的数字类型"+s.constructor);
-                return false;
-            }
-        };
-        var kvs_path=function(kvs,paths){
-            var value=null;
-            while(paths!=null){
-                var path=paths.First();
-                value=lib.s.kvs_find1st(kvs,path);
-                paths=paths.Rest();
-                kvs=value;
-            }
-            return value;
-        };
-        var eq=function(check){
-            return function(args){
-                //可用于数字，字符串，实体
-                return compare(args,check,function(last,now){
-                    return (last==now);
-                });
-            };
-        };
-
-        
 		var library={
-            "false":false,
-            "true":true,
-			log:function(args){
-				var cs=[];
-				for(var t=args;t!=null;t=t.Rest()){
-					cs.push(lib.s.log(t.First()));
-				}
-				log(cs);
-			},
-            reverse:function(args){
-                var v=args.First();
-                return lib.s.reverse(v);
-            },
-            rest:function(args){
-                var v=args.First();
-                return v.Rest();
-            },
-            first:function(args){
-                var v=args.First();
-                return v.First();
-            },
-            /*主要用于用闭包构建参数*/
-            list:function(args){
-                return args;
-            },
-            "empty?":function(args){
-                return (args.First()==null);
-            },
-            "exist?":function(args) {
-                return (args.First()!=null);
-            },
-            type:function(args) {
-                var n=args.First();
-                if(n==null){
-                    return "list";
-                }else{
-                    if(n.isList){
-                        return "list";
-                    }else
-                    if(n.isFun){
-                        return "function";
-                    }else{
-                        var t=typeof(n);
-                        if(t=="string"){
-                            return "string";
-                        }else
-                        if(t=="boolean"){
-                            return "bool";
-                        }else
-                        if(t=="number"){
-                            if(n%1===0){
-                                return "int";
-                            }else{
-                                return "float";
-                            }
-                        }else{
-                            return t;
-                        }
-                    }
-                }
-            },
-            "str-eq":eq(function(s){
-                if(s && s.constructor==String){
-                    return true;
-                }else{
-                    return false;
-                }
-            }),
-            eq:eq(function(){return true;}),
-            "str-at":function(args) {
-                var str=args.First();
-                args=args.Rest();
-                var index=args.First();  
-                return str[index];
-            },
-            "str-indexOf":function(args) {
-                var str=args.First();
-                args=args.Rest();
-                var v=args.First();
-                return str.indexOf(v);
-            },
-            "str-lastIndexOf":function(args) {
-                var str=args.First();
-                args=args.Rest();
-                var v=args.First();
-                return str.lastIndexOf(v);
-            },
-            "str-startsWith":function(args) {
-                var str=args.First();
-                args=args.Rest();
-                var v=args.First();
-                return str.startsWith(v);
-            },
-            "str-endsWith":function(args) {
-                var str=args.First();
-                args=args.Rest();
-                var v=args.First();
-                return str.endsWith(v);
-            },
-            length:function(args){
-                return args.First().Length();
-            },
-            extend:function(args){
-            	return lib.s.extend(args.First(),args.Rest().First());
-            },
-			quote:function(args){
-				return args.First();
-			},
-            "parseInt":function(args){
-                return parseInt(args.First());
-            },
-            "kvs-find1st":function(args){
-                var kvs=args.First();
-                args=args.Rest();
-                var key=args.First();
-                return lib.s.kvs_find1st(kvs,key);
-            },
-            "kvs-extend":function(args) {
-                var key=args.First();
-                args=args.Rest();
-                var value=args.First();
-                args=args.Rest();
-                var kvs=args.First();
-                return lib.s.kvs_extend(key,value,kvs);
-            },
-            "kvs-path":function(args){
-                var kvs=args.First();
-                args=args.Rest();
-                var paths=args.First();
-                return kvs_path(kvs,paths);
-            },
-            "kvs-path-run":function(args){
-                var kvs=args.First();
-                args=args.Rest();
-                var paths=args.First();
-                args=args.Rest();
-                return kvs_path(kvs,paths).exec(args);
-            },
-            //a?b:default(null)
-            "if":function(args){
-                if(args.First()){
-                    return args.Rest().First();
-                }else{
-                    args=args.Rest().Rest();
-                    if(args){
-                        return args.First();
-                    }else{
-                        return null;
-                    }
-                }
-            },
-            "str-join":function(args){
-                //字符串
-                var array=args.First();
-                var split="";
-                if(args.Rest()!=null){
-                    split=args.Rest().First();
-                }
-                var r="";
-                for(var t=array;t!=null;t=t.Rest()){
-                    r=r+t.First()+split;
-                }
-                return r.substr(0,r.length-split.length);
-            },
-            stringify:function(args){
-                //类似于JSON.stringify，没想好用toString还是stringify;
-                return args.First().toString();  
-            },
-            "str-trim":function(args) {
-                var str=args.First();
-                return str.trim();
-            },
-            "str-length":function(args) {
-                var str=args.First();
-                return str.length;
-            },
-			"+":function(args){
-                return reduce(args,function(last,now){
-                    return last+now;
-                },0);
-			},
-			"-":function(args){
-                var r=args.First();
-                return reduce(args.Rest(),function(last,now){
-                    return last-now;
-                },r);
-			},
-            "*":function(args){
-                return reduce(args,function(last,now){
-                    return last*now;
-                },1);
-            },
-            "/":function(args){
-                var r=args.First();
-                return reduce(args.Rest(),function(last,now){
-                    return last/now;
-                },r);
-            },
-            ">":function(args){
-                //数字
-                return compare(args,check_is_number,function(last,now){
-                    return (last>now);
-                });
-            },
-            "<":function(args){
-                //数字
-                return compare(args,check_is_number,function(last,now){
-                    return (last<now);
-                });
-            },
-            "=":eq(check_is_number),
-            and:function(args){
-                return reduce(args,function(init,v) {
-                    return and(init,v);
-                },true);
-            },
-            or:function(args){
-                return reduce(args,function(init,v) {
-                    return or(init,v);
-                },false);
-            },
-            not:function(args){
-                return !args.First();
-            },
-            apply:function(args) {
-                var run=args.First();
-                args=args.Rest();
-                var args=args.First();
-                return run.exec(args);
-            },
-            call:function(args){
-                var run=args.First();
-                args=args.Rest();
-                return run.exec(args);
-            },
             "js-eval":function(args){
                 return eval(args.First());
             },
@@ -343,17 +50,26 @@
                 }
             }
 		};
-        var core=lib.s.kvs_from_map(
-            mb.Object.map(
-                library,
-                function(v,k){
-                    if(typeof(v)=='function'){
-                        return lib.interpret.buildLibFun(k,v);
-                    }else{
-                        return v;
-                    }
+        var core=lib.System({
+            log:log||function(cs){
+                mb.log.apply(null,cs)
+            },
+            isList:function(n){
+                return n.isList;
+            },
+            isFun:function(f){
+                return f.isFun;
+            },
+            log_trans:lib.s.log,
+            Fun:lib.interpret.Fun
+        });
+        mb.Object.forEach(library,
+            function(v,k){
+                if(typeof(v)=='function'){
+                    v=lib.interpret.buildLibFun(k,v);
                 }
-            )
+                core=lib.s.kvs_extend(k,v,core);
+            }
         );
         /************Cache函数**************/
         var Cache=function(v){
