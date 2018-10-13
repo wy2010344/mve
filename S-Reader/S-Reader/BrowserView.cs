@@ -76,7 +76,28 @@ namespace S_Reader
                 JObject o = JObject.Parse(args);
                 r = success(readTxt(o["path"].ToString()));
             }
-            else
+            else if ("lib-path" == method)
+            {
+                String lib_path = "";
+                try
+                {
+                    lib_path = Environment.GetEnvironmentVariable("S_LISP");
+                    lib_path = lib_path.Replace('\\', '/');
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+                if (lib_path == null || lib_path == "")
+                {
+                    lib_path = "D:/S-Lisp/";
+                }
+                else if (!(lib_path[lib_path.Length - 1] == '/'))
+                {
+                    lib_path = lib_path + "/";
+                }
+                r = success(new JValue(lib_path).ToString());
+            }else
             {
                 r = error("Œ¥’“µΩ∂®“Â");
             }

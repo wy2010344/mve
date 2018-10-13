@@ -203,6 +203,13 @@
 			kvs_extend:kvs_extend,
 			kvs_find1st:kvs_find1st,
 			extend:extend,
+			list:function(){
+				var r=null;
+				for(var i=arguments.length-1;i>-1;i--){
+					r=extend(arguments[i],r);
+				}
+				return r;
+			},
 			list_from_array:list_from_array,
 			array_from_list:array_from_list,
 			kvs_from_map:function(map){

@@ -25,8 +25,10 @@ var circle=function(core,p,prefix) {
 };
 
 router.get("/package",function(req,res,next) {
-	var p="./public/index/S-Lisp/";
 	var core={};
+	var dir=process.env.S_LISP||"./S-Lisp";
+	circle(core,dir,"lib-path/");
+	var p="./public/index/S-Lisp/";
 	circle(core,p,"index/S-Lisp/");
 	fs.writeFile(p+"core.js", JSON.stringify(core,"",2),function(err){
 		res.json({
