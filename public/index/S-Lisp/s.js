@@ -47,27 +47,47 @@
 			Length:function(){
 				return this.length;
 			},
-			toString:function(bool) {
-				var v=this.First();
+			_toString_:function(v){
 				if(v==null){
-					v="[]";
+					return "[]";
 				}else
-				if(v.isFun){
-					//内置库转义
-					if(v.ftype()==v.Function_type.lib){
-						v="'"+v;
-					}
+				if(v.isList){
+					return v.toString();
 				}else
 				if(typeof(v)=="string"){
-					//字符串
-					v=string_to_trans(v,'"','"');
+					return string_to_trans(v,'"','"');
+				}else
+				if(v.isFun){
+					if(v.ftype()==v.Function_type.lib)
+					{
+						return "'"+v.toString();
+					}else
+					if(v.ftype()==v.Function_type.cache){
+						return "[]";
+					}else{
+						return v.toString();
+					}
+				}else
+				if(typeof(v)=="bool"){
+					return v.toString();
+				}else
+				if(typeof(v)=="number"){
+					return v.toString();
 				}else{
-					//其它类型
-					v=v.toString();
+					var vx=v.toString();
+					if(vx!=null){
+						return "'"+vx;
+					}else{
+						return "[]";
+					}
 				}
-
-				if(this.Rest()){
-					v=v+" "+this.Rest().toString(true);
+			},
+			toString:function(bool) {
+				var v=this._toString_(this.First());
+				var t=this.Rest();
+				while(t!=null){
+					v=v+" "+this._toString_(t.First());
+					t=t.Rest();
 				}
 				if(bool){
 					return v;
@@ -91,6 +111,19 @@
 			}
 		});
 
+		/*Token*/
+		function Token(type,value,old_value,loc) {
+			this.type=type;
+			this.value=value;
+			this.old_value=old_value;
+			this.loc=loc;
+		};
+		mb.Object.ember(Token.prototype,{
+			toString:function() {
+				return this.old_value;
+			}
+		});
+
 		function LocationException(msg,loc){
 			this.msg=msg;
 			this.loc=loc;
@@ -98,10 +131,11 @@
 		}
 		mb.Object.ember(LocationException.prototype,{
 			isLocationException:true,
-			addStack:function(path,loc,exp){
+			addStack:function(path,left,right,exp){
 				this.stacks.push({
 					path:path,
-					loc:loc,
+					left:left,
+					right:right,
 					exp:exp
 				});
 			},
@@ -183,21 +217,65 @@
 		};
 		var me={
 			Node:Node,
-			log:function(o){
+			toString:function(o,trans){
 				if(o==null){
 					return "[]";
 				}else
-				if(typeof(o)=="string"){
-					return string_to_trans(o,'"','"');
+				if(trans){
+					if(typeof(o)=="string"){
+						return string_to_trans(o,'"','"');
+					}else{
+						return o.toString();
+					}
 				}else{
 					return o.toString();
 				}
+			},
+			Token:function(type,value,old_value,loc){
+				return new Token(type,value,old_value,loc);
 			},
 			Location:function(row,col,i){
 				return new Location(row,col,i);
 			},
 			LocationException:function(msg,loc){
 				return new LocationException(msg,loc);
+			},
+			isInt:function(s) {
+				var ret=true;
+				var i=0;
+				if(s[i]=='-'){
+					i==1;
+				}
+				while(i<s.length){
+					var c=s[i];
+					ret=(ret && '0'<=c && c<='9'); 
+					i++;
+				}
+				return ret;
+			},
+			isFloat:function(s) {
+				var ret=true;
+				var i=0;
+				if(s[i]=='-'){
+					i==1;
+				}
+				var noPoint=true;
+				while(i<s.length){
+					var c=s[i];
+					if(c=='.'){
+						if(noPoint){
+							noPoint=false;
+						}else{
+							//重复出现小数点
+							ret=ret && false;
+						}
+					}else
+					{
+						ret=(ret && '0'<=c && c<= '9');
+					}
+					i++;
+				}
+				return ret;
 			},
 			string_to_trans:string_to_trans,
 			kvs_extend:kvs_extend,
