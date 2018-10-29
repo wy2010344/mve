@@ -60,7 +60,7 @@
             isFun:function(f){
                 return f.isFun;
             },
-            log_trans:lib.s.log,
+            toString:lib.s.toString,
             Fun:lib.interpret.Fun
         });
         mb.Object.forEach(library,
