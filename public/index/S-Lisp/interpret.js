@@ -12,10 +12,6 @@
 				return "";
 			}
 		};
-		
-		var match_Exception=function(scope,msg,loc){
-			return lib.s.LocationException(getPath(scope)+":\t"+msg,loc);
-		};
 		var calNodes=function(children,scope) {
 			var r=null;
 			while(children!=null){
@@ -25,8 +21,11 @@
 			}
 			return r;
 		};
+		var match_Exception=function(scope,msg,exp){
+			return exp.exception(getPath(scope)+":\t"+msg);
+		};
 		var error_throw=function(msg,exp,scope,children) {
-			return lib.s.LocationException(getPath(scope)+":\t"+msg+"\r\n"+exp.toString(true)+"\r\n"+children.toString(true),exp.loc);
+			return exp.exception(getPath(scope)+":\t"+msg+"\r\n"+exp.toString(true)+"\r\n"+children.toString(true));
 		};
 		var interpret=function(input,scope) {
 			if(input.type=="()"){
@@ -37,7 +36,7 @@
 						return first.exec(nodes.Rest());
 					}catch(err){
 						if(err.isLocationException){
-							err.addStack(getPath(scope),input.loc,input.toString());
+							err.addStack(getPath(scope),input.left,input.right,input.toString());
 							throw err;
 						}else{
 							throw error_throw(err,input,scope,nodes);
@@ -56,7 +55,7 @@
 			if(input.type=="id"){
 				var paths=input.paths;
 				if(paths==null){
-					throw match_Exception(scope,input.value+"不是合法的ID类型23",input.loc);
+					throw match_Exception(scope,input.token.value+"不是合法的ID类型23",input);
 				}else{
 					var c_scope=scope;
 					var value=null;
@@ -68,14 +67,15 @@
 							if(value==null || value.isList){
 								c_scope=value;
 							}else{
-								throw match_Exception(scope,"计算"+paths.toString()+",其中"+value+"不是合法的kvs类型:\t"+input.value,input.loc);
+								throw match_Exception(scope,"计算"+paths.toString()+",其中"+value+"不是合法的kvs类型:\t"+input.token.value,input);
 							}
 						}
 					}
 					return value;
 				}
 			}else{
-				return input.value;
+				/*string/int/float/bool*/
+				return input.token.value;
 			}
 		};
 
@@ -92,15 +92,15 @@
 					var k=ks.First();
 					ks=ks.Rest();
 					if(k.type=="let-id"){
-						scope=lib.s.kvs_extend(k.value,v,scope);
+						scope=lib.s.kvs_extend(k.token.value,v,scope);
 					}else
 					if(k.type=="let-()"){
 						scope=letSmallMatch(k,v,scope);
 					}else
 					if(k.type=="let-..."){
-						scope=lib.s.kvs_extend(k.value,vs,scope);
+						scope=lib.s.kvs_extend(k.token.value,vs,scope);
 					}else{
-						throw lib.s.LocationException("非法"+k.toString(),k.loc);
+						throw k.exception("非法"+k.toString());
 					}
 
 					if(vs!=null){
@@ -109,7 +109,7 @@
 				}
 				return scope;
 			}else{
-				throw lib.s.LocationException(vs.toString()+"不是合法的list类型，无法参与无组匹配："+small.toString(),small.loc);
+				throw small.exception(vs.toString()+"不是合法的list类型，无法参与无组匹配："+small.toString());
 			}
 		};
 		var runQueue=function(scope) {
@@ -126,7 +126,7 @@
 							cs=cs.Rest();
 
 							if(key.type=="let-id"){
-								scope=lib.s.kvs_extend(key.value,value,scope);
+								scope=lib.s.kvs_extend(key.token.value,value,scope);
 							}else
 							if(key.type=="let-()"){
 								scope=letSmallMatch(key,value,scope);

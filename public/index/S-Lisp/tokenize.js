@@ -41,47 +41,6 @@
 				}
 			};
 		})();
-
-		/*
-		允许负数
-		*/
-		var isInt=function(s) {
-			var ret=true;
-			var i=0;
-			if(s[i]=='-'){
-				i==1;
-			}
-			while(i<s.length){
-				var c=s[i];
-				ret=(ret && '0'<=c && c<='9'); 
-				i++;
-			}
-			return ret;
-		};
-		var isFloat=function(s) {
-			var ret=true;
-			var i=0;
-			if(s[i]=='-'){
-				i==1;
-			}
-			var noPoint=true;
-			while(i<s.length){
-				var c=s[i];
-				if(c=='.'){
-					if(noPoint){
-						noPoint=false;
-					}else{
-						//重复出现小数点
-						ret=ret && false;
-					}
-				}else
-				{
-					ret=(ret && '0'<=c && c<= '9');
-				}
-				i++;
-			}
-			return ret;
-		};
 		var que=function(txt) {
 			var index=0;
 			var row=0,col=0;
@@ -101,8 +60,9 @@
 				index:function() {
 					return index;
 				},
-				substr:function(a,b) {
-					return txt.substr(a,b);
+				/*begin,end*/
+				substr:function(begin,end) {
+					return txt.substr(begin,end-begin);
 				},
 				loc:function() {
 					return lib.s.Location(row,col,index);
@@ -144,9 +104,7 @@
 			}
 			return s;
 		};
-		var parseStr=function(end,q,trans_map) {
-			//字符串
-			var loc=q.loc();
+		var tokenize_split=function(q,tokens,type,loc,end) {
 			q.shift();
 			var nobreak=true;
 			var start=q.index();
@@ -165,13 +123,16 @@
 			if(q.current()==undefined){
 				throw end+"过早结束"+q.locMsg();
 			}else{
-				var s=q.substr(start,q.index()-start);
+				var s=q.substr(start,q.index());
 				q.shift();
+				var old_s=q.substr(start-1,q.index()+1)
 				if(trans_time!=0){
-					return string_from_trans(s,end,trans_map,trans_time);
-				}else{
-					return s;
+					s=string_from_trans(s,end,trans_map,trans_time);
 				}
+				return extend(
+					lib.s.Token(type,s,old_s,loc),
+					tokens
+				);
 			}
 		};
 		var trans_map={
@@ -182,23 +143,6 @@
 		var extend=function(x,xs){
 			return lib.s.extend(x,xs);
 		};
-		function Token(type,value,loc) {
-			this.type=type;
-			this.value=value;
-			this.loc=loc;
-		};
-		mb.Object.ember(Token.prototype,{
-			toString:function() {
-				if(this.type=="quote"){
-					return "'"+this.value;
-				}else
-				if(this.type=="string"){
-					return lib.s.string_to_trans(this.value,'"','"');
-				}else{
-					return this.value;
-				}
-			}
-		});
 		var tokenize=function(txt) {
 			var q=que(txt);
 			var tokens=null;
@@ -207,29 +151,26 @@
 					q.shift();
 				}else
 				if(is.brackets.in(q.current())){
+					var v=q.current();
 					tokens=extend(
-						new Token("BraL",q.current(),q.loc()),
+						lib.s.Token("BraL",v,v,q.loc()),
 						tokens
 					);
 					q.shift();
 				}else
 				if(is.brackets.out(q.current())){
+					var v=q.current();
 					tokens=extend(
-						new Token("BraR",q.current(),q.loc()),
+						lib.s.Token("BraR",v,v,q.loc()),
 						tokens
 					);
 					q.shift();
 				}else
 				if(q.current()=='"'){
-					var loc=q.loc();
-					var s=parseStr('"',q,trans_map);
-					tokens=extend(
-						new Token("string",s,loc),
-						tokens
-					);
+					tokens=tokenize_split(q,tokens,"string",q.loc(),'"');
 				}else
 				if(q.current()=='`'){
-					var s=parseStr('`',q,trans_map);
+					tokens=tokenize_split(q,tokens,"comment",q.loc(),'`');
 					//mb.log(s);//注释
 				}else
 				{
@@ -239,35 +180,44 @@
 					while(q.current()!=undefined && is.notEnd(q.current())){
 						q.shift();
 					}
-					var s=q.substr(start,q.index()-start);
+					var s=q.substr(start,q.index());
 					if(s[0]=='\''){
-						s=s.slice(1);
+						var n_s=s.slice(1);
 						if(s==""){
 							throw "ID过早结束"+locMsg(loc);
 						}else{
 							tokens=extend(
-								new Token("quote",s,loc),
+								lib.s.Token("quote",n_s,s,loc),
 								tokens
 							);
 						}
 					}else
-					if(isInt(s)) {
+					if(lib.s.isInt(s)) {
 						//整数
 						tokens=extend(
-							new Token("int",parseInt(s),loc),
+							lib.s.Token("int",parseInt(s),s,loc),
 							tokens
 						);
 					}else
-					if(isFloat(s)){
+					/*
+					if(lib.s.isFloat(s)){
 						//浮点数
 						tokens=extend(
-							new Token("float",parseFloat(s),loc),
+							lib.s.Token("float",parseFloat(s),s,loc),
+							tokens
+						);
+					}else
+					*/
+					if(s=="true"||s=="false"){
+						//纯id
+						tokens=extend(
+							lib.s.Token("bool",s=="true",s,loc),
 							tokens
 						);
 					}else{
 						//纯id
 						tokens=extend(
-							new Token("id",s,loc),
+							lib.s.Token("id",s,s,loc),
 							tokens
 						);
 					}

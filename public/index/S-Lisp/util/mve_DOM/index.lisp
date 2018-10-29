@@ -29,61 +29,61 @@
 				}
 				replaceWith 'DOM.replaceWith
 				createTextNode {
-					(let (x) args)
+					(let (x o) args)
 					(list 
-						(DOM.createTextNode x.o)
+						(DOM.createTextNode o)
 						x.inits
 						x.destroys
 					)
 				}
 				buildElement {
-					(let (x) args)
+					(let (x o) args)
 					`原生组件`
-					(let e  (DOM.createElement x.o.type))
+					(let e  (DOM.createElement o.type))
 					`attr属性`
-					(x.bindMap x.o.attr 
+					(x.bindMap o.attr 
 						{
 							(let (k v) args)
 							(DOM.attr e k v)
 						}
 					)
 					`style属性`
-					(x.bindMap x.o.style
+					(x.bindMap o.style
 						{
 							(let (k v) args)
 							(DOM.style e k v)
 						}
 					)
 					`动作`
-					(x.bindEvent x.o.event
+					(x.bindEvent o.event
 						{
 							(let (k v) args)
 							(DOM.event e k v)
 						}
 					)
 					`内部字符`
-					(x.if-bind x.o.text 
+					(x.if-bind o.text 
 						{
 							(let (v) args)
 							(DOM.text e v)
 						}
 					)
 					`内部值`
-					(x.if-bind x.o.value
+					(x.if-bind o.value
 						{
 							(let (v) args)
 							(DOM.value e v)
 						}
 					)
 					`innerHTML`
-					(x.if-bind watch x.o.html
+					(x.if-bind watch o.html
 						{
 							(let (v) args)
 							(DOM.html e v)
 						}
 					)
 					`children`
-					(let (inits destroys) (build-children e x))
+					(let (inits destroys) (build-children e x o))
 					(list 
 						e
 						inits

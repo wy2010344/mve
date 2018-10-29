@@ -18,7 +18,7 @@
 				var rq=lib.interpret.runQueue(x.scope);
 				return function(txt){
 					var r=rq(lib.parse(lib.tokenize(txt)).children);
-					appendResult(lib.s.log(r));
+					appendResult(lib.s.toString(r,true));
 				};
 			}
 		};

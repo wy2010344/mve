@@ -62,8 +62,6 @@
 			(str-join cls)
 		"
 		var m=null;
-		m=lib.s.kvs_extend(\"true\",true,m);
-		m=lib.s.kvs_extend(\"false\",false,m);
 		"
 			(str-join fun)
 		"
