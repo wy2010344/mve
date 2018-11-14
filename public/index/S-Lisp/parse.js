@@ -114,7 +114,6 @@
 			var children=null;
 			if(vs!=null){
 				var k=vs.First();
-				vs=vs.Rest();
 				if(k.type=="id"){
 					var v=k.token.value;
 					if(v.startsWith("...")){
@@ -128,11 +127,10 @@
 								),
 								children
 							);
+							vs=vs.Rest();//如果是最后一项，则处理，否则不处理
 						}else{
 							throw lib.s.LocationException("let表达式中，不合法的剩余匹配:"+k.toString(),k.loc);
 						}
-					}else{
-						children=extend(resetLetID(k),children);
 					}
 				}
 			}
