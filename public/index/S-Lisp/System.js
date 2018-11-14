@@ -163,63 +163,6 @@
 			}
 		});
 						
-		function LogFun(){}
-		LogFun.prototype=new Fun();
-		;
-		mb.Object.ember(LogFun.prototype,{
-			toString:function(){
-				return "log";
-			},
-			exec:function(args){
-                
-                var cs=[];
-                for(var t=args;t!=null;t=t.Rest()){
-                    cs.push(p.toString(t.First(),true));
-                }
-                p.log(cs);
-            
-			},
-			ftype:function(){
-				return this.Function_type.lib;
-			}
-		});
-						
-		function ToStringFun(){}
-		ToStringFun.prototype=new Fun();
-		;
-		mb.Object.ember(ToStringFun.prototype,{
-			toString:function(){
-				return "toString";
-			},
-			exec:function(args){
-                
-                var b=args.First();
-                return p.toString(b,false);
-            
-			},
-			ftype:function(){
-				return this.Function_type.lib;
-			}
-		});
-						
-		function StringifyFun(){}
-		StringifyFun.prototype=new Fun();
-		;
-		mb.Object.ember(StringifyFun.prototype,{
-			toString:function(){
-				return "stringify";
-			},
-			exec:function(args){
-                
-                var b=args.First();  
-                return p.toString(b,true);
-            
-			},
-			ftype:function(){
-				return this.Function_type.lib;
-			}
-		});
-						
 		function IfFun(){}
 		IfFun.prototype=new Fun();
 		
@@ -279,6 +222,63 @@
                 var run=args.First();
                 args=args.Rest();
                 return run.exec(args.First());
+            
+			},
+			ftype:function(){
+				return this.Function_type.lib;
+			}
+		});
+						
+		function LogFun(){}
+		LogFun.prototype=new Fun();
+		;
+		mb.Object.ember(LogFun.prototype,{
+			toString:function(){
+				return "log";
+			},
+			exec:function(args){
+                
+                var cs=[];
+                for(var t=args;t!=null;t=t.Rest()){
+                    cs.push(p.toString(t.First(),true));
+                }
+                p.log(cs);
+            
+			},
+			ftype:function(){
+				return this.Function_type.lib;
+			}
+		});
+						
+		function ToStringFun(){}
+		ToStringFun.prototype=new Fun();
+		;
+		mb.Object.ember(ToStringFun.prototype,{
+			toString:function(){
+				return "toString";
+			},
+			exec:function(args){
+                
+                var b=args.First();
+                return p.toString(b,false);
+            
+			},
+			ftype:function(){
+				return this.Function_type.lib;
+			}
+		});
+						
+		function StringifyFun(){}
+		StringifyFun.prototype=new Fun();
+		;
+		mb.Object.ember(StringifyFun.prototype,{
+			toString:function(){
+				return "stringify";
+			},
+			exec:function(args){
+                
+                var b=args.First();  
+                return p.toString(b,true);
             
 			},
 			ftype:function(){
@@ -658,6 +658,29 @@
 			}
 		});
 						
+		function Str_splitFun(){}
+		Str_splitFun.prototype=new Fun();
+		;
+		mb.Object.ember(Str_splitFun.prototype,{
+			toString:function(){
+				return "str-split";
+			},
+			exec:function(args){
+                
+                var a=args.First();
+                var split="";
+                args=args.Rest()
+                if(args!=null){
+                    split=args.First();
+                }
+                return a.split(split);
+            
+			},
+			ftype:function(){
+				return this.Function_type.lib;
+			}
+		});
+						
 		function Str_upperFun(){}
 		Str_upperFun.prototype=new Fun();
 		;
@@ -1011,24 +1034,19 @@
 		;
 		mb.Object.ember(LoopFun.prototype,{
 			toString:function(){
-				return "{(let (f init ) args loop this ) (let (will init ) (f init ) ) (if-run will {(loop f init ) } {init } ) }";
+				return "{(let (f ...init ) args loop this ) (let (will ...init ) (apply f init ) ) (if-run will {(apply loop (extend f init ) ) } {init } ) }";
 			},
 			exec:function(args){
                 
                 var f=args.First();
                 args=args.Rest();
-                var init=null;
-                if(args!=null){
-                    init=args.First();
-                }
                 var will=true;
                 while(will){
-                    var o=f.exec(lib.s.extend(init,null));
-                    will=o.First();
-                    o=o.Rest();
-                    init=o.First();
+                    args=f.exec(args);
+                    will=args.First();
+                    args=args.Rest();
                 }
-                return init;
+                return args;
             
 			},
 			ftype:function(){
@@ -1234,10 +1252,10 @@
 			}
 		});
 						
-		function OffsetFun(){}
-		OffsetFun.prototype=new Fun();
+		function Slice_fromFun(){}
+		Slice_fromFun.prototype=new Fun();
 		
-            OffsetFun.base_run=function(list,i){
+            Slice_fromFun.base_run=function(list,i){
                 while(i!=0){
                     list=list.Rest();
                     i--;
@@ -1245,7 +1263,7 @@
                 return list;
             }
             ;
-		mb.Object.ember(OffsetFun.prototype,{
+		mb.Object.ember(Slice_fromFun.prototype,{
 			toString:function(){
 				return "{(let (list i ) args offset this ) (if-run (= i 0 ) {list } {(offset (rest list ) (- i 1 ) ) } ) }";
 			},
@@ -1254,7 +1272,7 @@
             var list=args.First();
             args=args.Rest();
             var i=args.First();
-            return OffsetFun.base_run(list,i);
+            return Slice_fromFun.base_run(list,i);
             
 			},
 			ftype:function(){
@@ -1288,6 +1306,26 @@
 			}
 		});
 						
+		function OffsetFun(){}
+		OffsetFun.prototype=new Fun();
+		;
+		mb.Object.ember(OffsetFun.prototype,{
+			toString:function(){
+				return "{(first (apply slice-from args ) ) }";
+			},
+			exec:function(args){
+                
+                var list=args.First();
+                args=args.Rest();
+                var i=args.First();
+                return Slice_fromFun.base_run(list,i).First()
+            
+			},
+			ftype:function(){
+				return this.Function_type.user;
+			}
+		});
+						
 		var m=null;
 		
 		m=lib.s.kvs_extend("first",new FirstFun(),m);
@@ -1302,17 +1340,17 @@
 						
 		m=lib.s.kvs_extend("exist?",new IsexistFun(),m);
 						
-		m=lib.s.kvs_extend("log",new LogFun(),m);
-						
-		m=lib.s.kvs_extend("toString",new ToStringFun(),m);
-						
-		m=lib.s.kvs_extend("stringify",new StringifyFun(),m);
-						
 		m=lib.s.kvs_extend("if",new IfFun(),m);
 						
 		m=lib.s.kvs_extend("eq",new EqFun(),m);
 						
 		m=lib.s.kvs_extend("apply",new ApplyFun(),m);
+						
+		m=lib.s.kvs_extend("log",new LogFun(),m);
+						
+		m=lib.s.kvs_extend("toString",new ToStringFun(),m);
+						
+		m=lib.s.kvs_extend("stringify",new StringifyFun(),m);
 						
 		m=lib.s.kvs_extend("type",new TypeFun(),m);
 						
@@ -1347,6 +1385,8 @@
 		m=lib.s.kvs_extend("str-substr",new Str_substrFun(),m);
 						
 		m=lib.s.kvs_extend("str-join",new Str_joinFun(),m);
+						
+		m=lib.s.kvs_extend("str-split",new Str_splitFun(),m);
 						
 		m=lib.s.kvs_extend("str-upper",new Str_upperFun(),m);
 						
@@ -1402,9 +1442,11 @@
 						
 		m=lib.s.kvs_extend("kvs-path-run",new Kvs_path_runFun(),m);
 						
-		m=lib.s.kvs_extend("offset",new OffsetFun(),m);
+		m=lib.s.kvs_extend("slice-from",new Slice_fromFun(),m);
 						
 		m=lib.s.kvs_extend("slice-to",new Slice_toFun(),m);
+						
+		m=lib.s.kvs_extend("offset",new OffsetFun(),m);
 						
 		return m;
 	}
