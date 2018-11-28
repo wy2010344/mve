@@ -1,22 +1,14 @@
 ({
 	data:{
 		SLisp:"../index.js",
-		s:"../s.js",
-		path:{
-			url:"./index.lisp",
-			type:"path"
-		},
-		mve_DOM:{
-			url:"../util/mve_DOM/index.lisp",
-			type:"path"
-		}
+		s:"../s.js"
 	},
 	success:function(){
 		var r=lib.SLisp.run(
-			lib.path,
+			pathOf("./index.lisp"),
 			[
 				{
-					url:lib.mve_DOM,
+					url:pathOf("../util/mve_DOM/index.lisp"),
 					delay_args:[],
 					key:"mve"
 				}
