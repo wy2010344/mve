@@ -90,15 +90,12 @@ mb.task={
         var trans=p.trans||function(xp){
             xp.row(xp.notice);
         };
-        
-        
-        var idx=0;
         var ret=[];
         var cache=[];
         mb.Array.forEach(array, function(row){
             cache.push(row);
         });
-        
+        var idx=0;
         var load=function(){
             //这种方法总是可行的
             if(cache.length!=0){
@@ -107,10 +104,10 @@ mb.task={
                     index:idx,
                     notice:function(val){
                         ret.push(val);
+                        idx++;
                         load();
                     }
                 });
-                idx++;
             }else{
                 //mb.log(array.length,idx,"成功");//竟然有1、0成功的
                 success(ret);
@@ -130,7 +127,7 @@ mb.task={
             }
             */
         };
-      load();
+        load();
     }
 };
 mb.ajax=(function(){
@@ -219,12 +216,12 @@ mb.ajax=(function(){
              * @param {*模块加载完成，如何处理} notice(success)=>function(){}
              * @param {*}baseUrl
              */
-            var ret=function(xp){
-                var value=ret_getUrl(xp.url);
+            var require=function(xp){
+                var value=require_getUrl(xp.url);
                 if(value){
                     xp.notice(value);
                 }else{
-                    ret.getTxt(xp.url,function(txt){
+                    require.getTxt(xp.url,function(txt){
                         var lib={};
                         /**
                          * 从once中获得数据
@@ -236,6 +233,7 @@ mb.ajax=(function(){
                         }catch(ex){
                             mb.ajax.require.dealEX(xp.url,"Eval时",ex);
                         }
+                        /*计算success*/
                         var success;
                         if(typeof(body.success)=='function'){
                             success=function(){
@@ -246,38 +244,37 @@ mb.ajax=(function(){
                                 }
                             };
                             if(body.delay){
+                                /*尚未加载模块*/
                                 success=success();
                             }
                         }else{
+                            /*非函数*/
                             success=body.success;
                         }
-
-                        ret_saveUrl(xp.url,success);
+                        require_saveUrl(xp.url,success);
                         var x_notice=function() {
                             xp.notice(success);
                         };
                         /*结束*/
                         //不再使用once，而是通过data中使用的all将异步库转成标准的require库
+                        /*计算相对路径*/
+                        var pathOf=function(url){
+                            if(url){
+                                return require.calUrl(xp.baseUrl,xp.url,url);
+                            }else{
+                                return xp.url;
+                            }
+                        };
+                        /*模块加载*/
                         if(body.data){
                             xp.baseUrl=xp.baseUrl||mb.ajax.require.baseUrl
                             var arr=[];
-                            /*计算相对路径*/
-                            var calUrl=function(v){
-                                return ret.calUrl(xp.baseUrl,xp.url,v);
-                            };
+                            /*加载单个模块，加载后通知*/
                             var getJS=function(url,notice) {
-                                ret({
+                                require({
                                     baseUrl:xp.baseUrl,
-                                    url:calUrl(url),
+                                    url:pathOf(url),
                                     notice:notice
-                                });
-                            };
-                            var getTxt=function(ajax_text,url,notice) {
-                                ajax_text(calUrl(url),notice);
-                            };
-                            var getJSON=function(ajax_text,url,notice) {
-                                getTxt(ajax_text,url,function(txt) {
-                                    notice(JSON.parse(txt));
                                 });
                             };
                             mb.Object.forEach(body.data, function(v,k){
@@ -288,56 +285,12 @@ mb.ajax=(function(){
                                         next();
                                     };
                                     if(tp=='string'){
+                                        /*基础的模块加载*/
                                         getJS(v,load_success);
                                     }else
                                     if(tp=='function'){
+                                        /*依赖倒置型加载*/
                                         v(load_success);
-                                    }else
-                                    if(tp=='object'){
-                                        if(typeof(v.type)=='function'){
-                                            /*依赖倒置*/
-                                            v.type(calUrl(v.url),load_success);
-                                        }else
-                                        {
-                                            if(v.type=="js"){
-                                                load_success(getJS);
-                                                /*
-                                                *就是mb.ajax.require了
-                                                *如果没有url，就是延迟
-                                                */
-                                            }else
-                                            if(v.type=="path"){
-                                                if(v.url){
-                                                    load_success(calUrl(v.url));
-                                                }else{
-                                                    /*计算路径的函数*/
-                                                    load_success(calUrl);
-                                                }
-                                            }else{
-                                                var ajax_text=v.nocache?ajaxText:ret.getTxt;
-                                                if(v.type=="text"){
-                                                    if(v.url){
-                                                        getTxt(ajax_text,v.url,load_success);
-                                                    }else{
-                                                        load_success(function(url,notice){
-                                                            getTxt(ajax_text,url,notice);
-                                                        });
-                                                    }
-                                                }else
-                                                if(v.type=="json"){
-                                                    if(v.url){
-                                                        getJSON(ajax_text,v.url,load_success);
-                                                    }else{
-                                                        load_success(function(url,notice){
-                                                            getJSON(ajax_text,url,notice);
-                                                        });
-                                                    }
-                                                }else{
-                                                    mb.log("未支持类型")
-                                                    load_success(v.url);
-                                                }
-                                            }
-                                        }
                                     }
                                 });
                             });
@@ -358,8 +311,8 @@ mb.ajax=(function(){
                 if(window.top!=window){
                     try{
                         if(window.top.mb){
-                            ret._getTxt=window.top.mb.ajax.require._getTxt;
-                            ret._saveTxt=window.top.mb.ajax.require._saveTxt;
+                            require._getTxt=window.top.mb.ajax.require._getTxt;
+                            require._saveTxt=window.top.mb.ajax.require._saveTxt;
                         }else{
                             willDef=true;
                         }
@@ -371,16 +324,16 @@ mb.ajax=(function(){
                 }
                 if(willDef){
                     var _required_txt={};
-                    ret._required_txt=_required_txt;
-                    ret._saveTxt=function(k,v){
+                    require._required_txt=_required_txt;
+                    require._saveTxt=function(k,v){
                         _required_txt[k]=v;
                     };
-                    ret._getTxt=function(k){
+                    require._getTxt=function(k){
                         return _required_txt[k];
                     };
                 }
             })();
-            //从远端请求文件，如果是嵌入webView，可能重写
+            /*从远端请求文件，如果是嵌入webView，可能重写*/
             var ajaxText=(function(){
                 var _id=(new Date()).getTime();
                 var _i=0;
@@ -392,26 +345,18 @@ mb.ajax=(function(){
                     });
                 };
             })();
-            ret.calUrl=function(baseUrl,currentUrl,url) {
-                if(url[0]=='.'){
-                    url=mb.util.calAbsolutePath(currentUrl,url);
-                }else{
-                    url=baseUrl+url;
-                }
-                return url;
-            };
             /**
              * 本地缓存，所有地方可用
              */
-            ret.getTxt=function(url,suc){
-                var v=ret._getTxt[url];
-                if(v && v.v==ret._v_){ //存在而且版本号相同
+            require.getTxt=function(url,suc){
+                var v=require._getTxt[url];
+                if(v && v.v==require._v_){ //存在而且版本号相同
                     suc(v.txt);
                 }else{
                     ajaxText(url,function(txt){
-                        ret._saveTxt(url,{
+                        require._saveTxt(url,{
                             txt:txt,
-                            v:ret._v_
+                            v:require._v_
                         });
                         suc(txt);
                     });
@@ -419,20 +364,29 @@ mb.ajax=(function(){
             };
             //不同iframe缓存js函数
             var _required={};
-            ret._required=_required;
-            var ret_saveUrl=function(k,v){
+            require._required=_required;
+            var require_saveUrl=function(k,v){
                 _required[k]=v;
             };
-            var ret_getUrl=function(k){
+            var require_getUrl=function(k){
                 return _required[k];
             };
-            ret.dealEX=function(url,step,ex) {
+            require.calUrl=function(base_url,current_url,url){
+                if(url[0]=='.'){
+                    url=mb.util.calAbsolutePath(current_url,url);
+                }else{
+                    url=base_url+url;
+                }
+                return url;
+            }
+            /*错误处理*/
+            require.dealEX=function(url,step,ex) {
                 mb.log(url);
                 mb.log(step);
                 mb.log(JSON.stringify(ex));
                 throw ex;
             };
-            return ret;
+            return require;
         })()
     };
     return me;
@@ -476,32 +430,36 @@ mb.util={
      * 计算绝对路径
      */
     calAbsolutePath:function(base_url,url){
-        var base=base_url.substr(0,base_url.lastIndexOf('/'))+'/'+url;
-        var nodes=base.split('/');
-        var rets=[];
-        var last=null;
-        for(var i=0;i<nodes.length;i++){
-            var node=nodes[i];
-            if(node=='..'){
-                if(last=='..'){
-                    rets.push(node);
+        if(url[0]=="."){
+            var base=base_url.substr(0,base_url.lastIndexOf('/'))+'/'+url;
+            var nodes=base.split('/');
+            var rets=[];
+            var last=null;
+            for(var i=0;i<nodes.length;i++){
+                var node=nodes[i];
+                if(node=='..'){
+                    if(last=='..'){
+                        rets.push(node);
+                    }else
+                    if(last==null){
+                        rets.push(node);
+                        last=node;
+                    }else{
+                        rets.pop();
+                        last=rets[rets.length-1];
+                    }
                 }else
-                if(last==null){
+                if(node=='.'){
+                    //忽略
+                }else{
                     rets.push(node);
                     last=node;
-                }else{
-                    rets.pop();
-                    last=rets[rets.length-1];
                 }
-            }else
-            if(node=='.'){
-                //忽略
-            }else{
-                rets.push(node);
-                last=node;
             }
+            return rets.join('/');
+        }else{
+            return url;
         }
-        return rets.join('/');
     }
 };
 mb.browser=(function(){
