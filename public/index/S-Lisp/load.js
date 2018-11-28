@@ -4,33 +4,30 @@
 		parse:"./parse.js",
 		interpret:"./interpret.js",
 		s:"./s.js",
-		core:{
-			url:"./core.js",
-			type:function(url,notice) {
-				if(mb.ext){
-					notice(function(path) {
-						return mb.ext(
-							"readTxt",
-							{
-								path:path
-							}
-						);
-					});
-				}else{
-					mb.ajax.text({
-						url:url,
-						success:function(text){
-							var core=JSON.parse(text);
-							notice(function(path) {
-								var i=path.indexOf("S-Lisp");
-								if(i>-1){
-									path="index/"+path.substr(i);
-								}
-								return core[path];
-							});
+		core:function(notice){
+			if(mb.ext){
+				notice(function(path) {
+					return mb.ext(
+						"readTxt",
+						{
+							path:path
 						}
-					});
-				}
+					);
+				});
+			}else{
+				mb.ajax.text({
+					url:pathOf("./core.js"),
+					success:function(text){
+						var core=JSON.parse(text);
+						notice(function(path) {
+							var i=path.indexOf("S-Lisp");
+							if(i>-1){
+								path="index/"+path.substr(i);
+							}
+							return core[path];
+						});
+					}
+				});
 			}
 		}
 	},
@@ -61,7 +58,7 @@
 										"load",
 										function(node){
 											return load(
-												mb.ajax.require.calUrl("",path,node.First()),
+												mb.util.calAbsolutePath(path,node.First()),
 												scope,
 												deal
 											);
@@ -75,7 +72,7 @@
 												if(node==null){
 													return path;
 												}else{
-													return mb.ajax.require.calUrl("",path,node.First());
+													return mb.util.calAbsolutePath(path,node.First());
 												}
 											}
 										),
@@ -124,7 +121,7 @@
 			if(mb.ext){
 				xurl=mb.ext("lib-path",{});
 			}
-			url=mb.ajax.require.calUrl("",xurl,url);
+			url=mb.util.calAbsolutePath(xurl,url);
 			return url;
 		};
 		return function(base_scope,defs,deal) {

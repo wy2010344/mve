@@ -2,23 +2,15 @@
 	data:{
 		SLisp:"./S-Lisp/index.js",
 		interpret:"./S-Lisp/interpret.js",
-		s:"./S-Lisp/s.js",
-		mve_DOM:{
-			url:"./S-Lisp/util/mve_DOM/index.lisp",
-			type:"path"
-		},
-		sHtml:{
-			url:"./S-Lisp/index/s-html.lisp",
-			type:"path"
-		}
+		s:"./S-Lisp/s.js"
 	},
 	success:function() {
 		if(cp.query.path){
 			var r=lib.SLisp.run(
-				lib.sHtml,
+				pathOf("./S-Lisp/index/s-html.lisp"),
 				[
 					{
-						url:lib.mve_DOM,
+						url:pathOf("./S-Lisp/util/mve_DOM/index.lisp"),
 						delay_args:[],
 						key:"mve"
 					},

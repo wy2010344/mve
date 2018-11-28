@@ -70,6 +70,11 @@
                     obj.init();
                 }
                 window.onresize();
+                if(obj.destroy){
+                    mb.DOM.addEvent(window,"unload",function(){
+                        obj.destroy();
+                    });
+                }
             }else{
                 root.appendChild(obj);
             }
