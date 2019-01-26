@@ -740,6 +740,12 @@ mb.Array={
         }
         return ret;
     },
+    reduce:function(array,func,init){
+        for(var i=0;i<array.length;i++){
+            init=func(init,array[i],i,array);
+        }
+        return init;
+    },
     remove:function(array,row){
         var index=mb.Array.indexOf(array,row);
         array.splice(index,1);
