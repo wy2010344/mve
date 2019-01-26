@@ -26,12 +26,14 @@
                 f(key,v);
             });
         };
-        var bindMap=function(watch,map,f){
-            if(map){
-                mb.Object.forEach(map,function(v,k){
-                    bindKV(watch,k,v,f);
-                });
-            }
+        var bindMap=function(watch){
+            return function(map,f){
+                if(map){
+                    mb.Object.forEach(map,function(v,k){
+                        bindKV(watch,k,v,f);
+                    });
+                }
+            };
         };
         var bindEvent=function(map,f){
             if(map){
@@ -40,19 +42,20 @@
                 });
             }
         };
-
-        var build_locsize=function(locsize,json,fun) {
+        var if_bind=function(watch) {
+            return function(value,f){
+                if(value){
+                    bind(watch,value,f);
+                } 
+            };
+        };
+        var build_locsize=function(locsize,o,fun) {
             mb.Array.forEach(locsize, function(str){
-                var vf=json[str];
+                var vf=o[str];
                 if(vf!=undefined){
                     fun(str,vf)
                 }
             });
-        };
-        var if_bind=function(watch,value,f) {
-            if(value){
-                bind(watch,value,f);
-            }
         };
         var extendOr=function(x,xs) {
             if(x){
@@ -67,131 +70,104 @@
             };
         };
 
-        return function(DOM,buildChildren,locsize){
-            var ParseFunc=function(func,watch,inits,destroys,mvvm){
+        var add_k=function(k,id,obj){
+            if (id) {
+                var old=k[id];
+                if(old!=null){
+                    mb.log("已经存在重复的定义"+id,old,"不能添加",obj);
+                }else{
+                    k[id]=obj;
+                }
+            }
+            return k;
+        };
+        return function(locsize,p){//DOM,buildChildren,locsize
+            var ParseFun=function(x,o){
                 var change=mb.cache();
-                watch({
+                x.watch({
                     exp:function(){
-                       return func(); 
+                       return o.json(); 
                     },
                     after:function(jo){
-                        var newObj=mvvm(function(){
+                        var newObj=x.mve(function(){
                             return {
                                 element:jo
                             };
                         });
                         var obj=change();
+                        change(newObj);
                         if(obj){
                             //非第一次生成
-                            DOM.replaceWith(obj.getElement(),newObj.getElement());
-                            if(obj.destroy){
-                                obj.destroy();
-                            }
-                            if(newObj.init){
-                                newObj.init();
-                            }
+                            p.replaceWith(obj.getElement(),newObj.getElement());
+                            obj.destroy();
+                            newObj.init();
                         }
-                        change(newObj);
                     }
                 });
-                //第一次生成
-                extendOr(change().init,inits);
                 //最后一个销毁
-                destroys.push(function() {
+                o.destroys.push(function() {
                     var destroy=change().destroy||mb.emptyFunc;
                     destroy();
                 });
-                return change;
+                o.inits.push(change().init);
+                return {
+                    change:change,
+                    inits:o.inits,
+                    destroys:o.destroys
+                };
             };
-            var ParseEL=function(json,watch,k,inits,destroys,mvvm){
-                if(!json){
-                    json="";
-                }
+            var Parse=function(x,o){
+                var json=o.json||"";
                 if(typeof(json)=="function"){
-                    return ParseFunc(json,watch,inits,destroys,mvvm)().getElement();
+                    var pf=ParseFun(x,o);
+                    var obj=pf.change();
+                    return {
+                        element:obj.getElement(),
+                        k:o.k,
+                        inits:pf.inits,
+                        destroys:pf.destroys
+                    };
                 }else
                 if(typeof(json)!="object"){
-                    return DOM.createTextNode(json);
+                    return p.createTextNode(x,o);
                 }else{
-                    var el;
-                    var type=json.type;
-                    var children=json.children;
-                    var id=json.id;
+                    var type=o.json.type;
+                    var id=o.json.id;
                     if(typeof(type)=="string"){
-                        el=DOM.createElement(type,json.NS);
-                        if(id){
-                            k[id]=el;
-                        }
-                        if(children){
-                            if(typeof(children)=="object"){
-                                if(mb.Array.isArray(children)){
-                                    mb.Array.forEach(children,function(child,i){
-                                        DOM.appendChild(
-                                            el,
-                                            ParseEL(child,watch,k,inits,destroys,mvvm)
-                                        );
-                                    });
-                                }else{
-                                    /**
-                                     * v-for语句
-                                     */
-                                    buildChildren(el,children,inits,destroys,mvvm);
-                                }
-                            }
-                        }
-                        //
+                        var obj=p.buildElement(x,o);
+                        var el=obj.element;
                         build_locsize(locsize,json,function(str,vf){
-                            bind(watch,vf,function(v){
-                                DOM.style(el,str,v+"px");
+                            bind(x.watch,vf,function(v){
+                                p.locsize(el,str,v);
                             });
                         });
+                        p.makeUpElement(el,x,o.json);
+                        return {
+                            element:el,
+                            k:add_k(obj.k,id,el),
+                            inits:obj.inits,
+                            destroys:obj.destroys
+                        };
                     }else{
                         var obj=type(json.params||{});
-                        if(id){
-                            k[id]=obj;
-                        }
-                        el=obj.getElement();
-                        //
+                        var el=obj.getElement();
                         build_locsize(locsize,json,function(str,vf) {
                             var ef=obj[str]||mb.emptyFunc;//兼容jsdom
-                            bind(watch,vf,function(v){
+                            bind(x.watch,vf,function(v){
                                 ef(v);
-                                DOM.style(el,str,v+"px");
+                                p.locsize(el,str,v);
                             });
                         });
-                        extendOr(obj.init,inits);
-                        extendOr(obj.destroy,destroys);
+                        o.inits.push(obj.init);
+                        o.destroys.push(obj.destroy);
+                        p.makeUpElement(el,x,o.json);
+                        return {
+                            element:el,
+                            k:add_k(o.k,id,obj),
+                            inits:o.inits,
+                            destroys:o.destroys
+                        };
                     }
-                    
-                    bindMap(watch,json.attr,function(key,value){
-                        DOM.attr(el,key,value);
-                    });
-                    
-                    bindMap(watch,json.prop,function(key,value){
-                        DOM.prop(el,key,value);
-                    });
-                    
-                    bindMap(watch,json.style,function(key,value){
-                        DOM.style(el,key,value);
-                    });
-                    
-                    bindEvent(json.action,function(key,value){
-                        DOM.action(el,key,value);
-                    });
-                    
-                    if_bind(watch,json.text,function(value){
-                        DOM.text(el,value);
-                    });
-                    
-                    if_bind(watch,json.value,function(value){
-                        DOM.value(el,value);
-                    });
-
-                    if_bind(watch,json.html,function(html){
-                        DOM.html(el,html);
-                    });
-                    
-                    return el;
                 };
             };
         
@@ -199,27 +175,46 @@
              * 不再使用getElement，直接传入父节点。
              * 完全不知道什么时候结束的。
              */
-            return function(json,watch,k,mvvm){
-                var inits=[];
-                var destroys=[];
+            return function(json,watch,mve,k){
+                /*不变的*/
+                var x={
+                    Parse:Parse,
+                    watch:watch,
+                    mve:mve,
+                    bindEvent:bindEvent,
+                    bindMap:bindMap(watch),
+                    if_bind:if_bind(watch)
+                };
+                /*变化的*/
+                var o={
+                    json:json,
+                    k:{},
+                    inits:[],
+                    destroys:[]
+                };
                 var getElement;
-                if(typeof(json)=='function'){
+                if(typeof(o.json)=='function'){
                     //根是function，要更新最新的el。
-                    var obj=ParseFunc(json,watch,inits,destroys,mvvm);
-                    getElement=function() {
-                        return obj().getElement();
+                    var vm=ParseFun(x,o);
+                    return {
+                        getElement:function(){
+                            return vm.change().getElement();
+                        },
+                        k:{},
+                        init:forEach_run(vm.inits),
+                        destroy:forEach_run(vm.destroys)
                     };
                 }else{
-                    var el=ParseEL(json,watch,k,inits,destroys,mvvm);
-                    getElement=function(){
-                        return el;
+                    var vm=Parse(x,o);
+                    return {
+                        getElement:function(){
+                            return vm.element;
+                        },
+                        k:vm.k,
+                        init:forEach_run(vm.inits),
+                        destroy:forEach_run(vm.destroys)
                     };
                 }
-                return {
-                    getElement:getElement,
-                    init:forEach_run(inits),
-                    destroy:forEach_run(destroys)
-                };
             };
         }
     }
