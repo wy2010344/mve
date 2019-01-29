@@ -11,7 +11,7 @@
                     },
                     mve:function(notice){
                         mb.ajax.require({
-                            url:cp.libUrl()+"mve/index.js",
+                            url:cp.libUrl()+"mve-out-DOM/index.js",
                             notice:notice,
                             baseUrl:cp.libUrl()
                         });

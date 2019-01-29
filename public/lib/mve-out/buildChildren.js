@@ -33,8 +33,8 @@
                 return value;
             };
         };
-        var p_before=p.before||mb.emptyFunc;
-        var p_after=p.after||mb.emptyFunc;
+        var p_before=p.before||mb.Function.quote.one;
+        var p_after=p.after||mb.Function.quote.one;
         var buildChildren=function(pel,x,o){
             var children=o.json[p.key];
             if(children){
