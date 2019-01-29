@@ -1,7 +1,34 @@
 'use strict';
 window.mb={};
-mb.emptyFunc=function(item){return item;};
-var emptyFunc=mb.emptyFunc;
+mb.Function=(function(){
+    var quote=function(){
+        return function(a){
+            return a;
+        }
+    };
+    quote.one=quote();
+    var as_null=function(){
+        return function(){
+            return null;
+        };
+    };
+    as_null.one=as_null();
+    var list=function(){
+        return function(){
+            var r=[];
+            for(var i=0;i<arguments.length;i++){
+                r.push(arguments[i]);
+            }
+            return r;
+        };
+    };
+    list.one=list();
+    return {
+        quote:quote,
+        list:list,
+        as_null:as_null
+    };
+})();
 mb.log=(function(){
     if(window.console && window.console.log){
         try{
@@ -10,12 +37,17 @@ mb.log=(function(){
             return log;
         }catch(e){
             mb.isIE=true;
-            return mb.emptyFunc;
+            return mb.Function.list.one;
         }
     }else{
-        return mb.emptyFunc;
+        return mb.Function.list.one;
     }
 })();
+mb.emptyFunc=function(item){
+    mb.log("请调用mb.Function.quote/as_null/list或其one属性");
+    return item;
+};
+var emptyFunc=mb.emptyFunc;
 mb.cache=function(obj) {
     return function() {
         if(arguments.length==0){
@@ -38,7 +70,7 @@ mb.task={
      * @param success
      */
     all:function(p){
-        var success=p.success||mb.emptyFunc;
+        var success=p.success||mb.Function.as_null.one;
         var data=p.data||{};
         var trans=p.trans||function(xp){
             xp.value(xp.notice);
@@ -86,7 +118,7 @@ mb.task={
      */
     queue:function(p){
         var array=p.array||[];
-        var success=p.success||mb.emptyFunc;
+        var success=p.success||mb.Function.as_null.one;
         var trans=p.trans||function(xp){
             xp.row(xp.notice);
         };
@@ -179,7 +211,7 @@ mb.ajax=(function(){
     };
     var me={
         text:function(p) {
-            var success=p.success||mb.emptyFunc;
+            var success=p.success||mb.Function.as_null.one;
             p.success=function(xhr) {
                 success(xhr.responseText);
             }
@@ -716,7 +748,7 @@ mb.Array={
                 return ary;
             };
         }else{
-            return mb.emptyFunc;
+            return mb.Function.as_null.one;
         }
     })(),
     forEach:function(array,func){
@@ -763,6 +795,19 @@ mb.Object={
             ret[key]=func(object[key],key);
         }
         return ret;
+    },
+    reduce:function(obj,func,init){
+        for(var k in obj){
+            init=func(init,obj[k],k);
+        }
+        return init;
+    },
+    toArray:function(obj,func){
+        var r=[];
+        for(var k in obj){
+            r.push(func(obj[k],k,obj));
+        }
+        return r;
     },
     ember:function(me,obj){
         for(var key in obj){
