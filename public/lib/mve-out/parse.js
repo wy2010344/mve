@@ -106,7 +106,7 @@
                 });
                 //最后一个销毁
                 o.destroys.push(function() {
-                    var destroy=change().destroy||mb.emptyFunc;
+                    var destroy=change().destroy||mb.Function.quote.one;
                     destroy();
                 });
                 o.inits.push(change().init);
@@ -152,7 +152,7 @@
                         var obj=type(json.params||{});
                         var el=obj.getElement();
                         build_locsize(locsize,json,function(str,vf) {
-                            var ef=obj[str]||mb.emptyFunc;//兼容jsdom
+                            var ef=obj[str]||mb.Function.quote.one;//兼容jsdom
                             bind(x.watch,vf,function(v){
                                 ef(v);
                                 p.locsize(el,str,v);
