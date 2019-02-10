@@ -16,6 +16,41 @@
 		locsize [
 			width height left top right bottom
 		]
+		bindKV {
+			(let (bind key value f) args)
+			(bind value {
+					(f key 
+						(first args)
+					)
+				}
+			)
+		} 
+		bindMap {
+			(let (bind map f) args)
+			(if-run (exist? map)
+				{
+					(kvs-forEach map 
+						{
+							(let (v k) args)
+							(bindKV bind k v f)
+						}
+					)
+				}
+			)
+		} 
+		bindEvent {
+			(let (map f) args)
+			(if-run (exist? map)
+				{
+					(kvs-forEach map 
+						{
+							(let (v k) args)
+							(f k v)
+						}
+					)
+				}
+			)
+		} 
 	)
 	(util.Exp
 		locsize
@@ -58,21 +93,21 @@
 				makeUpElement {
 					(let (e x json) args)
 					`attr属性`
-					(x.bindMap json.attr 
+					(bindMap x.bind json.attr 
 						{
 							(let (k v) args)
 							(DOM.attr e k v)
 						}
 					)
 					`style属性`
-					(x.bindMap json.style
+					(bindMap x.bind json.style
 						{
 							(let (k v) args)
 							(DOM.style e k v)
 						}
 					)
 					`动作`
-					(x.bindEvent json.event
+					(bindEvent json.event
 						{
 							(let (k v) args)
 							(DOM.event e k v)

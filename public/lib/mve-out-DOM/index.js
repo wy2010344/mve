@@ -18,6 +18,25 @@
             appendChild:lib.DOM.appendChild,
             removeChild:lib.DOM.removeChild
         });
+        var bindEvent=function(map,f){
+            if(map){
+                mb.Object.forEach(map,function(v,k){
+                    f(k,v);
+                });
+            }
+        };
+        var bindKV=function(bind,key,value,f){
+            bind(value,function(v){
+                f(key,v);
+            });
+        };
+        var bindMap=function(bind,map,f){
+            if(map){
+                mb.Object.forEach(map,function(v,k){
+                    bindKV(bind,k,v,f);
+                });
+            }
+        };
         return lib.exp(
             lib.parse(
                 lib.mve.locsize,
@@ -45,19 +64,19 @@
                         };
                     },
                     makeUpElement:function(e,x,json){ 
-                        x.bindMap(json.attr,function(key,value){
+                        bindMap(x.bind,json.attr,function(key,value){
                             lib.DOM.attr(e,key,value);
                         });
                         
-                        x.bindMap(json.prop,function(key,value){
+                        bindMap(x.bind,json.prop,function(key,value){
                             lib.DOM.prop(e,key,value);
                         });
                         
-                        x.bindMap(json.style,function(key,value){
+                        bindMap(x.bind,json.style,function(key,value){
                             lib.DOM.style(e,key,value);
                         });
                         
-                        x.bindEvent(json.action,function(key,value){
+                        bindEvent(json.action,function(key,value){
                             lib.DOM.action(e,key,value);
                         });
                         

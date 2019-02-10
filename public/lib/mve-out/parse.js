@@ -6,46 +6,27 @@
      */
     delay:true,
     success:function(){
-        var bind=function(watch,value,f){
-            if(typeof(value)=="function"){
-                //observe
-                watch({
-                    exp:function(){
-                        return value();
-                    },
-                    after:function(v){
-                        f(v);
-                    }
-                });
-            }else{
-                f(value);
-            }
-        };
-        var bindKV=function(watch,key,value,f){
-            bind(watch,value,function(v){
-                f(key,v);
-            });
-        };
-        var bindMap=function(watch){
-            return function(map,f){
-                if(map){
-                    mb.Object.forEach(map,function(v,k){
-                        bindKV(watch,k,v,f);
+        var bindFactory=function(watch){
+            return function(value,f){
+                if(typeof(value)=="function"){
+                    //observe
+                    watch({
+                        exp:function(){
+                            return value();
+                        },
+                        after:function(v){
+                            f(v);
+                        }
                     });
+                }else{
+                    f(value);
                 }
             };
         };
-        var bindEvent=function(map,f){
-            if(map){
-                mb.Object.forEach(map,function(v,k){
-                    f(k,v);
-                });
-            }
-        };
-        var if_bind=function(watch) {
+        var if_bind=function(bind) {
             return function(value,f){
-                if(value){
-                    bind(watch,value,f);
+                if(value!=undefined){
+                    bind(value,f);
                 } 
             };
         };
@@ -56,11 +37,6 @@
                     fun(str,vf)
                 }
             });
-        };
-        var extendOr=function(x,xs) {
-            if(x){
-                xs.push(x);
-            }
         };
         var forEach_run=function(array) {
             return function() {
@@ -137,7 +113,7 @@
                         var obj=p.buildElement(x,o);
                         var el=obj.element;
                         build_locsize(locsize,json,function(str,vf){
-                            bind(x.watch,vf,function(v){
+                            x.bind(vf,function(v){
                                 p.locsize(el,str,v);
                             });
                         });
@@ -153,7 +129,7 @@
                         var el=obj.getElement();
                         build_locsize(locsize,json,function(str,vf) {
                             var ef=obj[str]||mb.Function.quote.one;//兼容jsdom
-                            bind(x.watch,vf,function(v){
+                            x.bind(vf,function(v){
                                 ef(v);
                                 p.locsize(el,str,v);
                             });
@@ -177,13 +153,13 @@
              */
             return function(json,watch,mve,k){
                 /*不变的*/
+                var bind=bindFactory(watch);
                 var x={
                     Parse:Parse,
                     watch:watch,
                     mve:mve,
-                    bindEvent:bindEvent,
-                    bindMap:bindMap(watch),
-                    if_bind:if_bind(watch)
+                    bind:bind,
+                    if_bind:if_bind(bind)
                 };
                 /*变化的*/
                 var o={
@@ -192,7 +168,6 @@
                     inits:[],
                     destroys:[]
                 };
-                var getElement;
                 if(typeof(o.json)=='function'){
                     //根是function，要更新最新的el。
                     var vm=ParseFun(x,o);
