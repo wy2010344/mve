@@ -4,7 +4,7 @@
     },
     /**
      * 改变行的data()，需要逆向改变数组
-
+     no_cache:false
      Value
      Watcher
      key
@@ -25,6 +25,9 @@
                     obj:mve(function(me){
                         return {
                             element:function(){
+                                /**
+                                尽量避免repeat的生成受模型的影响，否则导致全生成。
+                                */
                                 return repeat(o);
                             }
                         };
@@ -62,6 +65,7 @@
                         var c_inits=[];
                         var isInit=false; 
                         var bc=lib.nokey({
+                            no_cache:p.no_cache,
                             build:build(children.repeat,x.mve),
                             after:function(value){
                                 var init=value.obj.init;
