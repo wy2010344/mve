@@ -8,7 +8,7 @@
 			pathOf("./index.lisp"),
 			[
 				{
-					url:pathOf("../util/mve_DOM/index.lisp"),
+					url:"lib-path/mve/DOM/index.lisp",
 					delay_args:[],
 					key:"mve"
 				}
