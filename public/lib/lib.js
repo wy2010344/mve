@@ -763,20 +763,50 @@ mb.Array={
         }
         return ret;
     },
-    indexOf:function(array,row){
-        var ret=-1;
-        for(var i=0;i<array.length;i++){
-            if(row==array[i]){
-                ret=i;
-            }
-        }
-        return ret;
-    },
     reduce:function(array,func,init){
         for(var i=0;i<array.length;i++){
             init=func(init,array[i],i,array);
         }
         return init;
+    },
+    find_index:function(array,fun){
+        var ret=-1;
+        for(var i=0;i<array.length && ret==-1;i++){
+            if(fun(array[i])){
+                ret=i;
+            }
+        }
+        return ret;
+    },
+    indexOf:function(array,row){
+        return mb.Array.find_index(array,function(c){
+            return row==c;
+        });
+    },
+    find_row:function(array,fun){
+        return array[mb.Array.find_index(array,fun)];
+    },
+    find_indexes:function(array,fun){
+        var ret=[];
+        for(var i=0;i<array.length;i++){
+            if(fun(array[i])){
+                ret.push(i);
+            }
+        }
+        return ret;
+    },
+    indexesOf:function(array,row){
+        return mb.Array.find_indexes(array,function(c){
+            return row==c;
+        });
+    },
+    find_rows:function(array,fun){
+        var ret=[];
+        var indexes=mb.Array.find_indexes(array,fun);
+        for(var i=0;i<indexes.length;i++){
+            ret.push(array[indexes[i]]);
+        }
+        return ret;
     },
     remove:function(array,row){
         var index=mb.Array.indexOf(array,row);
