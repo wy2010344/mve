@@ -1,9 +1,4 @@
 ({
-    /**
-     * 不再使用getElement，而从参数传入父节点
-     * DOM
-     * buildChildren;
-     */
     delay:true,
     success:function(){
         var bindFactory=function(watch){
@@ -38,14 +33,6 @@
                 }
             });
         };
-        var forEach_run=function(array) {
-            return function() {
-                mb.Array.forEach(array,function(row){
-                    row();
-                });
-            };
-        };
-
         var add_k=function(k,id,obj){
             if (id) {
                 var old=k[id];
@@ -57,7 +44,7 @@
             }
             return k;
         };
-        return function(locsize,p){//DOM,buildChildren,locsize
+        return function(locsize,p){
             var ParseFun=function(x,o){
                 var change=mb.cache();
                 x.watch({
@@ -69,12 +56,12 @@
                             return {
                                 element:jo
                             };
-                        });
+                        })(o.e);
                         var obj=change();
                         change(newObj);
                         if(obj){
                             //非第一次生成
-                            p.replaceWith(obj.getElement(),newObj.getElement());
+                            o.e.replaceChild(o.e,obj.getElement(),newObj.getElement());
                             obj.destroy();
                             newObj.init();
                         }
@@ -92,18 +79,8 @@
                     destroys:o.destroys
                 };
             };
-            var Parse=function(x,o){
+            var ParseObject=function(x,o){
                 var json=o.json||"";
-                if(typeof(json)=="function"){
-                    var pf=ParseFun(x,o);
-                    var obj=pf.change();
-                    return {
-                        element:obj.getElement(),
-                        k:o.k,
-                        inits:pf.inits,
-                        destroys:pf.destroys
-                    };
-                }else
                 if(typeof(json)!="object"){
                     return p.createTextNode(x,o);
                 }else{
@@ -125,7 +102,7 @@
                             destroys:obj.destroys
                         };
                     }else{
-                        var obj=type(json.params||{});
+                        var obj=type(json.params||{})(o.e);
                         var el=obj.getElement();
                         build_locsize(locsize,json,function(str,vf) {
                             var ef=obj[str]||mb.Function.quote.one;//兼容jsdom
@@ -146,12 +123,20 @@
                     }
                 };
             };
-        
-            /**
-             * 不再使用getElement，直接传入父节点。
-             * 完全不知道什么时候结束的。
-             */
-            return function(json,watch,mve,k){
+            var Parse=function(x,o){
+                if(typeof(o.json)=="function"){
+                    var vm=ParseFun(x,o);
+                    return {
+                        element:vm.change().getElement(),
+                        k:o.k,
+                        inits:vm.inits,
+                        destroys:vm.destroys
+                    };
+                }else{
+                    return ParseObject(x,o);
+                }
+            };
+            return function(e,json,watch,mve,k){
                 /*不变的*/
                 var bind=bindFactory(watch);
                 var x={
@@ -164,6 +149,7 @@
                 /*变化的*/
                 var o={
                     json:json,
+                    e:e,
                     k:{},
                     inits:[],
                     destroys:[]
@@ -176,21 +162,21 @@
                             return vm.change().getElement();
                         },
                         k:{},
-                        init:forEach_run(vm.inits),
-                        destroy:forEach_run(vm.destroys)
+                        inits:vm.inits,
+                        destroys:vm.destroys
                     };
                 }else{
-                    var vm=Parse(x,o);
+                    var vm=ParseObject(x,o);
                     return {
                         getElement:function(){
                             return vm.element;
                         },
                         k:vm.k,
-                        init:forEach_run(vm.inits),
-                        destroy:forEach_run(vm.destroys)
+                        inits:vm.inits,
+                        destroys:vm.destroys
                     };
                 }
             };
-        }
+        };
     }
-});
+})
