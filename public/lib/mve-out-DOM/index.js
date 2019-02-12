@@ -1,9 +1,10 @@
 ({
     data:{
         mve:"../mve/index.js",
-        exp:"../mve-out/exp.js",
+        exp:"../mve/exp.js",
+        parse:"../mve/parse.js",
+        
         buildChildren:"../mve-out/buildChildren.js",
-        parse:"../mve-out/parse.js",
         DOM:"./DOM.js"
     },
     success:function(){
@@ -37,6 +38,9 @@
                 });
             }
         };
+        var replaceChild=function(e,old_el,new_el){
+            lib.DOM.replaceWith(old_el,new_el);
+        };
         return lib.exp(
             lib.parse(
                 lib.mve.locsize,
@@ -55,7 +59,10 @@
                     replaceWith:lib.DOM.replaceWith,
                     buildElement:function(x,o){
                         var e=lib.DOM.createElement(o.json.type,o.json.NS);
-                        var obj=buildChildren(e,x,o);
+                        var obj=buildChildren({
+                            pel:e,
+                            replaceChild:replaceChild
+                        },x,o);
                         return {
                             element:e,
                             k:obj.k,

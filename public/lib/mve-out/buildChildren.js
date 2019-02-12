@@ -14,31 +14,35 @@
      after 可选
      */
     success:function(p){
-        var build=function(repeat,mve){
+        var build=function(e,repeat,mve){
             return function(row,i){
                 var o={
                     data:p.Value(row),
                     index:p.Value(i)
                 };
+                var fn=mve(function(me){
+                    return {
+                        element:function(){
+                            /**
+                            尽量避免repeat的生成受模型的影响，否则导致全生成。
+                            */
+                            return repeat(o);
+                        }
+                    };
+                });
                 var value={
                     row:o,
-                    obj:mve(function(me){
-                        return {
-                            element:function(){
-                                /**
-                                尽量避免repeat的生成受模型的影响，否则导致全生成。
-                                */
-                                return repeat(o);
-                            }
-                        };
-                    })
+                    obj:fn(e)
                 };
                 return value;
             };
         };
         var p_before=p.before||mb.Function.quote.one;
         var p_after=p.after||mb.Function.quote.one;
-        var buildChildren=function(pel,x,o){
+        /**
+        e{pel,replaceChild}
+        */
+        var buildChildren=function(e,x,o){
             var children=o.json[p.key];
             if(children){
                 if(typeof(children)=='object') {
@@ -49,9 +53,14 @@
                         return mb.Array.reduce(
                             children,
                             function(init,child){
-                                init.json=child;
-                                var obj=x.Parse(x,init);
-                                p.appendChild(pel,obj.element);
+                                var obj=x.Parse(x,{
+                                    json:child,
+                                    e:e,
+                                    k:init.k,
+                                    inits:init.inits,
+                                    destroys:init.destroys
+                                });
+                                p.appendChild(e.pel,obj.element);
                                 return obj;
                             },
                             {
@@ -66,7 +75,7 @@
                         var isInit=false; 
                         var bc=lib.nokey({
                             no_cache:p.no_cache,
-                            build:build(children.repeat,x.mve),
+                            build:build(e,children.repeat,x.mve),
                             after:function(value){
                                 var init=value.obj.init;
                                 if(isInit){
@@ -84,29 +93,29 @@
                                 value.obj.destroy();
                             },
                             appendChild:function(value){
-                                p.appendChild(pel,value.obj.getElement());
+                                p.appendChild(e.pel,value.obj.getElement());
                             },
                             removeChild:function(value){
-                                p.removeChild(pel,value.obj.getElement());
+                                p.removeChild(e.pel,value.obj.getElement());
                             }
                         });
                         /*
                         暂时不考虑区分 
                         if (children.key) {
-                            //bc=lib.key(p,parseRow,buildOne,pel,children);
+                            //bc=lib.key(p,parseRow,buildOne,e.pel,children);
                         }else{
                         }
                         */
                         var watch=p.Watcher({
                             before:function(){
-                                p_before(pel);
+                                p_before(e.pel);
                             },
                             exp:function(){
                                 return children.array();
                             },
                             after:function(array){
                                 bc.after(array);
-                                p_after(pel);
+                                p_after(e.pel);
                             }
                         });
                         //初始化、销毁附加到全局
@@ -126,6 +135,8 @@
                             destroys:destroys
                         };
                     }
+                }else{
+                    mb.log("错误children应该是字典或列表");
                 }
             }else{
                 return o;

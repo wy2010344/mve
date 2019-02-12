@@ -50,6 +50,15 @@
                 rpd=10;
             }
             root.style.padding=rpd+"px";
+            if(typeof(obj)=="function"){
+                obj=obj({
+                    pel:root,
+                    replaceWith:function(e,old_el,new_el){
+                        mb.log("尚未实现");
+                    }
+                });
+            }
+
             if(obj.getElement){
                 //传统的jsdom
                 var el=obj.getElement();
