@@ -21,6 +21,9 @@
                     pN.replaceChild(newEL,el);
                 }
             },
+            insertChildBefore:function(pel,new_el,old_el){
+                pel.insertBefore(new_el,old_el);
+            },
             removeChild:function(el,child){
                 el.removeChild(child);
             },
