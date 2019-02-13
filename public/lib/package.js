@@ -2,7 +2,7 @@
 
 	return {
 		dependences:{
-			"mve-out-DOM":1
+			"mve-DOM":1
 		}
 	}
 })()

@@ -47,6 +47,74 @@
                  ret._dep_=dep;
                  return ret;
              },
+             ArrayModel:(function(){
+                function ArrayModel(array){
+                    if (array) {
+                        this._array=array;
+                    }else{
+                        this._array=[];
+                    }
+                    this._views=[];
+                };
+                mb.Object.ember(ArrayModel.prototype,{
+                    addView:function(view){
+                        this._views.push(view);
+                    },
+                    removeView:function(view){
+                        var index=mb.Array.indexOf(this._views,view);
+                        if (index!=-1) {
+                            this._views.splice(index,1);
+                        }
+                    },
+                    insert:function(index,row){
+                        this._array.splice(index,0,row);
+                        mb.Array.forEach(this._views,function(view){
+                            view.insert(index,row);
+                        });
+                    },
+                    remove:function(index){
+                        var row=this.get(index);
+                        this._array.splice(index,1);
+                        mb.Array.forEach(this._views,function(view){
+                            view.remove(index);
+                        });
+                        return row;
+                    },
+                    move:function(){
+                        /*视图的移动，需要吗？*/
+                    },
+                    size:function(){
+                        return this._array.length;
+                    },
+                    get:function(index){
+                        return this._array[index];
+                    },
+                    shift:function(){
+                        return this.remove(0);
+                    },
+                    unshift:function(row){
+                        return this.insert(0,row)
+                    },
+                    pop:function(){
+                        return this.remove(this.size()-1);
+                    },
+                    push:function(row){
+                        return this.insert(this.size(),row);
+                    },
+                    indexOf:function(row){
+                        var index=-1;
+                        for(var i=0;i<this.size() && index<0;i++){
+                            if(this.get(i)==row){
+                                index=i;
+                            }
+                        }
+                        return index;
+                    }
+                });
+                return function(array){
+                    return new ArrayModel(array);
+                };
+             })(),
              Watcher:(function(){      
                  var uid=0;
                  window._watcher={};//监视Watcher是否销毁。

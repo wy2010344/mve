@@ -34,6 +34,7 @@
                  */
                  var user_params={
                     Value:lib.mve.Value,
+                    ArrayModel:lib.mve.ArrayModel,
                     Watch:Watch,
                     Cache:Cache
                  };
