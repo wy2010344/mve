@@ -54,8 +54,8 @@
                     if(array.length<views.length){
                         //从视图上移除
                         while(views.length!=array.length){
-                            var value=views.pop();
-                            p.removeChild(value);
+                            var view=views.pop();
+                            p.removeChild(view);
                         }
                         update_views(array);
                     }else
@@ -64,32 +64,31 @@
                         if(array.length<cache.length){
                             //cache向视图上增加
                             for(var i=views.length;i<array.length;i++){
-                                var value=cache[i];
-                                views.push(value);
-                                p.appendChild(value);
+                                var view=cache[i];
+                                views.push(view);
+                                p.appendChild(view);
                             }
                             update_views(array);
                         }else{
                             //从cache向视图上增加的部分
                             for(var i=views.length;i<cache.length;i++){
-                                var value=cache[i];
-                                views.push(value);
-                                p.appendChild(value);
+                                var view=cache[i];
+                                views.push(view);
+                                p.appendChild(view);
                             }
                             //更新cache的数据
                             update_views(array);
                             //新增加，同时增加进cache和views
                             for(var i=cache.length;i<array.length;i++){
-                                var value=p.build(array[i],i);
-                                cache.push(value);
-                                views.push(value);
-                                p.appendChild(value);
-                                p.after(value);
+                                var view=p.build(array[i],i);
+                                cache.push(view);
+                                views.push(view);
+                                p.appendChild(view);
+                                p.after(view);
                             }
                         }
                         
                     }
-                    //重装
                 }
     		};
         }

@@ -3,8 +3,8 @@
         mve:"../mve/index.js",
         exp:"../mve/exp.js",
         parse:"../mve/parse.js",
-        
-        buildChildren:"../mve-out/buildChildren.js",
+        buildChildren:"../mve/buildChildren.js",
+
         DOM:"./DOM.js"
     },
     success:function(){
@@ -17,7 +17,8 @@
             Watcher:lib.mve.Watcher,
             key:"children",
             appendChild:lib.DOM.appendChild,
-            removeChild:lib.DOM.removeChild
+            removeChild:lib.DOM.removeChild,
+            insertChildBefore:lib.DOM.insertChildBefore
         });
         var bindEvent=function(map,f){
             if(map){
