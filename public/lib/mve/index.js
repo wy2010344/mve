@@ -117,6 +117,7 @@
              })(),
              Watcher:(function(){      
                  var uid=0;
+                 window._watcher_size=0;
                  window._watcher={};//监视Watcher是否销毁。
                  return function(p){
                      p.before=p.before||mb.Function.quote.one;
@@ -152,9 +153,11 @@
                          disable:function(){
                              enable=false;
                              delete window._watcher[me.id];
+                            window._watcher_size--;
                          }
                      };
                      window._watcher[me.id]=p.exp;
+                     window._watcher_size++;
                      me.update();
                      return me;
                  };
