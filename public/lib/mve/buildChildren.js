@@ -156,7 +156,7 @@
                                 },
                                 init:function(view){
                                     view.obj.init();
-                                }
+                                },
                                 destroy:function(view){
                                     view.obj.destroy();
                                 }
