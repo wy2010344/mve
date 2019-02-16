@@ -14,7 +14,7 @@
 				}
 			]
 		);
-		var xs=r.exec(null);
+		var xs=r.exec(null).exec();
 		return lib.s.map_from_kvs(xs);
 	}
 });
