@@ -9,7 +9,7 @@
         var mvvm=function(user_func){
             /**
             pel
-            reloadChild(pel,old,new){
+            replaceChild(pel,old,new){
                 old是第一次
             }
             */

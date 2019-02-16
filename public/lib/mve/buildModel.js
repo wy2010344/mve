@@ -14,7 +14,7 @@
         var view={
             insert:function(index,row){
                 //动态加载
-                var view=p.build(row,i);
+                var view=p.build(row,index);
                 views.splice(index,0,view);
                 for(var i=index+1;i<views.length;i++){
                     views[i].row.index(i+1);
@@ -22,6 +22,8 @@
                 if(index<views.length-1){
                     /*移动到前面*/
                     p.insertChildBefore(view,views[index+1]);
+                }else{
+                    p.appendChild(view)
                 }
                 p.init(view);
             },
