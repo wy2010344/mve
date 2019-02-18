@@ -1,12 +1,12 @@
 ({
     /*
-    *no_cache:false true表示无cache
     *build(row,i)=>{row:{data(),index()},obj,el}
+    *after(value):新增的附加到父元素之后
+    *no_cache:false true表示无cache
     *update_data
     *destroy
     *appendChild
     *removeChild
-    *after(value):新增的附加到父元素之后
     */
 	success:function(p) {
         var views=[];//在界面上的缓存池

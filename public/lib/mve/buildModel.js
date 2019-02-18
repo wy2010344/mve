@@ -1,8 +1,9 @@
 ({
 	/**
 	*
-	model
-	build
+    build
+    model
+    update_index(view,index);
 	insertChildBefore(new_view,old_view)
 	appendChild(view)
 	removeChild(view)
@@ -17,7 +18,7 @@
                 var view=p.build(row,index);
                 views.splice(index,0,view);
                 for(var i=index+1;i<views.length;i++){
-                    views[i].row.index(i+1);
+                    p.update_index(views[i],i+1);
                 }
                 if(index<views.length-1){
                     /*移动到前面*/
@@ -32,7 +33,7 @@
                 var view=views[index];
                 views.splice(index,1);
                 for(var i=index;i<views.length;i++){
-                    views[i].row.index(i-1);
+                    p.update_index(views[i],i-1);
                 }
                 p.destroy(view);
                 p.removeChild(view);
@@ -57,5 +58,5 @@
 	            p.model.removeView(view);
         	}
         };
-	}
+    }
 })

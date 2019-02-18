@@ -123,8 +123,8 @@
 												{
 													(if-run (me.DOM.confirm "确定添加？")
 														{
-																	(array (extend v (array)))
-																	(me.DOM.value el "")
+															(array (extend v (array)))
+															(me.DOM.value el "")
 														}
 													)
 												}
@@ -148,15 +148,14 @@
 												type button text x 
 												event [
 													click {
-														(log (o.index))
-														(array (splice (array) (o.index) 1))
+														(array (splice (array) o.index 1))
 													}
 												]
 											]
 											{
 												(str-join 
 													[
-														(o.index)
+														'o.index
 														------
 														(o.data)
 													]

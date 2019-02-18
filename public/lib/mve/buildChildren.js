@@ -1,5 +1,6 @@
 ({
     data:{
+        childOperate:"./childOperate.js",
         buildArray:"./buildArray.js",
         buildModel:"./buildModel.js"
     },
@@ -16,37 +17,23 @@
      after 可选
      */
     success:function(p){
-        var build=function(e,repeat,mve,getO){
-	        return function(row,i){
-                var o=getO(row,i);
-                var fn=mve(function(me){
-                    return {
-                        element:function(){
-                            /**
-                            尽量避免repeat的生成受模型的影响，否则导致全生成。
-                            */
-                            return repeat(o);
-                        }
-                    }
-                });
-	            var value={
-	                row:o,
-	                obj:fn(e)
-	            };
-	            return value;
-	        };
-        };
-        var getOArray=function(row,i){
-            return {
-                data:p.Value(row),
-                index:p.Value(i)
-            };
-        };
         var getOModel=function(row,i){
             return {
                 data:row,
                 index:p.Value(i)
             };
+        };
+        var updateModelIndex=function(view,index){
+            view.row.index(index);
+        };
+        var getOArray=function(row,i){
+            return {
+                data:p.Value(row),
+                index:i //因为使用复用，所以不会发生改变
+            };
+        };
+        var updateArrayData=function(view,data){
+            view.row.data(data);
         };
         var p_before=p.before||mb.Function.quote.one;
         var p_after=p.after||mb.Function.quote.one;
@@ -90,28 +77,24 @@
     		                var isInit=false;
     		                var bc=lib.buildArray({
                                 no_cache:p.no_cache,
-    		                    build:build(e,children.repeat,x.mve,getOArray),
-    		                    after:function(view){
-                                    var init=view.obj.init;
-    		                        if(isInit){
-    		                            init();
-    		                        }else{
+                                build:lib.childOperate.build(e,children.repeat,x.mve,getOArray),
+                                after:function(view){
+                                    var init=lib.childOperate.getInit(view);
+                                    if(isInit){
+                                        init();
+                                    }else{
                                         c_inits.push(init);
-    		                        }
-    		                    },
-    		                    update_data:function(view,v){
-    		                    	view.row.data(v);
-    		                    },
-    		                    destroy:function(view){
-    		                    	view.obj.destroy();
-    		                    },
-    		                    appendChild:function(view){
+                                    }
+                                },
+                                update_data:updateArrayData,
+                                destroy:lib.childOperate.destroy,
+                                appendChild:function(view){
                                     p.appendChild(e.pel,view.obj.getElement());
-    		                    },
-    		                    removeChild:function(view){
+                                },
+                                removeChild:function(view){
                                     p.removeChild(e.pel,view.obj.getElement());
-    		                    }
-    		                });
+                                }
+                            });
                             var watch=p.Watcher({
                             	before:function(){
                             		p_before(e.pel);
@@ -143,8 +126,11 @@
                         if(children.model){
                             //model属性
                             var bm=lib.buildModel({
-                                build:build(e,children.repeat,x.mve,getOModel),
+                                build:lib.childOperate.build(e,children.repeat,x.mve,getOModel),
                                 model:children.model,
+                                update_index:updateModelIndex,
+                                init:lib.childOperate.init,
+                                destroy:lib.childOperate.destroy,
                                 insertChildBefore:function(new_view,old_view){
                                     p.insertChildBefore(e.pel,new_view.obj.getElement(),old_view.obj.getElement());
                                 },
@@ -153,12 +139,6 @@
                                 },
                                 appendChild:function(view){
                                     p.appendChild(e.pel,view.obj.getElement());
-                                },
-                                init:function(view){
-                                    view.obj.init();
-                                },
-                                destroy:function(view){
-                                    view.obj.destroy();
                                 }
                             });
                             inits.push(bm.init);
