@@ -68,14 +68,12 @@
 												text:"x",
 												action:{
 													click:function() {
-														list().splice(o.index(),1);
+														list().splice(o.index,1);
 														list(list());
 													}
 												}
 											},
-											function(){
-												return o.index()+1;
-											},
+											o.index+1,
 											"-----------",
 											function() {
 												return o.data();
