@@ -37,6 +37,16 @@
                 }
                 p.destroy(view);
                 p.removeChild(view);
+            },
+            move:function(old_index,new_index){
+                var view=views[old_index];
+                views.splice(old_index,1);
+                views.splice(new_index,0,view);
+                if (new_index<views.length-1) {
+                    p.insertChildBefore(view,views[new_index+1]);
+                }else{
+                    p.appendChild(view);
+                }
             }
         };
         p.model.addView(view);
