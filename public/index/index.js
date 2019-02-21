@@ -85,10 +85,8 @@
 						},
 						{
 							type:lib.div,
-							params:{
-								text:function() {
-									return "我是子组件。"+list().length;
-								}
+							text:function() {
+								return "我是子组件。"+list().length;
 							}
 						}
 					]

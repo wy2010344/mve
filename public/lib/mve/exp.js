@@ -1,6 +1,6 @@
 ({
 	data:{
-		mve:"./index.js"
+		util:"./util.js"
 	},
 	success:function(Parse){
         var forEach_run=function(array){
@@ -16,12 +16,12 @@
             return function(e){
                  var watchPool=[];
                  var Watch=function(p){
-                     var w=lib.mve.Watcher(p);
+                     var w=lib.util.Watcher(p);
                      watchPool.push(w);
                      return w;
                  };
                  var Cache=function(exp){
-                     return lib.mve.Cache(Watch,exp);
+                     return lib.util.Cache(Watch,exp);
                  };
                  /**
                  element
@@ -30,29 +30,17 @@
 
                  out:附加到生成的实体上
 
-                 lib.mve.util.locsize:[]
+                 lib.util.util.locsize:[]
                  */
                  var user_params={
-                    Value:lib.mve.Value,
-                    ArrayModel:lib.mve.ArrayModel,
+                    Value:lib.util.Value,
+                    ArrayModel:lib.util.ArrayModel,
                     Watch:Watch,
                     Cache:Cache
                  };
                  var user_result=user_func(user_params);
                  //这个函数应该返回布局，而不再显式提供Parse
                  var me={};
-                 mb.Array.forEach(
-                    lib.mve.locsize,
-                    function(str){
-                        var v;
-                        if(user_result[str]){
-                            v=user_result[str];
-                        }else{
-                            v=lib.mve.Value(0);
-                        }
-                        me[str]=v;
-                     }
-                 );
                  //如果也在out中定义，会被out中相关覆盖
                  if(user_result.out){
                     mb.Object.forEach(user_result.out,function(v,k){

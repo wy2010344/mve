@@ -1,6 +1,6 @@
 ({
     data:{
-        mve:"../mve/index.js",
+        util:"../mve/util.js",
         exp:"../mve/exp.js",
         parse:"../mve/parse.js",
         buildChildren:"../mve/buildChildren.js",
@@ -13,8 +13,8 @@
          * 生成过程，而json叶子结点里的函数引用，如style,attr，则受具体的影响
          */
         var buildChildren=lib.buildChildren({
-            Value:lib.mve.Value,
-            Watcher:lib.mve.Watcher,
+            Value:lib.util.Value,
+            Watcher:lib.util.Watcher,
             key:"children",
             appendChild:lib.DOM.appendChild,
             removeChild:lib.DOM.removeChild,
@@ -42,13 +42,39 @@
         var replaceChild=function(e,old_el,new_el){
             lib.DOM.replaceWith(old_el,new_el);
         };
+
+        var makeUp=function(e,x,json){   
+            bindMap(x.bind,json.attr,function(key,value){
+                lib.DOM.attr(e,key,value);
+            });
+            
+            bindMap(x.bind,json.prop,function(key,value){
+                lib.DOM.prop(e,key,value);
+            });
+            
+            bindMap(x.bind,json.style,function(key,value){
+                lib.DOM.style(e,key,value);
+            });
+            
+            bindEvent(json.action,function(key,value){
+                lib.DOM.action(e,key,value);
+            });
+            
+            x.if_bind(json.text,function(value){
+                lib.DOM.text(e,value);
+            });
+            
+            x.if_bind(json.value,function(value){
+                lib.DOM.value(e,value);
+            });
+
+            x.if_bind(json.html,function(html){
+                lib.DOM.html(e,html);
+            });
+        }
         return lib.exp(
             lib.parse(
-                lib.mve.locsize,
                 {
-                    locsize:function(e,str,v){
-                        lib.DOM.style(e,str,v?v+"px":"");
-                    },
                     createTextNode:function(x,o){
                         return {
                             element:lib.DOM.createTextNode(o.json||""),
@@ -60,6 +86,7 @@
                     replaceWith:lib.DOM.replaceWith,
                     buildElement:function(x,o){
                         var e=lib.DOM.createElement(o.json.type,o.json.NS);
+                        makeUp(e,x,o.json);
                         var obj=buildChildren({
                             pel:e,
                             replaceChild:replaceChild
@@ -70,35 +97,6 @@
                             inits:obj.inits,
                             destroys:obj.destroys
                         };
-                    },
-                    makeUpElement:function(e,x,json){ 
-                        bindMap(x.bind,json.attr,function(key,value){
-                            lib.DOM.attr(e,key,value);
-                        });
-                        
-                        bindMap(x.bind,json.prop,function(key,value){
-                            lib.DOM.prop(e,key,value);
-                        });
-                        
-                        bindMap(x.bind,json.style,function(key,value){
-                            lib.DOM.style(e,key,value);
-                        });
-                        
-                        bindEvent(json.action,function(key,value){
-                            lib.DOM.action(e,key,value);
-                        });
-                        
-                        x.if_bind(json.text,function(value){
-                            lib.DOM.text(e,value);
-                        });
-                        
-                        x.if_bind(json.value,function(value){
-                            lib.DOM.value(e,value);
-                        });
-
-                        x.if_bind(json.html,function(html){
-                            lib.DOM.html(e,html);
-                        });
                     }
                 }
             )

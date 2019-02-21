@@ -25,14 +25,6 @@
                 } 
             };
         };
-        var build_locsize=function(locsize,o,fun) {
-            mb.Array.forEach(locsize, function(str){
-                var vf=o[str];
-                if(vf!=undefined){
-                    fun(str,vf)
-                }
-            });
-        };
         var add_k=function(k,id,obj){
             if (id) {
                 var old=k[id];
@@ -44,7 +36,7 @@
             }
             return k;
         };
-        return function(locsize,p){
+        return function(p){
             var ParseFun=function(x,o){
                 var change=mb.cache();
                 x.watch({
@@ -89,12 +81,6 @@
                     if(typeof(type)=="string"){
                         var obj=p.buildElement(x,o);
                         var el=obj.element;
-                        build_locsize(locsize,json,function(str,vf){
-                            x.bind(vf,function(v){
-                                p.locsize(el,str,v);
-                            });
-                        });
-                        p.makeUpElement(el,x,o.json);
                         return {
                             element:el,
                             k:add_k(obj.k,id,el),
@@ -102,18 +88,10 @@
                             destroys:obj.destroys
                         };
                     }else{
-                        var obj=type(json.params||{})(o.e);
+                        var obj=type(json)(o.e);
                         var el=obj.getElement();
-                        build_locsize(locsize,json,function(str,vf) {
-                            var ef=obj[str]||mb.Function.quote.one;//兼容jsdom
-                            x.bind(vf,function(v){
-                                ef(v);
-                                p.locsize(el,str,v);
-                            });
-                        });
                         o.inits.push(obj.init);
                         o.destroys.push(obj.destroy);
-                        p.makeUpElement(el,x,o.json);
                         return {
                             element:el,
                             k:add_k(o.k,id,obj),

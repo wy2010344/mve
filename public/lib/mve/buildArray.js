@@ -24,28 +24,27 @@
                 after:function(array){
                     if (array.length<views.length) {
                         while(views.length!=array.length){
-                            var value=views.pop();
-                            p.removeChild(value);
-                            p.destroy(value);
+                            var view=views.pop();
+                            p.removeChild(view);
+                            p.destroy(view);
                         }
                         update_views(array);
                     }else{               
                         update_views(array);
-                        //新增加，同时增加进cache和views
                         for(var i=views.length;i<array.length;i++){
-                            var value=p.build(array[i],i);
-                            views.push(value);
-                            p.appendChild(value);
-                            p.after(value);
+                            var view=p.build(array[i],i);
+                            views.push(view);
+                            p.appendChild(view);
+                            p.after(view);
                         }
                     }
                 }
             };
         }else{
-            var cache=[];//缓存池
+            var caches=[];//缓存池
     		return {
     			destroy:function() {
-    	           mb.Array.forEach(cache, p.destroy);
+    	           mb.Array.forEach(caches, p.destroy);
     			},
     			after:function(array){
                     /**
@@ -61,27 +60,27 @@
                     }else
                     {
                         //向视图上增加，>
-                        if(array.length<cache.length){
-                            //cache向视图上增加
+                        if(array.length<caches.length){
+                            //caches向视图上增加
                             for(var i=views.length;i<array.length;i++){
-                                var view=cache[i];
+                                var view=caches[i];
                                 views.push(view);
                                 p.appendChild(view);
                             }
                             update_views(array);
                         }else{
-                            //从cache向视图上增加的部分
-                            for(var i=views.length;i<cache.length;i++){
-                                var view=cache[i];
+                            //从caches向视图上增加的部分
+                            for(var i=views.length;i<caches.length;i++){
+                                var view=caches[i];
                                 views.push(view);
                                 p.appendChild(view);
                             }
-                            //更新cache的数据
+                            //更新caches的数据
                             update_views(array);
-                            //新增加，同时增加进cache和views
-                            for(var i=cache.length;i<array.length;i++){
+                            //新增加，同时增加进caches和views
+                            for(var i=caches.length;i<array.length;i++){
                                 var view=p.build(array[i],i);
-                                cache.push(view);
+                                caches.push(view);
                                 views.push(view);
                                 p.appendChild(view);
                                 p.after(view);
