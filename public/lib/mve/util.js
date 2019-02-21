@@ -80,8 +80,52 @@
                         });
                         return row;
                     },
-                    move:function(){
-                        /*视图的移动，需要吗？*/
+                    move:function(row,new_index){
+                        var old_index=this.indexOf(row);
+                        if(old_index>-1){
+                            this._array.splice(old_index,1);
+                            this._array.splice(new_index,0,row);
+                            mb.Array.forEach(this._views,function(view){
+                                view.move(old_index,new_index);
+                            });
+                        }
+                    },
+                    /*多控件用array和model，单控件用包装*/
+                    moveFirst:function(row) {
+                        this.move(row,0);
+                    },
+                    moveLast:function(row){
+                        this.move(row,this.size()-1);
+                    },
+                    moveBefore:function(row,old_row){
+                        /*
+                        row原来在old_row的前，取下后old_row的index-1，要放到old_row的最新index或旧index-1
+                        row原来在old_row的后面，取下后old_row的index不变,直接放在old_row的index。
+                        */
+                        var index=this.indexOf(row);
+                        var old_index=this.indexOf(old_row);
+                        if(index>-1 && old_index>-1){
+                            if (index<old_index) {
+                                this.move(row,old_index-1);
+                            }else{
+                                this.move(row,old_index);
+                            }
+                        }
+                    },
+                    moveAfter:function(row,old_row){
+                        /*
+                        row原来在old_row前，取下后old_row的index-1，放在old_row的最新index+1或旧index
+                        row原来在old_row的后面，取下后old_row的index不变，直接放在old_row的index+1
+                        */
+                        var index=this.indexOf(row);
+                        var old_index=this.indexOf(old_row);
+                        if(index>-1 && old_index>-1){
+                            if(index<old_index){
+                                this.move(row,old_index);
+                            }else{
+                                this.move(row,old_index+1);
+                            }
+                        }
                     },
                     size:function(){
                         return this._array.length;
@@ -102,13 +146,7 @@
                         return this.insert(this.size(),row);
                     },
                     indexOf:function(row){
-                        var index=-1;
-                        for(var i=0;i<this.size() && index<0;i++){
-                            if(this.get(i)==row){
-                                index=i;
-                            }
-                        }
-                        return index;
+                        return mb.Array.indexOf(this._array,row);
                     }
                 });
                 return function(array){
@@ -176,8 +214,7 @@
                      dep.depend();
                      return cache;
                  };
-             },
-             locsize:["width","height","left","top","right","bottom"]
+             }
         };
         
         return mve;
