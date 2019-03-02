@@ -1,9 +1,8 @@
 (function(){
-
 	return {
 		dependences:{
-			"front-index":1,
-			"mve-DOM":1
-		}
-	}
+			"front-lib":1
+		},
+		move:"../"
+	};
 })()

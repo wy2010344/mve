@@ -83,7 +83,6 @@
                             destroys:o.destroys
                         };
                     },
-                    replaceWith:lib.DOM.replaceWith,
                     buildElement:function(x,o){
                         var e=lib.DOM.createElement(o.json.type,o.json.NS);
                         makeUp(e,x,o.json);
