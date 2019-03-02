@@ -156,11 +156,11 @@ window.onload=function(){
         })();
     };
     if(ext){
-        var txt=ext("readTxt",{path:cp.topUrl()+"lib/lib.js"});
+        var txt=ext("readTxt",{path:cp.topUrl()+"lib/front-lib/lib.js"});
         eval(txt);
         lib_script.onload();
     }else{
-        lib_script.setAttribute("src",cp.topUrl()+"lib/lib.js?v="+(new Date()));
+        lib_script.setAttribute("src",cp.topUrl()+"lib/front-lib/lib.js?v="+(new Date()));
     }
 };
 </script>

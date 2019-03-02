@@ -5,7 +5,7 @@
                 data:{
                     jsdom:function(notice){
                         mb.ajax.require({
-                            url:cp.libUrl()+"jsdom.js",
+                            url:cp.libUrl()+"front-lib/jsdom.js",
                             notice:notice
                         });
                     },
@@ -20,7 +20,7 @@
                         if(window.JSON){
                             notice(window.JSON);
                         }else{
-                            mb.ajax.require.getTxt(cp.libUrl()+"json2.js",function(txt){
+                            mb.ajax.require.getTxt(cp.libUrl()+"front-lib/json2.js",function(txt){
                                 eval(txt);
                                 notice(JSON);
                             });
@@ -53,7 +53,7 @@
             if(typeof(obj)=="function"){
                 obj=obj({
                     pel:root,
-                    replaceWith:function(e,old_el,new_el){
+                    replaceChild:function(e,old_el,new_el){
                         mb.log("尚未实现");
                     }
                 });
