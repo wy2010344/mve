@@ -769,6 +769,16 @@ mb.Array={
         }
         return init;
     },
+    filter:function(array,func){
+        var ret=[];
+        for(var i=0;i<array.length;i++){
+            var row=array[i];
+            if(func(row,i)){
+                ret.push(row);
+            }
+        }
+        return ret;
+    },
     find_index:function(array,fun){
         var ret=-1;
         for(var i=0;i<array.length && ret==-1;i++){
