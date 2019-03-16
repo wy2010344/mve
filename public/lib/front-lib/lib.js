@@ -200,12 +200,26 @@ mb.ajax=(function(){
         var xhr=baseAjax(p,"GET");
         xhr.send();//不能sendData
     };
+
+    var common_getData=function(xhr,p){      
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8;");//一定要charset否则乱码
+        return mb.util.urlFromDic(p.data);
+    };
+    var getData=common_getData;
+    if(window.FormData){
+        getData=function(xhr,p){
+            if(p.data instanceof window.FormData){
+                return p.data;
+            }else{
+                return common_getData(xhr,p);
+            }
+        };
+    }
     var normalPOST=function(p) {
         var xhr=baseAjax(p,"POST");
-        xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded;charset=UTF-8;");//一定要charset否则乱码
         var data;
         if(p.data){
-            data=mb.util.urlFromDic(p.data);
+            data=getData(xhr,p);
         }
         xhr.send(data);
     };
@@ -874,4 +888,8 @@ if(!String.prototype.endsWith){
     String.prototype.endsWith=function(str) {
         return (this.lastIndexOf(str)==this.length-str.length);
     };
+}
+
+if(window.load_success){
+    window.load_success("front-lib/lib.js");
 }

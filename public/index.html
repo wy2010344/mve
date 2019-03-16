@@ -116,7 +116,7 @@ window.onload=function(){
         };
     }
     var lib_script=document.getElementById("lib");
-    lib_script.onload=function() {
+    var lib_script_onload=function() {
         if(after_load){
             after_load(window.mb)
         }
@@ -158,8 +158,13 @@ window.onload=function(){
     if(ext){
         var txt=ext("readTxt",{path:cp.topUrl()+"lib/front-lib/lib.js"});
         eval(txt);
-        lib_script.onload();
+        lib_script_onload();
     }else{
+        window.load_success=function(src){
+            if(src=="front-lib/lib.js"){
+                lib_script_onload();
+            }
+        }
         lib_script.setAttribute("src",cp.topUrl()+"lib/front-lib/lib.js?v="+(new Date()));
     }
 };
