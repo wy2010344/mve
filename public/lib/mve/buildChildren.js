@@ -2,7 +2,8 @@
     data:{
         childOperate:"./childOperate.js",
         buildArray:"./buildArray.js",
-        buildModel:"./buildModel.js"
+        buildModel:"./buildModel.js",
+        buildView:"./buildView.js"
     },
     /**
      * 改变行的data()，需要逆向改变数组
@@ -125,7 +126,7 @@
                         }else 
                         if(children.model){
                             //model属性
-                            var bm=lib.buildModel({
+                            var px={
                                 build:lib.childOperate.build(e,children.repeat,x.mve,getOModel),
                                 model:children.model,
                                 update_index:updateModelIndex,
@@ -140,7 +141,21 @@
                                 appendChild:function(view){
                                     p.appendChild(e.pel,view.obj.getElement());
                                 }
-                            });
+                            };
+
+                            var bm;
+                            if(mb.Array.isArray(children.model)){
+                                bm=lib.buildView(px);
+                                if(children.id){
+                                    if(o[children.id]){
+                                        mb.log(children.id+"该id已经存在，出错");
+                                    }else{
+                                        o.k[children.id]=bm.view;
+                                    }
+                                }
+                            }else{
+                                bm=lib.buildModel(px);
+                            }
                             inits.push(bm.init);
                             destroys.push(bm.destroy);
                             return {

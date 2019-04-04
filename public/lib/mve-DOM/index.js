@@ -71,34 +71,53 @@
             x.if_bind(json.html,function(html){
                 lib.DOM.html(e,html);
             });
-        }
-        return lib.exp(
-            lib.parse(
-                {
-                    createTextNode:function(x,o){
-                        return {
-                            element:lib.DOM.createTextNode(o.json||""),
-                            k:o.k,
-                            inits:o.inits,
-                            destroys:o.destroys
-                        };
-                    },
-                    buildElement:function(x,o){
-                        var e=lib.DOM.createElement(o.json.type,o.json.NS);
-                        makeUp(e,x,o.json);
-                        var obj=buildChildren({
-                            pel:e,
-                            replaceChild:replaceChild
-                        },x,o);
-                        return {
-                            element:e,
-                            k:obj.k,
-                            inits:obj.inits,
-                            destroys:obj.destroys
-                        };
+        };
+
+        var create=function(v){
+            return lib.exp(
+                lib.parse(
+                    {
+                        createTextNode:function(x,o){
+                            return {
+                                element:lib.DOM.createTextNode(o.json||""),
+                                k:o.k,
+                                inits:o.inits,
+                                destroys:o.destroys
+                            };
+                        },
+                        buildElement:function(x,o){
+                            var e=v.createElement(o);
+                            makeUp(e,x,o.json);
+                            var obj=buildChildren({
+                                pel:e,
+                                replaceChild:replaceChild
+                            },x,o);
+                            return {
+                                element:e,
+                                k:obj.k,
+                                inits:obj.inits,
+                                destroys:obj.destroys
+                            };
+                        }
                     }
+                )
+            );
+        };
+        var mve=create({
+            createElement:function(o){
+                var NS=o.json.NS;
+                if(NS){
+                    return lib.DOM.createElementNS(o.json.type,o.json.NS);
+                }else{
+                    return lib.DOM.createElement(o.json.type);
                 }
-            )
-        );
+            }
+        });
+        mve.svg=create({
+            createElement:function(o){
+                return lib.DOM.createElementNS(o.json.type,"http://www.w3.org/2000/svg");
+            }
+        });
+        return mve;
     }
 });

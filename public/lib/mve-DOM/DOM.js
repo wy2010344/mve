@@ -3,11 +3,10 @@
     success:function(){
         return {
             createElement:function(type,NS){
-                if(NS){
-                    return document.createElementNS(NS,type);
-                }else{
-                    return document.createElement(type);
-                }
+                return document.createElement(type);
+            },
+            createElementNS:function(type,NS){
+                return document.createElementNS(NS,type);
             },
             createTextNode:function(json){
                 return document.createTextNode(json);
