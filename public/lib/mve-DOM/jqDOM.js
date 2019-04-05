@@ -2,7 +2,7 @@
     data:{
         $:function(notice){
             mb.ajax.require.getTxt(
-                    cp.libUrl()+"jquery/jquery-1.3.2.min.js",
+                    cp.baseUrl()+"/lib/jquery/jquery-1.3.2.min.js",
                     notice
             );
         }

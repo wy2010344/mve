@@ -64,24 +64,8 @@ window.onload=function(){
     if(ext){
         var config=ext("config");
         cp={
-            topUrl:function() {
-                return config.topUrl;   
-            },
-            libUrl:function() {
-                return cp.topUrl()+"lib/";
-            },
             baseUrl:function() {
                 return config.baseUrl;
-            },
-            noteJS:function(str) {
-                return function(notice) {
-                    var baseUrl=cp.topUrl()+"index/";
-                    mb.ajax.require({
-                        url:baseUrl+str,
-                        notice:notice,
-                        baseUrl:baseUrl
-                    });
-                };
             }
         };
         after_load=function(mb) {
@@ -104,14 +88,8 @@ window.onload=function(){
     }else{
         /*浏览器*/
         cp={
-            libUrl:function(){
-                return "./lib/";
-            },
-            topUrl:function(){
-                return "./";
-            },
             baseUrl:function(){
-                return "./index/";
+                return ".";
             }
         };
     }
@@ -137,9 +115,9 @@ window.onload=function(){
             if(!query.act){
                 query.act="index";
             }
-            var url=cp.baseUrl()+query.act.replace(/>/g,"/")+".js";
+            var url=cp.baseUrl()+"/index/"+query.act.replace(/>/g,"/")+".js";
             mb.ajax.require({
-                url:cp.topUrl()+"index.js",
+                url:cp.baseUrl()+"/index.js",
                 notice:function(notice){
                     notice({
                         init:function(notice){
@@ -156,7 +134,7 @@ window.onload=function(){
         })();
     };
     if(ext){
-        var txt=ext("readTxt",{path:cp.topUrl()+"lib/front-lib/lib.js"});
+        var txt=ext("readTxt",{path:cp.baseUrl()+"/lib/front-lib/lib.js"});
         eval(txt);
         lib_script_onload();
     }else{
@@ -165,7 +143,7 @@ window.onload=function(){
                 lib_script_onload();
             }
         }
-        lib_script.setAttribute("src",cp.topUrl()+"lib/front-lib/lib.js?v="+(new Date()));
+        lib_script.setAttribute("src",cp.baseUrl()+"/lib/front-lib/lib.js?v="+(new Date()));
     }
 };
 </script>

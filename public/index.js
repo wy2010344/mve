@@ -5,22 +5,21 @@
                 data:{
                     jsdom:function(notice){
                         mb.ajax.require({
-                            url:cp.libUrl()+"front-lib/jsdom.js",
+                            url:cp.baseUrl()+"/lib/front-lib/jsdom.js",
                             notice:notice
                         });
                     },
                     mve:function(notice){
                         mb.ajax.require({
-                            url:cp.libUrl()+"mve-DOM/index.js",
-                            notice:notice,
-                            baseUrl:cp.libUrl()
+                            url:cp.baseUrl()+"/lib/mve-DOM/index.js",
+                            notice:notice
                         });
                     },
                     JSON:function(notice){
                         if(window.JSON){
                             notice(window.JSON);
                         }else{
-                            mb.ajax.require.getTxt(cp.libUrl()+"front-lib/json2.js",function(txt){
+                            mb.ajax.require.getTxt(cp.baseUrl()+"/lib/front-lib/json2.js",function(txt){
                                 eval(txt);
                                 notice(JSON);
                             });
