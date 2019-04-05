@@ -251,7 +251,6 @@ mb.ajax=(function(){
             }
         },
         /**
-         * @baseUrl 是否重写默认的baseUrl
          * @data{key,url},
          * @success dic/function
          */
@@ -306,19 +305,17 @@ mb.ajax=(function(){
                         /*计算相对路径*/
                         var pathOf=function(url){
                             if(url){
-                                return require.calUrl(xp.baseUrl,xp.url,url);
+                                return require.calUrl(xp.url,url);
                             }else{
                                 return xp.url;
                             }
                         };
                         /*模块加载*/
                         if(body.data){
-                            xp.baseUrl=xp.baseUrl||mb.ajax.require.baseUrl
                             var arr=[];
                             /*加载单个模块，加载后通知*/
                             var getJS=function(url,notice) {
                                 require({
-                                    baseUrl:xp.baseUrl,
                                     url:pathOf(url),
                                     notice:notice
                                 });
@@ -417,11 +414,11 @@ mb.ajax=(function(){
             var require_getUrl=function(k){
                 return _required[k];
             };
-            require.calUrl=function(base_url,current_url,url){
+            require.calUrl=function(current_url,url){
                 if(url[0]=='.'){
                     url=mb.util.calAbsolutePath(current_url,url);
                 }else{
-                    url=base_url+url;
+                    url=mb.ajax.require.baseUrl+url;
                 }
                 return url;
             }
