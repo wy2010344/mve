@@ -90,10 +90,10 @@
                                 update_data:updateArrayData,
                                 destroy:lib.childOperate.destroy,
                                 appendChild:function(view){
-                                    p.appendChild(e.pel,view.obj.getElement());
+                                    p.appendChild(e.pel,view.obj.element);
                                 },
                                 removeChild:function(view){
-                                    p.removeChild(e.pel,view.obj.getElement());
+                                    p.removeChild(e.pel,view.obj.element);
                                 }
                             });
                             var watch=p.Watcher({
@@ -133,13 +133,13 @@
                                 init:lib.childOperate.init,
                                 destroy:lib.childOperate.destroy,
                                 insertChildBefore:function(new_view,old_view){
-                                    p.insertChildBefore(e.pel,new_view.obj.getElement(),old_view.obj.getElement());
+                                    p.insertChildBefore(e.pel,new_view.obj.element,old_view.obj.element);
                                 },
                                 removeChild:function(view){
-                                    p.removeChild(e.pel,view.obj.getElement());
+                                    p.removeChild(e.pel,view.obj.element);
                                 },
                                 appendChild:function(view){
-                                    p.appendChild(e.pel,view.obj.getElement());
+                                    p.appendChild(e.pel,view.obj.element);
                                 }
                             };
 
@@ -164,7 +164,7 @@
                                 destroys:destroys
                             };
                         }else{
-                            mb.log("非array和model");
+                            mb.log("非array和model",children.model);
                             return o;
                         }
 		            }  

@@ -58,9 +58,9 @@
                 });
             }
 
-            if(obj.getElement){
+            if(obj.element){
                 //传统的jsdom
-                var el=obj.getElement();
+                var el=obj.element;
                 window.onresize=function(){
                     var _w=body.clientWidth-(rpd*2);
                     var _h=body.clientHeight-(rpd*2);

@@ -58,7 +58,7 @@
                  var user_init=user_result.init||mb.Function.quote.one;
                  var user_destroy=user_result.destroy||mb.Function.quote.one;
 
-                 me.getElement=element_result.getElement;
+                 me.element=element_result.element;
                  me.init=function() {
                     forEach_run(element_result.inits);
                     user_init();

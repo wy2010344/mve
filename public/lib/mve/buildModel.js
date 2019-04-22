@@ -18,7 +18,7 @@
                 var view=p.build(row,index);
                 views.splice(index,0,view);
                 for(var i=index+1;i<views.length;i++){
-                    p.update_index(views[i],i+1);
+                    p.update_index(views[i],i);
                 }
                 if(index<views.length-1){
                     /*移动到前面*/
@@ -33,7 +33,7 @@
                 var view=views[index];
                 views.splice(index,1);
                 for(var i=index;i<views.length;i++){
-                    p.update_index(views[i],i-1);
+                    p.update_index(views[i],i);
                 }
                 p.destroy(view);
                 p.removeChild(view);
@@ -42,6 +42,12 @@
                 var view=views[old_index];
                 views.splice(old_index,1);
                 views.splice(new_index,0,view);
+
+                var sort=old_index<new_index?[old_index,new_index]:[new_index,old_index];
+                for(var i=sort[0];i<sort[1];i++){
+                    p.update_index(views[i],i);
+                }
+                
                 if (new_index<views.length-1) {
                     p.insertChildBefore(view,views[new_index+1]);
                 }else{
