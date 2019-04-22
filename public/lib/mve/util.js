@@ -55,8 +55,14 @@
                         this._array=[];
                     }
                     this._views=[];
+                    //长度是可观察的
+                    this.size=mve.Value(0);
+                    this._reload_size_();
                 };
                 mb.Object.ember(ArrayModel.prototype,{
+                    _reload_size_:function(){
+                        this.size(this._array.length);
+                    },
                     addView:function(view){
                         this._views.push(view);
                     },
@@ -71,6 +77,7 @@
                         mb.Array.forEach(this._views,function(view){
                             view.insert(index,row);
                         });
+                        this._reload_size_();
                     },
                     remove:function(index){
                         var row=this.get(index);
@@ -78,6 +85,7 @@
                         mb.Array.forEach(this._views,function(view){
                             view.remove(index);
                         });
+                        this._reload_size_();
                         return row;
                     },
                     move:function(row,new_index){
@@ -127,9 +135,6 @@
                             }
                         }
                     },
-                    size:function(){
-                        return this._array.length;
-                    },
                     get:function(index){
                         return this._array[index];
                     },
@@ -145,8 +150,58 @@
                     push:function(row){
                         return this.insert(this.size(),row);
                     },
-                    indexOf:function(row){
-                        return mb.Array.indexOf(this._array,row);
+                    clear:function(){
+                        while(this.size()>0){
+                            this.pop();
+                        }
+                    },
+                    forEach:function(fun){
+                        for(var i=0;i<this.size();i++){
+                            fun(this.get(i),i);
+                        }
+                    },
+                    map:function(fun){
+                        var ret=[];
+                        for(var i=0;i<this.size();i++){
+                            ret[i]=fun(this.get(i),i);
+                        }
+                        return ret;
+                    },
+                    reduce:function(fun,init){
+                        for(var i=0;i<this.size();i++){
+                            init=fun(init,this.get(i),i);
+                        }
+                        return init;
+                    },
+                    filter:function(fun){
+                        var ret=[];
+                        for(var i=0;i<this.size();i++){
+                            var row=this.get(i);
+                            if(fun(row,i)){
+                                ret.push(row);
+                            }
+                        }
+                        return ret;
+                    },
+                    find_index:function(fun){
+                        var ret=-1;
+                        for(var i=0;i<this.size() && ret==-1;i++){
+                            if(fun(this.get(i))){
+                                ret=i;
+                            }
+                        }
+                        return ret;
+                    },
+                    indexOf:function(row,fun){
+                        return this.find_index(function(c){
+                            return c==row;
+                        });
+                    },
+                    find_row:function(fun){
+                        var index=this.find_index(fun);
+                        if(index>-1){
+                            return this.get(index);
+                        }
                     }
                 });
                 return function(array){
