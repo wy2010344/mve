@@ -45,7 +45,10 @@
                 if(!json){
                     json="";
                 }
-                if(typeof(json)!='object'){
+                var json_type=typeof(json);
+                if(json_type=='function'){
+                    json=json();
+                }else if(json_type!='object'){
                     return document.createTextNode(json);
                 }else{
                     var el;
@@ -95,7 +98,7 @@
                                 init();
                             };
                         }
-                        el=obj.getElement();
+                        el=obj.element;
                     }
                     var actions=json.action;
                     if(actions){
@@ -107,14 +110,15 @@
                     //类
                     var cls=json.cls;
                     if(cls){
-                        if(typeof(cls)=='object'){
+                        var type_cls=typeof(cls);
+                        if(type_cls=='object'){
                             var cls_o=cls.type(el,cls.params);
                             var cls_id=cls.id;
                             if(cls_id){
                                 me.k[cls_id]=cls_o;
                             }
                         }else
-                        if(typeof(cls)=='function'){
+                        if(type_cls=='function'){
                             cls(mb.DOM.cls(el));
                         }else{
                             el.setAttribute("class", cls);
@@ -152,6 +156,7 @@
                     return el;
                 }
             };
+            
             return {
                 /**
                  * 没办法面向对象化。
@@ -159,13 +164,10 @@
                  * 从parseElement到new的跨度
                  */
                 parseElement:function(json,me) {
-                    if(me){
-                        me.k=me.k||{};
-                        me.getElement=me.getElement||function(){
-                            return el;
-                        };
-                    }
+                    me=me||{};
+                    me.k=me.k||{};
                     var el=parseEL(json,me);
+                    me.element=el;
                     return el;
                 },
                 parseFragment:function(json,me) {
@@ -189,10 +191,7 @@
                     var me={};
                     me.k={};
                     me.init=p.init;
-                    me.getElement=function(){
-                        return element;
-                    };
-                    var element=parseEL(p.body,me);
+                    me.element=parseEL(p.body,me);
                     return me;
                 },
                 /**

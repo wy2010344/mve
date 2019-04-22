@@ -53,7 +53,7 @@
                         change(newObj);
                         if(obj){
                             //非第一次生成
-                            o.e.replaceChild(o.e,obj.getElement(),newObj.getElement());
+                            o.e.replaceChild(o.e,obj.element,newObj.element);
                             obj.destroy();
                             newObj.init();
                         }
@@ -89,9 +89,14 @@
                         };
                     }else{
                         var obj=type(json)(o.e);
-                        var el=obj.getElement();
-                        o.inits.push(obj.init);
-                        o.destroys.push(obj.destroy);
+                        var el=obj.element;
+                        /*虽然mve模板是有init与destroy，但原生模块并没有*/
+                        if(obj.init){
+                            o.inits.push(obj.init);
+                        }
+                        if(obj.destroy){
+                            o.destroys.push(obj.destroy);
+                        }
                         return {
                             element:el,
                             k:add_k(o.k,id,obj),
@@ -105,7 +110,7 @@
                 if(typeof(o.json)=="function"){
                     var vm=ParseFun(x,o);
                     return {
-                        element:vm.change().getElement(),
+                        element:vm.change().element,
                         k:o.k,
                         inits:vm.inits,
                         destroys:vm.destroys
@@ -136,23 +141,13 @@
                     //根是function，要更新最新的el。
                     var vm=ParseFun(x,o);
                     return {
-                        getElement:function(){
-                            return vm.change().getElement();
-                        },
+                        element:vm.change().element,
                         k:{},
                         inits:vm.inits,
                         destroys:vm.destroys
                     };
                 }else{
-                    var vm=ParseObject(x,o);
-                    return {
-                        getElement:function(){
-                            return vm.element;
-                        },
-                        k:vm.k,
-                        inits:vm.inits,
-                        destroys:vm.destroys
-                    };
+                    return ParseObject(x,o);
                 }
             };
         };
