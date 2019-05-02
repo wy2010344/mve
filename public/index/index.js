@@ -59,27 +59,29 @@
 								array:function() {
 									return list();
 								},
-								repeat:function(o) {
+								repeat:function(me,row,index) {
 									return {
-										type:"li",
-										children:[
-											{
-												type:"button",
-												text:"x",
-												action:{
-													click:function() {
-														list().splice(o.index,1);
-														list(list());
+										element:{
+											type:"li",
+											children:[
+												{
+													type:"button",
+													text:"x",
+													action:{
+														click:function() {
+															list().splice(index,1);
+															list(list());
+														}
 													}
+												},
+												index+1,
+												"-----------",
+												function() {
+													return row();
 												}
-											},
-											o.index+1,
-											"-----------",
-											function() {
-												return o.data();
-											}
-										]
-									}
+											]
+										}
+									};
 								}
 							}
 						},
