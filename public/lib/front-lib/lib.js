@@ -1,4 +1,12 @@
 'use strict';
+if(!Function.prototype.bind){
+	Function.prototype.bind = function(context) {
+		var self=this,args = Array.prototype.slice.call(arguments);    
+    return function(){
+      return self.apply(context, args.slice(1));
+    };
+	};
+}
 window.mb={};
 mb.Function=(function(){
 	var quote=function(){
@@ -26,15 +34,33 @@ mb.Function=(function(){
 	return {
 		quote:quote,
 		list:list,
-		as_null:as_null
+		as_null:as_null,
+		or_run:function(fun){
+			if(fun){
+				fun();
+			}else{
+				fun;
+			}
+		},
+		or_apply:function(fun,array){
+			/*apply，将数组转化成参数列表*/
+			if(fun){
+				fun.apply(null,array);
+			}
+		},
+		or_call:function(fun){
+			/*call，将参数列表转化成数组*/
+			if(fun){
+				var array=Array.prototype.slice.call(arguments,1);
+				fun.apply(null,array);
+			}
+		}
 	};
 })();
 mb.log=(function(){
 	if(window.console && window.console.log){
 		try{
-			var log=function(){
-				window.console.log.apply(window.console,arguments);
-			};
+			var log=window.console.log.bind(window.console);
 			log("测试支持控制台");
 			return log;
 		}catch(e){
@@ -281,6 +307,7 @@ mb.ajax=(function(){
 			/**
 			 * 
 			 * @param {*路径} url 绝对路径
+			 * 如果在远程服务器，服务器内部的模块的相对路径能正常加载，绝对路径不能正常加载，因为绝对路径定位到本地
 			 * @param {*模块加载完成，如何处理} success模块
 			 */
 			var require=function(url,success){
@@ -445,6 +472,14 @@ mb.ajax=(function(){
 	return me;
 })();
 mb.util={
+  decodeURI:function(search){
+      var dsearch;
+      while(search!=dsearch){
+          dsearch=search;
+          search=decodeURI(search);
+      }
+      return search;
+  },
 	dicFromUrl:function(uri){
 	   var url = decodeURI(uri); //获取url中"?"符后的字串
 	   var theRequest = new Object();
@@ -880,6 +915,7 @@ mb.Object={
 		for(var key in obj){
 			me[key]=obj[key];
 		}
+		return me;
 	},
 	combine:function(a,b) {
 		var ret={};
@@ -892,6 +928,11 @@ mb.Object={
 		return ret;
 	}
 };
+if(!String.prototype.trim){
+	String.prototype.trim=function(){  
+      return this.replace(/(^\s*)|(\s*$)/g, "");  
+  };
+}
 if(!String.prototype.startsWith){
 	String.prototype.startsWith=function(str) {
 		return (this.indexOf(str)==0);

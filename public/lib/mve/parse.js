@@ -36,38 +36,46 @@
 			}
 			return k;
 		};
+		var forEachRun=function(array){
+			mb.Array.forEach(array,function(array){
+				row();
+			});
+		};
 		return function(p){
-			var ParseFun=function(x,o){
+			var ParseFun=function(x,o,me){
 				var change=mb.cache();
 				x.watch({
 					exp:function(){
 					   return o.json(); 
 					},
-					after:function(jo){
-						var newObj=x.mve(function(){
-							return {
-								element:jo
-							};
-						})(o.e);
-						var obj=change();
-						change(newObj);
-						if(obj){
-							//非第一次生成
-							o.e.replaceChild(o.e,obj.element,newObj.element);
-							obj.destroy();
-							newObj.init();
+					after:function(json){
+						if(typeof(json)=='function'){
+							throw "返回结果不允许为函数！";
+						}else{
+							var newObj=ParseObject(x,{
+								json:json,
+								k:{},
+								inits:[],
+								destroys:[]
+							});
+							var obj=change();
+							change(newObj);
+							me.element=newObj.element;
+							if(obj){
+								//非第一次生成
+								o.e.replaceChild(o.e,obj.element,newObj.element);
+								forEachRun(obj.destroys);
+								forEachRun(newObj.inits);
+							}
 						}
 					}
 				});
 				//最后一个销毁
 				o.destroys.push(function() {
-					var destroy=change().destroy||mb.Function.quote.one;
-					destroy();
+					forEachRun(change().destroys);
 				});
-				o.inits.push(change().init);
 				return {
-					change:change,
-					inits:o.inits,
+					inits:o.inits.concat(change().inits),
 					destroys:o.destroys
 				};
 			};
@@ -108,18 +116,18 @@
 			};
 			var Parse=function(x,o){
 				if(typeof(o.json)=="function"){
-					var vm=ParseFun(x,o);
-					return {
-						element:vm.change().element,
-						k:o.k,
-						inits:vm.inits,
-						destroys:vm.destroys
-					};
+					var me={};
+					var vm=ParseFun(x,o,me);
+					me.inits=vm.inits;
+					me.destroys=vm.destroys;
+					me.k=o.k;
+					return me;
 				}else{
 					return ParseObject(x,o);
 				}
 			};
-			return function(e,json,watch,mve,k){
+			/*me的element会发生改变*/
+			return function(e,json,watch,mve,k,me){
 				/*不变的*/
 				var bind=bindFactory(watch);
 				var x={
@@ -139,15 +147,16 @@
 				};
 				if(typeof(o.json)=='function'){
 					//根是function，要更新最新的el。
-					var vm=ParseFun(x,o);
+					var vm=ParseFun(x,o,me);
 					return {
-						element:vm.change().element,
 						k:{},
 						inits:vm.inits,
 						destroys:vm.destroys
 					};
 				}else{
-					return ParseObject(x,o);
+					var vm=ParseObject(x,o);
+					me.element=vm.element;
+					return vm;
 				}
 			};
 		};

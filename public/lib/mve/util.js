@@ -55,11 +55,9 @@
 			 },
 			 ArrayModel:(function(){
 				function ArrayModel(array){
-					if (array) {
-						this._array=array;
-					}else{
-						this._array=[];
-					}
+					this._array=mb.Array.map(array||[],function(row){
+						return row;
+					});
 					this._views=[];
 					//长度是可观察的
 					this.size=mve.Value(0);

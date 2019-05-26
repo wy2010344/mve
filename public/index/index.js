@@ -21,6 +21,9 @@
 			return {
 				element:{
 					type:"div",
+					style:{
+						overflow:"auto"
+					},
 					children:[
 						a("更新或重打包S-Lisp目录","./S-Lisp/package"),
 						br,
@@ -82,13 +85,103 @@
 											]
 										}
 									};
-								}
+								},
+								before:[
+									function(){
+										return {
+											type:"div",
+											text:"添加第"+(list().length+1)+"条记录"
+										};
+									}
+								],
+								after:[
+									function(){
+										return {
+											type:"div",
+											text:"添加第"+(list().length+1)+"条记录"
+										};
+									}
+								]
 							}
 						},
 						{
 							type:lib.div,
 							text:function() {
 								return "我是子组件。"+list().length;
+							}
+						},
+						{
+							type:"div",
+							children:{
+								multi:[
+									[
+										"测试multi",
+										"我亦是内容"
+									],
+									{
+										array:function(){
+											return list();
+										},
+										repeat:function(me,row,index){
+											return {
+												element:{
+													type:"div",
+													text:function(){
+														return index+"---->"+row();
+													}
+												}
+											}
+										}
+									},
+									[
+										function(){
+											return "长度"+list().length;
+										},
+										"这也是一条内容"
+									],
+									{
+										array:function(){
+											return list();
+										},
+										repeat:function(me,row,index){
+											return {
+												element:{
+													type:"div",
+													text:function(){
+														return index+"---->"+row();
+													}
+												}
+											}
+										}
+									},
+									[
+										function(){
+											return "长度"+list().length;
+										},
+										"这也是一条新1111内容"
+									],
+									{
+										array:function(){
+											return list();
+										},
+										repeat:function(me,row,index){
+											return {
+												element:{
+													type:"div",
+													text:function(){
+														return index+"---->"+row();
+													}
+												}
+											}
+										}
+									},
+									[
+										function(){
+											return "长度"+list().length;
+										},
+										"这也是一条新1111内容"
+									]
+								]
 							}
 						}
 					]
