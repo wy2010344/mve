@@ -41,33 +41,34 @@
 				 };
 				 var user_result=user_func(user_params);
 				 //这个函数应该返回布局，而不再显式提供Parse
+
+				 var me={};
 				 var element_result=Parse(
 					e,
 					user_result.element,
 					Watch,
 					mvvm,
-					{}
+					{},
+					me
 				 );
 				 user_params.k=element_result.k;
 				 var user_init=user_result.init||mb.Function.quote.one;
 				 var user_destroy=user_result.destroy||mb.Function.quote.one;
 
-				 return {
-					out:user_result.out,//一些一次性指令，但是组件应该维护自身的状态如关闭之类
-					element:element_result.element,
-					init:function() {
-						forEach_run(element_result.inits);
-						user_init();
-					 },
-					 destroy:function() {
-						user_destroy();
-						forEach_run(element_result.destroys);
-						var w;
-						while((w=watchPool.shift())!=null){
-							w.disable();
-						}
-					 }
+				 me.out=user_result.out;//一些一次性指令，但是组件应该维护自身的状态如关闭之类
+				 me.init=function() {
+					forEach_run(element_result.inits);
+					user_init();
 				 };
+				 me.destroy=function() {
+					user_destroy();
+					forEach_run(element_result.destroys);
+					var w;
+					while((w=watchPool.shift())!=null){
+						w.disable();
+					}
+				 };
+				 return me;
 			 };
 		 };
 		 mvvm.NS={
