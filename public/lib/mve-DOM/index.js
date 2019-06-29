@@ -7,14 +7,23 @@
 
 		DOM:"./DOM.js"
 	},
-	success:function(){
+	success:function(p){
+		p=p||{};
+		var cache=p.cache||function(){
+			if(arguments.length==0){
+				return window.top._Dep_;
+			}else{
+				window._Dep_=arguments[0];
+			}
+		};
+		var util=lib.util(cache);
 		/**
 		 * repeat生成json结果是被观察的，受哪些影响，重新生成，替换原来的节点。
 		 * 生成过程，而json叶子结点里的函数引用，如style,attr，则受具体的影响
 		 */
 		var buildChildren=lib.buildChildren({
-			Value:lib.util.Value,
-			Watcher:lib.util.Watcher,
+			Value:util.Value,
+			Watcher:util.Watcher,
 			key:"children",
 			appendChild:lib.DOM.appendChild,
 			removeChild:lib.DOM.removeChild,
@@ -79,6 +88,7 @@
 
 		var create=function(v){
 			return lib.exp(
+				util,
 				lib.parse(
 					{
 						createTextNode:function(x,o){
@@ -91,11 +101,12 @@
 						},
 						buildElement:function(x,o){
 							var e=v.createElement(o);
-							makeUp(e,x,o.json);
 							var obj=buildChildren({
 								pel:e,
 								replaceChild:replaceChild
 							},x,o);
+							/*像select，依赖子元素先赋值再触发*/
+							makeUp(e,x,o.json);
 							return {
 								element:e,
 								k:obj.k,

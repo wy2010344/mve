@@ -219,6 +219,7 @@ mb.ajax=(function(){
 			}
 		};
 		xhr.open(type,encodeURI(p.url),true);
+		xhr.setRequestHeader("x-requested-with","XMLHttpRequest");//区别为ajax
 		if(p.operate){
 			p.operate(xhr);
 		}
@@ -229,9 +230,31 @@ mb.ajax=(function(){
 		xhr.send();//不能sendData
 	};
 
-	var common_getData=function(xhr,p){      
-		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");//一定要charset否则乱码，最后一定不能加分号，会出问题！
-		return mb.util.urlFromDic(p.data);
+	var common_getData=function(xhr,p){  
+		var data=p.data;    
+		if(!p.dataType){
+			var dataType="application/x-www-form-urlencoded;charset=UTF-8";//一定要charset否则乱码，最后一定不能加分号，会出问题！
+			data=mb.util.urlFromDic(p.data);
+			xhr.setRequestHeader("Content-Type",dataType);
+		}
+		if(p.dataType=="json"){
+			var dataType="application/json";
+			data=JSON.stringify(p.data);
+			xhr.setRequestHeader("Content-Type",dataType);
+		}
+		if(p.dataType=="formdata"){
+			data=new FormData();
+			if(mb.Array.isArray(p.data)){
+				mb.Array.forEach(p.data,function(row){
+					data.append(row.key,row.value);
+				});
+			}else{
+				mb.Object.forEach(p.data,function(value,key){
+					data.append(key,value);
+				});
+			}
+		}
+		return data;
 	};
 	var getData=common_getData;
 	if(window.FormData){
@@ -403,13 +426,12 @@ mb.ajax=(function(){
 					willDef=true;
 				}
 				if(willDef){
-					var _required_txt={};
-					require._required_txt=_required_txt;
+					require._required_txt=window._required_txt||{};
 					require._saveTxt=function(k,v){
-						_required_txt[k]=v;
+						require._required_txt[k]=v;
 					};
 					require._getTxt=function(k){
-						return _required_txt[k];
+						return require._required_txt[k];
 					};
 				}
 			})();
@@ -429,15 +451,12 @@ mb.ajax=(function(){
 			 * 本地缓存，所有地方可用
 			 */
 			require.getTxt=function(url,suc){
-				var v=require._getTxt[url];
-				if(v && v.v==require._v_){ //存在而且版本号相同
-					suc(v.txt);
+				var txt=require._getTxt(url);
+				if(txt){ //存在而且版本号相同
+					suc(txt);
 				}else{
 					ajaxText(url,function(txt){
-						require._saveTxt(url,{
-							txt:txt,
-							v:require._v_
-						});
+						require._saveTxt(url,txt);
 						suc(txt);
 					});
 				}
