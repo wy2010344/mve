@@ -1,32 +1,36 @@
 ({
-	delay:true,
-	success:function(){
+	success:function(cache){
 		var mve={
 			 Dep:(function(){
-				 var uid=0;
-				 var Dep=function(){
-					 var subs={};
-					 var me={
-						 id:uid++,
-						 _subs_:subs,//测试可以看到
-						 depend:function(){
-							 if(Dep.target){
-								 subs[Dep.target.id]=Dep.target;
+			 	var x=cache();
+			 	if(!x){
+					var uid=0;
+					var Dep=function(){
+						 var subs={};
+						 var me={
+							 id:uid++,
+							 _subs_:subs,//测试可以看到
+							 depend:function(){
+								 if(Dep.target){
+									 subs[Dep.target.id]=Dep.target;
+								 }
+							 },
+							 notify:function(){
+								 var oldSubs=subs;
+								 subs={};//清空
+								 me._subs_=subs;
+								 mb.Object.forEach(oldSubs,function(sub){
+								 	sub.update();
+								 });
 							 }
-						 },
-						 notify:function(){
-							 var oldSubs=subs;
-							 subs={};//清空
-							 me._subs_=subs;
-							 mb.Object.forEach(oldSubs,function(sub){
-								 sub.update();
-							 });
-						 }
-					 };
-					 return me;
-				 };
-				 Dep.target=null;
-				 return Dep;
+						 };
+						 return me;
+					};
+					Dep.target=null;
+					x=Dep;
+					cache(x);
+			 	}
+				return x;
 			 })(),
 			 Value:function(v){       
 				 var dep=mve.Dep();

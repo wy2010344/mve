@@ -1,8 +1,5 @@
 ({
-	data:{
-		util:"./util.js"
-	},
-	success:function(Parse){
+	success:function(util,Parse){
 		var forEach_run=function(array){
 			mb.Array.forEach(array,function(r){r();});
 		};
@@ -16,12 +13,12 @@
 			return function(e){
 				 var watchPool=[];
 				 var Watch=function(p){
-					 var w=lib.util.Watcher(p);
+					 var w=util.Watcher(p);
 					 watchPool.push(w);
 					 return w;
 				 };
 				 var Cache=function(exp){
-					 return lib.util.Cache(Watch,exp);
+					 return util.Cache(Watch,exp);
 				 };
 				 /**
 				 element
@@ -29,13 +26,11 @@
 				 destroy
 
 				 out:附加到生成的实体上
-
-				 lib.util.util.locsize:[]
 				 */
 				 var user_params={
-					Value:lib.util.Value,
-					ReadValue:lib.util.ReadValue,
-					ArrayModel:lib.util.ArrayModel,
+					Value:util.Value,
+					ReadValue:util.ReadValue,
+					ArrayModel:util.ArrayModel,
 					Watch:Watch,
 					Cache:Cache
 				 };
