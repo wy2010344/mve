@@ -41,44 +41,17 @@
 				row();
 			});
 		};
+
+		var addLifeCycle=function(object,o){
+			if(object.init){
+				o.inits.push(object.init);
+			}
+			if(object.destroy){
+				o.destroys.push(object.destroy);
+			}
+			return o;
+		};
 		return function(p){
-			var ParseFun=function(x,o,me){
-				var change=mb.cache();
-				x.watch({
-					exp:function(){
-					   return o.json(); 
-					},
-					after:function(json){
-						if(typeof(json)=='function'){
-							throw "返回结果不允许为函数！";
-						}else{
-							var newObj=ParseObject(x,{
-								json:json,
-								k:{},
-								inits:[],
-								destroys:[]
-							});
-							var obj=change();
-							change(newObj);
-							me.element=newObj.element;
-							if(obj){
-								//非第一次生成
-								o.e.replaceChild(o.e,obj.element,newObj.element);
-								forEachRun(obj.destroys);
-								forEachRun(newObj.inits);
-							}
-						}
-					}
-				});
-				//最后一个销毁
-				o.destroys.push(function() {
-					forEachRun(change().destroys);
-				});
-				return {
-					inits:o.inits.concat(change().inits),
-					destroys:o.destroys
-				};
-			};
 			var ParseObject=function(x,o){
 				var json=o.json||"";
 				if(typeof(json)!="object"){
@@ -99,12 +72,7 @@
 						var obj=type(json)(o.e);
 						var el=obj.element;
 						/*虽然mve模板是有init与destroy，但原生模块并没有*/
-						if(obj.init){
-							o.inits.push(obj.init);
-						}
-						if(obj.destroy){
-							o.destroys.push(obj.destroy);
-						}
+						addLifeCycle(obj,o);
 						return {
 							element:el,
 							k:add_k(o.k,id,obj.out),//只将out部分暴露出去
@@ -116,18 +84,20 @@
 			};
 			var Parse=function(x,o){
 				if(typeof(o.json)=="function"){
-					var me={};
-					var vm=ParseFun(x,o,me);
-					me.inits=vm.inits;
-					me.destroys=vm.destroys;
-					me.k=o.k;
-					return me;
+					var vm=x.mve(o.json)(x.e);
+					addLifeCycle(vm,o);
+					return {
+						element:vm.element,
+						k:o.k,
+						inits:o.inits,
+						destroys:o.destroys
+					};
 				}else{
 					return ParseObject(x,o);
 				}
 			};
 			/*me的element会发生改变*/
-			return function(e,json,watch,mve,k,me){
+			return function(e,json,watch,mve,k){
 				/*不变的*/
 				var bind=bindFactory(watch);
 				var x={
@@ -145,19 +115,7 @@
 					inits:[],
 					destroys:[]
 				};
-				if(typeof(o.json)=='function'){
-					//根是function，要更新最新的el。
-					var vm=ParseFun(x,o,me);
-					return {
-						k:{},
-						inits:vm.inits,
-						destroys:vm.destroys
-					};
-				}else{
-					var vm=ParseObject(x,o);
-					me.element=vm.element;
-					return vm;
-				}
+				return ParseObject(x,o);
 			};
 		};
 	}

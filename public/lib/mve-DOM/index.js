@@ -84,11 +84,38 @@
 			x.if_bind(json.html,function(html){
 				lib.DOM.html(e,html);
 			});
+			
+			x.if_bind(json.fragment,function(cs){
+				lib.DOM.empty(e);
+				var me={};
+				mb.Array.forEach(cs,function(c){
+					lib.DOM.appendChild(e,jsdom.parseElement(c,me));
+				});
+			});
+
+			x.if_bind(json.element,function(element){
+				lib.DOM.empty(e);
+				lib.DOM.appendChild(e,jsdom.parseElement(element));
+			});
 		};
 
 		var create=function(v){
 			return lib.exp(
 				util,
+				function(user_func,user_result){
+					if(p.debug){
+						alert("不友好的元素节点"+user_func);
+					}
+					mb.log("顶层user_result目前是:",user_func,user_result);
+					if(user_result && typeof(user_result)=="object"){
+						//如果是生成元素结点
+						var user_result_element={type:"div",element:user_func};
+					}else{
+						//如果是生成普通节点
+						var user_result_element={type:"span",text:user_func};
+					}
+					return user_result_element;
+				},
 				lib.parse(
 					{
 						createTextNode:function(x,o){
