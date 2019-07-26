@@ -57,6 +57,16 @@ mb.Function=(function(){
 		}
 	};
 })();
+
+/**
+冻结
+*/
+if(Object.freeze){
+	mb.freeze=Object.freeze.bind(Object);
+}else{
+	mb.freeze=mb.Function.quote.one;
+}
+
 mb.log=(function(){
 	if(window.console && window.console.log){
 		try{
@@ -436,17 +446,12 @@ mb.ajax=(function(){
 				}
 			})();
 			/*从远端请求文件，如果是嵌入webView，可能重写*/
-			var ajaxText=(function(){
-				var _id=(new Date()).getTime();
-				var _i=0;
-				return function(url,success){
-					_i++;
-					mb.ajax.text({
-						url:url+"?_id="+_id+_i,
-						success:success
-					});
-				};
-			})();
+			var ajaxText=function(url,success){
+				mb.ajax.text({
+					url:url+"?_id="+mb.ajax.require.cp.version,
+					success:success
+				});
+			};
 			/**
 			 * 本地缓存，所有地方可用
 			 */
@@ -723,6 +728,7 @@ mb.DOM=(function(){
 			}
 		})(),
 		//滚动条宽度
+		//https://www.cnblogs.com/liumangdashi/p/8036103.html
 		scrollWidth:(function(){
 			var cache;
 			return function(){
@@ -730,7 +736,8 @@ mb.DOM=(function(){
 					var el=jsdom.parseElement({
 						type:"div",
 						style:{
-							width:mb.isIE?"5px":"",
+							width:"100px",
+							height:"100px",
 							overflow:"scroll"
 						}
 					});
