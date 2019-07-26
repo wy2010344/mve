@@ -79,27 +79,30 @@
 												},
 												index+1,
 												"-----------",
-												function() {
-													return row();
+												{
+													type:"span",
+													text:function(){
+														return row();
+													}
 												}
 											]
 										}
 									};
 								},
 								before:[
-									function(){
-										return {
-											type:"div",
-											text:"添加第"+(list().length+1)+"条记录"
-										};
+									{
+										type:"div",
+										text:function(){
+											return "添加第"+(list().length+1)+"条记录";
+										}
 									}
 								],
 								after:[
-									function(){
-										return {
-											type:"div",
-											text:"添加第"+(list().length+1)+"条记录"
-										};
+									{
+										type:"div",
+										text:function(){
+											return "添加第"+(list().length+1)+"条记录";
+										}
 									}
 								]
 							}
@@ -109,6 +112,15 @@
 							text:function() {
 								return "我是子组件。"+list().length;
 							}
+						},
+						function(){
+							return "我是文字";
+						},
+						function(){
+							return {
+								type:"div",
+								text:"我是返回div"
+							};
 						},
 						{
 							type:"div",
@@ -134,8 +146,11 @@
 										}
 									},
 									[
-										function(){
-											return "长度"+list().length;
+										{
+											type:"span",
+											text:function(){
+												return "长度"+list().length;
+											}
 										},
 										"这也是一条内容"
 									],
@@ -155,8 +170,11 @@
 										}
 									},
 									[
-										function(){
-											return "长度"+list().length;
+										{
+											type:"span",
+											text:function(){
+												return "长度"+list().length;
+											}
 										},
 										"这也是一条新1111内容"
 									],
@@ -176,8 +194,11 @@
 										}
 									},
 									[
-										function(){
-											return "长度"+list().length;
+										{
+											type:"span",
+											text:function(){
+												return "长度"+list().length;
+											}
 										},
 										"这也是一条新1111内容"
 									]
