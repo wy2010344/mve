@@ -81,13 +81,18 @@
 							}
 						}
 					}else{
-						var params=json.params||{};
-						if(children){
-							mb.Object.forEach(children,function(value,key){
-								params[key]=parseEL(value,me);
-							});
+						if(type){
+							var params=json.params||{};
+							if(children){
+								mb.Object.forEach(children,function(value,key){
+									params[key]=parseEL(value,me);
+								});
+							}
+							var obj=type(params);
+						}else if(json.jsdom){
+							//自动注入的
+							var obj=jsdom.jsdom;
 						}
-						var obj=type(params);
 						if(id){
 							me.k[id]=obj;
 						}

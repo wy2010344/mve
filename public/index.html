@@ -98,7 +98,6 @@ window.onload=function(){
 		if(after_load){
 			after_load(window.mb)
 		}
-		mb.ajax.require.baseUrl=cp.baseUrl();
 		mb.ajax.require.cp=cp;
 		var query=mb.util.dicFromUrl(window.location.search);
 		cp.query=query;

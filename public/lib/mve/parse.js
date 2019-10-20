@@ -36,12 +36,6 @@
 			}
 			return k;
 		};
-		var forEachRun=function(array){
-			mb.Array.forEach(array,function(array){
-				row();
-			});
-		};
-
 		var addLifeCycle=function(object,o){
 			if(object.init){
 				o.inits.push(object.init);
@@ -51,6 +45,17 @@
 			}
 			return o;
 		};
+		var addMve=function(obj,o,id){
+			var el=obj.element;
+			/*虽然mve模板是有init与destroy，但原生模块并没有*/
+			addLifeCycle(obj,o);
+			return {
+				element:el,
+				k:add_k(o.k,id,obj.out),//只将out部分暴露出去
+				inits:o.inits,
+				destroys:o.destroys
+			};
+		};
 		return function(p){
 			var ParseObject=function(x,o){
 				var json=o.json||"";
@@ -59,32 +64,42 @@
 				}else{
 					var type=o.json.type;
 					var id=o.json.id;
-					if(typeof(type)=="string"){
-						var obj=p.buildElement(x,o);
-						var el=obj.element;
-						return {
-							element:el,
-							k:add_k(obj.k,id,el),
-							inits:obj.inits,
-							destroys:obj.destroys
-						};
+					if(type){
+						var tp=typeof(type)
+						if(tp=="string"){
+							var obj=p.buildElement(x,o);
+							var el=obj.element;
+							return {
+								element:el,
+								k:add_k(obj.k,id,el),
+								inits:obj.inits,
+								destroys:obj.destroys
+							};
+						}else{
+							//这种子组件方式无法表达泛型，需要移除。type直接是mve节点，不需要接受自身的json参数
+							if(tp=='function'){
+								var obj=type(json)(o.e);
+								return addMve(obj,o,id);
+							}else{
+								mb.log("不合法的type类型",type);
+							}
+						}
 					}else{
-						var obj=type(json)(o.e);
-						var el=obj.element;
-						/*虽然mve模板是有init与destroy，但原生模块并没有*/
-						addLifeCycle(obj,o);
-						return {
-							element:el,
-							k:add_k(o.k,id,obj.out),//只将out部分暴露出去
-							inits:o.inits,
-							destroys:o.destroys
-						};
+						if(json.mve && typeof(json.mve)=='function'){
+							var obj=json.mve(o.e);
+							return addMve(obj,o,id);
+						}else{
+							mb.log("暂时不支持",json)
+						}
 					}
 				};
 			};
 			var Parse=function(x,o){
 				if(typeof(o.json)=="function"){
-					var vm=x.mve(o.json)(x.e);
+					/*
+					o.json=function(me)=>MveOuter这种，可以构造，返回模块。但没有id无法被持有
+					*/
+					var vm=o.json(x.e);
 					addLifeCycle(vm,o);
 					return {
 						element:vm.element,
