@@ -32,7 +32,8 @@
 					ReadValue:util.ReadValue,
 					ArrayModel:util.ArrayModel,
 					Watch:Watch,
-					Cache:Cache
+					Cache:Cache,
+					children:mb.Function.quote.one
 				};
 				var user_result=user_func(user_params);
 				//这个函数应该返回布局，而不再显式提供Parse
@@ -75,6 +76,7 @@
 		 mvvm.NS={
 			svg:"http://www.w3.org/2000/svg"
 		 };
+		 mvvm.Value=util.Value;
 		 return mvvm;
 	}
 })

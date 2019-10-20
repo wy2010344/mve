@@ -293,6 +293,7 @@ mb.ajax=(function(){
 			normalGET(p);
 		},
 		get:normalGET,
+		//请求格式化是contentType,返回格式化是dataType
 		post:normalPOST,
 		util:{
 			cros:function(xhr) {
@@ -316,7 +317,11 @@ mb.ajax=(function(){
 		 * @success dic/function
 		 */
 		require:(function(){
-
+			/**
+			 * 
+			 * @param {any} body
+			 * @param {any} url 仅用于报错
+			 */
 			var get_success=function(body,url){
 				var success;
 				if(typeof(body.success)=='function'){
@@ -338,81 +343,193 @@ mb.ajax=(function(){
 				return success;
 			};
 			/**
-			 * 
-			 * @param {*路径} url 绝对路径
-			 * 如果在远程服务器，服务器内部的模块的相对路径能正常加载，绝对路径不能正常加载，因为绝对路径定位到本地
-			 * @param {*模块加载完成，如何处理} success模块
+			 * 兼容TypeScript生成的AMD模块
+			 * @param {any} keys
+			 * @param {any} fun
 			 */
-			var require=function(url,success){
-				var value=require_getUrl(url);
-				if(value){
-					success(value);
-				}else{
-					mb.ajax.require.getTxt(url,function(txt){
-						var lib={};
-						/*
-							计算相对路径，
-							或自身路径，
-							全局通用，
-							根路径转成baseUrl()+路径
-						*/
-						var pathOf=function(x){
-							if(x){
-								return mb.ajax.require.calUrl(url,x);
-							}else{
-								return url;
+			var define = function (libs, run) {
+				return {
+					type: "amd",
+					libs:libs,
+					run:run
+				};
+			};
+			/**
+			 * AMD加载多个模块
+			 * @param {any} baseUrl
+			 */
+			var amdRequire = function (pathOf,exports) {
+				var require=function (urls, notice) {
+					mb.task.queue({
+						array: urls,
+						trans: function (o) {
+							var url = o.row;
+							//如果需要导出require
+							if(url=="require"){
+								return o.notice(require);
 							}
-						};
-						/*
-							内部的模块加载，与data部分一致
-						*/
-						var require=function(v,notice){
-							mb.ajax.require(pathOf(v),notice);
-						};
+							//如果需要导出exports
+							if(url=="exports"){
+								return o.notice(exports);
+							}
+							if(url[0]!='.' && url[0]!='/'){
+								var ug=mb.ajax.require.cp.alias[url];
+								if(ug){
+									mb.log(ug,pathOf(ug));
+									return loader(pathOf(ug),o.notice);
+								}
+							}
+							//其它情况
+							if(!url.endsWith(".js")){
+								url=url+".js";
+							}
+							loader(pathOf(url),o.notice);
+						},
+						success: function (o) {
+							notice.apply(null, o);
+						}
+					});
+				};
+				return require;
+			};
+			/**
+			 * 成功后通知
+			 * @param {any} value
+			 */
+			var loadedNotice = function (value) {
+				mb.Array.forEach(value.waits, function (wait) {
+					wait(value.success);
+				});
+				delete value.waits;
+			};
+			/**
+			 * 绝对路径
+			 * 如果在远程服务器，服务器内部的模块的相对路径能正常加载，绝对路径不能正常加载，因为绝对路径定位到本地
+			 * @param {any} url
+			 * @param {any} success
+			 */
+			var loader=function(url,success){
+				var value=require_getUrl(url);
+				if (value) {
+					if (value.waits) {
+						value.waits.push(success);
+					} else {
+						success(value.success);
+					}
+				} else {
+					value = {
+						waits: [success]
+					};
+					/*计算success*/
+					require_saveUrl(url, value);
+					mb.ajax.require.getTxt(url,function(txt){
 						/**
 						 * 从once中获得数据
 						 */
 						var cp=mb.ajax.require.cp;//全局共享
-						try{
+						try {
 							txt="//"+url+"\r\n"+txt;
-							var body=eval(txt);
+							var body = eval(txt);
 						}catch(ex){
 							mb.ajax.require.dealEX(url,"Eval时",ex);
 						}
-						var out=get_success(body,url);
-						/*计算success*/
-						require_saveUrl(url,out);
-						var x_notice=function() {
-							success(out);
-						};
-						/*结束*/
-						//不再使用once，而是通过data中使用的all将异步库转成标准的require库
-						/*模块加载*/
-						if(body.data){
-							var arr=[];
-							mb.Object.forEach(body.data, function(v,k){
-								var tp=typeof(v);
-								arr.push(function(next){
-									var load_success=function(success){
-										lib[k]=success;
-										next();
-									};
-									if(tp=='string'){
-										/*基础的模块加载*/
-										require(v,load_success);
-									}else
-									if(tp=='function'){
-										/*依赖倒置型加载*/
-										v(load_success);
+						if (body) {
+							/**
+							 *
+								计算相对路径，
+								或自身路径，
+								全局通用，
+								根路径转成baseUrl()+路径
+							 * @param {any} x
+							 */
+							var pathOf = function (x) {
+								if (x) {
+									return mb.ajax.require.calUrl(url, x);
+								} else {
+									return url;
+								}
+							};
+							if(body.async){
+								//模块是异步响应，注入notice
+								var notice_count=0;
+								var notice=function(success){
+									if(notice_count==0){
+										notice_count++;
+										value.success=success;
+										loadedNotice(value);
+									}else{
+										mb.log("出错，禁止通知两次:"+url,success);
+									}
+								};
+							}
+							if (body.type=="amd") {
+								//AMD加载模式
+								var exports={};
+								var require = amdRequire(pathOf,exports);
+								require(body.libs||[], function () {
+									var success = body.run.apply(null, arguments);
+									if(body.async){
+										success(notice);
+									}else{
+										//不是异步，直接取返回值
+										if (success) {
+											body.success = success;
+										}else{
+											body.success = exports;
+										}
+										value.success = body.success;
+										loadedNotice(value);
 									}
 								});
-							});
-							mb.task.queue({
-								array:arr,
-								success:x_notice
-							});
-						}else{
-							x_notice();
+							} else {
+								//原加载方式
+								/**
+								 * 内部的模块加载，与data部分一致
+								 * @param {any} v
+								 * @param {any} notice
+								 */
+								var require = function (v, notice) {
+									loader(pathOf(v), notice);
+								};
+								/**
+								 * 注入lib
+								 */
+								var lib = {};
+								/*结束*/
+								//不再使用once，而是通过data中使用的all将异步库转成标准的require库
+								/*模块加载*/
+								mb.task.all({
+									data:body.data,
+									trans:function(o){
+										var tp=typeof(o.value);
+										var load_success=function(value){
+											lib[o.key]=value;
+											o.notice();
+										};
+										if(tp=='string'){
+											require(o.value,load_success);
+										}else
+										if(tp=='function'){
+											//未作缓存加载
+											o.value(load_success);
+										}else{
+											mb.log("暂时不支持的require类型",o.value);
+										}
+									},
+									success:function () {
+										var success = get_success(body, url);
+										if(body.async){
+											success(notice);
+										}else{
+											//不是异步，取返回值
+											value.success = success;
+											loadedNotice(value);
+										}
+									}
+								});
+							}
+						} else {
+							loadedNotice(value);
 						}
 					});
 				}
@@ -424,8 +541,8 @@ mb.ajax=(function(){
 				if(window.top!=window){
 					try{
 						if(window.top.mb){
-							require._getTxt=window.top.mb.ajax.require._getTxt;
-							require._saveTxt=window.top.mb.ajax.require._saveTxt;
+							loader._getTxt=window.top.mb.ajax.require._getTxt;
+							loader._saveTxt=window.top.mb.ajax.require._saveTxt;
 						}else{
 							willDef=true;
 						}
@@ -436,12 +553,12 @@ mb.ajax=(function(){
 					willDef=true;
 				}
 				if(willDef){
-					require._required_txt=window._required_txt||{};
-					require._saveTxt=function(k,v){
-						require._required_txt[k]=v;
+					loader._required_txt=window._required_txt||{};
+					loader._saveTxt=function(k,v){
+						loader._required_txt[k]=v;
 					};
-					require._getTxt=function(k){
-						return require._required_txt[k];
+					loader._getTxt=function(k){
+						return loader._required_txt[k];
 					};
 				}
 			})();
@@ -455,66 +572,70 @@ mb.ajax=(function(){
 			/**
 			 * 本地缓存，所有地方可用
 			 */
-			require.getTxt=function(url,suc){
-				var txt=require._getTxt(url);
+			loader.getTxt=function(url,suc){
+				var txt=loader._getTxt(url);
 				if(txt){ //存在而且版本号相同
 					suc(txt);
 				}else{
 					ajaxText(url,function(txt){
-						require._saveTxt(url,txt);
+						loader._saveTxt(url,txt);
 						suc(txt);
 					});
 				}
 			};
 			//不同iframe缓存js函数
 			var _required={};
-			require._required=_required;
+			loader._required=_required;
 			var require_saveUrl=function(k,v){
 				_required[k]=v;
 			};
 			var require_getUrl=function(k){
 				return _required[k];
 			};
-			require.calUrl=function(current_url,url){
+			loader.calUrl=function(current_url,url){
 				if(url[0]=='.'){
 					url=mb.util.calAbsolutePath(current_url,url);
 				}else{
-					url=mb.ajax.require.baseUrl+url;
+					//baseUrl的本质是，定位html页面与js仓库的相对路径。多html页面，不一定在同一个地方
+					url=mb.ajax.require.cp.baseUrl()+url;
+					if(url.startsWith("./")){
+						url=url.slice(2);
+					}
 				}
 				return url;
-			}
+			};
 			/*错误处理*/
-			require.dealEX=function(url,step,ex) {
+			loader.dealEX=function(url,step,ex) {
 				mb.log(url);
 				mb.log(step);
 				mb.log(JSON.stringify(ex));
 				throw ex;
 			};
-			return require;
+			return loader;
 		})()
 	};
 	return me;
 })();
 mb.util={
   decodeURI:function(search){
-      var dsearch;
-      while(search!=dsearch){
-          dsearch=search;
-          search=decodeURI(search);
-      }
-      return search;
+		var dsearch;
+		while(search!=dsearch){
+			dsearch=search;
+			search=decodeURI(search);
+		}
+		return search;
   },
 	dicFromUrl:function(uri){
-	   var url = decodeURI(uri); //获取url中"?"符后的字串
-	   var theRequest = new Object();
-	   if (url.indexOf("?") != -1) {
-		  var str = url.substr(1);
-		  var strs = str.split("&");
-		  for(var i = 0; i < strs.length; i ++) {
-			 theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
-		  }
-	   }
-	   return theRequest; 
+		var url = decodeURI(uri); //获取url中"?"符后的字串
+		var theRequest = new Object();
+		if (url.indexOf("?") != -1) {
+			var str = url.substr(1);
+			var strs = str.split("&");
+			for(var i = 0; i < strs.length; i ++) {
+				theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+			}
+		}
+		return theRequest; 
 	},    
 	/***
 	 * 字典转请求参数
@@ -615,6 +736,15 @@ mb.browser=(function(){
 })();
 mb.DOM=(function(){
 	var isTouch= ("ontouchend" in document)? true : false;
+	var transDic={};
+	if(isTouch){
+		transDic={
+			//click:"touchstart",
+			mousedown:"touchstart",
+			mousemove:"touchmove",
+			mouseup:"touchend"
+		};
+	}
 	return {
 		cls:function(el){
 			var clss=[];
@@ -646,15 +776,6 @@ mb.DOM=(function(){
 			};
 		},
 		addEvent:(function(){
-			var transDic={};
-			if(isTouch){
-				transDic={
-					//click:"touchstart",
-					mousedown:"touchstart",
-					mousemove:"touchmove",
-					mouseup:"touchend"
-				};
-			}
 			if(window.addEventListener){
 				return function(e,t,f){
 					t=transDic[t]||t;
@@ -670,15 +791,6 @@ mb.DOM=(function(){
 			}
 		})(),
 		removeEvent:(function(){
-			var transDic={};
-			if(isTouch){
-				transDic={
-					//click:"touchstart",
-					mousedown:"touchstart",
-					mousemove:"touchmove",
-					mouseup:"touchend"
-				};
-			}
 			if(window.removeEventListener){
 				return function(e,t,f){
 					t=transDic[t]||t;
@@ -969,7 +1081,20 @@ if(!String.prototype.endsWith){
 		return (this.lastIndexOf(str)==this.length-str.length);
 	};
 }
-
+/**
+ * 时间格式化
+ * yyyy-MM-dd HH:mm:ss
+ */
+Date.prototype.format = function(formatStr){   
+	var str = formatStr;  
+	str=str.replace(/yyyy|YYYY/,this.getFullYear());  
+	str=str.replace(/MM/,(this.getMonth()+1)>9?(this.getMonth()+1).toString():'0' + (this.getMonth()+1));   
+	str=str.replace(/dd|DD/,this.getDate()>9?this.getDate().toString():'0' + this.getDate());
+	str=str.replace(/hh|HH/,this.getHours()>9?this.getHours().toString():'0' + this.getHours());
+	str=str.replace(/mm/,this.getMinutes()>9?this.getMinutes().toString():'0' + this.getMinutes());
+	str=str.replace(/ss/,this.getSeconds()>9?this.getSeconds().toString():'0' + this.getSeconds());   
+	return str;   
+}
 if(window.load_success){
 	window.load_success("front-lib/lib.js");
 }
