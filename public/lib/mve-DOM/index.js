@@ -4,7 +4,7 @@
 		exp:"../mve/exp.js",
 		parse:"../mve/parse.js",
 		buildChildren:"../mve/buildChildren.js",
-
+		jsdom:"../front-lib/jsdom.js",
 		DOM:"./DOM.js"
 	},
 	success:function(p){
@@ -89,13 +89,13 @@
 				lib.DOM.empty(e);
 				var me={};
 				mb.Array.forEach(cs,function(c){
-					lib.DOM.appendChild(e,jsdom.parseElement(c,me));
+					lib.DOM.appendChild(e,lib.jsdom.parseElement(c,me));
 				});
 			});
 
 			x.if_bind(json.element,function(element){
 				lib.DOM.empty(e);
-				lib.DOM.appendChild(e,jsdom.parseElement(element));
+				lib.DOM.appendChild(e,lib.jsdom.parseElement(element));
 			});
 		};
 
