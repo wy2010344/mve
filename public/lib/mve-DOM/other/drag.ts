@@ -32,9 +32,70 @@ type TEvent={
   type:""
 }
 
-export function dragHelper(p:{
-  show:()=>boolean;
-  max:()=>boolean;
+
+/**
+ * 只移动
+ * @param p 
+ */
+export function dragMoveHelper(p:{
+  border?:Node;
+  allow?:()=>boolean;
+  diffX?:(diff:number)=>void;
+  diffY?:(diff:number)=>void;
+}){
+  let laste;
+  let move=false;
+  const allow=p.allow||function(){return true};
+  const m={
+    move(e){
+      if(allow()){
+        if(move){
+          e=e||window.Event;
+          var diffX=e.clientX-laste.clientX;
+          if(p.diffX){
+            p.diffX(diffX);
+          }
+          var diffY=e.clientY-laste.clientY;
+          if(p.diffY){
+            p.diffY(diffY);
+          }
+          laste=e;
+          mb.DOM.stopPropagation(e);
+        }
+      }
+    },
+    cancel(e){
+      move=false;
+      canSelect();
+    }
+  }
+  const border=p.border||document;
+  return {
+    move(e){
+      stopSelect();
+      laste=e||window.Event;
+      move=true;
+      mb.DOM.stopPropagation(e);
+    },
+    init:function(){
+      mb.DOM.addEvent(border,"mousemove",m.move);
+      mb.DOM.addEvent(border,"mouseup",m.cancel);
+      mb.DOM.addEvent(border,"mouseleave",m.cancel);
+    },
+    destroy:function(){
+      mb.DOM.removeEvent(border,"mousemove",m.move);
+      mb.DOM.removeEvent(border,"mouseup",m.cancel);
+      mb.DOM.removeEvent(border,"mouseleave",m.cancel);
+    }
+  }
+}
+/**
+ * 主要是拖拽放大。拖动只是辅助。如果只有拖动，不如另写
+ * @param p 
+ */
+export function dragResizeMoveHelper(p:{
+  border?:Node;
+  allow?:()=>boolean;
   left:MveValue<number>;
   top:MveValue<number>;
   width:MveValue<number>;
@@ -43,58 +104,53 @@ export function dragHelper(p:{
   var event:TEvent={
     type:""
   };
+  const allow=p.allow||function(){return true};
   var m={
-    mouseup:function(e){
+    cancel:function(e){
       event.type="";
       canSelect();
     },
-    mouseleave:function(e){
-      event.type="";
-      canSelect();
-    },
-    mousemove:function(e){
-      if(p.show()){
-        //当前是最前
-        if(!p.max()){
-          //非最大
-          if(event.type=="resize"){
-            var old_e=event.event;
-            e=e||window.event;
-            event.event=e;
-            if(event.dir.l){
-              var x=diff(true,e,old_e);
-              p.left(p.left()+x);
-              p.width(p.width()-x);
-            }
-            if(event.dir.r){
-              var x=diff(true,e,old_e);
-              p.width(p.width()+x);
-            }
-            if (event.dir.t){
-              var y=diff(false,e,old_e);
-              p.top(p.top()+y);
-              p.height(p.height()-y);
-            }
-            if(event.dir.b){
-              var y=diff(false,e,old_e);
-              p.height(p.height()+y);
-            }
-          }else
-          if(event.type=="move"){
-            var old_e=event.event;
-            e=e||window.event;
-            event.event=e;
+    move:function(e){
+      if(allow()){
+        if(event.type=="resize"){
+          var old_e=event.event;
+          e=e||window.event;
+          event.event=e;
+          if(event.dir.l){
             var x=diff(true,e,old_e);
-            var y=diff(false,e,old_e);
             p.left(p.left()+x);
-            p.top(p.top()+y);
+            p.width(p.width()-x);
           }
+          if(event.dir.r){
+            var x=diff(true,e,old_e);
+            p.width(p.width()+x);
+          }
+          if (event.dir.t){
+            var y=diff(false,e,old_e);
+            p.top(p.top()+y);
+            p.height(p.height()-y);
+          }
+          if(event.dir.b){
+            var y=diff(false,e,old_e);
+            p.height(p.height()+y);
+          }
+        }else
+        if(event.type=="move"){
+          var old_e=event.event;
+          e=e||window.event;
+          event.event=e;
+          var x=diff(true,e,old_e);
+          var y=diff(false,e,old_e);
+          p.left(p.left()+x);
+          p.top(p.top()+y);
         }
       }
     }
   };
+  //最大边界，一般是document
+  const border=p.border||document;
   return {
-    resize:function(e:Event,dir:Direction){
+    resize(e:Event,dir:Direction){
       stopSelect();
       event={
         type:"resize",
@@ -102,7 +158,7 @@ export function dragHelper(p:{
         dir:dir
       }
     },
-    move:function(e:Event){
+    move(e:Event){
       stopSelect();
       event={
         type:"move",
@@ -110,14 +166,14 @@ export function dragHelper(p:{
       }
     },
     init:function(){
-      mb.DOM.addEvent(document,"mousemove",m.mousemove);
-      mb.DOM.addEvent(document,"mouseup",m.mouseup);
-      mb.DOM.addEvent(document,"mouseleave",m.mouseleave);
+      mb.DOM.addEvent(border,"mousemove",m.move);
+      mb.DOM.addEvent(border,"mouseup",m.cancel);
+      mb.DOM.addEvent(border,"mouseleave",m.cancel);
     },
     destroy:function(){
-      mb.DOM.removeEvent(document,"mousemove",m.mousemove);
-      mb.DOM.removeEvent(document,"mouseup",m.mouseup);
-      mb.DOM.removeEvent(document,"mouseleave",m.mouseleave);
+      mb.DOM.removeEvent(border,"mousemove",m.move);
+      mb.DOM.removeEvent(border,"mouseup",m.cancel);
+      mb.DOM.removeEvent(border,"mouseleave",m.cancel);
     }
   };
 }
