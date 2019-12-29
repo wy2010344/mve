@@ -1,7 +1,7 @@
 import { Direction } from "./drag";
 
 
-export function resizeUtil(p:{
+export function resizeZoom(p:{
   resize:(e:Event,dir:Direction)=>void;
   no_resize:()=>boolean;
 }):MveViewItem[]{

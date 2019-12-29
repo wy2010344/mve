@@ -236,6 +236,14 @@ mb.ajax=(function(){
 		return xhr;
 	};
 	var normalGET=function(p) {
+		if(p.data){
+			var query=mb.util.urlFromDic(p.data);
+			if(p.url.indexOf("?")>0){
+				p.url=p.url+"&"+query;
+			}else{
+				p.url=p.url+"?"+query;
+			}
+		}
 		var xhr=baseAjax(p,"GET");
 		xhr.send();//不能sendData
 	};
@@ -402,6 +410,19 @@ mb.ajax=(function(){
 				});
 				delete value.waits;
 			};
+
+			var generateNotice=function(value){
+				var notice_count=0;
+				return function(success){
+					if(notice_count==0){
+						notice_count++;
+						value.success=success;
+						loadedNotice(value);
+					}else{
+						mb.log("出错，禁止通知两次:"+url,success);
+					}
+				};
+			};
 			/**
 			 * 绝对路径
 			 * 如果在远程服务器，服务器内部的模块的相对路径能正常加载，绝对路径不能正常加载，因为绝对路径定位到本地
@@ -449,19 +470,6 @@ mb.ajax=(function(){
 									return url;
 								}
 							};
-							if(body.async){
-								//模块是异步响应，注入notice
-								var notice_count=0;
-								var notice=function(success){
-									if(notice_count==0){
-										notice_count++;
-										value.success=success;
-										loadedNotice(value);
-									}else{
-										mb.log("出错，禁止通知两次:"+url,success);
-									}
-								};
-							}
 							if (body.type=="amd") {
 								//AMD加载模式
 								var exports={};
@@ -469,7 +477,7 @@ mb.ajax=(function(){
 								require(body.libs||[], function () {
 									var success = body.run.apply(null, arguments);
 									if(body.async){
-										success(notice);
+										success(generateNotice(value));
 									}else{
 										//不是异步，直接取返回值
 										if (success) {
@@ -477,8 +485,14 @@ mb.ajax=(function(){
 										}else{
 											body.success = exports;
 										}
-										value.success = body.success;
-										loadedNotice(value);
+										if(body.success.async && body.success.success){
+											//内部的异步
+											body.success.success(generateNotice(value));
+										}else{
+											//原始的方式
+											value.success = body.success;
+											loadedNotice(value);
+										}
 									}
 								});
 							} else {
@@ -519,7 +533,7 @@ mb.ajax=(function(){
 									success:function () {
 										var success = get_success(body, url);
 										if(body.async){
-											success(notice);
+											success(generateNotice(value));
 										}else{
 											//不是异步，取返回值
 											value.success = success;
@@ -568,6 +582,15 @@ mb.ajax=(function(){
 					url:url+"?_id="+mb.ajax.require.cp.version,
 					success:success
 				});
+			};
+			/**
+			 * 兼容ts的异步模块
+			 */
+			loader.async=function(fun){
+				return {
+					async:true,
+					success:fun
+				};
 			};
 			/**
 			 * 本地缓存，所有地方可用
@@ -881,8 +904,10 @@ mb.DOM=(function(){
 			}
 		},
 		//inpu允许tab
-		inputTabAllow:function(e){
+		inputTabAllow:function(e,tabReplace){
 			if (e.keyCode === 9){
+				tabReplace=tabReplace||'\t';
+				var tabSize=tabReplace?tabReplace.length:1;
 				mb.DOM.preventDefault(e);
 				//参考https://segmentfault.com/q/1010000000694609
 				var el=e.target;
@@ -901,20 +926,52 @@ mb.DOM=(function(){
 
 				var lines = value.substring(lineStart, lineEnd).split('\n');
 				if (lines.length > 1) {
-					offset = lines.length;
-					lines = '\t' + lines.join('\n\t');
+					//多行
+					var firstPart=value.substring(0, lineStart);
+					var lastPart=value.substring(lineEnd);
+					if(e.shiftKey){
+						if(lines[0].startsWith(tabReplace)){
+							start=start-1*tabSize;
+						}
 
-					el.value = value.substring(0, lineStart) + lines + value.substring(lineEnd);
+						offset=0;
+						lines=mb.Array.map(lines,function(line){
+							if(line.startsWith(tabReplace)){
+								offset+=tabReplace.length;
+								return line.substr(tabReplace.length);
+							}else{
+								return line;
+							}
+						})
+						el.value=firstPart + lines.join('\n')+ lastPart;
 
-					el.selectionStart = start + 1;
-					el.selectionEnd = end + offset;
+
+						el.selectionStart=start;
+						el.selectionEnd=end - offset;
+					}else{
+
+						el.value = firstPart + tabReplace + lines.join('\n'+tabReplace) + lastPart;
+
+						el.selectionStart = start + 1*tabSize;
+						offset = lines.length*tabSize;
+						el.selectionEnd = end + offset;
+					}
 				} else {
-					offset = 1;
-					lines = lines[0];
-
-					el.value = value.substring(0, start) + '\t' + value.substring(end);
-
-					el.selectionStart = el.selectionEnd = start + offset;
+					//单
+					offset = 1*tabSize;
+					
+					var firstPart=value.substring(0, start);
+					var lastPart=value.substring(end);
+					if(e.shiftKey){
+						if(firstPart.endsWith(tabReplace)){
+							el.value=firstPart.substr(0,firstPart.length-tabReplace.length)+lastPart;
+							el.selectionStart = el.selectionEnd = start - offset;
+						}
+					}else{
+						lines = lines[0];
+						el.value = firstPart + tabReplace + lastPart
+						el.selectionStart = el.selectionEnd = start + offset;
+					}
 				}
 			}
 		},
@@ -1052,6 +1109,12 @@ mb.Object={
 	ember:function(me,obj){
 		for(var key in obj){
 			me[key]=obj[key];
+		}
+		return me;
+	},
+	orDefault:function(me,obj){
+		for(var key in obj){
+			me[key]=me[key]||obj[key];
 		}
 		return me;
 	},
