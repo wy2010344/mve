@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    function resizeUtil(p) {
+    function resizeZoom(p) {
         var makeResize = function (dir) {
             return function (e) {
                 e = e || window.event;
@@ -135,5 +135,5 @@ define(["require", "exports"], function (require, exports) {
             }
         ];
     }
-    exports.resizeUtil = resizeUtil;
+    exports.resizeZoom = resizeZoom;
 });
