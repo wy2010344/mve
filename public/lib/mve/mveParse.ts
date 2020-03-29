@@ -68,32 +68,37 @@ function addDynamicMve(mve:MveFun,x:XModel,e:EModel,json,m:LifeModel){
 			return json.render();
 		},
 		after(json){
-			/**如果是普通节点，也可能陷入观察，需要包装起来*/
-			if(typeof(json)=='object'){
-				var mveReturn=mve(function(me){
-					return {
-						element:json
+			if(json){
+				/**如果是普通节点，也可能陷入观察，需要包装起来*/
+				if(typeof(json)=='object'){
+					var mveReturn=mve(function(me){
+						return {
+							element:json
+						}
+					});
+				}else{
+					var mveReturn=mve(json);
+				}
+				const obj:MveOuterModel=mveReturn(e);
+				if(currentObject){
+					if(initFlag){
+						//替换
+						e.replaceChild(e.pel,currentObject.element,obj.element);
+						currentObject.destroy();
+						obj.init();
 					}
-				});
-			}else{
-				var mveReturn=mve(json);
-			}
-			const obj:MveOuterModel=mveReturn(e);
-			if(currentObject){
-				if(initFlag){
-					//替换
-					e.replaceChild(e.pel,currentObject.element,obj.element);
-					currentObject.destroy();
-					obj.init();
+					if(id){
+						add_k(returnObject.m.k,id,obj,true);
+					}
+				}else{
+					add_k(returnObject.m.k,id,obj);
 				}
-				if(id){
-					add_k(returnObject.m.k,id,obj,true);
-				}
+				returnObject.element=obj.element;
+				currentObject=obj;
 			}else{
-				add_k(returnObject.m.k,id,obj);
+				//看来这里还无法支持单个替换
+				mb.log("尚无法支持无返回值")
 			}
-			returnObject.element=obj.element;
-			currentObject=obj;
 		}
 	})
 	returnObject.m.inits.push(function(){

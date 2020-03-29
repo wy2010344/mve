@@ -1,63 +1,8 @@
-define(["require", "exports", "./childOperate", "./buildArray", "./buildView", "./buildModel", "./mveParseChildren"], function (require, exports, childOperate, buildArray, buildView, buildModel, mveParseChildrenFactory) {
+define(["require", "exports", "./children/util"], function (require, exports, util_1) {
     "use strict";
-    /**
-     * 递归查找下一个节点
-     * @param obj
-     */
-    function findFirstElement(obj) {
-        if (obj.element) {
-            //普通节点
-            return obj.element;
-        }
-        else {
-            //复合节点
-            var element = obj.firstElement();
-            if (element) {
-                return element;
-            }
-            else {
-                return findFirstElement(obj.getNextObject());
-            }
-        }
-    }
-    var updateModelIndex = function (view, index) {
-        view.row.index(index);
-    };
-    var updateArrayData = function (view, data) {
-        view.row.data(data);
-    };
-    return function (util) {
-        var mveParseChildren = mveParseChildrenFactory(util);
-        var getOModel = function (row, i) {
-            return {
-                data: row,
-                index: util.Value(i)
-            };
-        };
-        var getOArray = function (row, i) {
-            return {
-                data: util.Value(row),
-                index: i //因为使用复用，所以不会发生改变
-            };
-        };
-        /**
-         * 每种children的配置的
-         */
+    exports.__esModule = true;
+    function superBuildChildrenFactory(mveParseChild, whenNoType) {
         return function (p) {
-            /**
-             * 单元素，销毁时自动从父元素脱离
-             * @param child
-             * @param e
-             * @param x
-             * @param m
-             */
-            var parseObject = function (child, e, x, m) {
-                var obj = p.parse(p.mve, x, e, child, m);
-                m.destroys.push(function () {
-                    p.removeChild(e.pel, obj.element);
-                });
-                return obj;
-            };
             var p_before = p.before || mb.Function.quote.one;
             var p_after = p.after || mb.Function.quote.one;
             /**
@@ -66,14 +11,14 @@ define(["require", "exports", "./childOperate", "./buildArray", "./buildView", "
              * @param obj
              */
             function appendChildFromSetObject(obj, p_appendChild) {
-                if (obj.element) {
+                if ('element' in obj) {
                     return function (pel, el) {
                         p.insertChildBefore(pel, el, obj.element);
                     };
                 }
                 else {
                     return function (pel, el) {
-                        var element = findFirstElement(obj);
+                        var element = util_1.findFirstElement(obj);
                         if (element) {
                             p.insertChildBefore(pel, el, element);
                         }
@@ -83,241 +28,116 @@ define(["require", "exports", "./childOperate", "./buildArray", "./buildView", "
                     };
                 }
             }
-            function parseArrayRepeat(child, e, x, m, p_appendChild) {
-                var appendChild = p_appendChild;
-                var c_inits = [];
-                var isInit = false;
-                var bc = buildArray({
-                    no_cache: p.no_cache,
-                    build: childOperate.build(e, child.repeat, p.mve, getOArray),
-                    after: function (view) {
-                        var init = childOperate.getInit(view);
-                        if (isInit) {
-                            init();
-                        }
-                        else {
-                            c_inits.push(init);
-                        }
-                    },
-                    update_data: updateArrayData,
-                    destroy: childOperate.destroy,
-                    appendChild: function (view) {
-                        appendChild(e.pel, view.obj.element);
-                    },
-                    removeChild: function (view) {
-                        p.removeChild(e.pel, view.obj.element);
-                    }
-                });
-                var watch = util.Watcher({
-                    before: function () {
-                        p_before(e.pel);
-                    },
-                    exp: function () {
-                        return child.array();
-                    },
-                    after: function (array) {
-                        bc.after(array);
-                        p_after(e.pel);
-                    }
-                });
-                m.inits.push(function () {
-                    mb.Array.forEach(c_inits, function (c_i) {
-                        c_i();
-                    });
-                    isInit = true;
-                });
-                m.destroys.push(function () {
-                    watch.disable();
-                    bc.destroy();
-                });
-                var nextObject;
-                return {
-                    m: m,
-                    firstElement: bc.firstElement,
-                    getNextObject: function () {
-                        return nextObject;
-                    },
-                    setNextObject: function (obj) {
-                        nextObject = obj;
-                        appendChild = appendChildFromSetObject(obj, p_appendChild);
-                    }
-                };
-            }
-            function parseModelRepeat(child, e, x, m, p_appendChild) {
-                var appendChild = p_appendChild;
-                //model属性
-                var px = {
-                    build: childOperate.build(e, child.repeat, p.mve, getOModel),
-                    model: child.model,
-                    update_index: updateModelIndex,
-                    init: childOperate.init,
-                    destroy: childOperate.destroy,
-                    insertChildBefore: function (new_view, old_view, isMove) {
-                        p.insertChildBefore(e.pel, new_view.obj.element, old_view.obj.element, isMove);
-                    },
-                    removeChild: function (view) {
-                        p.removeChild(e.pel, view.obj.element);
-                    },
-                    appendChild: function (view, isMove) {
-                        appendChild(e.pel, view.obj.element, isMove);
-                    }
-                };
-                var bm;
-                if (mb.Array.isArray(child.model)) {
-                    bm = buildView(px);
-                    if (child.id) {
-                        if (m.k[child.id]) {
-                            mb.log(child.id + "该id已经存在，出错");
-                        }
-                        else {
-                            m.k[child.id] = bm.view;
-                        }
-                    }
-                }
-                else {
-                    bm = buildModel(px);
-                }
-                m.inits.push(bm.init);
-                m.destroys.push(bm.destroy);
-                var nextObject;
-                return {
-                    m: m,
-                    firstElement: bm.firstElement,
-                    getNextObject: function () {
-                        return nextObject;
-                    },
-                    setNextObject: function (obj) {
-                        nextObject = obj;
-                        appendChild = appendChildFromSetObject(obj, p_appendChild);
-                    }
+            function buildChildrenOf(e, repeat, getO, keep) {
+                return function (row, i) {
+                    var o = getO(row, i);
+                    var obj = mveParseChild(function (me) {
+                        /*相当于修饰*/
+                        return repeat(me, o.data, o.index);
+                    })(e, realBuildChildren, keep);
+                    return {
+                        row: o,
+                        obj: obj
+                    };
                 };
             }
             /**
-             * buildChildren会直接appendChild，
-             * @param child
-             * @param e
-             * @param x
-             * @param o
-             * @param p_appendChild
-             */
-            function parseMultiIf(child, e, x, m, p_appendChild) {
-                var currentObject;
-                var initFlag = false;
-                var keep = {
-                    appendChild: p_appendChild
+            * 单元素，销毁时自动从父元素脱离
+            * @param child
+            * @param e
+            * @param x
+            * @param m
+            */
+            var parseObject = function (child, e, x, m) {
+                var obj = p.parse(p.mve, x, e, child, m);
+                obj.remove = function () {
+                    p.removeChild(e.pel, obj.element);
                 };
-                x.watch({
-                    exp: function () {
-                        return child.render();
-                    },
-                    after: function (json) {
-                        if (typeof (json) == 'object') {
-                            var mveChildren = mveParseChildren(function (me) {
-                                return {
-                                    elements: json
-                                };
-                            });
-                        }
-                        else {
-                            var mveChildren = mveParseChildren(json);
-                        }
-                        var obj = mveChildren(e, realBuildChildren, keep);
-                        if (currentObject) {
-                            if (initFlag) {
-                                currentObject.destroy();
-                                obj.init();
-                            }
-                        }
-                        currentObject = obj;
-                    }
-                });
-                m.inits.push(function () {
-                    initFlag = true;
-                    if (currentObject && currentObject.init) {
-                        currentObject.init();
-                    }
-                });
-                m.destroys.push(function () {
-                    if (currentObject && currentObject.destroy) {
-                        currentObject.destroy();
-                    }
-                });
-                var nextObject;
-                return {
-                    m: m,
-                    firstElement: function () {
-                        return currentObject.firstElement();
-                    },
-                    getNextObject: function () {
-                        return nextObject;
-                    },
-                    setNextObject: function (obj) {
-                        nextObject = obj;
-                        keep.appendChild = appendChildFromSetObject(obj, p_appendChild);
-                    }
-                };
-            }
+                return obj;
+            };
             /**
-             * 真实的组装子节点
-             * @param g
-             * @param e
-             * @param x
-             * @param children
-             * @param m
-             * @param appendChild 默认的追加方式
-             */
+            * 真实的组装子节点
+            * 返回元素列表，手动决定组合
+            * @param g
+            * @param e
+            * @param x
+            * @param children
+            * @param m
+            * @param appendChild 默认的追加方式
+            */
             var realBuildChildren = function (e, x, children, m, appendChild) {
                 var i = 0;
-                var firstChild = null;
+                var views = [];
                 var lastObject = null;
                 var length = children.length;
                 while (i < length) {
                     var child = children[i];
                     i++;
                     var thisObject = void 0;
-                    if (child.array && child.repeat) {
-                        thisObject = parseArrayRepeat(child, e, x, m, appendChild);
+                    /*
+                    if(child.array && child.repeat){
+                    if(child.isNew){
+                    thisObject=parseArrayRepeat(child,e,x,m,appendChild)
+                    }else{
+                    thisObject=parseArrayRepeat_old(child,e,x,m,appendChild)
                     }
-                    else if (child.model && child.repeat) {
-                        thisObject = parseModelRepeat(child, e, x, m, appendChild);
+                    }else
+                    if(child.model && child.repeat){
+                    thisObject=parseModelRepeat(child,e,x,m,appendChild)
+                    }else
+                    if(child.multi && child.render){
+                    thisObject=parseMultiIf(child,e,x,m,appendChild);
                     }
-                    else if (child.multi && child.render) {
-                        thisObject = parseMultiIf(child, e, x, m, appendChild);
+                    */
+                    var ctype = child.type;
+                    if (!ctype && child.repeat) {
+                        child = whenNoType(child); //需要兼容
+                        ctype = child.type;
+                    }
+                    if (typeof (ctype) == 'function') {
+                        thisObject = ctype(child, e, x, m, appendChild, mxv);
                     }
                     else {
                         var obj = parseObject(child, e, x, m);
-                        appendChild(e.pel, obj.element);
                         thisObject = obj;
                     }
                     if (lastObject && 'setNextObject' in lastObject) {
                         lastObject.setNextObject(thisObject);
                     }
                     m = thisObject.m;
-                    if (!firstChild) {
-                        firstChild = thisObject;
-                    }
+                    views.push(thisObject);
                     lastObject = thisObject;
                 }
                 return {
                     firstElement: function () {
-                        if (firstChild) {
-                            return findFirstElement(firstChild);
+                        if (views.length != 0) {
+                            return util_1.findFirstElement(views[0]);
                         }
                     },
-                    firstChild: firstChild,
+                    views: views,
                     m: m
                 };
+            };
+            var mxv = {
+                before: p_before,
+                after: p_after,
+                realBuildChildren: realBuildChildren,
+                buildChildrenOf: buildChildrenOf,
+                parseObject: parseObject,
+                appendChildFromSetObject: appendChildFromSetObject,
+                insertChildBefore: p.insertChildBefore
             };
             return function (e, x, children, m) {
                 if (children) {
                     if (mb.Array.isArray(children)) {
-                        var cd = realBuildChildren(e, x, children, m, p.appendChild);
-                        return cd.m;
+                        var newChildren = children;
                     }
                     else {
                         //兼容原来的
-                        mb.log("将要淘汰，请使用列表式的children和me.repeat", children);
                         var newChildren = [];
+                        if (children.before || children.after) {
+                            mb.log("将要淘汰，使用before和after的方式", children);
+                        }
                         if (children.before) {
                             newChildren = newChildren.concat(children.before);
                         }
@@ -325,14 +145,26 @@ define(["require", "exports", "./childOperate", "./buildArray", "./buildView", "
                         if (children.after) {
                             newChildren = newChildren.concat(children.after);
                         }
-                        var cd = realBuildChildren(e, x, newChildren, m, p.appendChild);
-                        return cd.m;
                     }
+                    var cd = realBuildChildren(e, x, newChildren, m, p.appendChild);
+                    util_1.deepRun(cd.views, function (el) {
+                        p.appendChild(e.pel, el.element);
+                    });
+                    /*
+                    //可以不用，移除父节点不需要再移除孙子结点
+                    cd.m.destroys.push(function(){
+                    deepRun(cd.views,function(el){
+                    el.remove()
+                    })
+                    })
+                    */
+                    return cd.m;
                 }
                 else {
                     return m;
                 }
             };
         };
-    };
+    }
+    exports.superBuildChildrenFactory = superBuildChildrenFactory;
 });
