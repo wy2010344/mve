@@ -55,22 +55,31 @@
 			if(obj.element){
 				//传统的jsdom
 				var el=obj.element;
+				var oldSize={width:0,height:0};
+				var reHeight=mb.Function.quote.one;
+				var reWidth=mb.Function.quote.one;
+				var out=obj.out||obj;
+				//兼容mve的情况
+				if(out){
+					if(out.height){
+						reHeight=out.height;
+					}
+					if(out.width){
+						reWidth=out.width;
+					}
+				}
 				window.onresize=function(){
 					var _w=body.clientWidth-(rpd*2);
 					var _h=body.clientHeight-(rpd*2);
 					el.style.width=_w+'px';
 					el.style.height=_h+'px';
-					
-					var out=obj;
-					//兼容mve的情况
-					if(obj.out){
-						out=obj.out;
+					if(_w!=oldSize.width){
+						oldSize.width=_w
+						reWidth(_w)
 					}
-					if(out.height){
-						out.height(_h);
-					}
-					if(out.width){
-						out.width(_w);
+					if(_h!=oldSize.height){
+						oldSize.height=_h
+						reHeight(_h)
 					}
 				};
 				root.appendChild(el);

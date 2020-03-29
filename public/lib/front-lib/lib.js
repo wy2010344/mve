@@ -981,7 +981,15 @@ mb.DOM=(function(){
 			return function(){
 				return _is_;
 			}
-		})()
+		})(),
+		copyElement:function(div){
+			var selection = window.getSelection();
+			var range = document.createRange();
+			range.selectNodeContents(div);
+			selection.removeAllRanges();
+			selection.addRange(range);
+			document.execCommand('Copy');
+		}
 	};
 })();
 mb.Array={
@@ -1017,6 +1025,16 @@ mb.Array={
 		var ret=[];
 		for(var i=0;i<array.length;i++){
 			ret[i]=func(array[i],i);
+		}
+		return ret;
+	},
+	flatMap:function(array,func){
+		var ret=[];
+		for(var i=0;i<array.length;i++){
+			var vr=func(array[i],i)
+			for(var x=0;x<vr.length;x++){
+				ret.push(vr[x])
+			}
 		}
 		return ret;
 	},

@@ -32,16 +32,16 @@ function reverScroll(store:ScrollKeep[]){
 
 
 export={
-	createElement:function(type:string){
+	createElement(type:string){
 		return document.createElement(type);
 	},
-	createElementNS:function(type,NS){
+	createElementNS(type,NS){
 		return document.createElementNS(NS,type);
 	},
-	createTextNode:function(json){
+	createTextNode(json){
 		return document.createTextNode(json);
 	},
-	appendChild:function(el,child,isMove?:boolean){
+	appendChild(el,child,isMove?:boolean){
 		if(isMove){
 			const o=keepScroll(child)
 			el.appendChild(child);
@@ -50,13 +50,13 @@ export={
 			el.appendChild(child);
 		}
 	},
-	replaceWith:function(el,newEL){
+	replaceWith(el,newEL){
 		var pN=el.parentNode;
 		if(pN){
 			pN.replaceChild(newEL,el);
 		}
 	},
-	insertChildBefore:function(pel,new_el,old_el,isMove?:boolean){
+	insertChildBefore(pel,new_el,old_el,isMove?:boolean){
 		if(isMove){
 			const oo=keepScroll(old_el)
 			const no=keepScroll(new_el);
@@ -67,22 +67,22 @@ export={
 			pel.insertBefore(new_el,old_el);
 		}
 	},
-	removeChild:function(el,child){
+	removeChild(el,child){
 		el.removeChild(child);
 	},
-	empty:function(el){
+	empty(el){
 		while(el.firstChild){
 			el.removeChild(el.firstChild);
 		}
 	},
-	attr:function(el,key,value){
+	attr(el,key,value){
 		if(value==undefined){
 			el.removeAttribute(key);
 		}else{
 			el.setAttribute(key,value);
 		}
 	},
-	style:function(el,key,value){
+	style(el,key,value){
 		//IE下如果设置负值，会导致错误
 		try{
 			el.style[key]=value;
@@ -90,22 +90,22 @@ export={
 			mb.log(e);
 		}
 	},
-	prop:function(el,key,value){                
+	prop(el,key,value){                
 		el[key]=value;
 	},
-	action:function(el,key,value){
+	action(el,key,value){
 		mb.DOM.addEvent(el,key,value);
 	},
-	text:function(el,value){
+	text(el,value){
 		el.innerText=value;
 	},
-	content:function(el,value){
+	content(el,value){
 		el.textContent=value;
 	},
-	value:function(el,value){
+	value(el,value){
 		el.value=value;
 	},
-	html:function(el,value) {
+	html(el,value) {
 		el.innerHTML=value;
 	}
 }

@@ -42,6 +42,7 @@ export function dragMoveHelper(p:{
   allow?:()=>boolean;
   diffX?:(diff:number)=>void;
   diffY?:(diff:number)=>void;
+  cancel?:()=>void
 }){
   let laste;
   let move=false;
@@ -52,12 +53,16 @@ export function dragMoveHelper(p:{
         if(move){
           e=e||window.Event;
           var diffX=e.clientX-laste.clientX;
-          if(p.diffX){
-            p.diffX(diffX);
+          if(diffX!=0){
+            if(p.diffX){
+              p.diffX(diffX);
+            }
           }
           var diffY=e.clientY-laste.clientY;
-          if(p.diffY){
-            p.diffY(diffY);
+          if(diffY!=0){
+            if(p.diffY){
+              p.diffY(diffY);
+            }
           }
           laste=e;
           mb.DOM.stopPropagation(e);
@@ -67,6 +72,9 @@ export function dragMoveHelper(p:{
     cancel(e){
       move=false;
       canSelect();
+      if(p.cancel){
+        p.cancel()
+      }
     }
   }
   const border=p.border||document;
@@ -116,23 +124,26 @@ export function dragResizeMoveHelper(p:{
           var old_e=event.event;
           e=e||window.event;
           event.event=e;
-          if(event.dir.l){
-            var x=diff(true,e,old_e);
-            p.left(p.left()+x);
-            p.width(p.width()-x);
+          var x=diff(true,e,old_e);
+          var y=diff(false,e,old_e);
+          if(x!=0){
+            if(event.dir.l){
+              p.left(p.left()+x);
+              p.width(p.width()-x);
+            }
+            if(event.dir.r){
+              var x=diff(true,e,old_e);
+              p.width(p.width()+x);
+            }
           }
-          if(event.dir.r){
-            var x=diff(true,e,old_e);
-            p.width(p.width()+x);
-          }
-          if (event.dir.t){
-            var y=diff(false,e,old_e);
-            p.top(p.top()+y);
-            p.height(p.height()-y);
-          }
-          if(event.dir.b){
-            var y=diff(false,e,old_e);
-            p.height(p.height()+y);
+          if(y!=0){
+            if (event.dir.t){
+              p.top(p.top()+y);
+              p.height(p.height()-y);
+            }
+            if(event.dir.b){
+              p.height(p.height()+y);
+            }
           }
         }else
         if(event.type=="move"){
@@ -141,8 +152,12 @@ export function dragResizeMoveHelper(p:{
           event.event=e;
           var x=diff(true,e,old_e);
           var y=diff(false,e,old_e);
-          p.left(p.left()+x);
-          p.top(p.top()+y);
+          if(x!=0){
+            p.left(p.left()+x);
+          }
+          if(y!=0){
+            p.top(p.top()+y);
+          }
         }
       }
     }

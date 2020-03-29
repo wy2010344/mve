@@ -1,5 +1,6 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
+    exports.__esModule = true;
     /*
     ArrayModel是模型内的批量移动，其实可以对应grid。
     
@@ -22,7 +23,7 @@ define(["require", "exports"], function (require, exports) {
             from._models.splice(from_index, 1);
             to._models.splice(to_index, 0, model);
             //视图的移动
-            from._p.removeChild(model.view);
+            from._p.removeChildOnly(model.view);
             if (to_index < to.size() - 1) {
                 to._p.insertChildBefore(model.view, to._models[to_index + 1].view);
             }
@@ -73,7 +74,6 @@ define(["require", "exports"], function (require, exports) {
                 p.update_index(models[i].view, i - 1);
             }
             p.destroy(view);
-            p.removeChild(view);
         };
         //////
         ArrayView.prototype.size = function () {
@@ -101,7 +101,13 @@ define(["require", "exports"], function (require, exports) {
         };
         return ArrayView;
     }());
-    return function (p) {
+    /*
+    model:[]
+    build
+    init
+    destroy
+    */
+    function buildView(p) {
         var models = [];
         var initModels = [];
         for (var i = 0; i < p.model.length; i++) {
@@ -134,5 +140,7 @@ define(["require", "exports"], function (require, exports) {
                 });
             }
         };
-    };
+    }
+    exports.buildView = buildView;
+    ;
 });
