@@ -1,4 +1,4 @@
-import { JOFun, JOChildType, BuildChildrenResult, JOChildren } from "./childrenModel";
+import { JOFun, BuildChildrenResult, JOChildren } from "./childrenModel";
 import { onceLife } from "./onceLife";
 import { VirtualChild } from "./virtualTreeChildren";
 
@@ -48,7 +48,7 @@ export function modelChildren<T,JO,EO,PEO>(
         //创建视图
         const vm=parent.newChildAt(index)
         const vx=mx.buildChildren(lifeModel.me,cs,vm)
-        const view=new ViewModel(vindex,lifeModel,vm,vx)
+        const view=new ViewModel<PEO,EO>(vindex,lifeModel,vm,vx)
         //模型增加
         views.splice(index,0,view)
         //更新计数
@@ -82,8 +82,7 @@ export function modelChildren<T,JO,EO,PEO>(
         views.splice(oldIndex,1)
         views.splice(newIndex,0,view)
         //视图变更
-        parent.remove(oldIndex)
-        parent.insert(newIndex,view.element)
+        parent.move(oldIndex,newIndex)
         //更新计数
         const sort=oldIndex<newIndex?[oldIndex,newIndex]:[newIndex,oldIndex];
         for(let i=sort[0];i<=sort[1];i++){

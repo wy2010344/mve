@@ -6,8 +6,8 @@ export type VirtualChildType<PEO,EO>= EO | VirtualChild<PEO,EO>
 
 export interface VirtualChildParam<PEO,EO>{
   remove(pel:PEO,e:EO):void,
-  append(pel:PEO,e:EO):void,
-  insertBefore(pel:PEO,e:EO,old:EO):void
+  append(pel:PEO,e:EO,isMove?:boolean):void,
+  insertBefore(pel:PEO,e:EO,old:EO,isMove?:boolean):void
 }
 export class VirtualChild<PEO,EO>{
   private constructor(
@@ -43,23 +43,87 @@ export class VirtualChild<PEO,EO>{
   private before?:VirtualChildType<PEO,EO>
   /**自己的后一个节点 */
   private after?:VirtualChildType<PEO,EO>
-  remove(index:number){
+
+  private pureRemove(index){
     const view=this.children.splice(index,1)[0]
-    if(view){
-      const before=this.children[index-1]
-      const after=this.children[index]
-      if(before && before instanceof VirtualChild){
-        before.after=after
-      }
-      if(after && after instanceof VirtualChild){
-        after.before=before
-      }
+    const before=this.children[index-1]
+    const after=this.children[index]
+    if(before && before instanceof VirtualChild){
+      before.after=after
+    }
+    if(after && after instanceof VirtualChild){
+      after.before=before
+    }
+    return view
+  }
+  remove(index:number){
+    if(index>-1 && index<(this.children.length-1)){
+      const view=this.pureRemove(index)
       const that=this
       VirtualChild.deepRun(view,function(e){
         that.param.remove(that.pel,e)
       })
     }else{
       mb.log(`删除${index}失败,总宽度仅为${this.size()}`)
+    }
+  }
+  move(oldIndex:number,newIndex:number){
+    if(oldIndex>-1 && oldIndex<(this.children.length-1)
+    && newIndex>-1 && newIndex<(this.children.length-1)){
+      const view=this.pureRemove(oldIndex)
+      const after=this.pureInsert(newIndex,view)
+      const realNextEL=this.nextEL(after)
+      const that=this
+      VirtualChild.deepRun(view,function(e){
+        if(realNextEL){
+          that.param.insertBefore(that.pel,e,realNextEL,true)
+        }else{
+          that.param.append(that.pel,e,true)
+        }
+      })
+    }
+  }
+  private pureInsert(index:number,view:VirtualChildType<PEO,EO>){
+    this.children.splice(index,0,view)
+    const before=this.children[index-1]
+    const after=this.children[index+1]
+    if(view instanceof VirtualChild){
+      view.parent=this
+      view.param=this.param
+      view.pel=this.pel
+      
+      view.before=before
+      view.after=after
+    }
+    if(before && before instanceof VirtualChild){
+      before.after=view
+    }
+    if(after && after instanceof VirtualChild){
+      after.before=view
+    }
+    return after
+  }
+  nextEL(after:VirtualChildType<PEO,EO>){
+    if(after){
+      return this.realNextEO(after)
+    }else{
+      return this.realParentNext(this)
+    }
+  }
+  insert(index:number,view:VirtualChildType<PEO,EO>){
+    if(index>-1 && index<(this.children.length+1)){
+      const after=this.pureInsert(index,view)
+      const realNextEL=this.nextEL(after)
+      const that=this
+      VirtualChild.deepRun(view,function(e){
+        if(realNextEL){
+          that.param.insertBefore(that.pel,e,realNextEL)
+        }else{
+          that.param.append(that.pel,e)
+        }
+      })
+    }else{
+      mb.log(`插入${index}失败,总宽度仅为${this.size()}`)
     }
   }
 
@@ -92,38 +156,6 @@ export class VirtualChild<PEO,EO>{
       }
     }else{
       return null
-    }
-  }
-  insert(index:number,view:VirtualChildType<PEO,EO>){
-    if(index>-1 && index<(this.children.length+1)){
-      this.children.splice(index,0,view)
-      const before=this.children[index-1]
-      const after=this.children[index+1]
-      if(view instanceof VirtualChild){
-        view.parent=this
-        view.param=this.param
-        view.pel=this.pel
-        
-        view.before=before
-        view.after=after
-      }
-      if(before && before instanceof VirtualChild){
-        before.after=view
-      }
-      if(after && after instanceof VirtualChild){
-        after.before=view
-      }
-      const that=this
-      const realNextEL=after?that.realNextEO(after):that.realParentNext(that)
-      VirtualChild.deepRun(view,function(e){
-        if(realNextEL){
-          that.param.insertBefore(that.pel,e,realNextEL)
-        }else{
-          that.param.append(that.pel,e)
-        }
-      })
-    }else{
-      mb.log(`插入${index}失败,总宽度仅为${this.size()}`)
     }
   }
   static newRootChild<PEO,EO>(param:VirtualChildParam<PEO,EO>,pel:PEO){
