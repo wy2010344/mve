@@ -57,7 +57,7 @@ export class VirtualChild<PEO,EO>{
     return view
   }
   remove(index:number){
-    if(index>-1 && index<(this.children.length-1)){
+    if(index>-1 && index<this.children.length){
       const view=this.pureRemove(index)
       const that=this
       VirtualChild.deepRun(view,function(e){
@@ -68,8 +68,8 @@ export class VirtualChild<PEO,EO>{
     }
   }
   move(oldIndex:number,newIndex:number){
-    if(oldIndex>-1 && oldIndex<(this.children.length-1)
-    && newIndex>-1 && newIndex<(this.children.length-1)){
+    if(oldIndex>-1 && oldIndex<this.children.length
+    && newIndex>-1 && newIndex<this.children.length){
       const view=this.pureRemove(oldIndex)
       const after=this.pureInsert(newIndex,view)
       const realNextEL=this.nextEL(after)
