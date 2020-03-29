@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/wangyang2010344/mve/issues"
   },
-  "homepage": "https://github.com/wangyang2010344/mve#readme"
+  "homepage": "https://github.com/wangyang2010344/mve#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
