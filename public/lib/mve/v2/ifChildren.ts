@@ -1,4 +1,4 @@
-import { JOChildType, JOFun, BuildChildrenResult, JOChildren } from "./childrenModel";
+import { JOFun, BuildChildrenResult, JOChildren } from "./childrenModel";
 import { onceLife } from "./onceLife";
 import { VirtualChild } from "./virtualTreeChildren";
 

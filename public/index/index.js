@@ -32,7 +32,7 @@ define(["require", "exports", "./div"], function (require, exports, div_1) {
                     a("s-html测试", "?act=s-html&path=index/s-html-test/a.s-html"),
                     br,
                     a("测试ViewModel", "?act=test>ViewModel"),
-                    a("新的mve", "?act=mve_new/index"),
+                    a("新的mve", "?act=mve_new/demo"),
                     {
                         type: "input",
                         id: function (v) {

@@ -17,29 +17,26 @@
  * 只要有邻近依赖节点都行。
  * 固定片段里不一定有元素。
  * 需要构建树状结构供遍历，parent,children,before,next几个属性
+ * 
+ * 不再主动声明mve，使用ifChildren和modelChildren来解决
+ * 根更像ifChildren。
+ * 仍然暂时不用innerHTML/content
+ * 虽然ifChildren，顶层用状态机控制。下层可以继续ifChildren。
  */
 
-import { JOChildType, superChildrenBuilder } from "./childrenModel"
-import { ifChildren } from "./ifChildren"
-import DOM = require("../../lib/mve-DOM/DOM")
-import { modelChildren } from "./modelChildren"
-
-
- 
-
-interface NJO{
+import {superChildrenBuilder, JOChildren } from "../mve/v2/childrenModel"
+import DOM = require("./DOM")
+export interface NJO{
 	type:string,
 	id?:(o:any)=>void;
-	NS?:string;
-	text?: MveItemValue;
-	content?:MveItemValue;
 	cls?:mve.StringValue;
+	text?: MveItemValue;
 	value?: MveItemValue;
 	attr?: MveItemMap;
 	style?: mve.StringMap;
 	prop?:{ [key: string]:mve.TValue<string|number|boolean>};
 	action?: { [key: string]: ((e: Event) => void) };
-	children?:JOChildType<NJO,HTMLElement,HTMLElement>[]
+	children?:JOChildren <NJO,HTMLElement,HTMLElement>
 }
 function bind<T>(me:mve.Inner,value:mve.TValue<T>,fun:(v:T)=>void){
 	if(typeof(value)=='function'){
@@ -60,9 +57,9 @@ function bindKV<T>(me:mve.Inner,map:{ [key: string]: mve.TValue<T>},fun:(k:strin
 		})
 	})
 }
-const buildChildren=superChildrenBuilder<NJO,HTMLElement,HTMLElement>({
-	parseChild(me,child){
-		const el=DOM.createElement(child.type)
+function parseOf(createElement:(type:string)=>HTMLElement){
+	function view(me:mve.Inner,child:NJO){
+		const el=createElement(child.type)
 		if(child.id){
 			child.id(el)
 		}
@@ -86,111 +83,43 @@ const buildChildren=superChildrenBuilder<NJO,HTMLElement,HTMLElement>({
 				DOM.attr(el,k,v)
 			})
 		}
+		if(child.prop){
+			bindKV(me,child.prop,function(k,v){
+				DOM.prop(el,k,v)
+			})
+		}
 		if(child.action){
 			mb.Object.forEach(child.action,function(v,k){
 				DOM.action(el,k,v)
 			})
-    }
-    const childResult=child.children?buildChildren(me,el,child.children):null
+		}
+		const childResult=child.children?children(me,el,child.children):null
 		return {
 			element:el,
 			init(){
-        if(childResult){
-          childResult.init()
-        }
-      },
+				if(childResult){
+					childResult.init()
+				}
+			},
 			destroy(){
-        if(childResult){
-          childResult.destroy()
-        }
-      }
-		}
-	},
-	insertBefore(pel,newEL,oldEL){
-		// mb.log("insertBefore",newEL,oldEL)
-    DOM.insertChildBefore(pel,newEL,oldEL)
-  },
-  append(pel,el){
-		// mb.log("append",el)
-    DOM.appendChild(pel,el)
-  },
-	remove(pel,el){
-		// mb.log("remove",el)
-		DOM.removeChild(pel,el)
-  }
-})
-
-
-export=mve(function(me){
-	let centerV:HTMLDivElement
-	const div=mve.Value(1)
-
-	function ifChildrenOf(flag:number,num:number){
-		return ifChildren(function(){
-			if(div()%num==0){
-				return []
-			}else{
-				return [
-					{
-						type:"div",
-						text(){
-							return flag+"标签"+div()%num
-						}
-					}
-				]
+				if(childResult){
+					childResult.destroy()
+				}
 			}
-		})
+		}
 	}
-
-	const model=mve.ArrayModel([1,2,3])
+	const children=superChildrenBuilder<NJO,HTMLElement,HTMLElement>({
+		parseChild:view,
+		insertBefore:DOM.insertChildBefore,
+		append:DOM.appendChild,
+		remove:DOM.removeChild
+	})
 	return {
-		init(){
-		 const ch=buildChildren(me,centerV,[
-			 {
-				 type:"button",
-				 style:{
-					 background:"gray"
-				 },
-				 text(){
-					 return "当前计数"+div()
-				 },
-				 action:{
-					 click(){
-						 div(div()+1)
-						 const flag=div()%7
-						 let x=model.size()%7
-						 mb.log(flag,x<model.size(),x,model.size())
-						 model.insert(x,flag)
-						 /*
-						 model.unshift(model.size()+1)
-						 */
-					 }
-				 }
-			 },
-			 ifChildrenOf(1,2),
-			 ifChildrenOf(2,5),
-			 modelChildren(model,function(me,row,index){
-				 return [
-					 ifChildrenOf(131,3),
-					 {
-						 type:"div",
-						 style:{
-							background:"yellow"
-						 },
-						 text:row+""
-					 },
-					 ifChildrenOf(141,7),
-				 ] as NJO[]
-			 }),
-			 ifChildrenOf(5,13)
-		 ])
-		 ch.init()
-		},
-		element:{
-			type:"div",
-			id(v){
-				centerV=v
-			}
-		}
+		view,
+		children
 	}
+}
+export const parseHTML=parseOf(DOM.createElement)
+export const parseSVG=parseOf(function(type){
+	return DOM.createElementNS(type,"http://www.w3.org/2000/svg")
 })

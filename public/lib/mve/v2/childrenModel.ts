@@ -46,8 +46,8 @@ export interface MXO<JO,EO,PEO>{
 }
 export function superChildrenBuilder<JO,EO,PEO>(p:{
   parseChild(me:mve.Inner,child:JO):EOParseResult<EO>,
-  append(pel:PEO,el:EO):void,
-  insertBefore(pel:PEO,el:EO,old:EO):void,
+  append(pel:PEO,el:EO,isMove?:boolean):void,
+  insertBefore(pel:PEO,el:EO,old:EO,isMove?:boolean):void,
   remove(pel:PEO,el:EO):void
 }){
   function getItem(item:JOChildren<JO,EO,PEO>,inits:EmptyFun[],destroys:EmptyFun[]):JOChildType<JO,EO,PEO>[]{

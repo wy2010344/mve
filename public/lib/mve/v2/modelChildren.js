@@ -77,8 +77,7 @@ define(["require", "exports", "./onceLife"], function (require, exports, onceLif
                     views.splice(oldIndex, 1);
                     views.splice(newIndex, 0, view);
                     //视图变更
-                    parent.remove(oldIndex);
-                    parent.insert(newIndex, view.element);
+                    parent.move(oldIndex, newIndex);
                     //更新计数
                     var sort = oldIndex < newIndex ? [oldIndex, newIndex] : [newIndex, oldIndex];
                     for (var i = sort[0]; i <= sort[1]; i++) {
