@@ -43,7 +43,7 @@ define(["require", "exports"], function (require, exports) {
             return view;
         };
         VirtualChild.prototype.remove = function (index) {
-            if (index > -1 && index < (this.children.length - 1)) {
+            if (index > -1 && index < this.children.length) {
                 var view = this.pureRemove(index);
                 var that_1 = this;
                 VirtualChild.deepRun(view, function (e) {
@@ -55,8 +55,8 @@ define(["require", "exports"], function (require, exports) {
             }
         };
         VirtualChild.prototype.move = function (oldIndex, newIndex) {
-            if (oldIndex > -1 && oldIndex < (this.children.length - 1)
-                && newIndex > -1 && newIndex < (this.children.length - 1)) {
+            if (oldIndex > -1 && oldIndex < this.children.length
+                && newIndex > -1 && newIndex < this.children.length) {
                 var view = this.pureRemove(oldIndex);
                 var after = this.pureInsert(newIndex, view);
                 var realNextEL_1 = this.nextEL(after);
