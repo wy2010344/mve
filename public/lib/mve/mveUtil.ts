@@ -1,6 +1,9 @@
 
 
 
+const forEachRun=function(array:(()=>void)[]){
+	mb.Array.forEach(array,function(r:any){r();});
+};
 export=function(cache:mve.Value<any>){
 	interface CreateDep{
 		():DepCls;
@@ -27,6 +30,7 @@ export=function(cache:mve.Value<any>){
 		}
 	};
 	const mveUtil={
+		 forEachRun,
 		 Dep:(function(){
 			let x:CreateDep=cache();
 			 if(!x){
@@ -82,6 +86,10 @@ export=function(cache:mve.Value<any>){
 				 }
 				 addView(view){
 					 this._views.push(view);
+					 //自动初始化
+					 for(var i=0;i<this._array.length;i++){
+						 view.insert(i,this._array[i])
+					 }
 				 }
 				 removeView(view){
 					 var index=mb.Array.indexOf(this._views,view);
@@ -287,19 +295,6 @@ export=function(cache:mve.Value<any>){
 				 return cache;
 			 };
 		 },
-		 repeat(a,repeat){
-			 if(typeof(a)=='function'){
-					return {
-						array:a,
-						repeat:repeat
-					}
-			 }else{
-				 return {
-					 model:a,
-					 repeat:repeat
-				 }
-			 }
-		 },
 		 generateMe:(function(){
 			const bindFactory=function(watch){
 				return function(value,f){
@@ -329,9 +324,6 @@ export=function(cache:mve.Value<any>){
 			const children=function(av){
 				return [av];
 			};
-			const forEach_run=function(array){
-				mb.Array.forEach(array,function(r:any){r();});
-			};
 			return function(){
 				const watchPool=[];
 				const Watch=function(p){
@@ -351,7 +343,7 @@ export=function(cache:mve.Value<any>){
 				*/
 				const bind=bindFactory(Watch);
 				return {
-					me:<mve.Inner>{
+					me:<mve.OldInner>{
 						k:{},
 						Value:mveUtil.Value,
 						ReadValue:mveUtil.ReadValue,
@@ -366,7 +358,7 @@ export=function(cache:mve.Value<any>){
 						bind:bind,
 						if_bind:if_bind(bind)
 					},
-					forEachRun:forEach_run,
+					forEachRun,
 					destroy(){
 						var w;
 						while((w=watchPool.shift())!=null){

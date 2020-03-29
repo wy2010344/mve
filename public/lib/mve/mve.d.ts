@@ -10,12 +10,28 @@ declare namespace mve{
   /** 字符串Map*/
   type StringMap={ [key: string]: StringValue}
 
-  interface WatchParam<B,A>{
-    before?():B;
-    exp(v: B):A;
-    after?(v: A):void;
+  type WatchParam<B,A>={
+    before():B
+    exp(v:B):A
+    after(v:A):void
+  }|{
+    before():B
+    exp(v:B):void
+  }|{
+    exp():A
+    after(v:A):void
+  }|{
+    exp():void
   }
+  interface TArrayModelView<T>{
+    insert(index:number,row:T):void,
+    remove(indeex:number):void,
+    move(oldIndex:number,newIndex:number):void
+  }
+  /**需要内部的filter+sort，全浸染只展示部分。但与移动又是矛盾的。 */
   class TArrayModel<T>{
+    addView(view:TArrayModelView<T>):void;
+    removeView(view:TArrayModelView<T>):void;
     insert(index:number,row:T):void;
     removeAt(index:number):T;
     remove(row:T):T;
@@ -50,7 +66,7 @@ declare namespace mve{
   type ViewItem<E>=E | EWithLife<E> ;
 
   /**内部使用自变化*/
-  type RenderSelfFun<E>=()=>(((me:Inner)=>ViewItem<E>) | E)
+  type RenderSelfFun<E>=()=>(((me:Inner)=>ViewItem<E>) | ViewItem<E>)
   interface RenderSelf<E>{
     render:RenderSelfFun<E>;
     id?:string|((o:any)=>void);
@@ -58,54 +74,77 @@ declare namespace mve{
   /**单个节点的，带自render的*/
   type SViewItem<E>=ViewItem<E> | RenderSelf<E> ;
 
-  /**repeat应该支持返回重复节点 */
-  interface ArrayRepeat<T,E>{
-    array():T[],
-    repeat(me:Inner,row:()=>T,index:number):Outter<E>;
-  }
-  interface ModelRepeat<T,E>{
-    model:TArrayModel<T>,
-    repeat(me:Inner,row:T,index:()=>number):Outter<E>;
-  }
-
   /**多节点带生命周期 */
   type ESWithLife<E>={
+    /**兼容性考虑 */
     init?():void;
     destroy?():void;
-    elements:MViewItem<E>[]
+    element:MViewItem<E> | MViewItem<E>[]
   }
   /**多节点的render*/
-  type RenderMultiFun<E>=()=>( ((me:Inner)=>ESWithLife<E>) | MViewItem<E>[] );
+  type RenderMultiFun<E>=()=>( ((me:Inner)=>RepeatOutter<E>) | RepeatOutter<E>  | void);
   interface RenderMulti<E>{
     multi:true,
     render:RenderMultiFun<E>
   }
-  /**重复节点的*/
-  type MViewItem<E>=ViewItem<E> | RenderMulti<E> | ArrayRepeat<any,E> | ModelRepeat<any,E> | ESWithLife<E>;
-  /**
-   * 生命周期相关
-   */
-  interface Inner{
+
+  /**作为repeat的返回，multi-if的返回 */
+  type RepeatOutter<E>=ESWithLife<E> | (MViewItem<E>[]) | MViewItem<E>;
+  
+  interface RepeatRender<T,E>{
+    (child:T,e,x,m,p_appendChild,mx):{
+      m,
+      firstElement():E
+      deepRun(fun:(e)=>void):void
+      getNextObject():any
+      setNextObject(e:any):void
+    }
+  }
+  /**单纯作为重复项reset */
+  interface ArrayRepeat<T,E>{
+    type:RepeatRender<any,E>,
+    array():T[],
+    repeat(me:Inner,row:T,index:number):RepeatOutter<E>;
+  }
+  //兼容考虑，暂时先不加。
+  interface ModelRepeat<T,E>{
+    //type:RepeatRender<any,E>
+    model:TArrayModel<T>,
+    repeat(me:Inner,row:T,index:()=>number):RepeatOutter<E>;
+  }
+  /**@description */
+  interface ArrayRepeat_old<T,E>{
+    //type:RepeatRender<any,E>
+    array():T[],
+    repeat(me:Inner,row:()=>T,index:number):RepeatOutter<E>;
+  }  
+  /**重复节点的单元素*/
+  type MViewItem<E>=ViewItem<E> 
+    | RenderMulti<E> 
+    | ArrayRepeat_old<any,E> 
+    | ArrayRepeat<any,E> 
+    | ModelRepeat<any,E> 
+    | ESWithLife<E>;
+  
+  /**生命周期相关*/
+  interface OldInner{
     readonly k:{[key:string]:any};
+    /**@description */
     Value<T>(t: T):mve.Value<T>;
+    /**@description */
     ReadValue<T>(v:mve.Value<T>):(()=>T);
     Watch<B,A>(v: mve.WatchParam<B,A>):void;
     Cache<T>(v:(() => T)):(()=> T);
+    /**@description */
     ArrayModel<T>(array?:T[]):mve.TArrayModel<T>;
   }
-
+  /*生命周期只需要Watch和Cache。*/
+  interface Inner{
+    Watch<B,A>(v: mve.WatchParam<B,A>):void;
+    Cache<T>(v:(() => T)):(()=> T);
+  }
 
   /***********逐渐不关注********************************************************************************* */
-    /**
-   * mve中内部函数返回
-   * E是返回的元素类型
-   */
-  interface Outter<E> {
-    out?:any;
-    init?: () => void;
-    destroy?: () => void;
-    element:E;
-  }
   /**
    * mve函数的返回类型
    */

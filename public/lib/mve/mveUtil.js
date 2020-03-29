@@ -1,5 +1,8 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
+    var forEachRun = function (array) {
+        mb.Array.forEach(array, function (r) { r(); });
+    };
     return function (cache) {
         ;
         var DepCls = /** @class */ (function () {
@@ -24,6 +27,7 @@ define(["require", "exports"], function (require, exports) {
         }());
         ;
         var mveUtil = {
+            forEachRun: forEachRun,
             Dep: (function () {
                 var x = cache();
                 if (!x) {
@@ -78,6 +82,10 @@ define(["require", "exports"], function (require, exports) {
                     };
                     ArrayModel.prototype.addView = function (view) {
                         this._views.push(view);
+                        //自动初始化
+                        for (var i = 0; i < this._array.length; i++) {
+                            view.insert(i, this._array[i]);
+                        }
                     };
                     ArrayModel.prototype.removeView = function (view) {
                         var index = mb.Array.indexOf(this._views, view);
@@ -282,20 +290,6 @@ define(["require", "exports"], function (require, exports) {
                     return cache;
                 };
             },
-            repeat: function (a, repeat) {
-                if (typeof (a) == 'function') {
-                    return {
-                        array: a,
-                        repeat: repeat
-                    };
-                }
-                else {
-                    return {
-                        model: a,
-                        repeat: repeat
-                    };
-                }
-            },
             generateMe: (function () {
                 var bindFactory = function (watch) {
                     return function (value, f) {
@@ -324,9 +318,6 @@ define(["require", "exports"], function (require, exports) {
                 };
                 var children = function (av) {
                     return [av];
-                };
-                var forEach_run = function (array) {
-                    mb.Array.forEach(array, function (r) { r(); });
                 };
                 return function () {
                     var watchPool = [];
@@ -362,7 +353,7 @@ define(["require", "exports"], function (require, exports) {
                             bind: bind,
                             if_bind: if_bind(bind)
                         },
-                        forEachRun: forEach_run,
+                        forEachRun: forEachRun,
                         destroy: function () {
                             var w;
                             while ((w = watchPool.shift()) != null) {

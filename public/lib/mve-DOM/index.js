@@ -1,4 +1,4 @@
-define(["require", "exports", "../mve/mveUtil", "../mve/mveBuildChildren", "./DOM", "../mve/mveParse", "../mve/mveExp", "../front-lib/jsdom"], function (require, exports, mveUtil, superBuildChildrenFactory, DOM, mveParse, mveExp, jsdom) {
+define(["require", "exports", "../mve/mveUtil", "./DOM", "../mve/mveParse", "../mve/mveExp", "../front-lib/jsdom", "../mve/mveBuildChildren", "../mve/mveParseChildFactory", "../mve/children/multiIf", "../mve/children/filterRepeat", "../mve/children/modelRepeat", "../mve/children/filterCacheRepeat"], function (require, exports, mveUtil, DOM, mveParse, mveExp, jsdom, mveBuildChildren_1, mveParseChildFactory_1, multiIf_1, filterRepeat_1, modelRepeat_1, filterCacheRepeat_1) {
     "use strict";
     return function (p) {
         p = p || {};
@@ -65,6 +65,9 @@ define(["require", "exports", "../mve/mveUtil", "../mve/mveBuildChildren", "./DO
             x.if_bind(json.fragment, function (cs) {
                 DOM.empty(e);
                 var me = {};
+                if (!mb.Array.isArray(cs)) {
+                    cs = [cs];
+                }
                 mb.Array.forEach(cs, function (c) {
                     DOM.appendChild(e, jsdom.parseElement(c, me));
                 });
@@ -74,7 +77,19 @@ define(["require", "exports", "../mve/mveUtil", "../mve/mveBuildChildren", "./DO
                 DOM.appendChild(e, jsdom.parseElement(element));
             });
         };
-        var buildChildrenFactory = superBuildChildrenFactory(util);
+        var mveParseChild = mveParseChildFactory_1.mveParseChildFactory(util);
+        var filterRepeat = filterRepeat_1.buildRepeat(util);
+        var modelRepeat = modelRepeat_1.buildModelRepeat(util);
+        var filterCacheRepeat = filterCacheRepeat_1.buildFilterCacheRepeat(util);
+        var buildChildrenFactory = mveBuildChildren_1.superBuildChildrenFactory(mveParseChild, function (child) {
+            if (child.array) {
+                child.type = filterCacheRepeat;
+            }
+            else if (child.model) {
+                child.type = modelRepeat;
+            }
+            return child;
+        });
         var create = function (v) {
             var parse = mveParse({
                 whenNotObject: function (mve, x, e, json, m) {
@@ -111,22 +126,7 @@ define(["require", "exports", "../mve/mveUtil", "../mve/mveBuildChildren", "./DO
                     return mve(fun);
                 }
             });
-            //兼容性
-            var compatible = function (user_func, user_result) {
-                if (p.debug) {
-                    alert("不友好的元素节点" + user_func);
-                }
-                mb.log("顶层user_result目前是:", user_func, user_result);
-                if (user_result && typeof (user_result) == "object") {
-                    //如果是生成元素结点
-                    return { type: "div", element: user_func };
-                }
-                else {
-                    //如果是生成普通节点
-                    return { type: "span", text: user_func };
-                }
-            };
-            var mve = mveExp(util, compatible, parse);
+            var mve = mveExp(util, parse);
             return mve;
         };
         var mve = create({
@@ -146,6 +146,61 @@ define(["require", "exports", "../mve/mveUtil", "../mve/mveBuildChildren", "./DO
                 return DOM.createElementNS(json.type, mve.svg_NS);
             }
         });
+        var multiIf = multiIf_1.buildMultiIf(mveParseChild);
+        mve.renders = function (fun) {
+            return {
+                type: multiIf,
+                render: fun
+            };
+        };
+        mve.repeat = function (vs, fun) {
+            if (typeof (vs) == 'function') {
+                /**
+                 * 单个节点内变化的，尽量使用ArrayModel。
+                 * 而function的，只有自整体的render，和对应数据一致（只有reload）。不科学之处：可以改变数据吗？事实上不可以。
+                 * 与fragment的区别：fragment的细节不允许有可观察片段。
+                 * 但ArrayModel除了局部insert/remove也有reset，但function是自带watch的，即不破坏原结构，在中间加筛选条件。只要中间的筛选条件，就是ArrayModel。
+                 */
+                return {
+                    type: filterRepeat,
+                    array: vs,
+                    repeat: fun
+                };
+            }
+            else {
+                return {
+                    type: modelRepeat,
+                    model: vs,
+                    repeat: fun
+                };
+            }
+        };
+        mve.Watch = util.Watcher;
+        mve.lifeModel = function () {
+            var watchpool = [];
+            return {
+                me: {
+                    Watch: function (w) {
+                        watchpool.push(util.Watcher(w));
+                    }
+                },
+                destroy: function () {
+                    watchpool.forEach(function (w) {
+                        w.disable();
+                    });
+                    watchpool.length = 0;
+                }
+            };
+        };
+        mve.children = function (obj) {
+            if (obj.array) {
+                obj.type = filterCacheRepeat;
+            }
+            else if (obj.model) {
+                obj.type = modelRepeat;
+            }
+            return obj;
+        };
         mve.svgCompatible = mb.Function.quote.one;
         return mve;
     };

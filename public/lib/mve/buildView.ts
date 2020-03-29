@@ -4,11 +4,11 @@ interface ArrayViewParam{
 	model:any[],
 	build(model,i:number):any;
 	appendChild(view):void;
-	removeChild(view):void;
 	insertChildBefore(view,old_voiew):void;
 	update_index(view,i:number):void;
 	init(view):void;
 	destroy(view):void;
+	removeChildOnly(view):void;
 }
 /*
 ArrayModel是模型内的批量移动，其实可以对应grid。
@@ -35,7 +35,7 @@ class ArrayView {
 		from._models.splice(from_index,1);
 		to._models.splice(to_index,0,model);
 		//视图的移动
-		from._p.removeChild(model.view);
+		from._p.removeChildOnly(model.view);
 		if(to_index<to.size()-1){
 			to._p.insertChildBefore(model.view,to._models[to_index+1].view);
 		}else{
@@ -88,7 +88,6 @@ class ArrayView {
 		}
 
 		p.destroy(view);
-		p.removeChild(view);
 	}
 	//////
 	size(){
@@ -121,7 +120,7 @@ build
 init
 destroy
 */
-export=function(p:ArrayViewParam){
+export function buildView(p:ArrayViewParam){
 	const models=[];
 	const initModels=[];
 	for(var i=0;i<p.model.length;i++){

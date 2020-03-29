@@ -88,12 +88,13 @@ declare namespace mb {
 	namespace Array{
 		function forEach<T>(vs:T[],fun:(row:T,index:number)=>void):void;
 		function map<T,V>(vs:T[],fun:(row:T,index:number)=>V):V[];
+		function flatMap<T,V>(vs:T[],fun:(row:T,index:number)=>V[]):V[]
 		function find_row<T>(vs:T[],fun:(v:T,index:number)=>boolean):T;
 		function find_index<T>(vs:T[],fun:(v:T,index:number)=>boolean):number;
 		function reduce<T,V>(vs:T[],fun:(v:V,t:T,i:number)=>V,init:V):V;
 		function filter<T>(vs:T[],fun:(t:T,i:number)=>boolean):T[];
 		function indexOf<T>(vs:T[],x:any):number;
-		function isArray(o:any):boolean;
+		function isArray(o:any):o is any[];
 	}
 
 	namespace Object{
@@ -130,6 +131,7 @@ declare namespace mb {
 		function empty(e:Node):void;
 		function divTabAllow(e:MouseEvent):void;
 		function inputTabAllow(e:MouseEvent,tabReplace?:string):void;
+		function copyElement(div:Node):void;
 	}
 
 	namespace browser{
