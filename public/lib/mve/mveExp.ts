@@ -1,5 +1,6 @@
 import { EWithLife, EModel, GenerateMeType, ParseType } from "./model";
 export=function(util:{
+	Watcher:any,
 	Value(p):any;
 	ArrayModel(e):any;
 	generateMe:GenerateMeType
@@ -45,6 +46,23 @@ export=function(util:{
 		return {
 			render:fun
 		}
-	};
+	}
+	mvvm.Watch=util.Watcher
+	mvvm.lifeModel=function(){
+		const watchpool=[]
+		return {
+			me:{
+				Watch(w){
+					watchpool.push(util.Watcher(w))
+				}
+			},
+			destroy(){
+				watchpool.forEach(function(w){
+					w.disable()
+				})
+				watchpool.length=0
+			}
+		}
+	}
 	return mvvm;
 }

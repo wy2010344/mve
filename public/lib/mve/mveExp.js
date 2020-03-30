@@ -38,6 +38,23 @@ define(["require", "exports"], function (require, exports) {
                 render: fun
             };
         };
+        mvvm.Watch = util.Watcher;
+        mvvm.lifeModel = function () {
+            var watchpool = [];
+            return {
+                me: {
+                    Watch: function (w) {
+                        watchpool.push(util.Watcher(w));
+                    }
+                },
+                destroy: function () {
+                    watchpool.forEach(function (w) {
+                        w.disable();
+                    });
+                    watchpool.length = 0;
+                }
+            };
+        };
         return mvvm;
     };
 });

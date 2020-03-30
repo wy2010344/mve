@@ -50,13 +50,6 @@ type MveReturn=mve.Return;
  */
 declare function mve(fun:(me: mve.Inner)=> mve.ViewItem<mve.dom.SElement>):mve.Return;
 declare namespace mve{
-	function Value<T>(t: T):mve.Value<T>;
-	function ArrayModel<T>(array:T[]):mve.TArrayModel<T>;
-
-	function Watch<B,A>(p:mve.WatchParam<B,A>):{disable():void}
-	interface LifeModel{me:mve.Inner,destroy():void}
-	function lifeModel():LifeModel
-	
 	function render(fun:RenderSelfFun<mve.dom.SElement>):mve.RenderSelf<mve.dom.SElement>;
 	function renders(fun:RenderMultiFun<mve.dom.SElement>):RenderMulti<mve.dom.SElement>;
 	function repeat<T>(array:()=>T[],repeat:(me:Inner,row:T,index:number)=>mve.RepeatOutter<mve.dom.SElement>):ArrayRepeat<any,mve.dom.SElement>;

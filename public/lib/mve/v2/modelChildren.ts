@@ -1,15 +1,16 @@
-import { JOFun, BuildChildrenResult, JOChildren } from "./childrenModel";
+import { JOChildFun, JOChildren } from "./childrenBuilder";
 import { onceLife } from "./onceLife";
 import { VirtualChild } from "./virtualTreeChildren";
+import { BuildResult } from "./model";
 
 
 
-export class ViewModel<PEO,EO>{
+export class ViewModel<EO>{
   constructor(
     public readonly index:mve.Value<number>,
     public readonly life:mve.LifeModel,
-    public readonly element:VirtualChild<PEO,EO>,
-    public readonly result:BuildChildrenResult
+    public readonly element:VirtualChild<EO>,
+    public readonly result:BuildResult
   ){}
   init(){
     this.result.init()
@@ -20,12 +21,12 @@ export class ViewModel<PEO,EO>{
   }
 }
 
-export function modelChildren<T,JO,EO,PEO>(
+export function modelChildren<T,JO,EO>(
   model:mve.TArrayModel<T>,
-	fun:(me:mve.Inner,row:T,index:()=>number)=>JOChildren<JO,EO,PEO>
-):JOFun<JO,EO,PEO>{
+	fun:(me:mve.Inner,row:T,index:()=>number)=>JOChildren<JO,EO>
+):JOChildFun<JO,EO>{
   return function(mx,parent){
-    const views:ViewModel<PEO,EO>[]=[] 
+    const views:ViewModel<EO>[]=[] 
     const life=onceLife({
       init(){
         for(let i=0;i<views.length;i++){
@@ -48,7 +49,7 @@ export function modelChildren<T,JO,EO,PEO>(
         //创建视图
         const vm=parent.newChildAt(index)
         const vx=mx.buildChildren(lifeModel.me,cs,vm)
-        const view=new ViewModel<PEO,EO>(vindex,lifeModel,vm,vx)
+        const view=new ViewModel<EO>(vindex,lifeModel,vm,vx)
         //模型增加
         views.splice(index,0,view)
         //更新计数

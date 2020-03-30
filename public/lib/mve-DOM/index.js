@@ -175,23 +175,6 @@ define(["require", "exports", "../mve/mveUtil", "./DOM", "../mve/mveParse", "../
                 };
             }
         };
-        mve.Watch = util.Watcher;
-        mve.lifeModel = function () {
-            var watchpool = [];
-            return {
-                me: {
-                    Watch: function (w) {
-                        watchpool.push(util.Watcher(w));
-                    }
-                },
-                destroy: function () {
-                    watchpool.forEach(function (w) {
-                        w.disable();
-                    });
-                    watchpool.length = 0;
-                }
-            };
-        };
         mve.children = function (obj) {
             if (obj.array) {
                 obj.type = filterCacheRepeat;
