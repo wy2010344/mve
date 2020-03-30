@@ -2,9 +2,8 @@ define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
     var VirtualChild = /** @class */ (function () {
-        function VirtualChild(param, pel, parent) {
+        function VirtualChild(param, parent) {
             this.param = param;
-            this.pel = pel;
             this.parent = parent;
             this.children = [];
         }
@@ -47,7 +46,7 @@ define(["require", "exports"], function (require, exports) {
                 var view = this.pureRemove(index);
                 var that_1 = this;
                 VirtualChild.deepRun(view, function (e) {
-                    that_1.param.remove(that_1.pel, e);
+                    that_1.param.remove(e);
                 });
             }
             else {
@@ -63,10 +62,10 @@ define(["require", "exports"], function (require, exports) {
                 var that_2 = this;
                 VirtualChild.deepRun(view, function (e) {
                     if (realNextEL_1) {
-                        that_2.param.insertBefore(that_2.pel, e, realNextEL_1, true);
+                        that_2.param.insertBefore(e, realNextEL_1, true);
                     }
                     else {
-                        that_2.param.append(that_2.pel, e, true);
+                        that_2.param.append(e, true);
                     }
                 });
             }
@@ -78,7 +77,6 @@ define(["require", "exports"], function (require, exports) {
             if (view instanceof VirtualChild) {
                 view.parent = this;
                 view.param = this.param;
-                view.pel = this.pel;
                 view.before = before;
                 view.after = after;
             }
@@ -105,10 +103,10 @@ define(["require", "exports"], function (require, exports) {
                 var that_3 = this;
                 VirtualChild.deepRun(view, function (e) {
                     if (realNextEL_2) {
-                        that_3.param.insertBefore(that_3.pel, e, realNextEL_2);
+                        that_3.param.insertBefore(e, realNextEL_2);
                     }
                     else {
-                        that_3.param.append(that_3.pel, e);
+                        that_3.param.append(e);
                     }
                 });
             }
@@ -152,14 +150,14 @@ define(["require", "exports"], function (require, exports) {
                 return null;
             }
         };
-        VirtualChild.newRootChild = function (param, pel) {
-            return new VirtualChild(param, pel);
+        VirtualChild.newRootChild = function (param) {
+            return new VirtualChild(param);
         };
         VirtualChild.prototype.push = function (view) {
             return this.insert(this.children.length, view);
         };
         VirtualChild.prototype.newChildAt = function (index) {
-            var child = new VirtualChild(this.param, this.pel, this);
+            var child = new VirtualChild(this.param, this);
             this.insert(index, child);
             return child;
         };

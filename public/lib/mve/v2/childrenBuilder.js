@@ -5,24 +5,24 @@ define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (
         return typeof (child) == 'function';
     }
     exports.isJOChildFunType = isJOChildFunType;
-    function superChildrenBuilder(p) {
-        function getItem(item, inits, destroys) {
-            if (mb.Array.isArray(item)) {
-                return item;
-            }
-            else if ('elements' in item) {
-                if (item.init) {
-                    inits.push(item.init);
-                }
-                if (item.destroy) {
-                    destroys.push(item.destroy);
-                }
-                return getItem(item.elements, inits, destroys);
-            }
-            else {
-                return [item];
-            }
+    function getItem(item, inits, destroys) {
+        if (mb.Array.isArray(item)) {
+            return item;
         }
+        else if ('elements' in item) {
+            if (item.init) {
+                inits.push(item.init);
+            }
+            if (item.destroy) {
+                destroys.push(item.destroy);
+            }
+            return getItem(item.elements, inits, destroys);
+        }
+        else {
+            return [item];
+        }
+    }
+    function childrenBuilder(parseView) {
         var mx = {
             buildChildren: function (me, item, parent) {
                 var inits = [], destroys = [];
@@ -37,7 +37,7 @@ define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (
                         array.push(child(mx, cv));
                     }
                     else {
-                        var o = p.parseChild(me, child);
+                        var o = parseView(me, child);
                         parent.push(o.element);
                         array.push(o);
                     }
@@ -63,10 +63,10 @@ define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (
                 return life;
             }
         };
-        return function (me, pel, children) {
-            var vm = virtualTreeChildren_1.VirtualChild.newRootChild(p, pel);
+        return function (me, p, children) {
+            var vm = virtualTreeChildren_1.VirtualChild.newRootChild(p);
             return mx.buildChildren(me, children, vm);
         };
     }
-    exports.superChildrenBuilder = superChildrenBuilder;
+    exports.childrenBuilder = childrenBuilder;
 });

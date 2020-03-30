@@ -22,10 +22,26 @@
  * 根更像ifChildren。
  * 仍然暂时不用innerHTML/content
  * 虽然ifChildren，顶层用状态机控制。下层可以继续ifChildren。
+ * 
+ * 多种节点的一般套路
+ * 有时A节点下只能容纳B\C两种节点
+ * 但B节点下又可以容纳C\D节点
+ * 比如菜单
+ * 有时可以容纳所有类型的节点
+ * 一种，依每种子节点可能的类型单独声明一组children，是各种元素的组合。
+ * 	这有一个循环网，需求惰性求值，
+ * 		惰性求值一种是声明一个函数去延迟访问树状作用域，
+ * 		还有一种是用面向对象。但是回调是已经求值的。
+ * 另一种，做一个全局通用的可替换节点，像DOM的createElement一样。便是总分关系，N+1
+ * 第三种，全局也可以做，以防构造任意节点（所以必须有）。局部也可以做，根据全局传入定制。因为有全局的，所以需要区分全局类型。
+ * 局部子节点可以容忍自由类型
  */
 
-import {superChildrenBuilder, JOChildren } from "../mve/v2/childrenModel"
+import { JOChildren } from "../mve/v2/childrenBuilder"
 import DOM = require("./DOM")
+import { VirtualChildParam } from "../mve/v2/virtualTreeChildren"
+import { parseOf, parseUtil } from "../mve/v2/index"
+import { BuildResult } from "../mve/v2/model"
 export interface NJO{
 	type:string,
 	id?:(o:any)=>void;
@@ -36,55 +52,59 @@ export interface NJO{
 	style?: mve.StringMap;
 	prop?:{ [key: string]:mve.TValue<string|number|boolean>};
 	action?: { [key: string]: ((e: Event) => void) };
-	children?:JOChildren <NJO,HTMLElement,HTMLElement>
+	children?:JOChildren <NJO,HTMLElement>
 }
-function bind<T>(me:mve.Inner,value:mve.TValue<T>,fun:(v:T)=>void){
-	if(typeof(value)=='function'){
-		me.Watch({
-			exp(){
-				return (value as any)()
-			},
-			after:fun
-		})
-	}else{
-		fun(value)
+
+class DOMVirtualParam implements VirtualChildParam<HTMLElement>{
+	constructor(
+		private pel:HTMLElement
+	){}
+	append(el){
+		DOM.appendChild(this.pel,el)
+	}
+	remove(el){
+		DOM.removeChild(this.pel,el)
+	}
+	insertBefore(el,oldEl){
+		DOM.insertChildBefore(this.pel,el,oldEl)
 	}
 }
-function bindKV<T>(me:mve.Inner,map:{ [key: string]: mve.TValue<T>},fun:(k:string,v:T)=>void){
-	mb.Object.forEach(map,function(v,k){
-		bind(me,map[k],function(v){
-			fun(k,v)
-		})
-	})
-}
-function parseOf(createElement:(type:string)=>HTMLElement){
-	function view(me:mve.Inner,child:NJO){
-		const el=createElement(child.type)
+function buildOf(p:{
+	createElement(type:string):HTMLElement,
+	buildChildren(
+		type:string,
+		me:mve.Inner,
+		el:HTMLElement,
+		children:JOChildren<NJO,HTMLElement>
+	):BuildResult
+}){
+	return function(me:mve.Inner,child:NJO){
+		const el=p.createElement(child.type)
 		if(child.id){
 			child.id(el)
 		}
 		if(child.text){
-			bind(me,child.text,function(v){
+			parseUtil.bind(me,child.text,function(v){
 				DOM.content(el,v)
 			})
 		}
 		if(child.value){
-			bind(me,child.value,function(v){
+			parseUtil.bind(me,child.value,function(v){
 				DOM.value(el,v)
 			})
 		}
 		if(child.style){
-			bindKV(me,child.style,function(k,v){
+			parseUtil.bindKV(me,child.style,function(k,v){
 				DOM.style(el,k,v)
 			})
 		}
 		if(child.attr){
-			bindKV(me,child.attr,function(k,v){
+			parseUtil.bindKV(me,child.attr,function(k,v){
 				DOM.attr(el,k,v)
 			})
 		}
 		if(child.prop){
-			bindKV(me,child.prop,function(k,v){
+			parseUtil.bindKV(me,child.prop,function(k,v){
 				DOM.prop(el,k,v)
 			})
 		}
@@ -93,7 +113,7 @@ function parseOf(createElement:(type:string)=>HTMLElement){
 				DOM.action(el,k,v)
 			})
 		}
-		const childResult=child.children?children(me,el,child.children):null
+		const childResult=child.children?p.buildChildren(child.type,me,el,child.children):null
 		return {
 			element:el,
 			init(){
@@ -108,18 +128,26 @@ function parseOf(createElement:(type:string)=>HTMLElement){
 			}
 		}
 	}
-	const children=superChildrenBuilder<NJO,HTMLElement,HTMLElement>({
-		parseChild:view,
-		insertBefore:DOM.insertChildBefore,
-		append:DOM.appendChild,
-		remove:DOM.removeChild
-	})
-	return {
-		view,
-		children
-	}
 }
-export const parseHTML=parseOf(DOM.createElement)
-export const parseSVG=parseOf(function(type){
-	return DOM.createElementNS(type,"http://www.w3.org/2000/svg")
-})
+export const parseHTML=parseOf(buildOf({
+	createElement(type){
+		return DOM.createElement(type)
+	},
+	buildChildren(type,me,el,children){
+		const vm=new DOMVirtualParam(el)
+		if(type=="svg"){
+			return parseSVG.children(me,vm,children)
+		}else{
+			return parseHTML.children(me,vm,children)
+		}
+	}
+}))
+export const parseSVG=parseOf(buildOf({
+	createElement(type){
+		return DOM.createElementNS(type,"http://www.w3.org/2000/svg")
+	},
+	buildChildren(type,me,el,children){
+		const vm=new DOMVirtualParam(el)
+		return parseSVG.children(me,vm,children)
+	}
+}))
