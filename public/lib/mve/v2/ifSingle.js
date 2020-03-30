@@ -1,10 +1,9 @@
 define(["require", "exports", "./onceLife"], function (require, exports, onceLife_1) {
     "use strict";
     exports.__esModule = true;
-    function ifChildren(fun) {
-        return function (mx, parent) {
+    function ifSingle(fun) {
+        return function (mx, p) {
             var currentObject;
-            var virtualChild;
             var currentLifeModel;
             var life = onceLife_1.onceLife({
                 init: function () {
@@ -30,21 +29,18 @@ define(["require", "exports", "./onceLife"], function (require, exports, onceLif
                 exp: function () {
                     return fun(currentLifeModel.me);
                 },
-                after: function (children) {
-                    if (virtualChild) {
-                        parent.remove(0);
-                        virtualChild = null;
-                    }
+                after: function (target) {
                     if (currentObject) {
+                        //销毁
                         if (life.isInit) {
                             currentObject.destroy();
                         }
+                        p.remove();
                         currentObject = null;
                     }
-                    if (children) {
+                    if (target) {
                         //初始化
-                        virtualChild = parent.newChildAtLast();
-                        currentObject = mx.buildChildren(currentLifeModel.me, children, virtualChild);
+                        currentObject = mx.buildSingle(currentLifeModel.me, target, p);
                         if (life.isInit) {
                             currentObject.init();
                         }
@@ -54,5 +50,5 @@ define(["require", "exports", "./onceLife"], function (require, exports, onceLif
             return life;
         };
     }
-    exports.ifChildren = ifChildren;
+    exports.ifSingle = ifSingle;
 });

@@ -1,19 +1,16 @@
+import { SingleTargetType, SingleTargetFun } from "./singleModel";
 import { onceLife } from "./onceLife";
-import { VirtualChild } from "./virtualTreeChildren";
-import { JOChildren, JOChildFun } from "./childrenBuilder";
 import { BuildResult } from "./model";
 
 
 
 
-export function ifChildren<JO,EO>(
-  fun:(me:mve.Inner)=>JOChildren<JO,EO>|null
-):JOChildFun<JO,EO>{
-  return function(mx,parent){
+export function ifSingle<JO,EO>(
+  fun:(me:mve.Inner)=>SingleTargetType<JO>|null
+):SingleTargetFun<JO,EO>{
+  return function(mx,p){
     let currentObject:BuildResult|null
-    let virtualChild:VirtualChild<EO>|null
     let currentLifeModel:mve.LifeModel
-
     const life=onceLife({
       init(){
         if(currentObject){
@@ -38,21 +35,18 @@ export function ifChildren<JO,EO>(
       exp(){
         return fun(currentLifeModel.me)
       },
-      after(children:JOChildren<JO,EO>){
-        if(virtualChild){
-          parent.remove(0)
-          virtualChild=null
-        }
+      after(target:SingleTargetType<JO>){
         if(currentObject){
+          //销毁
           if(life.isInit){
             currentObject.destroy()
           }
+          p.remove()
           currentObject=null
         }
-        if(children){
+        if(target){
           //初始化
-          virtualChild=parent.newChildAtLast()
-          currentObject=mx.buildChildren(currentLifeModel.me,children,virtualChild)
+          currentObject=mx.buildSingle(currentLifeModel.me,target,p)
           if(life.isInit){
             currentObject.init()
           }

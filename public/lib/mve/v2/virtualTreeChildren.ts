@@ -2,22 +2,21 @@
 
 
 
-export type VirtualChildType<PEO,EO>= EO | VirtualChild<PEO,EO>
+export type VirtualChildType<EO>= EO | VirtualChild<EO>
 
-export interface VirtualChildParam<PEO,EO>{
-  remove(pel:PEO,e:EO):void,
-  append(pel:PEO,e:EO,isMove?:boolean):void,
-  insertBefore(pel:PEO,e:EO,old:EO,isMove?:boolean):void
+export interface VirtualChildParam<EO>{
+  remove(e:EO):void,
+  append(e:EO,isMove?:boolean):void,
+  insertBefore(e:EO,old:EO,isMove?:boolean):void
 }
-export class VirtualChild<PEO,EO>{
+export class VirtualChild<EO>{
   private constructor(
-    private param:VirtualChildParam<PEO,EO>,
-    private pel:PEO,
-    private parent?:VirtualChild<PEO,EO>
+    private param:VirtualChildParam<EO>,
+    private parent?:VirtualChild<EO>
   ){}
-  private children:VirtualChildType<PEO,EO>[]=[]
+  private children:VirtualChildType<EO>[]=[]
 
-  static deepRun<PEO,EO>(view:VirtualChildType<PEO,EO>,fun:(view:EO)=>void){
+  static deepRun<EO>(view:VirtualChildType<EO>,fun:(view:EO)=>void){
     if(view instanceof VirtualChild){
       for(let i=0;i<view.children.length;i++){
         VirtualChild.deepRun(view.children[i],fun)
@@ -40,9 +39,9 @@ export class VirtualChild<PEO,EO>{
   }
 
   /**自己的前一个节点 */
-  private before?:VirtualChildType<PEO,EO>
+  private before?:VirtualChildType<EO>
   /**自己的后一个节点 */
-  private after?:VirtualChildType<PEO,EO>
+  private after?:VirtualChildType<EO>
 
   private pureRemove(index){
     const view=this.children.splice(index,1)[0]
@@ -61,7 +60,7 @@ export class VirtualChild<PEO,EO>{
       const view=this.pureRemove(index)
       const that=this
       VirtualChild.deepRun(view,function(e){
-        that.param.remove(that.pel,e)
+        that.param.remove(e)
       })
     }else{
       mb.log(`删除${index}失败,总宽度仅为${this.size()}`)
@@ -76,21 +75,20 @@ export class VirtualChild<PEO,EO>{
       const that=this
       VirtualChild.deepRun(view,function(e){
         if(realNextEL){
-          that.param.insertBefore(that.pel,e,realNextEL,true)
+          that.param.insertBefore(e,realNextEL,true)
         }else{
-          that.param.append(that.pel,e,true)
+          that.param.append(e,true)
         }
       })
     }
   }
-  private pureInsert(index:number,view:VirtualChildType<PEO,EO>){
+  private pureInsert(index:number,view:VirtualChildType<EO>){
     this.children.splice(index,0,view)
     const before=this.children[index-1]
     const after=this.children[index+1]
     if(view instanceof VirtualChild){
       view.parent=this
       view.param=this.param
-      view.pel=this.pel
       
       view.before=before
       view.after=after
@@ -103,23 +101,23 @@ export class VirtualChild<PEO,EO>{
     }
     return after
   }
-  nextEL(after:VirtualChildType<PEO,EO>){
+  nextEL(after:VirtualChildType<EO>){
     if(after){
       return this.realNextEO(after)
     }else{
       return this.realParentNext(this)
     }
   }
-  insert(index:number,view:VirtualChildType<PEO,EO>){
+  insert(index:number,view:VirtualChildType<EO>){
     if(index>-1 && index<(this.children.length+1)){
       const after=this.pureInsert(index,view)
       const realNextEL=this.nextEL(after)
       const that=this
       VirtualChild.deepRun(view,function(e){
         if(realNextEL){
-          that.param.insertBefore(that.pel,e,realNextEL)
+          that.param.insertBefore(e,realNextEL)
         }else{
-          that.param.append(that.pel,e)
+          that.param.append(e)
         }
       })
     }else{
@@ -127,7 +125,7 @@ export class VirtualChild<PEO,EO>{
     }
   }
 
-  private realNextEO(view:VirtualChildType<PEO,EO>):EO|null{
+  private realNextEO(view:VirtualChildType<EO>):EO|null{
     if(view instanceof VirtualChild){
       const childrenFirst=view.firstChild()
       if(childrenFirst){
@@ -146,7 +144,7 @@ export class VirtualChild<PEO,EO>{
       return view
     }
   }
-  private realParentNext(parent?:VirtualChild<PEO,EO>):EO|null{
+  private realParentNext(parent?:VirtualChild<EO>):EO|null{
     if(parent){
       const after=parent.after
       if(after){
@@ -158,14 +156,14 @@ export class VirtualChild<PEO,EO>{
       return null
     }
   }
-  static newRootChild<PEO,EO>(param:VirtualChildParam<PEO,EO>,pel:PEO){
-    return new VirtualChild(param,pel)
+  static newRootChild<EO>(param:VirtualChildParam<EO>){
+    return new VirtualChild(param)
   }
-  push(view:VirtualChildType<PEO,EO>){
+  push(view:VirtualChildType<EO>){
     return this.insert(this.children.length,view)
   }
-  newChildAt(index:number):VirtualChild<PEO,EO>{
-    const child=new VirtualChild(this.param,this.pel,this)
+  newChildAt(index:number):VirtualChild<EO>{
+    const child=new VirtualChild(this.param,this)
     this.insert(index,child)
     return child
   }

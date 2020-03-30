@@ -144,6 +144,12 @@ declare namespace mve{
     Cache<T>(v:(() => T)):(()=> T);
   }
 
+  
+	function Value<T>(t: T):mve.Value<T>;
+	function ArrayModel<T>(array:T[]):mve.TArrayModel<T>;
+	function Watch<B,A>(p:mve.WatchParam<B,A>):{disable():void}
+	interface LifeModel{me:mve.Inner,destroy():void}
+	function lifeModel():LifeModel
   /***********逐渐不关注********************************************************************************* */
   /**
    * mve函数的返回类型

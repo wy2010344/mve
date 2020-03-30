@@ -22,58 +22,66 @@
  * 根更像ifChildren。
  * 仍然暂时不用innerHTML/content
  * 虽然ifChildren，顶层用状态机控制。下层可以继续ifChildren。
+ *
+ * 多种节点的一般套路
+ * 有时A节点下只能容纳B\C两种节点
+ * 但B节点下又可以容纳C\D节点
+ * 比如菜单
+ * 有时可以容纳所有类型的节点
+ * 一种，依每种子节点可能的类型单独声明一组children，是各种元素的组合。
+ * 	这有一个循环网，需求惰性求值，
+ * 		惰性求值一种是声明一个函数去延迟访问树状作用域，
+ * 		还有一种是用面向对象。但是回调是已经求值的。
+ * 另一种，做一个全局通用的可替换节点，像DOM的createElement一样。便是总分关系，N+1
+ * 第三种，全局也可以做，以防构造任意节点（所以必须有）。局部也可以做，根据全局传入定制。因为有全局的，所以需要区分全局类型。
+ * 局部子节点可以容忍自由类型
  */
-define(["require", "exports", "../mve/v2/childrenModel", "./DOM"], function (require, exports, childrenModel_1, DOM) {
+define(["require", "exports", "./DOM", "../mve/v2/index"], function (require, exports, DOM, index_1) {
     "use strict";
     exports.__esModule = true;
-    function bind(me, value, fun) {
-        if (typeof (value) == 'function') {
-            me.Watch({
-                exp: function () {
-                    return value();
-                },
-                after: fun
-            });
+    var DOMVirtualParam = /** @class */ (function () {
+        function DOMVirtualParam(pel) {
+            this.pel = pel;
         }
-        else {
-            fun(value);
-        }
-    }
-    function bindKV(me, map, fun) {
-        mb.Object.forEach(map, function (v, k) {
-            bind(me, map[k], function (v) {
-                fun(k, v);
-            });
-        });
-    }
-    function parseOf(createElement) {
-        function view(me, child) {
-            var el = createElement(child.type);
+        DOMVirtualParam.prototype.append = function (el) {
+            DOM.appendChild(this.pel, el);
+        };
+        DOMVirtualParam.prototype.remove = function (el) {
+            DOM.removeChild(this.pel, el);
+        };
+        DOMVirtualParam.prototype.insertBefore = function (el, oldEl) {
+            DOM.insertChildBefore(this.pel, el, oldEl);
+        };
+        return DOMVirtualParam;
+    }());
+    function buildOf(p) {
+        return function (me, child) {
+            var el = p.createElement(child.type);
             if (child.id) {
                 child.id(el);
             }
             if (child.text) {
-                bind(me, child.text, function (v) {
+                index_1.parseUtil.bind(me, child.text, function (v) {
                     DOM.content(el, v);
                 });
             }
             if (child.value) {
-                bind(me, child.value, function (v) {
+                index_1.parseUtil.bind(me, child.value, function (v) {
                     DOM.value(el, v);
                 });
             }
             if (child.style) {
-                bindKV(me, child.style, function (k, v) {
+                index_1.parseUtil.bindKV(me, child.style, function (k, v) {
                     DOM.style(el, k, v);
                 });
             }
             if (child.attr) {
-                bindKV(me, child.attr, function (k, v) {
+                index_1.parseUtil.bindKV(me, child.attr, function (k, v) {
                     DOM.attr(el, k, v);
                 });
             }
             if (child.prop) {
-                bindKV(me, child.prop, function (k, v) {
+                index_1.parseUtil.bindKV(me, child.prop, function (k, v) {
                     DOM.prop(el, k, v);
                 });
             }
@@ -82,7 +90,7 @@ define(["require", "exports", "../mve/v2/childrenModel", "./DOM"], function (req
                     DOM.action(el, k, v);
                 });
             }
-            var childResult = child.children ? children(me, el, child.children) : null;
+            var childResult = child.children ? p.buildChildren(child.type, me, el, child.children) : null;
             return {
                 element: el,
                 init: function () {
@@ -96,20 +104,29 @@ define(["require", "exports", "../mve/v2/childrenModel", "./DOM"], function (req
                     }
                 }
             };
-        }
-        var children = childrenModel_1.superChildrenBuilder({
-            parseChild: view,
-            insertBefore: DOM.insertChildBefore,
-            append: DOM.appendChild,
-            remove: DOM.removeChild
-        });
-        return {
-            view: view,
-            children: children
         };
     }
-    exports.parseHTML = parseOf(DOM.createElement);
-    exports.parseSVG = parseOf(function (type) {
-        return DOM.createElementNS(type, "http://www.w3.org/2000/svg");
-    });
+    exports.parseHTML = index_1.parseOf(buildOf({
+        createElement: function (type) {
+            return DOM.createElement(type);
+        },
+        buildChildren: function (type, me, el, children) {
+            var vm = new DOMVirtualParam(el);
+            if (type == "svg") {
+                return exports.parseSVG.children(me, vm, children);
+            }
+            else {
+                return exports.parseHTML.children(me, vm, children);
+            }
+        }
+    }));
+    exports.parseSVG = index_1.parseOf(buildOf({
+        createElement: function (type) {
+            return DOM.createElementNS(type, "http://www.w3.org/2000/svg");
+        },
+        buildChildren: function (type, me, el, children) {
+            var vm = new DOMVirtualParam(el);
+            return exports.parseSVG.children(me, vm, children);
+        }
+    }));
 });

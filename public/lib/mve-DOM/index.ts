@@ -202,23 +202,6 @@ export=function(p?:{
 		 }
 	 }
 	}
-	mve.Watch=util.Watcher
-	mve.lifeModel=function(){
-		const watchpool=[]
-		return {
-			me:{
-				Watch(w){
-					watchpool.push(util.Watcher(w))
-				}
-			},
-			destroy(){
-				watchpool.forEach(function(w){
-					w.disable()
-				})
-				watchpool.length=0
-			}
-		}
-	}
 	mve.children=function(obj){
 		if(obj.array){
 			obj.type=filterCacheRepeat
