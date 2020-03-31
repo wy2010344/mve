@@ -1,190 +1,118 @@
-define(["require", "exports", "../mve/mveUtil", "./DOM", "../mve/mveParse", "../mve/mveExp", "../front-lib/jsdom", "../mve/mveBuildChildren", "../mve/mveParseChildFactory", "../mve/children/multiIf", "../mve/children/filterRepeat", "../mve/children/modelRepeat", "../mve/children/filterCacheRepeat"], function (require, exports, mveUtil, DOM, mveParse, mveExp, jsdom, mveBuildChildren_1, mveParseChildFactory_1, multiIf_1, filterRepeat_1, modelRepeat_1, filterCacheRepeat_1) {
+define(["require", "exports", "./DOM", "../mve/index"], function (require, exports, DOM, index_1) {
     "use strict";
-    return function (p) {
-        p = p || {};
-        var cache = p.cache || function () {
-            var w = window.top;
-            if (arguments.length == 0) {
-                return w._Dep_;
+    exports.__esModule = true;
+    var DOMVirtualParam = /** @class */ (function () {
+        function DOMVirtualParam(pel) {
+            this.pel = pel;
+        }
+        DOMVirtualParam.prototype.append = function (el) {
+            DOM.appendChild(this.pel, el);
+        };
+        DOMVirtualParam.prototype.remove = function (el) {
+            DOM.removeChild(this.pel, el);
+        };
+        DOMVirtualParam.prototype.insertBefore = function (el, oldEl) {
+            DOM.insertChildBefore(this.pel, el, oldEl);
+        };
+        return DOMVirtualParam;
+    }());
+    exports.DOMVirtualParam = DOMVirtualParam;
+    function buildParam(me, el, child) {
+        if (child.id) {
+            child.id(el);
+        }
+        if (child.value) {
+            index_1.parseUtil.bind(me, child.value, function (v) {
+                DOM.value(el, v);
+            });
+        }
+        if (child.text) {
+            index_1.parseUtil.bind(me, child.text, function (v) {
+                DOM.content(el, v);
+            });
+        }
+        if (child.style) {
+            index_1.parseUtil.bindKV(me, child.style, function (k, v) {
+                DOM.style(el, k, v);
+            });
+        }
+        if (child.attr) {
+            index_1.parseUtil.bindKV(me, child.attr, function (k, v) {
+                DOM.attr(el, k, v);
+            });
+        }
+        if (child.prop) {
+            index_1.parseUtil.bindKV(me, child.prop, function (k, v) {
+                DOM.prop(el, k, v);
+            });
+        }
+        if (child.action) {
+            mb.Object.forEach(child.action, function (v, k) {
+                DOM.action(el, k, v);
+            });
+        }
+    }
+    function buildChildren(me, el, child, buildChildren) {
+        if (child.children) {
+            if (child.text) {
+                mb.log("已经有text了，不应该有children", child);
             }
             else {
-                w._Dep_ = arguments[0];
+                return buildChildren(me, new DOMVirtualParam(el), child.children);
             }
-        };
-        var util = mveUtil(cache);
-        var bindEvent = function (map, f) {
-            if (map) {
-                mb.Object.forEach(map, function (v, k) {
-                    f(k, v);
-                });
-            }
-        };
-        var bindKV = function (bind, key, value, f) {
-            bind(value, function (v) {
-                f(key, v);
-            });
-        };
-        var bindMap = function (bind, map, f) {
-            if (map) {
-                mb.Object.forEach(map, function (v, k) {
-                    bindKV(bind, k, v, f);
-                });
-            }
-        };
-        var replaceChild = function (e, old_el, new_el) {
-            DOM.replaceWith(old_el, new_el);
-        };
-        var makeUp = function (e, x, json) {
-            bindMap(x.bind, json.attr, function (key, value) {
-                DOM.attr(e, key, value);
-            });
-            x.if_bind(json.cls, function (cls) {
-                DOM.attr(e, "class", cls);
-            });
-            bindMap(x.bind, json.prop, function (key, value) {
-                DOM.prop(e, key, value);
-            });
-            bindMap(x.bind, json.style, function (key, value) {
-                DOM.style(e, key, value);
-            });
-            bindEvent(json.action, function (key, value) {
-                DOM.action(e, key, value);
-            });
-            x.if_bind(json.text, function (value) {
-                DOM.text(e, value);
-            });
-            x.if_bind(json.value, function (value) {
-                DOM.value(e, value);
-            });
-            x.if_bind(json.content, function (value) {
-                DOM.content(e, value);
-            });
-            x.if_bind(json.html, function (html) {
-                DOM.html(e, html);
-            });
-            x.if_bind(json.fragment, function (cs) {
-                DOM.empty(e);
-                var me = {};
-                if (!mb.Array.isArray(cs)) {
-                    cs = [cs];
-                }
-                mb.Array.forEach(cs, function (c) {
-                    DOM.appendChild(e, jsdom.parseElement(c, me));
-                });
-            });
-            x.if_bind(json.element, function (element) {
-                DOM.empty(e);
-                DOM.appendChild(e, jsdom.parseElement(element));
-            });
-        };
-        var mveParseChild = mveParseChildFactory_1.mveParseChildFactory(util);
-        var filterRepeat = filterRepeat_1.buildRepeat(util);
-        var modelRepeat = modelRepeat_1.buildModelRepeat(util);
-        var filterCacheRepeat = filterCacheRepeat_1.buildFilterCacheRepeat(util);
-        var buildChildrenFactory = mveBuildChildren_1.superBuildChildrenFactory(mveParseChild, function (child) {
-            if (child.array) {
-                child.type = filterCacheRepeat;
-            }
-            else if (child.model) {
-                child.type = modelRepeat;
-            }
-            return child;
-        });
-        var create = function (v) {
-            var parse = mveParse({
-                whenNotObject: function (mve, x, e, json, m) {
-                    return {
-                        element: DOM.createTextNode(json || ""),
-                        m: m
-                    };
-                },
-                buildElement: function (mve, x, e, json, m) {
-                    var element = v.createElement(json);
-                    m = buildChildren({
-                        pel: element,
-                        replaceChild: replaceChild
-                    }, x, json.children, m);
-                    /*像select，依赖子元素先赋值再触发*/
-                    makeUp(element, x, json);
-                    return {
-                        element: element,
-                        m: m
-                    };
-                }
-            });
-            /**
-             * repeat生成json结果是被观察的，受哪些影响，重新生成，替换原来的节点。
-             * 生成过程，而json叶子结点里的函数引用，如style,attr，则受具体的影响
-             */
-            var buildChildren = buildChildrenFactory({
-                removeChild: DOM.removeChild,
-                insertChildBefore: DOM.insertChildBefore,
-                appendChild: DOM.appendChild,
-                parse: parse,
-                //循环调用的注入，这种延迟最好，如果难免副作用
-                mve: function (fun) {
-                    return mve(fun);
-                }
-            });
-            var mve = mveExp(util, parse);
-            return mve;
-        };
-        var mve = create({
-            createElement: function (json) {
-                var NS = json.NS;
-                if (NS) {
-                    return DOM.createElementNS(json.type, json.NS);
-                }
-                else {
-                    return DOM.createElement(json.type);
-                }
-            }
-        });
-        mve.svg_NS = "http://www.w3.org/2000/svg";
-        mve.svg = create({
-            createElement: function (json) {
-                return DOM.createElementNS(json.type, mve.svg_NS);
-            }
-        });
-        var multiIf = multiIf_1.buildMultiIf(mveParseChild);
-        mve.renders = function (fun) {
+        }
+    }
+    exports.parseHTML = index_1.parseOf(function (me, child) {
+        if (typeof (child) == 'string') {
             return {
-                type: multiIf,
-                render: fun
+                element: DOM.createTextNode(child),
+                init: function () { },
+                destroy: function () { }
             };
-        };
-        mve.repeat = function (vs, fun) {
-            if (typeof (vs) == 'function') {
-                /**
-                 * 单个节点内变化的，尽量使用ArrayModel。
-                 * 而function的，只有自整体的render，和对应数据一致（只有reload）。不科学之处：可以改变数据吗？事实上不可以。
-                 * 与fragment的区别：fragment的细节不允许有可观察片段。
-                 * 但ArrayModel除了局部insert/remove也有reset，但function是自带watch的，即不破坏原结构，在中间加筛选条件。只要中间的筛选条件，就是ArrayModel。
-                 */
-                return {
-                    type: filterRepeat,
-                    array: vs,
-                    repeat: fun
-                };
+        }
+        else if (child) {
+            if (child.type == "svg") {
+                return exports.parseSVG.view(me, child);
             }
             else {
+                var element = DOM.createElement(child.type);
+                buildParam(me, element, child);
+                var childResult_1 = buildChildren(me, element, child, exports.parseHTML.children);
                 return {
-                    type: modelRepeat,
-                    model: vs,
-                    repeat: fun
+                    element: element,
+                    init: function () {
+                        if (childResult_1) {
+                            childResult_1.init();
+                        }
+                    },
+                    destroy: function () {
+                        if (childResult_1) {
+                            childResult_1.destroy();
+                        }
+                    }
                 };
             }
-        };
-        mve.children = function (obj) {
-            if (obj.array) {
-                obj.type = filterCacheRepeat;
+        }
+        else {
+            mb.log("child\u4E3A\u7A7A\uFF0C\u4E0D\u751F\u6210\u4EFB\u4F55\u4E1C\u897F");
+        }
+    });
+    exports.parseSVG = index_1.parseOf(function (me, child) {
+        var element = DOM.createElementNS(child.type, "http://www.w3.org/2000/svg");
+        buildParam(me, element, child);
+        var childResult = buildChildren(me, element, child, exports.parseSVG.children);
+        return {
+            element: element,
+            init: function () {
+                if (childResult) {
+                    childResult.init();
+                }
+            },
+            destroy: function () {
+                if (childResult) {
+                    childResult.destroy();
+                }
             }
-            else if (obj.model) {
-                obj.type = modelRepeat;
-            }
-            return obj;
         };
-        mve.svgCompatible = mb.Function.quote.one;
-        return mve;
-    };
+    });
 });

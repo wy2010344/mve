@@ -1,40 +1,44 @@
-define(["require", "exports"], function (require, exports) {
+define(["require", "exports", "../../lib/mve/util", "../../lib/mve-DOM/index", "../../lib/mve/modelChildren"], function (require, exports, util_1, index_1, modelChildren_1) {
     "use strict";
-    return mve(function (me) {
+    return index_1.parseHTML.mve(function (me) {
         var vs = [];
         for (var i = 0; i < 20; i++) {
             vs.push({
-                a: mve.Value(i)
+                a: util_1.mve.valueOf(i)
             });
         }
-        var vm = mve.ArrayModel(vs);
+        var vm = util_1.mve.arrayModelOf(vs);
         return {
-            type: "div",
-            children: [
-                {
-                    type: "div",
-                    text: "文字"
-                },
-                mve.repeat(vm, function (me, row, index) {
-                    return {
+            init: function () { },
+            destroy: function () { },
+            element: {
+                type: "div",
+                children: [
+                    {
                         type: "div",
-                        children: [
-                            {
-                                type: "div"
-                            },
-                            {
-                                type: "button",
-                                text: "删除" + row.a(),
-                                action: {
-                                    click: function () {
-                                        vm.removeAt(index());
+                        text: "文字"
+                    },
+                    modelChildren_1.modelChildren(vm, function (me, row, index) {
+                        return {
+                            type: "div",
+                            children: [
+                                {
+                                    type: "div"
+                                },
+                                {
+                                    type: "button",
+                                    text: "删除" + row.a(),
+                                    action: {
+                                        click: function () {
+                                            vm.removeAt(index());
+                                        }
                                     }
                                 }
-                            }
-                        ]
-                    };
-                })
-            ]
+                            ]
+                        };
+                    })
+                ]
+            }
         };
     });
 });

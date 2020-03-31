@@ -6,9 +6,6 @@
 					jsdom:function(notice){
 						require("/lib/front-lib/jsdom.js",notice);
 					},
-					mve:function(notice){
-						require("/lib/mve-DOM/index.js",notice);
-					},
 					JSON:function(notice){
 						if(window.JSON){
 							notice(window.JSON);
@@ -30,9 +27,7 @@
 	success:function(p){
 		window.JSON=lib.conf.JSON;
 		window.jsdom=lib.conf.jsdom;
-		window.mve=lib.conf.mve();
 		p.init(function(success){
-			var obj=success();
 			var root=document.getElementById("root");
 			var body=root.parentElement;
 			
@@ -43,15 +38,7 @@
 				rpd=10;
 			}
 			root.style.padding=rpd+"px";
-			if(typeof(obj)=="function"){
-				obj=obj({
-					pel:root,
-					replaceChild:function(e,old_el,new_el){
-						mb.log("尚未实现");
-					}
-				});
-			}
-
+			var obj=success
 			if(obj.element){
 				//传统的jsdom
 				var el=obj.element;
