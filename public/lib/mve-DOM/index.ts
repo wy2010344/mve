@@ -1,215 +1,154 @@
-import mveUtil = require("../mve/mveUtil");
-import DOM = require("./DOM");
-import mveParse = require("../mve/mveParse");
-import mveExp = require("../mve/mveExp");
-import jsdom = require("../front-lib/jsdom");
-import { EModel, XModel, FakeE } from "../mve/model";
-import { superBuildChildrenFactory } from "../mve/mveBuildChildren";
-import { mveParseChildFactory } from "../mve/mveParseChildFactory";
-import { buildMultiIf } from "../mve/children/multiIf";
-import { buildRepeat } from "../mve/children/filterRepeat";
-import { buildModelRepeat } from "../mve/children/modelRepeat";
-import { buildFilterCacheRepeat } from "../mve/children/filterCacheRepeat";
 
-export=function(p?:{
-	cache:mve.Value<any>;
-	debug?:boolean;
-}){
-	p=p||({} as any);
-	const cache=p.cache||function(){
-		const w=window.top as any;
-		if(arguments.length==0){
-			return w._Dep_;
-		}else{
-			w._Dep_=arguments[0];
-		}
-	};
-	const util=mveUtil(cache);
-	const bindEvent=function(map,f){
-		if(map){
-			mb.Object.forEach(map,function(v,k){
-				f(k,v);
-			});
-		}
-	};
-	const bindKV=function(bind,key,value,f){
-		bind(value,function(v){
-			f(key,v);
-		});
-	};
-	const bindMap=function(bind,map,f){
-		if(map){
-			mb.Object.forEach(map,function(v,k){
-				bindKV(bind,k,v,f);
-			});
-		}
-	};
-	const replaceChild=function(e,old_el,new_el){
-		DOM.replaceWith(old_el,new_el);
-	};
-
-	const makeUp=function(e:EModel,x:XModel,json){   
-		bindMap(x.bind,json.attr,function(key,value){
-			DOM.attr(e,key,value);
-		});
-		
-		x.if_bind(json.cls,function(cls){
-			DOM.attr(e,"class",cls);
-		});
-		
-		bindMap(x.bind,json.prop,function(key,value){
-			DOM.prop(e,key,value);
-		});
-		
-		bindMap(x.bind,json.style,function(key,value){
-			DOM.style(e,key,value);
-		});
-		
-		bindEvent(json.action,function(key,value){
-			DOM.action(e,key,value);
-		});
-		
-		x.if_bind(json.text,function(value){
-			DOM.text(e,value);
-		});
-		
-		x.if_bind(json.value,function(value){
-			DOM.value(e,value);
-		});
-
-		x.if_bind(json.content,function(value){
-			DOM.content(e,value);
-		})
-
-		x.if_bind(json.html,function(html){
-			DOM.html(e,html);
-		});
-		
-		x.if_bind(json.fragment,function(cs){
-			DOM.empty(e);
-			var me={};
-			if(!mb.Array.isArray(cs)){
-				cs=[cs]
-			}
-			mb.Array.forEach(cs,function(c){
-				DOM.appendChild(e,jsdom.parseElement(c,me));
-			});
-		});
-
-		x.if_bind(json.element,function(element){
-			DOM.empty(e);
-			DOM.appendChild(e,jsdom.parseElement(element));
-		});
-	};
-	const mveParseChild=mveParseChildFactory(util)
-	const filterRepeat=buildRepeat(util)
-	const modelRepeat=buildModelRepeat(util)
-	const filterCacheRepeat=buildFilterCacheRepeat(util)
-	const buildChildrenFactory=superBuildChildrenFactory(mveParseChild,function(child){
-		if(child.array){
-			child.type=filterCacheRepeat
-		}else
-		if(child.model){
-			child.type=modelRepeat
-		}
-		return child
-	});
-	const create=function(v:{
-		createElement(o):any;
-	}){
-		const parse=mveParse({
-			whenNotObject(mve,x,e,json,m){
-				return {
-					element:DOM.createTextNode(json||"") as any,
-					m:m
-				};
-			},
-			buildElement(mve,x,e,json,m){
-				const element=v.createElement(json);
-				m=buildChildren({
-													pel:element,
-													replaceChild:replaceChild
-												},
-												x,
-												json.children,
-												m);
-				/*像select，依赖子元素先赋值再触发*/
-				makeUp(element,x,json);
-				return {
-					element:element,
-					m:m
-				};
-			}
-		});
-		/**
-		 * repeat生成json结果是被观察的，受哪些影响，重新生成，替换原来的节点。
-		 * 生成过程，而json叶子结点里的函数引用，如style,attr，则受具体的影响
-		 */
-		const buildChildren=buildChildrenFactory({
-			removeChild:DOM.removeChild,
-			insertChildBefore:DOM.insertChildBefore,
-			appendChild:DOM.appendChild,
-			parse:parse,
-			//循环调用的注入，这种延迟最好，如果难免副作用
-			mve(fun){
-				return mve(fun);
-			}
-		});
-		const mve=mveExp(util,parse);
-		return mve;
-	};
-	const mve:any=create({
-		createElement(json){
-			var NS=json.NS;
-			if(NS){
-				return DOM.createElementNS(json.type,json.NS);
-			}else{
-				return DOM.createElement(json.type);
-			}
-		}
-	});
-	mve.svg_NS="http://www.w3.org/2000/svg";
-	mve.svg=create({
-		createElement(json){
-			return DOM.createElementNS(json.type,mve.svg_NS);
-		}
-	});
-	const multiIf=buildMultiIf(mveParseChild)
-	mve.renders=function(fun){
-		return {
-			type:multiIf,
-			render:fun
-		}
-	};
-	mve.repeat=function(vs,fun){
-		if(typeof(vs)=='function'){
-			/**
-			 * 单个节点内变化的，尽量使用ArrayModel。
-			 * 而function的，只有自整体的render，和对应数据一致（只有reload）。不科学之处：可以改变数据吗？事实上不可以。
-			 * 与fragment的区别：fragment的细节不允许有可观察片段。
-			 * 但ArrayModel除了局部insert/remove也有reset，但function是自带watch的，即不破坏原结构，在中间加筛选条件。只要中间的筛选条件，就是ArrayModel。
-			 */
-			return {
-				type:filterRepeat,
-				array:vs,
-				repeat:fun
-			}
-	 }else{
-		 return {
-			 type:modelRepeat,
-			 model:vs,
-			 repeat:fun
-		 }
-	 }
+import DOM = require("./DOM")
+import { parseOf, parseUtil, ParseOfResult} from "../mve/index"
+import { JOChildren } from "../mve/childrenBuilder"
+import { BuildResult } from "../mve/model"
+import { VirtualChildParam } from "../mve/virtualTreeChildren"
+import { mve } from "../mve/util"
+export class DOMVirtualParam implements VirtualChildParam<Node>{
+	constructor(
+		private pel:Node
+	){}
+	append(el){
+		DOM.appendChild(this.pel,el)
 	}
-	mve.children=function(obj){
-		if(obj.array){
-			obj.type=filterCacheRepeat
-		}else if(obj.model){
-			obj.type=modelRepeat;
-		}
-		return obj;
+	remove(el){
+		DOM.removeChild(this.pel,el)
 	}
-	mve.svgCompatible=mb.Function.quote.one;
-	return mve;
+	insertBefore(el,oldEl){
+		DOM.insertChildBefore(this.pel,el,oldEl)
+	}
 }
+/**
+ * innerText和innserHTML没有必要
+ * innerText就是子节点第一个是text
+ * span的默认是容纳text，但text也只是一个子成员
+ * innerHTML是危险的，是另一个注入体系，也不应该存在
+ * 它应该先解析成ifChildren的成员，再注入进来。
+ * 但是text自身的render怎么处理？
+ * text作为普通节点，本身支持children的render。
+ * 
+ * 对外放出去的，必须是严格的节点
+ * 所以children必须只有一种类型？其它是外部的简化语法与兼容？
+ */
+type StringValue=mve.TValue<string>
+type ItemValue=mve.TValue<string|number>
+type ItemMap={[key:string]:ItemValue}
+type PropMap={ [key: string]:mve.TValue<string|number|boolean>}
+type StringMap={[key:string]:StringValue}
+type ActionMap={[key: string]: ((e) => void)}
+export interface PNJO{
+	type:string,
+	id?:(o:any)=>void;
+	cls?:StringValue;
+	text?: ItemValue;
+	value?: ItemValue;
+	attr?: ItemMap;
+	style?: StringMap;
+	prop?:PropMap;
+	action?: ActionMap;
+	children?:JOChildren<NJO,Node>
+}
+export type NJO=PNJO|string
+
+function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
+	if(child.id){
+		child.id(el)
+	}
+	if(child.value){
+		parseUtil.bind(me,child.value,function(v){
+			DOM.value(el,v)
+		})
+	}
+	if(child.text){
+		parseUtil.bind(me,child.text,function(v){
+			DOM.content(el,v)
+		})
+	}
+	if(child.style){
+		parseUtil.bindKV(me,child.style,function(k,v){
+			DOM.style(el,k,v)
+		})
+	}
+	if(child.attr){
+		parseUtil.bindKV(me,child.attr,function(k,v){
+			DOM.attr(el,k,v)
+		})
+	}
+	if(child.prop){
+		parseUtil.bindKV(me,child.prop,function(k,v){
+			DOM.prop(el,k,v)
+		})
+	}
+	if(child.action){
+		mb.Object.forEach(child.action,function(v,k){
+			DOM.action(el,k,v)
+		})
+	}
+}
+
+function buildChildren(
+	me:mve.LifeModel,
+	el:Node,
+	child:PNJO,
+	buildChildren:(me:mve.LifeModel,p:VirtualChildParam<Node>,children:JOChildren<NJO,Node>)=>BuildResult
+){
+	if(child.children){
+		if(child.text){
+			mb.log("已经有text了，不应该有children",child)
+		}else{
+			return buildChildren(me,new DOMVirtualParam(el),child.children)
+		}
+	}
+}
+export const parseHTML:ParseOfResult<NJO,Node>=parseOf(function(me,child){
+	if(typeof(child)=='string'){
+		return {
+			element:DOM.createTextNode(child),
+			init(){},
+			destroy(){}
+		}
+	}else
+	if(child){
+		if(child.type=="svg"){
+			return parseSVG.view(me,child)
+		}else{
+			const element=DOM.createElement(child.type)
+			buildParam(me,element,child)
+			const childResult=buildChildren(me,element,child,parseHTML.children)
+			return{
+				element,
+				init(){
+					if(childResult){
+						childResult.init()
+					}
+				},
+				destroy(){
+					if(childResult){
+						childResult.destroy()
+					}
+				}
+			}
+		}
+	}else{
+		mb.log(`child为空，不生成任何东西`)
+	}
+})
+export const parseSVG:ParseOfResult<PNJO,Node>=parseOf(function(me,child){
+	const element=DOM.createElementNS(child.type,"http://www.w3.org/2000/svg")
+	buildParam(me,element,child)
+	const childResult=buildChildren(me,element,child,parseSVG.children)
+	return {
+		element,
+		init(){
+			if(childResult){
+				childResult.init()
+			}
+		},
+		destroy(){
+			if(childResult){
+				childResult.destroy()
+			}
+		}
+	}
+})

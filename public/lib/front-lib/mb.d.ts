@@ -1,5 +1,5 @@
 declare var define:(paths:string[],success:(...args:any[])=>any)=>any;
-declare var pathOf: (path: string) => string;
+declare var pathOf: (path?: string) => string;
 declare function require(moduleNames: string[], onLoad: (...args: any[]) => void): void;
 interface JSDOMElement {
 	type: string;

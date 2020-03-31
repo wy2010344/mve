@@ -1,8 +1,8 @@
-define(["require", "exports", "../../lib/mve/v2/ifChildren", "../../lib/mve/v2/modelChildren", "../../lib/mve-DOM/indexv2"], function (require, exports, ifChildren_1, modelChildren_1, indexv2_1) {
+define(["require", "exports", "../../lib/mve/ifChildren", "../../lib/mve/modelChildren", "../../lib/mve-DOM/index", "../../lib/mve/util"], function (require, exports, ifChildren_1, modelChildren_1, index_1, util_1) {
     "use strict";
-    return mve(function (me) {
+    return index_1.parseHTML.mve(function (me) {
         var centerV;
-        var div = mve.Value(1);
+        var div = util_1.mve.valueOf(1);
         function ifChildrenOf(flag, num) {
             return ifChildren_1.ifChildren(function () {
                 if (div() % num == 0) {
@@ -20,10 +20,13 @@ define(["require", "exports", "../../lib/mve/v2/ifChildren", "../../lib/mve/v2/m
                 }
             });
         }
-        var model = mve.ArrayModel([1, 2, 3]);
+        var model = util_1.mve.arrayModelOf([1, 2, 3]);
         return {
-            init: function () {
-                var ch = indexv2_1.parseHTML.children(me, centerV, [
+            init: function () { },
+            destroy: function () { },
+            element: {
+                type: "div",
+                children: [
                     {
                         type: "button",
                         style: {
@@ -61,14 +64,7 @@ define(["require", "exports", "../../lib/mve/v2/ifChildren", "../../lib/mve/v2/m
                         ];
                     }),
                     ifChildrenOf(5, 13)
-                ]);
-                ch.init();
-            },
-            element: {
-                type: "div",
-                id: function (v) {
-                    centerV = v;
-                }
+                ]
             }
         };
     });
