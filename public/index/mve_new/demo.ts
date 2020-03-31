@@ -1,11 +1,14 @@
 
-import { ifChildren } from "../../lib/mve/v2/ifChildren"
-import { modelChildren } from "../../lib/mve/v2/modelChildren"
-import { NJO, parseHTML } from "../../lib/mve-DOM/indexv2"
+import { ifChildren } from "../../lib/mve/ifChildren"
+import { modelChildren } from "../../lib/mve/modelChildren"
+import { parseHTML, NJO, DOMVirtualParam } from "../../lib/mve-DOM/index"
+import { mve } from "../../lib/mve/util"
 
-export=mve(function(me){
+
+export=parseHTML.mve(function(me){
+
 	let centerV:HTMLDivElement
-	const div=mve.Value(1)
+	const div=mve.valueOf(1)
 
 	function ifChildrenOf(flag:number,num:number){
 		return ifChildren(function(){
@@ -24,55 +27,51 @@ export=mve(function(me){
 		})
 	}
 
-	const model=mve.ArrayModel([1,2,3])
+	const model=mve.arrayModelOf([1,2,3])
 	return {
-		init(){
-		 const ch=parseHTML.children(me,centerV,[
-			 {
-				 type:"button",
-				 style:{
-					 background:"gray"
-				 },
-				 text(){
-					 return "当前计数"+div()
-				 },
-				 action:{
-					 click(){
-						 div(div()+1)
-						 const flag=div()%7
-						 let x=model.size()%7
-						 mb.log(flag,x<model.size(),x,model.size())
-						 model.insert(x,flag)
-						 /*
-						 model.unshift(model.size()+1)
-						 */
-					 }
-				 }
-			 },
-			 ifChildrenOf(1,2),
-			 ifChildrenOf(2,5),
-			 modelChildren(model,function(me,row,index){
-				 return [
-					 ifChildrenOf(131,3),
-					 {
-						 type:"div",
-						 style:{
-							background:"yellow"
-						 },
-						 text:row+""
-					 },
-					 ifChildrenOf(141,7),
-				 ] as NJO[]
-			 }),
-			 ifChildrenOf(5,13)
-		 ])
-		 ch.init()
-		},
+		init(){},
+		destroy(){},
 		element:{
 			type:"div",
-			id(v){
-				centerV=v
-			}
+			children:[
+				{
+					type:"button",
+					style:{
+						background:"gray"
+					},
+					text(){
+						return "当前计数"+div()
+					},
+					action:{
+						click(){
+							div(div()+1)
+							const flag=div()%7
+							let x=model.size()%7
+							mb.log(flag,x<model.size(),x,model.size())
+							model.insert(x,flag)
+							/*
+							model.unshift(model.size()+1)
+							*/
+						}
+					}
+				},
+				ifChildrenOf(1,2),
+				ifChildrenOf(2,5),
+				modelChildren(model,function(me,row,index){
+					return [
+						ifChildrenOf(131,3),
+						{
+							type:"div",
+							style:{
+							 background:"yellow"
+							},
+							text:row+""
+						},
+						ifChildrenOf(141,7),
+					] as NJO[]
+				}),
+				ifChildrenOf(5,13)
+			]
 		}
 	}
 })
