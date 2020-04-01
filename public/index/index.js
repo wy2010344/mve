@@ -32,6 +32,7 @@ define(["require", "exports", "./div", "../lib/mve-DOM/index", "../lib/mve/ifChi
                 br,
                 a("测试ViewModel", "?act=test>ViewModel"),
                 a("新的mve", "?act=mve_new/demo"),
+                a("手机demo", "?act=mobel/index"),
                 {
                     type: "input",
                     id: function (v) {

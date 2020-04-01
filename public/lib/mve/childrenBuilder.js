@@ -37,7 +37,20 @@ define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (
                         array.push(child(mx, cv));
                     }
                     else {
-                        var o = parseView(me, child);
+                        var element = void 0;
+                        if (typeof (child) == 'object' && 'element' in child) {
+                            element = child.element;
+                            if (child.init) {
+                                inits.push(child.init);
+                            }
+                            if (child.destroy) {
+                                destroys.push(child.destroy);
+                            }
+                        }
+                        else {
+                            element = child;
+                        }
+                        var o = parseView(me, element);
                         parent.push(o.element);
                         array.push(o);
                     }
