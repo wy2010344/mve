@@ -36,6 +36,7 @@ export=parseHTML.mve(function(me){
 			br,
 			a("测试ViewModel","?act=test>ViewModel"),
 			a("新的mve","?act=mve_new/demo"),
+			a("手机demo","?act=mobel/index"),
 			{
 				type:"input",
 				id(v){

@@ -1,6 +1,25 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
+    /**
+     * 列表的抽象树，似乎对web的各种布局很有用，对苹果却不是很有用
+     * 苹果缺少布局，总是自定义组件来布局。苹果总是一个绝对定位的UIView
+     * 或者封装TableView或CollectionView。想要实现GUID。
+     * TableView有cell复用，重新给cell组装数据。具体到以行数据为单位。但是视图观察全局模型呢？
+     * ArrayModel不更新位置的记录，只是增删，没有视图复用。
+     * model本身是自更新复用视图的，不需要显式的更新。
+     * 比如要自己封装列表，最大的个性化，跟navigation/tab一样，是页面作为自定义模型。那么VirtaulChildren的意义何在呢？
+     * VirtualChild最初是解决web默认布局中，重复控件尾随固定控件。
+     * 而自封装列表，接受的是视图，而视图又是封装了模型的，从而达到这个效果。作为整体render的片段，或者model。原生视图里没有这样的灵活的模型控制。
+     * 没有web布局的苹果环境，只有原始的view/scroll/button/label/input，要用mve去自定义布局。则原来需要VirtualTreeChild的地方，变成了某种mve的某种应用形式
+     * 比如图片列表尾随一个添加窗口这种情形。在web可以使用布局解决。纯mve的模式是固定一个添加控件，封装一层insert总在前一位
+     * 主要是ArrayModel没有内部的VirtaulTree。所以没有直观布局的模式。其实导航(Navigation也无直观布局)
+     * iOS这种简单控件就不需要VirtaulTree，直接用原生视图，差别大吗？
+     * 主要是控件的存在是否受多数据源的影响，是业务逻辑部分还是布局部分。if的情况。无默认布局所以用子view。virtualTree是封装固定位置
+     * VirtualTree是为了应对默认布局
+     * 以子View为单位。
+     * 使用原生的appendChild。则如何转化代码？视图本身作为模型单位。
+     */
     var VirtualChild = /** @class */ (function () {
         function VirtualChild(param, parent) {
             this.param = param;
@@ -17,27 +36,12 @@ define(["require", "exports"], function (require, exports) {
                 fun(view);
             }
         };
-        VirtualChild.prototype.size = function () {
-            return this.children.length;
-        };
-        VirtualChild.prototype.get = function (index) {
-            return this.children[index];
-        };
-        VirtualChild.prototype.firstChild = function () {
-            return this.children[0];
-        };
-        VirtualChild.prototype.lastChild = function () {
-            return this.children[this.children.length - 1];
-        };
         VirtualChild.prototype.pureRemove = function (index) {
             var view = this.children.splice(index, 1)[0];
             var before = this.children[index - 1];
             var after = this.children[index];
             if (before && before instanceof VirtualChild) {
                 before.after = after;
-            }
-            if (after && after instanceof VirtualChild) {
-                after.before = before;
             }
             return view;
         };
@@ -50,7 +54,7 @@ define(["require", "exports"], function (require, exports) {
                 });
             }
             else {
-                mb.log("\u5220\u9664" + index + "\u5931\u8D25,\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.size());
+                mb.log("\u5220\u9664" + index + "\u5931\u8D25,\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.children.length);
             }
         };
         VirtualChild.prototype.move = function (oldIndex, newIndex) {
@@ -77,23 +81,19 @@ define(["require", "exports"], function (require, exports) {
             if (view instanceof VirtualChild) {
                 view.parent = this;
                 view.param = this.param;
-                view.before = before;
                 view.after = after;
             }
             if (before && before instanceof VirtualChild) {
                 before.after = view;
             }
-            if (after && after instanceof VirtualChild) {
-                after.before = view;
-            }
             return after;
         };
         VirtualChild.prototype.nextEL = function (after) {
             if (after) {
-                return this.realNextEO(after);
+                return VirtualChild.realNextEO(after);
             }
             else {
-                return this.realParentNext(this);
+                return VirtualChild.realParentNext(this);
             }
         };
         VirtualChild.prototype.insert = function (index, view) {
@@ -101,34 +101,36 @@ define(["require", "exports"], function (require, exports) {
                 var after = this.pureInsert(index, view);
                 var realNextEL_2 = this.nextEL(after);
                 var that_3 = this;
-                VirtualChild.deepRun(view, function (e) {
-                    if (realNextEL_2) {
+                if (realNextEL_2) {
+                    VirtualChild.deepRun(view, function (e) {
                         that_3.param.insertBefore(e, realNextEL_2);
-                    }
-                    else {
+                    });
+                }
+                else {
+                    VirtualChild.deepRun(view, function (e) {
                         that_3.param.append(e);
-                    }
-                });
+                    });
+                }
             }
             else {
-                mb.log("\u63D2\u5165" + index + "\u5931\u8D25,\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.size());
+                mb.log("\u63D2\u5165" + index + "\u5931\u8D25,\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.children.length);
             }
         };
-        VirtualChild.prototype.realNextEO = function (view) {
+        VirtualChild.realNextEO = function (view) {
             if (view instanceof VirtualChild) {
-                var childrenFirst = view.firstChild();
+                var childrenFirst = view.children[0];
                 if (childrenFirst) {
                     //寻找自己的子级节点
-                    return this.realNextEO(childrenFirst);
+                    return VirtualChild.realNextEO(childrenFirst);
                 }
                 else {
                     //自己的后继
                     var after = view.after;
                     if (after) {
-                        return this.realNextEO(after);
+                        return VirtualChild.realNextEO(after);
                     }
                     else {
-                        return this.realParentNext(view.parent);
+                        return VirtualChild.realParentNext(view.parent);
                     }
                 }
             }
@@ -136,14 +138,14 @@ define(["require", "exports"], function (require, exports) {
                 return view;
             }
         };
-        VirtualChild.prototype.realParentNext = function (parent) {
+        VirtualChild.realParentNext = function (parent) {
             if (parent) {
                 var after = parent.after;
                 if (after) {
-                    return this.realNextEO(after);
+                    return VirtualChild.realNextEO(after);
                 }
                 else {
-                    return this.realParentNext(parent.parent);
+                    return VirtualChild.realParentNext(parent.parent);
                 }
             }
             else {
