@@ -9,7 +9,11 @@ import { mve } from "./util"
  * 传进来的类型
  */
 export type JOChildFun<JO,EO>=(mx:ChildrenMXO<JO,EO>,parent:VirtualChild<EO>)=>BuildResult
-export type JOChildType<JO,EO>=JO | JOChildFun<JO,EO>
+export type JOChildType<JO,EO>=JO | JOChildFun<JO,EO> | {
+  init?():void,
+  destroy?():void,
+  element:JO
+}
 
 export type PureJOChildren<JO,EO>=JOChildType<JO,EO>[] | JOChildType<JO,EO>
 /**兼容多种简化格式 */
@@ -64,7 +68,19 @@ export function childrenBuilder<JO,EO>(
           const cv=parent.newChildAtLast()
           array.push(child(mx,cv))
         }else{
-          const o=parseView(me,child)
+          let element:JO
+          if(typeof(child)=='object' && 'element' in child){
+            element=child.element
+            if(child.init){
+              inits.push(child.init)
+            }
+            if(child.destroy){
+              destroys.push(child.destroy)
+            }
+          }else{
+            element=child as JO
+          }
+          const o=parseView(me,element)
           parent.push(o.element)
           array.push(o)
         }
