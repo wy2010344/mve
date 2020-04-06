@@ -255,6 +255,24 @@ export namespace mve{
   class LifeModelImpl implements LifeModel{
     private pool:Watcher[]=[]
     Watch(exp){
+      /**兼容 */
+      if(typeof(exp)=='object'){
+        if(exp.before){
+          if(exp.after){
+            return this.WatchExp(exp.before,exp.exp,exp.after)
+          }else{
+            return this.WatchBefore(exp.before,exp.exp)
+          }
+        }else{
+          if(exp.after){
+            return this.WatchAfter(exp.exp,exp.after)
+          }else{
+            return this.Watch(exp.exp)
+          }
+        }
+      }
+      /****/
+
       this.pool.push(mve.Watch(exp))
     }
     WatchExp(before,exp,after){
@@ -283,6 +301,15 @@ export namespace mve{
         this.pool.pop().disable()
       }
     }
+    /////兼容性问题////
+    k={}
+    Value(v){
+      return mve.valueOf(v)
+    }
+    ArrayModel(v){
+      return mve.arrayModelOf(v)
+    }
+    ////////
   }
   export function newLifeModel():{
     me:LifeModel,

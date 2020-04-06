@@ -9,14 +9,14 @@ export class DOMVirtualParam implements VirtualChildParam<Node>{
 	constructor(
 		private pel:Node
 	){}
-	append(el){
-		DOM.appendChild(this.pel,el)
+	append(el,isMove){
+		DOM.appendChild(this.pel,el,isMove)
 	}
 	remove(el){
 		DOM.removeChild(this.pel,el)
 	}
-	insertBefore(el,oldEl){
-		DOM.insertChildBefore(this.pel,el,oldEl)
+	insertBefore(el,oldEl,isMove){
+		DOM.insertChildBefore(this.pel,el,oldEl,isMove)
 	}
 }
 /**
