@@ -37,17 +37,32 @@ function getItem<JO,EO>(
   inits:EmptyFun[],
   destroys:EmptyFun[]
 ):JOChildType<JO,EO>[]{
-  if(mb.Array.isArray(item)){
-    return item
-  }else
-  if('elements' in item){
-    if(item.init){
-      inits.push(item.init)
+  if(typeof(item)=='object'){
+    if(mb.Array.isArray(item)){
+      return mb.Array.flatMap(item,v=>{
+        return getItem(v,inits,destroys)
+      })
+    }else
+    if('elements' in item){
+      if(item.init){
+        inits.push(item.init)
+      }
+      if(item.destroy){
+        destroys.push(item.destroy)
+      }
+      return getItem(item.elements,inits,destroys)
+    }else
+    if('element' in item){
+      if(item.init){
+        inits.push(item.init)
+      }
+      if(item.destroy){
+        destroys.push(item.destroy)
+      }
+      return [item.element]
+    }else{
+      return [ item ]
     }
-    if(item.destroy){
-      destroys.push(item.destroy)
-    }
-    return getItem(item.elements,inits,destroys)
   }else{
     return [item]
   }

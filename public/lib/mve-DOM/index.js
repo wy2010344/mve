@@ -5,14 +5,14 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
         function DOMVirtualParam(pel) {
             this.pel = pel;
         }
-        DOMVirtualParam.prototype.append = function (el) {
-            DOM.appendChild(this.pel, el);
+        DOMVirtualParam.prototype.append = function (el, isMove) {
+            DOM.appendChild(this.pel, el, isMove);
         };
         DOMVirtualParam.prototype.remove = function (el) {
             DOM.removeChild(this.pel, el);
         };
-        DOMVirtualParam.prototype.insertBefore = function (el, oldEl) {
-            DOM.insertChildBefore(this.pel, el, oldEl);
+        DOMVirtualParam.prototype.insertBefore = function (el, oldEl, isMove) {
+            DOM.insertChildBefore(this.pel, el, oldEl, isMove);
         };
         return DOMVirtualParam;
     }());

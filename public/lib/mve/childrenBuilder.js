@@ -6,17 +6,33 @@ define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (
     }
     exports.isJOChildFunType = isJOChildFunType;
     function getItem(item, inits, destroys) {
-        if (mb.Array.isArray(item)) {
-            return item;
-        }
-        else if ('elements' in item) {
-            if (item.init) {
-                inits.push(item.init);
+        if (typeof (item) == 'object') {
+            if (mb.Array.isArray(item)) {
+                return mb.Array.flatMap(item, function (v) {
+                    return getItem(v, inits, destroys);
+                });
             }
-            if (item.destroy) {
-                destroys.push(item.destroy);
+            else if ('elements' in item) {
+                if (item.init) {
+                    inits.push(item.init);
+                }
+                if (item.destroy) {
+                    destroys.push(item.destroy);
+                }
+                return getItem(item.elements, inits, destroys);
             }
-            return getItem(item.elements, inits, destroys);
+            else if ('element' in item) {
+                if (item.init) {
+                    inits.push(item.init);
+                }
+                if (item.destroy) {
+                    destroys.push(item.destroy);
+                }
+                return [item.element];
+            }
+            else {
+                return [item];
+            }
         }
         else {
             return [item];

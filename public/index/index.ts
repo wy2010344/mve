@@ -2,6 +2,8 @@ import { div } from "./div";
 import { parseHTML } from "../lib/mve-DOM/index";
 import { ifChildren } from "../lib/mve/ifChildren";
 import { mve } from "../lib/mve/util";
+import { filterCacheChildren } from "../lib/mve/filterCacheChildren";
+import { filterChildren } from "../lib/mve/fiilterChildren";
 
 const a=function(text:string,href:string) {
 	return {
@@ -71,36 +73,36 @@ export=parseHTML.mve(function(me){
 							return "添加第"+(list().length+1)+"条记录";
 						}
 					},
-					ifChildren(function(me){
-						return mb.Array.flatMap(list(),function(row,index){
-							return [
-								{
-									type:"li",
-									children:[
-										{
-											type:"button",
-											text:"x",
-											action:{
-												click:function() {
-													list().splice(index,1);
-													list(list());
-												}
+					filterCacheChildren(list,function(me,row,index){
+						return [
+							{
+								type:"li",
+								children:[
+									{
+										type:"button",
+										text:"x",
+										action:{
+											click:function() {
+												list().splice(index,1);
+												list(list());
 											}
-										},
-										index+1+"",
-										"-----------",
-										{
-											type:"span",
-											text:row+""
 										}
-									]
-								},
-								{
-									type:"li",
-									text:"我是第"+index+"个元素"
-								}
-							]
-						})
+									},
+									index+1+"",
+									"-----------",
+									{
+										type:"span",
+										text(){
+											return row()
+										}
+									}
+								]
+							},
+							{
+								type:"li",
+								text:"我是第"+index+"个元素"
+							}
+						]
 					}),
 					{
 						type:"li",
@@ -148,13 +150,16 @@ export=parseHTML.mve(function(me){
 							}
 						})
 					}),
-					ifChildren(function(me){
-						return mb.Array.map(list(),function(row,index){
-							return {
+					filterChildren(list,function(me,row,index){
+						return {
+							init(){
+								mb.log("初始化")
+							},
+							elements:{
 								type:"div",
 								text:index+"---->"+row
 							}
-						})
+						}
 					}),
 					{
 						type:"span",

@@ -1,4 +1,4 @@
-define(["require", "exports", "./div", "../lib/mve-DOM/index", "../lib/mve/ifChildren", "../lib/mve/util"], function (require, exports, div_1, index_1, ifChildren_1, util_1) {
+define(["require", "exports", "./div", "../lib/mve-DOM/index", "../lib/mve/ifChildren", "../lib/mve/util", "../lib/mve/filterCacheChildren", "../lib/mve/fiilterChildren"], function (require, exports, div_1, index_1, ifChildren_1, util_1, filterCacheChildren_1, fiilterChildren_1) {
     "use strict";
     var a = function (text, href) {
         return {
@@ -68,36 +68,36 @@ define(["require", "exports", "./div", "../lib/mve-DOM/index", "../lib/mve/ifChi
                                 return "添加第" + (list().length + 1) + "条记录";
                             }
                         },
-                        ifChildren_1.ifChildren(function (me) {
-                            return mb.Array.flatMap(list(), function (row, index) {
-                                return [
-                                    {
-                                        type: "li",
-                                        children: [
-                                            {
-                                                type: "button",
-                                                text: "x",
-                                                action: {
-                                                    click: function () {
-                                                        list().splice(index, 1);
-                                                        list(list());
-                                                    }
+                        filterCacheChildren_1.filterCacheChildren(list, function (me, row, index) {
+                            return [
+                                {
+                                    type: "li",
+                                    children: [
+                                        {
+                                            type: "button",
+                                            text: "x",
+                                            action: {
+                                                click: function () {
+                                                    list().splice(index, 1);
+                                                    list(list());
                                                 }
-                                            },
-                                            index + 1 + "",
-                                            "-----------",
-                                            {
-                                                type: "span",
-                                                text: row + ""
                                             }
-                                        ]
-                                    },
-                                    {
-                                        type: "li",
-                                        text: "我是第" + index + "个元素"
-                                    }
-                                ];
-                            });
+                                        },
+                                        index + 1 + "",
+                                        "-----------",
+                                        {
+                                            type: "span",
+                                            text: function () {
+                                                return row();
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    type: "li",
+                                    text: "我是第" + index + "个元素"
+                                }
+                            ];
                         }),
                         {
                             type: "li",
@@ -145,13 +145,16 @@ define(["require", "exports", "./div", "../lib/mve-DOM/index", "../lib/mve/ifChi
                                 };
                             });
                         }),
-                        ifChildren_1.ifChildren(function (me) {
-                            return mb.Array.map(list(), function (row, index) {
-                                return {
+                        fiilterChildren_1.filterChildren(list, function (me, row, index) {
+                            return {
+                                init: function () {
+                                    mb.log("初始化");
+                                },
+                                elements: {
                                     type: "div",
                                     text: index + "---->" + row
-                                };
-                            });
+                                }
+                            };
                         }),
                         {
                             type: "span",

@@ -33,10 +33,14 @@ define(["require", "exports", "./childrenBuilder", "./singleModel", "./util"], f
                     element: presult.element,
                     init: function () {
                         presult.init();
-                        uresult.init();
+                        if (uresult.init) {
+                            uresult.init();
+                        }
                     },
                     destroy: function () {
-                        uresult.destroy();
+                        if (uresult.destroy) {
+                            uresult.destroy();
+                        }
                         presult.destroy();
                     }
                 };
