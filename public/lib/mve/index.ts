@@ -28,13 +28,16 @@ export const parseUtil={
 }
 
 /**将out返回出去 */
-export interface MveOuterResult<JO> extends EOParseResult<JO>{
-  out:any
+export interface MveOuterResult<JO>{
+  out?:any,
+  init?():void,
+  destroy?():void,
+  element:JO
 }
 
 export interface ParseOfResult<JO,EO>{
   view(me:mve.LifeModel,child:JO):EOParseResult<EO>,
-  mve(fun:(me:mve.LifeModel)=>EOParseResult<JO>):MveOuterResult<EO>,
+  mve(fun:(me:mve.LifeModel)=>MveOuterResult<JO>):MveOuterResult<EO>,
   children(me:mve.LifeModel,p:VirtualChildParam<EO>,children:JOChildren<JO,EO>):BuildResult
   single(p:SingleParam<EO>,me:mve.LifeModel,target:SingleTarget<JO,EO>):BuildResult
 }
@@ -52,10 +55,14 @@ export function parseOf<JO,EO>(view:(me:mve.LifeModel,child:JO)=>EOParseResult<E
         element:presult.element,
         init(){
           presult.init()
-          uresult.init()
+          if(uresult.init){
+            uresult.init()
+          }
         },
         destroy(){
-          uresult.destroy()
+          if(uresult.destroy){
+            uresult.destroy()
+          }
           presult.destroy()
         }
       }

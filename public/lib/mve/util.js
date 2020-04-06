@@ -256,8 +256,31 @@ define(["require", "exports"], function (require, exports) {
         var LifeModelImpl = /** @class */ (function () {
             function LifeModelImpl() {
                 this.pool = [];
+                /////兼容性问题////
+                this.k = {};
+                ////////
             }
             LifeModelImpl.prototype.Watch = function (exp) {
+                /**兼容 */
+                if (typeof (exp) == 'object') {
+                    if (exp.before) {
+                        if (exp.after) {
+                            return this.WatchExp(exp.before, exp.exp, exp.after);
+                        }
+                        else {
+                            return this.WatchBefore(exp.before, exp.exp);
+                        }
+                    }
+                    else {
+                        if (exp.after) {
+                            return this.WatchAfter(exp.exp, exp.after);
+                        }
+                        else {
+                            return this.Watch(exp.exp);
+                        }
+                    }
+                }
+                /****/
                 this.pool.push(mve.Watch(exp));
             };
             LifeModelImpl.prototype.WatchExp = function (before, exp, after) {
@@ -285,6 +308,12 @@ define(["require", "exports"], function (require, exports) {
                 while (this.pool.length > 0) {
                     this.pool.pop().disable();
                 }
+            };
+            LifeModelImpl.prototype.Value = function (v) {
+                return mve.valueOf(v);
+            };
+            LifeModelImpl.prototype.ArrayModel = function (v) {
+                return mve.arrayModelOf(v);
             };
             return LifeModelImpl;
         }());
