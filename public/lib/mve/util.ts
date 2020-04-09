@@ -123,6 +123,7 @@ export namespace mve{
         mb.Array.forEach(this._views,function(view:any){
           view.move(index,target_index);
         });
+        this._reload_size_()
       }
     }
     /*多控件用array和model，单控件用包装*/
