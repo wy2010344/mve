@@ -128,6 +128,7 @@ define(["require", "exports"], function (require, exports) {
                     mb.Array.forEach(this._views, function (view) {
                         view.move(index, target_index);
                     });
+                    this._reload_size_();
                 }
             };
             /*多控件用array和model，单控件用包装*/
