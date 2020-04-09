@@ -3,6 +3,9 @@
 
 export abstract class BAbsView{
 	abstract getElement():HTMLElement
+	setBackground(c:string){
+		this.getElement().style.background=c
+	}
 	setX(x:number){
 		this.getElement().style.left=x+"px"
 	}
@@ -67,13 +70,13 @@ export class BView extends BAbsView{
 		this.element.style.position="absolute"
 	}
 	insert(index:number,view:BAbsView){
-		if(-1 < index && index < this.children.length + 1){
-			this.children.splice(index,0,view)
+		if(-1 < index && index < (this.children.length + 1)){
 			if(index<this.children.length){
 				this.element.insertBefore(view.getElement(),this.children[index].getElement())
 			}else{
 				this.element.appendChild(view.getElement())
 			}
+			this.children.splice(index,0,view)
 		}else{
 			mb.log(`插入位置不正确，全长${this.children.length},位置${index}`)
 		}
