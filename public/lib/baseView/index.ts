@@ -18,6 +18,44 @@ export abstract class BAbsView{
 	setH(h:number){
 		this.getElement().style.height=h+"px"
 	}
+
+	protected getInnerElement(){
+		return this.getElement()
+	}
+	private children:BAbsView[]=[]
+	insert(index:number,view:BAbsView){
+		if(-1 < index && index < (this.children.length + 1)){
+			if(index<this.children.length){
+				this.getInnerElement().insertBefore(view.getElement(),this.children[index].getElement())
+			}else{
+				this.getInnerElement().appendChild(view.getElement())
+			}
+			this.children.splice(index,0,view)
+		}else{
+			mb.log(`插入位置不正确，全长${this.children.length},位置${index}`)
+		}
+	}
+	removeAt(index:number){
+		let view=this.children.splice(index,1)[0]
+		if(view){
+			this.getInnerElement().removeChild(view.getElement())
+		}else{
+			mb.log(`删除位置不正确，全长${this.children.length},位置${index}`)
+		}
+	}
+	/////////////////
+	push(view:BAbsView){
+		this.insert(this.children.length,view)
+	}
+	unshift(view:BAbsView){
+		this.insert(0,view)
+	}
+	pop(){
+		this.removeAt(this.children.length-1)
+	}
+	shift(){
+		this.removeAt(0)
+	}
 }
 export class BLable extends BAbsView{
 	private element:HTMLDivElement
@@ -61,7 +99,6 @@ export class BInput extends BAbsView{
 	}
 }
 export class BView extends BAbsView{
-	private children:BAbsView[]=[]
 	private element:HTMLDivElement
 	getElement(){return this.element}
 	constructor(){
@@ -69,46 +106,13 @@ export class BView extends BAbsView{
 		this.element=document.createElement("div")
 		this.element.style.position="absolute"
 	}
-	insert(index:number,view:BAbsView){
-		if(-1 < index && index < (this.children.length + 1)){
-			if(index<this.children.length){
-				this.element.insertBefore(view.getElement(),this.children[index].getElement())
-			}else{
-				this.element.appendChild(view.getElement())
-			}
-			this.children.splice(index,0,view)
-		}else{
-			mb.log(`插入位置不正确，全长${this.children.length},位置${index}`)
-		}
-	}
-	removeAt(index:number){
-		let view=this.children.splice(index,1)[0]
-		if(view){
-			this.element.removeChild(view.getElement())
-		}else{
-			mb.log(`删除位置不正确，全长${this.children.length},位置${index}`)
-		}
-	}
-	/////////////////
-	push(view:BAbsView){
-		this.insert(this.children.length,view)
-	}
-	unshift(view:BAbsView){
-		this.insert(0,view)
-	}
-	pop(){
-		this.removeAt(this.children.length-1)
-	}
-	shift(){
-		this.removeAt(0)
-	}
 }
 
 export class BScrollView extends BAbsView{
-	private children:BAbsView[]=[]
 	private element:HTMLDivElement
 	private inElement:HTMLDivElement
 	getElement(){return this.element}
+	getInnerElement(){return this.inElement}
 	constructor(){
 		super()
 		this.inElement=document.createElement("div")
@@ -123,38 +127,5 @@ export class BScrollView extends BAbsView{
 	}
 	setIH(h:number){
 		this.inElement.style.height=h+"px"
-	}
-	insert(index:number,view:BAbsView){
-		if(-1 < index && index < this.children.length + 1){
-			this.children.splice(index,0,view)
-			if(index<this.children.length){
-				this.element.insertBefore(view.getElement(),this.children[index].getElement())
-			}else{
-				this.element.appendChild(view.getElement())
-			}
-		}else{
-			mb.log(`插入位置不正确，全长${this.children.length},位置${index}`)
-		}
-	}
-	removeAt(index:number){
-		let view=this.children.splice(index,1)[0]
-		if(view){
-			this.element.removeChild(view.getElement())
-		}else{
-			mb.log(`删除位置不正确，全长${this.children.length},位置${index}`)
-		}
-	}
-	/////////////////
-	push(view:BAbsView){
-		this.insert(this.children.length,view)
-	}
-	unshift(view:BAbsView){
-		this.insert(0,view)
-	}
-	pop(){
-		this.removeAt(this.children.length-1)
-	}
-	shift(){
-		this.removeAt(0)
 	}
 }

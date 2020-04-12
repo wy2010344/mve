@@ -16,6 +16,7 @@ define(["require", "exports"], function (require, exports) {
     exports.__esModule = true;
     var BAbsView = /** @class */ (function () {
         function BAbsView() {
+            this.children = [];
         }
         BAbsView.prototype.setBackground = function (c) {
             this.getElement().style.background = c;
@@ -31,6 +32,45 @@ define(["require", "exports"], function (require, exports) {
         };
         BAbsView.prototype.setH = function (h) {
             this.getElement().style.height = h + "px";
+        };
+        BAbsView.prototype.getInnerElement = function () {
+            return this.getElement();
+        };
+        BAbsView.prototype.insert = function (index, view) {
+            if (-1 < index && index < (this.children.length + 1)) {
+                if (index < this.children.length) {
+                    this.getInnerElement().insertBefore(view.getElement(), this.children[index].getElement());
+                }
+                else {
+                    this.getInnerElement().appendChild(view.getElement());
+                }
+                this.children.splice(index, 0, view);
+            }
+            else {
+                mb.log("\u63D2\u5165\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
+            }
+        };
+        BAbsView.prototype.removeAt = function (index) {
+            var view = this.children.splice(index, 1)[0];
+            if (view) {
+                this.getInnerElement().removeChild(view.getElement());
+            }
+            else {
+                mb.log("\u5220\u9664\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
+            }
+        };
+        /////////////////
+        BAbsView.prototype.push = function (view) {
+            this.insert(this.children.length, view);
+        };
+        BAbsView.prototype.unshift = function (view) {
+            this.insert(0, view);
+        };
+        BAbsView.prototype.pop = function () {
+            this.removeAt(this.children.length - 1);
+        };
+        BAbsView.prototype.shift = function () {
+            this.removeAt(0);
         };
         return BAbsView;
     }());
@@ -89,48 +129,11 @@ define(["require", "exports"], function (require, exports) {
         __extends(BView, _super);
         function BView() {
             var _this = _super.call(this) || this;
-            _this.children = [];
             _this.element = document.createElement("div");
             _this.element.style.position = "absolute";
             return _this;
         }
         BView.prototype.getElement = function () { return this.element; };
-        BView.prototype.insert = function (index, view) {
-            if (-1 < index && index < (this.children.length + 1)) {
-                if (index < this.children.length) {
-                    this.element.insertBefore(view.getElement(), this.children[index].getElement());
-                }
-                else {
-                    this.element.appendChild(view.getElement());
-                }
-                this.children.splice(index, 0, view);
-            }
-            else {
-                mb.log("\u63D2\u5165\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
-            }
-        };
-        BView.prototype.removeAt = function (index) {
-            var view = this.children.splice(index, 1)[0];
-            if (view) {
-                this.element.removeChild(view.getElement());
-            }
-            else {
-                mb.log("\u5220\u9664\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
-            }
-        };
-        /////////////////
-        BView.prototype.push = function (view) {
-            this.insert(this.children.length, view);
-        };
-        BView.prototype.unshift = function (view) {
-            this.insert(0, view);
-        };
-        BView.prototype.pop = function () {
-            this.removeAt(this.children.length - 1);
-        };
-        BView.prototype.shift = function () {
-            this.removeAt(0);
-        };
         return BView;
     }(BAbsView));
     exports.BView = BView;
@@ -138,7 +141,6 @@ define(["require", "exports"], function (require, exports) {
         __extends(BScrollView, _super);
         function BScrollView() {
             var _this = _super.call(this) || this;
-            _this.children = [];
             _this.inElement = document.createElement("div");
             _this.inElement.style.position = "absolute";
             _this.element = document.createElement("div");
@@ -148,47 +150,12 @@ define(["require", "exports"], function (require, exports) {
             return _this;
         }
         BScrollView.prototype.getElement = function () { return this.element; };
+        BScrollView.prototype.getInnerElement = function () { return this.inElement; };
         BScrollView.prototype.setIW = function (w) {
             this.inElement.style.width = w + "px";
         };
         BScrollView.prototype.setIH = function (h) {
             this.inElement.style.height = h + "px";
-        };
-        BScrollView.prototype.insert = function (index, view) {
-            if (-1 < index && index < this.children.length + 1) {
-                this.children.splice(index, 0, view);
-                if (index < this.children.length) {
-                    this.element.insertBefore(view.getElement(), this.children[index].getElement());
-                }
-                else {
-                    this.element.appendChild(view.getElement());
-                }
-            }
-            else {
-                mb.log("\u63D2\u5165\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
-            }
-        };
-        BScrollView.prototype.removeAt = function (index) {
-            var view = this.children.splice(index, 1)[0];
-            if (view) {
-                this.element.removeChild(view.getElement());
-            }
-            else {
-                mb.log("\u5220\u9664\u4F4D\u7F6E\u4E0D\u6B63\u786E\uFF0C\u5168\u957F" + this.children.length + ",\u4F4D\u7F6E" + index);
-            }
-        };
-        /////////////////
-        BScrollView.prototype.push = function (view) {
-            this.insert(this.children.length, view);
-        };
-        BScrollView.prototype.unshift = function (view) {
-            this.insert(0, view);
-        };
-        BScrollView.prototype.pop = function () {
-            this.removeAt(this.children.length - 1);
-        };
-        BScrollView.prototype.shift = function () {
-            this.removeAt(0);
         };
         return BScrollView;
     }(BAbsView));

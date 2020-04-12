@@ -14,98 +14,107 @@ var __extends = (this && this.__extends) || (function () {
 define(["require", "exports", "../mve/util"], function (require, exports, util_1) {
     "use strict";
     exports.__esModule = true;
-    function valueOf(v, set) {
-        var cache = util_1.mve.valueOf(v);
-        return function () {
-            if (arguments.length == 0) {
-                return cache();
-            }
-            else {
-                var v_1 = arguments[0];
-                set(v_1);
-                cache(v_1);
+    var BParamImpl = /** @class */ (function () {
+        function BParamImpl() {
+            this.pool = [];
+        }
+        BParamImpl.prototype.Watch = function (exp) {
+            this.pool.push(util_1.mve.Watch(exp));
+        };
+        BParamImpl.prototype.WatchExp = function (before, exp, after) {
+            this.pool.push(util_1.mve.WatchExp(before, exp, after));
+        };
+        BParamImpl.prototype.WatchBefore = function (before, exp) {
+            this.pool.push(util_1.mve.WatchBefore(before, exp));
+        };
+        BParamImpl.prototype.WatchAfter = function (exp, after) {
+            this.pool.push(util_1.mve.WatchAfter(exp, after));
+        };
+        BParamImpl.prototype.destroy = function () {
+            while (this.pool.length > 0) {
+                this.pool.pop().disable();
             }
         };
-    }
-    var BaseView = /** @class */ (function () {
-        function BaseView(view) {
-            this.view = view;
-            this.x = valueOf(0, function (v) {
-                view.setX(v);
-            });
-            this.y = valueOf(0, function (v) {
-                view.setY(v);
-            });
-            this.w = valueOf(0, function (v) {
-                view.setW(v);
-            });
-            this.h = valueOf(0, function (v) {
-                view.setH(v);
-            });
-        }
-        BaseView.prototype.destroy = function () { };
-        return BaseView;
+        return BParamImpl;
     }());
-    exports.BaseView = BaseView;
-    var SubView = /** @class */ (function (_super) {
-        __extends(SubView, _super);
-        function SubView() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.index = util_1.mve.valueOf(0);
+    exports.BParamImpl = BParamImpl;
+    var BSubParamImpl = /** @class */ (function (_super) {
+        __extends(BSubParamImpl, _super);
+        function BSubParamImpl(i) {
+            var _this = _super.call(this) || this;
+            _this.indexValue = util_1.mve.valueOf(i);
             return _this;
         }
-        return SubView;
-    }(BaseView));
-    exports.SubView = SubView;
-    var SuperView = /** @class */ (function (_super) {
-        __extends(SuperView, _super);
-        function SuperView() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.count = util_1.mve.valueOf(0);
-            _this.children = [];
-            return _this;
+        BSubParamImpl.prototype.index = function () {
+            return this.indexValue();
+        };
+        return BSubParamImpl;
+    }(BParamImpl));
+    var BSuper = /** @class */ (function () {
+        function BSuper(view) {
+            this.view = view;
+            this.params = [];
+            this.children = [];
+            this.size = util_1.mve.valueOf(0);
         }
-        SuperView.prototype.size = function () {
-            return this.count();
+        BSuper.prototype.count = function () {
+            return this.size();
         };
-        SuperView.prototype.get = function (index) {
-            return this.children[index];
+        BSuper.prototype.get = function (i) {
+            return this.children[i];
         };
-        SuperView.prototype.updateIndex = function (index) {
-            for (var i = index; i < this.children.length; i++) {
-                this.children[i].index(i);
+        BSuper.prototype.reloadSize = function (i) {
+            while (i < this.params.length) {
+                this.params[i].indexValue(i);
+                i++;
             }
-            this.count(this.children.length);
+            this.size(this.children.length);
         };
-        SuperView.prototype.insert = function (index, item) {
-            this.children.splice(index, 0, item);
-            this.view.insert(index, item.view);
-            this.updateIndex(index);
+        BSuper.prototype.insert = function (i, get) {
+            var param = new BSubParamImpl(i);
+            var child = get(param);
+            //创建3个
+            this.params.splice(i, 0, param);
+            this.children.splice(i, 0, child);
+            this.view.insert(i, child.view);
+            this.reloadSize(i);
         };
-        SuperView.prototype.removeAt = function (index) {
-            var child = this.children.splice(index, 1)[0];
-            if (child) {
-                this.view.removeAt(index);
-                child.destroy();
-                this.updateIndex(index);
+        BSuper.prototype.removeAt = function (i) {
+            //销毁4个
+            this.params.splice(i, 1)[0].destroy();
+            this.children.splice(i, 1);
+            this.view.removeAt(i);
+            this.reloadSize(i);
+        };
+        BSuper.prototype.moveTo = function (from, to) {
+            if (from == to) {
+                return;
             }
-            else {
-                mb.log("\u53EA\u6709" + this.size() + "\uFF0C\u79FB\u9664" + index + "\u5931\u8D25");
+            var child = this.children.splice(from, 1)[0];
+            var param = this.params.splice(from)[0];
+            this.view.removeAt(from);
+            this.children.splice(to, 0, child);
+            this.params.splice(to, 0, param);
+            this.view.insert(to, child.view);
+            var _a = from < to ? [from, to] : [to, from], min = _a[0], max = _a[1];
+            for (var i = min; i <= max; i++) {
+                this.params[i].indexValue(i);
             }
+            this.size(this.size());
         };
-        SuperView.prototype.push = function (item) {
-            this.insert(this.size(), item);
+        BSuper.prototype.push = function (get) {
+            this.insert(this.count(), get);
         };
-        SuperView.prototype.pop = function () {
-            this.removeAt(this.size() - 1);
+        BSuper.prototype.pop = function () {
+            this.removeAt(this.count() - 1);
         };
-        SuperView.prototype.unshift = function (item) {
-            this.insert(0, item);
+        BSuper.prototype.unshift = function (get) {
+            this.insert(0, get);
         };
-        SuperView.prototype.shift = function () {
+        BSuper.prototype.shift = function () {
             this.removeAt(0);
         };
-        return SuperView;
-    }(BaseView));
-    exports.SuperView = SuperView;
+        return BSuper;
+    }());
+    exports.BSuper = BSuper;
 });
