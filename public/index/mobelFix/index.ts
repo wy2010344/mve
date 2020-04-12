@@ -1,52 +1,47 @@
-import { MveUtil } from "../../lib/baseView/mveUtil"
-import { mve } from "../../lib/mve/util"
-import { SuperView, SubView } from "../../lib/baseView/arraymodel"
-import { BView } from "../../lib/baseView/index"
-import { sameWidth, sameHeight } from "../../lib/baseView/Layout"
+import { MveUtil } from "../../lib/baseView/mveUtil";
+import { mve } from "../../lib/mve/util";
+import { navigationOf } from "../../lib/baseView/BNavigationView";
+import { BView } from "../../lib/baseView/index";
 
 
 const me=new MveUtil()
 
-const width=mve.valueOf(0)
-const height=mve.valueOf(0)
-
-const element=document.createElement("div")
-element.style.background="gray"
-const navigation=new SuperView(new BView())
-sameWidth(me,navigation)
-sameHeight(me,navigation)
-element.appendChild(navigation.view.getElement())
-navigation.w(320)
-navigation.h(640)
-me.WatchAfter(width,function(w){
-  navigation.x((w-navigation.w())/2)
-})
-me.WatchAfter(height,function(h){
-  navigation.y((h-navigation.h())/2)
-})
-export={
-  out:{
-    width,height
-  },
-  element,
-  init(){
-    navigation.push(new 首页(navigation))
-  },
-  destroy(){
-    navigation.destroy()
-    me.destroy()
-  }
+const out={
+	width:mve.valueOf(0),
+	height:mve.valueOf(0)
 }
-
-
-class 首页 extends SubView{
-  navigation:SuperView
-  constructor(
-    navigation:SuperView
-  ){
-      const view=new BView()
-      super(view)
-      this.navigation=navigation
-      view.setBackground("yellow")
-  }
+const element=document.createElement("div")
+const view=new BView()
+view.setBackground("yellow")
+const navigation=navigationOf(me,{
+	view,
+	width(){
+		return 320
+	},
+	height(){
+		return 640
+	}
+})
+element.style.background="gray"
+me.Watch(function(){
+	view.setX((out.width() - navigation.width())/2)
+})
+me.Watch(function(){
+	view.setY((out.height() - navigation.height())/2)
+})
+element.appendChild(view.getElement())
+export={
+	out,
+	element:element,
+	init(){
+		mb.log("初始化")
+		navigation.push(function(index){
+			return {
+				view:new BView()
+			}
+		})
+	},
+	destroy(){
+		me.destroy()
+	}
 }
