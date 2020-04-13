@@ -38,6 +38,12 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
         return BParamImpl;
     }());
     exports.BParamImpl = BParamImpl;
+    var BSub = /** @class */ (function () {
+        function BSub() {
+        }
+        return BSub;
+    }());
+    exports.BSub = BSub;
     var BSubParamImpl = /** @class */ (function (_super) {
         __extends(BSubParamImpl, _super);
         function BSubParamImpl(i) {
@@ -55,10 +61,20 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
             this.view = view;
             this.params = [];
             this.children = [];
-            this.size = util_1.mve.valueOf(0);
+            this.count = util_1.mve.valueOf(0);
         }
-        BSuper.prototype.count = function () {
-            return this.size();
+        BSuper.prototype.init = function (me, outView) {
+            outView = outView || this.view;
+            var that = this;
+            me.Watch(function () {
+                outView.kSetW(that.getWidth());
+            });
+            me.Watch(function () {
+                outView.kSetH(that.getHeight());
+            });
+        };
+        BSuper.prototype.size = function () {
+            return this.count();
         };
         BSuper.prototype.get = function (i) {
             return this.children[i];
@@ -68,7 +84,7 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
                 this.params[i].indexValue(i);
                 i++;
             }
-            this.size(this.children.length);
+            this.count(this.children.length);
         };
         BSuper.prototype.insert = function (i, get) {
             var param = new BSubParamImpl(i);
@@ -78,6 +94,9 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
             this.children.splice(i, 0, child);
             this.view.insert(i, child.view);
             this.reloadSize(i);
+        };
+        BSuper.prototype.indexOf = function (v) {
+            return this.children.indexOf(v);
         };
         BSuper.prototype.removeAt = function (i) {
             //销毁4个
@@ -100,13 +119,13 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
             for (var i = min; i <= max; i++) {
                 this.params[i].indexValue(i);
             }
-            this.size(this.size());
+            this.count(this.count());
         };
         BSuper.prototype.push = function (get) {
-            this.insert(this.count(), get);
+            this.insert(this.size(), get);
         };
         BSuper.prototype.pop = function () {
-            this.removeAt(this.count() - 1);
+            this.removeAt(this.size() - 1);
         };
         BSuper.prototype.unshift = function (get) {
             this.insert(0, get);
@@ -117,4 +136,32 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
         return BSuper;
     }());
     exports.BSuper = BSuper;
+    function subViewSameWidth(me, that) {
+        me.Watch(function () {
+            var w = that.getWidth();
+            var size = that.size();
+            var i = 0;
+            while (i < size) {
+                var view = that.get(i).view;
+                view.kSetX(0);
+                view.kSetW(w);
+                i = i + 1;
+            }
+        });
+    }
+    exports.subViewSameWidth = subViewSameWidth;
+    function subViewSameHeiht(me, that) {
+        me.Watch(function () {
+            var h = that.getHeight();
+            var size = that.size();
+            var i = 0;
+            while (i < size) {
+                var view = that.get(i).view;
+                view.kSetY(0);
+                view.kSetH(h);
+                i = i + 1;
+            }
+        });
+    }
+    exports.subViewSameHeiht = subViewSameHeiht;
 });

@@ -1,3 +1,6 @@
+import { BParam } from "./arraymodel"
+import { mve } from "../mve/util"
+import { VirtualChildParam } from "../mve/virtualTreeChildren"
 
 
 
@@ -6,17 +9,33 @@ export abstract class BAbsView{
 	setBackground(c:string){
 		this.getElement().style.background=c
 	}
-	setX(x:number){
+	private x:number
+	private y:number
+	private w:number
+	private h:number
+	kSetX(x:number){
+		this.x=x
 		this.getElement().style.left=x+"px"
 	}
-	setY(y:number){
+	kSetY(y:number){
+		this.y=y
 		this.getElement().style.top=y+"px"
 	}
-	setW(w:number){
+	kSetW(w:number){
+		this.w=w
 		this.getElement().style.width=w+"px"
 	}
-	setH(h:number){
+	kSetH(h:number){
+		this.h=h
 		this.getElement().style.height=h+"px"
+	}
+
+	//便利的方法，感觉都不会用
+	kSetCenterX(x:number){
+		this.kSetX(x - (this.w / 2))
+	}
+	kSetCenterY(y:number){
+		this.kSetY(y - (this.h / 2))
 	}
 
 	protected getInnerElement(){
@@ -34,6 +53,9 @@ export abstract class BAbsView{
 		}else{
 			mb.log(`插入位置不正确，全长${this.children.length},位置${index}`)
 		}
+	}
+	indexOf(view:BAbsView){
+		return this.children.indexOf(view)
 	}
 	removeAt(index:number){
 		let view=this.children.splice(index,1)[0]
@@ -64,6 +86,11 @@ export class BLable extends BAbsView{
 		super()
 		this.element=document.createElement("div")
 		this.element.style.position="absolute"
+		this.element.style.textAlign="center"
+	}
+	kSetH(h:number){
+		this.element.style.lineHeight=h+"px"
+		super.kSetH(h)
 	}
 	setText(txt:string){
 		//sizeToFit一体了
@@ -77,10 +104,16 @@ export class BButton extends BAbsView{
 		super()
 		this.element=document.createElement("div")
 		this.element.style.position="absolute"
+		this.element.style.cursor="pointer"
+		this.element.style.textAlign="center"
 	}
 	setText(txt:string){
 		//sizeToFit一体了
 		this.element.innerText=txt
+	}
+	kSetH(h:number){
+		this.element.style.lineHeight=h+"px"
+		super.kSetH(h)
 	}
 	setClick(click:()=>void){
 		mb.DOM.addEvent(this.element,"click",click)
@@ -108,24 +141,97 @@ export class BView extends BAbsView{
 	}
 }
 
-export class BScrollView extends BAbsView{
-	private element:HTMLDivElement
-	private inElement:HTMLDivElement
-	getElement(){return this.element}
-	getInnerElement(){return this.inElement}
-	constructor(){
-		super()
-		this.inElement=document.createElement("div")
-		this.inElement.style.position="absolute"
-		this.element=document.createElement("div")
-		this.element.style.position="absolute"
-		this.element.style.overflow="auto"
-		this.element.appendChild(this.inElement)
+
+
+
+export class BListItem{
+	view=new BView()
+	height=mve.valueOf(0)
+}
+export class BList{
+	view=new BView()
+	private children:BListItem[]=[]
+	private size=mve.valueOf(0)
+	private height=mve.valueOf(0)
+	split=mve.valueOf(0)
+	constructor(me:BParam){
+		const that=this
+		//高度监视
+		me.WatchAfter<number>(function(){
+			const size=that.size()
+			const split=that.split()
+			let h=0
+			for(let i=0;i<that.size();i++){
+				const child=that.children[i]
+				child.view.kSetY(h)
+				const ch=child.height()
+				child.view.kSetH(ch)
+				h = h + split + ch
+			}
+			if(size>0){
+				return h-split
+			}else{
+				return h
+			}
+		},function(h){
+			that.view.kSetH(h)
+			that.height(h)
+		})
+		//宽度变化
+		me.Watch(function(){
+			const w =that.width()
+			that.view.kSetW(w)
+			const size=that.size()
+			for(let i=0;i<size;i++){
+				that.children[i].view.kSetW(w)
+			}
+		})
 	}
-	setIW(w:number){
-		this.inElement.style.width=w+"px"
+	width=mve.valueOf(0)
+	getHeight(){
+		return this.height()
 	}
-	setIH(h:number){
-		this.inElement.style.height=h+"px"
+	private reloadSize(){
+		this.size(this.children.length)
+	}
+	insertBefore(e:BListItem,old:BListItem){
+		const index=this.children.indexOf(old)
+		if(index > -1){
+			this.view.insert(index,e.view)
+			this.children.splice(index,0,e)
+			this.reloadSize()
+		}else{
+			mb.log("insert失败");
+		}
+	}
+	append(e:BListItem){
+		this.view.push(e.view)
+		this.children.push(e)
+		this.reloadSize()
+	}
+	remove(e:BListItem){
+		const index=this.children.indexOf(e)
+		if(index > -1){
+			this.view.removeAt(index)
+			this.children.splice(index,1)
+			this.reloadSize()
+		}else{
+			mb.log("remove失败")
+		}
+	}
+}
+
+export class BListVirtualParam implements VirtualChildParam<BListItem>{
+	constructor(
+		private pel:BList
+	){}
+	remove(e: BListItem): void {
+		this.pel.remove(e)
+	}
+	append(e: BListItem, isMove?: boolean): void {
+		this.pel.append(e)
+	}
+	insertBefore(e: BListItem, old: BListItem, isMove?: boolean): void {
+		this.pel.insertBefore(e,old)
 	}
 }
