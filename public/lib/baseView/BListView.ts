@@ -1,87 +1,91 @@
-import { BSub, BSuper, BSubGet, BParam } from "./ArrayModel"
-import { BScrollView, BView } from "./index"
+import { BSub, BSuper, BSubGet, BParam, subViewSameWidth } from "./ArrayModel"
+import { BView, BAbsView } from "./index"
 import { mve } from "../mve/util"
 
 
 
-export interface BListSub extends BSub{
-	height():number
+export class BListViewSub extends BSub{
+	getHeight(){
+		return 44
+	}
 }
-//对应widenList，变宽
-export function increaseListOf(me:BParam,p:{
-	view:BView,
-	width():number
-}){
-	me.Watch(function(){
-		p.view.setW(p.width())
-	})
-	const superArray=new BSuper<BListSub>(p.view)
-	const height=mve.valueOf(0)
-	me.WatchAfter(function(){
-		let h=0
-		let i=0
-		while(i < superArray.count()){
-			const child=superArray.get(i)
-			const ch=child.height()
-			child.view.setY(h)
-			child.view.setH(ch)
-			h=h+ch
-			i++
-		}
-		return h
-	},function(h){
-		height(h)
-	})
 
-	const it={
-		width:p.width,
-		height(){
-			return height()
-		},
-		insert(index:number,get:BSubGet<BListSub>){
-			superArray.insert(index,get)
-		},
-		removeAt(index:number){
-			superArray.removeAt(index)
-		}
+export abstract class BIncreaseListViewSuperT<T extends BListViewSub> extends BSuper<T>{
+	private height=mve.valueOf(0)
+	getHeight(){
+		return this.height()
 	}
-	return it
+	getSplitHeight(){
+		return 0
+	}
+	constructor(me:BParam,view:BAbsView){
+		super(view)
+		this.init(me,view)
+		const that=this
+		me.WatchAfter<number>(function(){
+			let h=0
+			const sh=that.getSplitHeight()
+			let index=0
+			let size=that.size()
+			while(index < size){
+				const child=that.get(index)
+				child.view.kSetY(h)
+				const ch=child.getHeight()
+				child.view.kSetH(ch)
+				h = h + sh + ch
+				index = index +1
+			}
+			if(size>0){
+				return h-sh
+			}else{
+				return h
+			}
+		},function(h){
+			that.height(h)
+		})
+		subViewSameWidth(me,this)
+	}
 }
-export function scrollListOf(mve:BParam,p:{
-	view:BScrollView,
-	width():number
-	height():number
-}){
-	mve.Watch(function(){
-		p.view.setW(p.width())
-		p.view.setIW(p.width())
-	})
-	mve.Watch(function(){
-		p.view.setH(p.height())
-	})
-	const superArray=new BSuper<BListSub>(p.view)
-	mve.Watch(function(){
-		let h=0
-		let i=0
-		while(i < superArray.count()){
-			const child=superArray.get(i)
-			const ch=child.height()
-			child.view.setY(h)
-			child.view.setH(ch)
-			h=h+ch
-			i++
-		}
-		p.view.setIH(h)
-	})
-	const it={
-		width:p.width,
-		height:p.height,
-		insert(index:number,get:BSubGet<BListSub>){
-			superArray.insert(index,get)
-		},
-		removeAt(index:number){
-			superArray.removeAt(index)
-		}
+
+export abstract class BScrollListViewSuperT<T extends BListViewSub> extends BSuper<T>{
+	private height=mve.valueOf(0)
+	getSplitHeight(){
+		return 0
 	}
-	return it
+	private scrollHeight=mve.valueOf(0)
+	getScrollHeight(){
+		return this.scrollHeight()
+	}
+	private contentView=new BView()
+	constructor(me:BParam,view:BView){
+		super(view)
+		view.push(this.contentView)
+		this.init(me,this.contentView)
+		const that=this
+		me.WatchAfter<number>(function(){
+			let h=0
+			const sh=that.getSplitHeight()
+			let index=0
+			let size=that.size()
+			while(index < size){
+				const child=that.get(index)
+				child.view.kSetY(h)
+				const ch=child.getHeight()
+				child.view.kSetH(ch)
+				h = h + sh + ch
+				index = index +1
+			}
+			if(size>0){
+				return h-sh
+			}else{
+				return h
+			}
+		},function(h){
+			that.height(h)
+		})
+		me.Watch(function(){
+			that.contentView.kSetW(that.getWidth())
+		})
+		subViewSameWidth(me,this)
+	}
 }
