@@ -28,7 +28,7 @@ export class BParamImpl implements BParam{
     }
   }
 }
-export interface BSub{
+export class BSub{
 	view:BAbsView
 }
 export interface BSubParam extends BParam{
@@ -46,17 +46,32 @@ class BSubParamImpl extends BParamImpl implements BSubParam{
 }
 export type BSubGet<T extends BSub>=(index:BSubParam)=>T
 
-export class BSuper<T extends BSub>{
-
+export abstract class BSuper<T extends BSub>{
 	constructor(
 		private view:BAbsView
 	){}
+	protected init(
+		me:BParam,
+		outView?:BAbsView
+	){
+		outView = outView || this.view
+		const that=this
+		me.Watch(function(){
+			outView.kSetW(that.getWidth())
+		})
+		me.Watch(function(){
+			outView.kSetH(that.getHeight())
+		})
+	}
 	private params:BSubParamImpl[]=[]
 	private children:T[]=[]
-	private size=mve.valueOf(0)
+	private count=mve.valueOf(0)
 
-	count(){
-		return this.size()
+	abstract getWidth():number
+	abstract getHeight():number
+
+	size(){
+		return this.count()
 	}
 	get(i:number){
 		return this.children[i]
@@ -66,7 +81,7 @@ export class BSuper<T extends BSub>{
 			this.params[i].indexValue(i)
 			i++
 		}
-		this.size(this.children.length)
+		this.count(this.children.length)
 	}
 	insert(i:number,get:BSubGet<T>) {
 		const param=new BSubParamImpl(i)
@@ -76,6 +91,9 @@ export class BSuper<T extends BSub>{
 		this.children.splice(i,0,child)
 		this.view.insert(i,child.view)
 		this.reloadSize(i)
+	}
+	indexOf(v:T){
+		return this.children.indexOf(v)
 	}
   removeAt(i:number){
 		//销毁4个
@@ -103,13 +121,13 @@ export class BSuper<T extends BSub>{
 		for(let i=min;i<=max;i++){
 			this.params[i].indexValue(i)
 		}
-		this.size(this.size())
+		this.count(this.count())
 	}
 	push(get:BSubGet<T>){
-		this.insert(this.count(),get)
+		this.insert(this.size(),get)
 	}
 	pop(){
-		this.removeAt(this.count()-1)
+		this.removeAt(this.size()-1)
 	}
 	unshift(get:BSubGet<T>){
 		this.insert(0,get)
@@ -117,4 +135,32 @@ export class BSuper<T extends BSub>{
 	shift(){
 		this.removeAt(0)
 	}
+}
+
+export function subViewSameWidth<T extends BSub>(me:BParam,that:BSuper<T>){
+	me.Watch(function(){
+		const w=that.getWidth()
+		const size=that.size()
+		let i=0
+		while(i < size){
+			const view=that.get(i).view
+			view.kSetX(0)
+			view.kSetW(w)
+			i = i + 1
+		}
+	})
+}
+
+export function subViewSameHeiht<T extends BSub>(me:BParam,that:BSuper<T>){
+	me.Watch(function(){
+		const h=that.getHeight()
+		const size=that.size()
+		let i=0
+		while(i < size){
+			const view=that.get(i).view
+			view.kSetY(0)
+			view.kSetH(h)
+			i = i + 1
+		}
+	})
 }

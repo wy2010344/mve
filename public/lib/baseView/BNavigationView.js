@@ -1,60 +1,53 @@
-define(["require", "exports", "./index", "./ArrayModel"], function (require, exports, index_1, ArrayModel_1) {
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+define(["require", "exports", "./ArrayModel", "../mve/util"], function (require, exports, ArrayModel_1, util_1) {
     "use strict";
     exports.__esModule = true;
-    function navigationOf(mve, p) {
-        var superArray = new ArrayModel_1.BSuper(p.view);
-        mve.Watch(function () {
-            p.view.setW(p.width());
-        });
-        mve.Watch(function () {
-            var i = 0;
-            while (i < superArray.count()) {
-                superArray.get(i).view.setW(p.width());
-                i++;
-            }
-        });
-        mve.Watch(function () {
-            p.view.setH(p.height());
-        });
-        mve.Watch(function () {
-            var i = 0;
-            while (i < superArray.count()) {
-                superArray.get(i).view.setH(p.height());
-                i++;
-            }
-        });
-        var it = {
-            width: p.width,
-            height: p.height,
-            push: function (get) {
-                superArray.push(get);
-            },
-            pop: function () {
-                superArray.pop();
-            },
-            redirect: function (get) {
-                superArray.pop();
-                superArray.push(get);
-            },
-            count: function () {
-                return superArray.count();
-            }
+    var BNavigationViewSuper = /** @class */ (function (_super) {
+        __extends(BNavigationViewSuper, _super);
+        function BNavigationViewSuper(me, view) {
+            var _this = _super.call(this, view) || this;
+            _this.init(me, view);
+            ArrayModel_1.subViewSameWidth(me, _this);
+            ArrayModel_1.subViewSameHeiht(me, _this);
+            return _this;
+        }
+        BNavigationViewSuper.prototype.redirect = function (get) {
+            this.pop();
+            this.push(get);
         };
-        return it;
-    }
-    exports.navigationOf = navigationOf;
-    function dialogBack() {
-        var view = new index_1.BView();
-        view.setBackground("white");
-        return view;
-    }
-    function dialogOf(navigation, mve, p) {
-        var view = p.view ? p.view : dialogBack();
-        mve.Watch(function () {
-        });
-        return {
-            view: view
+        return BNavigationViewSuper;
+    }(ArrayModel_1.BSuper));
+    exports.BNavigationViewSuper = BNavigationViewSuper;
+    var BStack = /** @class */ (function (_super) {
+        __extends(BStack, _super);
+        function BStack(me, view) {
+            var _this = _super.call(this, view) || this;
+            _this.width = util_1.mve.valueOf(0);
+            _this.height = util_1.mve.valueOf(0);
+            _this.init(me, view);
+            ArrayModel_1.subViewSameWidth(me, _this);
+            ArrayModel_1.subViewSameHeiht(me, _this);
+            return _this;
+        }
+        BStack.prototype.getWidth = function () {
+            return this.width();
         };
-    }
-    exports.dialogOf = dialogOf;
+        BStack.prototype.getHeight = function () {
+            return this.height();
+        };
+        return BStack;
+    }(ArrayModel_1.BSuper));
+    exports.BStack = BStack;
 });
