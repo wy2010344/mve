@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
 	<meta name="apple-mobile-web-app-capable" content="yes" /> <!-- safari强制全屏 -->
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>首页</title>
-	<script type="text/javascript" id="lib"></script>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>主页</title>
 	<style type="text/css">
 		html,body,#root{
 			margin: 0;
@@ -20,120 +19,41 @@
 			position: fixed;
 		}
 	</style>
+    <script type="text/javascript">
+        window.load_success=function(){
+          var cp={
+            version:new Date(),
+            baseUrl:function(){
+                return "."
+            },
+            query:mb.util.dicFromUrl(window.location.search)
+          }
+          if(!cp.query.act){
+            cp.query.act="index"
+          }
+          mb.ajax.require.cp=cp;
+          mb.ajax.require(cp.baseUrl()+"/index/"+cp.query.act+".js",function(notice){
+						var body=document.body
+						var mve=notice.mve
+            body.appendChild(mve.element)
+            mve.init()
+            mb.DOM.addEvent(window,"unload",mve.destroy)
+            if(notice.resize){
+              var outResize=notice.resize
+              function resize(){
+                var w=body.clientWidth
+                var h=body.clientHeight
+                outResize({width:w,height:h})
+              }
+              mb.DOM.addEvent(window,"resize",resize)
+              resize()
+            }
+          });
+        }
+    </script>
+    <script type="text/javascript" src="./lib/share-util/share.js"></script>
+    <script type="text/javascript" src="./lib/front-lib/lib.js"></script>
 </head>
 <body>
-	<div id="root"></div>
 </body>
 </html>
-<script type="text/javascript">
-window.onload=function(){
-	var debug=false;
-	var ext;
-	if(!window._ini_){
-		if(window.external && window.external.csharp){
-			/*C#-winForm所写，兼容java-swt*/
-			window._ini_=function(method,args){
-				return window.external._ini_(method,args)
-			};
-		}
-	}
-	if (window._ini_ && typeof(window._ini_)=='function') {
-		ext=function(act,params) {
-			try{
-				if(params){
-					args=JSON.stringify(params);
-				}else{
-					args="";
-				}
-				var retstr=_ini_.call(this,act,args);
-				var ret=JSON.parse(retstr);
-				if(ret.code!=0){
-					throw ret.description;
-				}else{
-					return ret.data;
-				}
-			}catch(ex){
-				alert(ex);
-				return {};
-			}
-		};
-	}
-	var cp;
-	var after_load;
-	if(ext){
-		var config=ext("config");
-		cp={
-			baseUrl:function() {
-				return config.baseUrl;
-			}
-		};
-		after_load=function(mb) {
-			/*嵌套在gui中的浏览器*/
-			mb.ext=ext;
-			mb.ajax.text=function(xp) {
-				xp.success(
-					mb.ext(
-						"readTxt",
-						{
-							path:xp.url.split('?')[0]
-						}
-					)
-				);
-			};
-			mb.ajax.require.dealEX=function(url,step,ex) {
-				alert(url+"\n"+step+"\n"+JSON.stringify(ex));
-			};      
-		};
-	}else{
-		/*浏览器*/
-		cp={
-			baseUrl:function(){
-				return ".";
-			}
-		};
-	}
-	var lib_script=document.getElementById("lib");
-	var lib_script_onload=function() {
-		if(after_load){
-			after_load(window.mb)
-		}
-		mb.ajax.require.cp=cp;
-		var query=mb.util.dicFromUrl(window.location.search);
-		cp.query=query;
-		/*
-		if(window.addEventListener){
-			//禁止iOS的橡皮筋特性。
-			document.addEventListener('touchstart', function(e){
-				e.stopPropagation();
-				e.preventDefault();
-			}, false);
-		}
-		*/
-		(function(){
-			if(!query.act){
-				query.act="index";
-			}
-			var url=cp.baseUrl()+"/index/"+query.act.replace(/>/g,"/")+".js";
-			mb.ajax.require(cp.baseUrl()+"/index.js",function(notice){
-				notice({
-					init:function(notice){
-						mb.ajax.require(url,notice);
-					}
-				});
-			});
-		})();
-	};
-	if(ext){
-		var txt=ext("readTxt",{path:cp.baseUrl()+"/lib/front-lib/lib.js"});
-		eval(txt);
-		lib_script_onload();
-	}else{
-		window.load_success=function(src){
-			if(src=="front-lib/lib.js"){
-				lib_script_onload();
-			}
-		}
-		lib_script.setAttribute("src",cp.baseUrl()+"/lib/front-lib/lib.js?v="+(new Date()));
-	}
-};
-</script>

@@ -1,27 +1,25 @@
-import { SingleTargetType, SingleTargetFun } from "./singleModel";
-import { onceLife } from "./onceLife";
-import { BuildResult } from "./model";
-import { mve } from "./util";
-
-
-
-
+import { SingleTargetFun } from "./singleModel";
+import { BuildResult, mve, onceLife, orDestroy, orInit } from "./util";
+/**
+ * 子元素集是动态生成的，watchAfter后直接新入
+ * @param fun 
+ */
 export function ifSingle<JO,EO>(
-  fun:(me:mve.LifeModel)=>SingleTargetType<JO>|null
+  fun:(me:mve.LifeModel)=>JO|null
 ):SingleTargetFun<JO,EO>{
-  return function(mx,p){
+  return function(buildSingle,set){
     let currentObject:BuildResult|null
     let currentLifeModel:mve.LifeModelReturn
     const life=onceLife({
       init(){
         if(currentObject){
-          currentObject.init()
+          orInit(currentObject)
         }
       },
       destroy(){
         w.disable()
         if(currentObject){
-          currentObject.destroy()
+          orDestroy(currentObject)
         }
         currentLifeModel.destroy()
       }
@@ -36,24 +34,24 @@ export function ifSingle<JO,EO>(
       function(){
         return fun(currentLifeModel.me)
       },
-      function(target:SingleTargetType<JO>){
+      function(target:JO){
         if(currentObject){
           //销毁
           if(life.isInit){
-            currentObject.destroy()
+            orDestroy(currentObject)
           }
-          p.remove()
+          set(null)
           currentObject=null
         }
         if(target){
           //初始化
-          currentObject=mx.buildSingle(currentLifeModel.me,target,p)
+          currentObject=buildSingle(currentLifeModel.me,target,set)
           if(life.isInit){
-            currentObject.init()
+            orInit(currentObject)
           }
         }
       }
     )
-    return life
+    return life.out
   }
 }

@@ -6,7 +6,7 @@
     "noEmitOnError": true,
     "removeComments": false,
     "module": "amd",
-    "target": "es3"
+		"target": "es3"
   },
   "compileOnSave": true
 }

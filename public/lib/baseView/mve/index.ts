@@ -1,4 +1,4 @@
-import { BParam } from "../arraymodel";
+import { BParam } from "../index"
 import { CEResult, childrenBuilder, CResult, CChildType } from "./childrenBuilder";
 import { VirtualChildParam } from "../../mve/virtualTreeChildren";
 import { mve } from "../../mve/util";

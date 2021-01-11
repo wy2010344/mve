@@ -1,9 +1,8 @@
-import { CAbsView, buildAbs, BViewVirtualParam, BArrayVirtualParam } from "./util";
+import { CAbsView, BViewVirtualParam} from "./util";
 import { CChildType } from "../mve/childrenBuilder";
 import { CAllView, VBuilder } from "./index";
-import { BAbsView, BView } from "../index";
+import { BAbsView, BView, BStack, BStackVirtualParam, BStackItem } from "../index";
 import { parseOf, parseUtil } from "../mve/index";
-import { BStack } from "../BNavigationView";
 
 
 
@@ -14,43 +13,46 @@ export interface CStackItem{
 
 export interface CStack extends CAbsView{
   type:"stack",
-  children:CChildType<CStackItem,BView>[]
+  children:CChildType<CStackItem,BStackItem>[]
 }
 
 export const stackBuilder:VBuilder<CStack,BView>=function(getAllBuilder,allParse){
-  const parseStackItem=parseOf<CStackItem,BView>(function(me,child){
-    const element=new BView()
-    const childResult=allParse.children(me,new BViewVirtualParam(element),child.children)
+  const parseStackItem=parseOf<CStackItem,BStackItem>(function(me,child){
+    const stackItem=new BStackItem()
+    const childResult=allParse.children(me,new BViewVirtualParam(stackItem.view),child.children)
     return {
-      element,
+      element:stackItem,
       destroy(){
         childResult.destroy()
       }
     }
   })
   return parseOf(function(me,child){
-    const element=new BView()
-    const stack=new BStack(me,element)
-    parseUtil.bind(me,child.x,function(v){
-      element.kSetX(v)
-    })
-    parseUtil.bind(me,child.y,function(v){
-      element.kSetY(v)
-    })
+    const stack=new BStack(me)
+    if(child.x){
+      parseUtil.bind(me,child.x,function(v){
+        stack.view.kSetX(v)
+      })
+    }
+    if(child.y){
+      parseUtil.bind(me,child.y,function(v){
+        stack.view.kSetY(v)
+      })
+    }
     parseUtil.bind(me,child.w,function(v){
-      element.kSetW(v)
+      stack.width(v)
     })
     parseUtil.bind(me,child.h,function(v){
-      element.kSetH(v)
+      stack.height(v)
     })
     if(child.background){
       parseUtil.bind(me,child.background,function(v){
-        element.setBackground(v)
+        stack.view.setBackground(v)
       })
     }
-    const childResult=parseStackItem.children(me,new BArrayVirtualParam(stack),child.children)
+    const childResult=parseStackItem.children(me,new BStackVirtualParam(stack),child.children)
     return {
-      element,
+      element:stack.view,
       destroy(){
         childResult.destroy()
       }

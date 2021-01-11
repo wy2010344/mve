@@ -1,6 +1,7 @@
 define(["require", "exports", "./DOM", "../mve/index"], function (require, exports, DOM, index_1) {
     "use strict";
     exports.__esModule = true;
+    exports.newline = exports.parseSVG = exports.parseHTML = exports.reDefineActionHandler = exports.DOMVirtualParam = void 0;
     var DOMVirtualParam = /** @class */ (function () {
         function DOMVirtualParam(pel) {
             this.pel = pel;
@@ -17,18 +18,25 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
         return DOMVirtualParam;
     }());
     exports.DOMVirtualParam = DOMVirtualParam;
+    function reDefineActionHandler(e, fun) {
+        if (e) {
+            if (typeof (e) == "function") {
+                return fun(e);
+            }
+            else {
+                e.handler = fun(e.handler);
+                return e;
+            }
+        }
+    }
+    exports.reDefineActionHandler = reDefineActionHandler;
     function buildParam(me, el, child) {
         if (child.id) {
             child.id(el);
         }
-        if (child.value) {
-            index_1.parseUtil.bind(me, child.value, function (v) {
-                DOM.value(el, v);
-            });
-        }
-        if (child.text) {
-            index_1.parseUtil.bind(me, child.text, function (v) {
-                DOM.content(el, v);
+        if (child.action) {
+            mb.Object.forEach(child.action, function (v, k) {
+                DOM.action(el, k, v);
             });
         }
         if (child.style) {
@@ -46,9 +54,15 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
                 DOM.prop(el, k, v);
             });
         }
-        if (child.action) {
-            mb.Object.forEach(child.action, function (v, k) {
-                DOM.action(el, k, v);
+        //value必须在Attr后面才行，不然type=range等会无效
+        if (child.value != null) {
+            index_1.parseUtil.bind(me, child.value, function (v) {
+                DOM.value(el, v);
+            });
+        }
+        if (child.text != null) {
+            index_1.parseUtil.bind(me, child.text, function (v) {
+                DOM.content(el, v);
             });
         }
     }
@@ -75,17 +89,23 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
                 return exports.parseSVG.view(me, child);
             }
             else {
-                var element = DOM.createElement(child.type);
-                buildParam(me, element, child);
-                var childResult_1 = buildChildren(me, element, child, exports.parseHTML.children);
+                var element_1 = DOM.createElement(child.type);
+                buildParam(me, element_1, child);
+                var childResult_1 = buildChildren(me, element_1, child, exports.parseHTML.children);
                 return {
-                    element: element,
+                    element: element_1,
                     init: function () {
                         if (childResult_1) {
                             childResult_1.init();
                         }
+                        if (child.init) {
+                            child.init(element_1);
+                        }
                     },
                     destroy: function () {
+                        if (child.destroy) {
+                            child.destroy(element_1);
+                        }
                         if (childResult_1) {
                             childResult_1.destroy();
                         }
@@ -100,19 +120,26 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
     exports.parseSVG = index_1.parseOf(function (me, child) {
         var element = DOM.createElementNS(child.type, "http://www.w3.org/2000/svg");
         buildParam(me, element, child);
-        var childResult = buildChildren(me, element, child, exports.parseSVG.children);
+        var childResult = buildChildren(me, element, child, child.type == "foreignObject" ? exports.parseHTML.children : exports.parseSVG.children);
         return {
             element: element,
             init: function () {
                 if (childResult) {
                     childResult.init();
                 }
+                if (child.init) {
+                    child.init(element);
+                }
             },
             destroy: function () {
+                if (child.destroy) {
+                    child.destroy(element);
+                }
                 if (childResult) {
                     childResult.destroy();
                 }
             }
         };
     });
+    exports.newline = { type: "br" };
 });

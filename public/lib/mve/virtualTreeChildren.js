@@ -1,6 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
+    exports.VirtualChild = void 0;
     /**
      * 列表的抽象树，似乎对web的各种布局很有用，对苹果却不是很有用
      * 苹果缺少布局，总是自定义组件来布局。苹果总是一个绝对定位的UIView

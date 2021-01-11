@@ -1,21 +1,26 @@
-define(["require", "exports", "./onceLife", "./util"], function (require, exports, onceLife_1, util_1) {
+define(["require", "exports", "./util"], function (require, exports, util_1) {
     "use strict";
     exports.__esModule = true;
+    exports.ifChildren = void 0;
+    /**
+     * 子元素集片段是动态生成的，watchAfter后直接新入
+     * @param fun
+     */
     function ifChildren(fun) {
-        return function (mx, parent) {
+        return function (buildChildren, parent) {
             var currentObject;
             var virtualChild;
             var currentLifeModel;
-            var life = onceLife_1.onceLife({
+            var life = util_1.onceLife({
                 init: function () {
                     if (currentObject) {
-                        currentObject.init();
+                        util_1.orInit(currentObject);
                     }
                 },
                 destroy: function () {
                     w.disable();
                     if (currentObject) {
-                        currentObject.destroy();
+                        util_1.orDestroy(currentObject);
                     }
                     currentLifeModel.destroy();
                 }
@@ -34,20 +39,20 @@ define(["require", "exports", "./onceLife", "./util"], function (require, export
                 }
                 if (currentObject) {
                     if (life.isInit) {
-                        currentObject.destroy();
+                        util_1.orDestroy(currentObject);
                     }
                     currentObject = null;
                 }
                 if (children) {
                     //初始化
                     virtualChild = parent.newChildAtLast();
-                    currentObject = mx.buildChildren(currentLifeModel.me, children, virtualChild);
+                    currentObject = buildChildren(currentLifeModel.me, children, virtualChild);
                     if (life.isInit) {
-                        currentObject.init();
+                        util_1.orInit(currentObject);
                     }
                 }
             });
-            return life;
+            return life.out;
         };
     }
     exports.ifChildren = ifChildren;

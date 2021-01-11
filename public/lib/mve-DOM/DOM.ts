@@ -30,6 +30,9 @@ function reverScroll(store:ScrollKeep[]){
 	})
 }
 
+function notEqual(a:string,b){
+	return a!=b || (typeof(b)!="string" && a!=b+"")
+}
 
 export={
 	createElement(type:string){
@@ -76,36 +79,55 @@ export={
 		}
 	},
 	attr(el,key,value){
-		if(value==undefined){
-			el.removeAttribute(key);
-		}else{
-			el.setAttribute(key,value);
+		const attr=el.getAttribute(key)
+		if(notEqual(attr,value)){
+			if(value==undefined){
+				el.removeAttribute(key);
+			}else{
+				el.setAttribute(key,value);
+			}
 		}
 	},
 	style(el,key,value){
 		//IE下如果设置负值，会导致错误
 		try{
-			el.style[key]=value;
+			if(notEqual(el.style[key],value)){
+				el.style[key]=value;
+			}
 		}catch(e){
 			mb.log(e);
 		}
 	},
-	prop(el,key,value){                
-		el[key]=value;
+	prop(el,key,value){  
+		if(notEqual(el[key],value)) {
+			el[key]=value;
+		}             
 	},
 	action(el,key,value){
-		mb.DOM.addEvent(el,key,value);
+		if(typeof(value)=="function"){
+			mb.DOM.addEvent(el,key,value);
+		}else{
+			mb.DOM.addEvent(el,key,value.handler,value)
+		}
 	},
 	text(el,value){
-		el.innerText=value;
+		if(notEqual(el.innerText,value)){
+			el.innerText=value;
+		}
 	},
 	content(el,value){
-		el.textContent=value;
+		if(notEqual(el.textContent,value)){
+			el.textContent=value;
+		}
 	},
 	value(el,value){
-		el.value=value;
+		if(notEqual(el.value,value)){
+			el.value=value;
+		}
 	},
 	html(el,value) {
-		el.innerHTML=value;
+		if(notEqual(el.innerHTML,value)){
+			el.innerHTML=value;
+		}
 	}
 }

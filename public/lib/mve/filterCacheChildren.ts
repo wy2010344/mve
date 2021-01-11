@@ -1,25 +1,21 @@
 import { JOChildFun, JOChildren } from "./childrenBuilder";
-import { onceLife } from "./onceLife";
-import { mve } from "./util"
-import { VirtualChild } from "./virtualTreeChildren";
-import { BuildResult } from "./model";
+import { mve,onceLife, BuildResult, orInit, orDestroy } from "./util"
 
 
 
 
-class CacheViewModel<T,EO>{
+class CacheViewModel<T>{
   constructor(
     public readonly row:mve.Value<T>,
-    public readonly life:mve.LifeModelReturn,
-    public readonly element:VirtualChild<EO>,
-    public readonly result:BuildResult
+		private readonly life:mve.LifeModelReturn,
+		private readonly result:BuildResult
   ){}
   init(){
-    this.result.init()
+		orInit(this.result)
   }
   destroy(){
-    this.life.destroy()
-    this.result.destroy()
+		this.life.destroy()
+		orDestroy(this.result)
   }
 }
 
@@ -27,36 +23,37 @@ export function filterCacheChildren<T,JO,EO>(
   array:()=>T[],
   fun:(me:mve.LifeModel,row:()=>T,index:number)=>JOChildren<JO,EO>
 ):JOChildFun<JO,EO>{
-  return function (mx,parent){
-    const views:CacheViewModel<T,EO>[]=[]
+  return function (buildChildren,parent){
+    const views:CacheViewModel<T>[]=[]
     const life=onceLife({
       init(){
-        for(let i=0;i<views.length;i++){
-          views[i].init()
+				const size=views.size()
+				for(let i=0;i<size;i++){
+          views.get(i).init()
         }
       },
       destroy(){
-        for(let i=0;i<views.length;i++){
-          views[i].destroy()
+				const size=views.size()
+				for(let i=size-1;i>-1;i--){
+          views.get(i).destroy()
         }
         views.length=0
         w.disable()
       }
     })
-    const w=mve.WatchAfter(function(){
-      return array()
-    },function(vs){
+    const w=mve.WatchAfter(array,function(vs){
       if(vs.length<views.length){
         //更新旧数据视图
         for(let i=0;i<vs.length;i++){
           views[i].row(vs[i])
         }
-        for(let i=views.length;i>vs.length;i--){
+        const minLength=vs.length-1
+        for(let i=views.length-1;i>minLength;i--){
           //删除视图
-          parent.remove(i-1)
+          parent.remove(i)
           //销毁
           if(life.isInit){
-            views[i-1].destroy()
+            views[i].destroy()
           }
         }
         views.length=vs.length
@@ -72,8 +69,8 @@ export function filterCacheChildren<T,JO,EO>(
           const cs=fun(lifeModel.me,row,i)
           //创建视图
           const vm=parent.newChildAt(i)
-          const vx=mx.buildChildren(lifeModel.me,cs,vm)
-          const cv=new CacheViewModel(row,lifeModel,vm,vx)
+          const vx=buildChildren(lifeModel.me,cs,vm)
+          const cv=new CacheViewModel(row,lifeModel,vx)
           //模型增加
           views.push(cv)
           //初始化
@@ -83,6 +80,6 @@ export function filterCacheChildren<T,JO,EO>(
         }
       }
     })
-    return life
+    return life.out
   }
 }

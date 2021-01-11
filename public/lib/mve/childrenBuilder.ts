@@ -1,129 +1,114 @@
-import { EmptyFun } from "./model"
 import { VirtualChild, VirtualChildParam } from "./virtualTreeChildren"
-import { onceLife } from "./onceLife"
-import { BuildResult, EOParseResult } from "./model"
-import { mve } from "./util"
+import { BuildResult, BuildResultList, EOParseResult, mve, onceLife } from "./util"
 
-
-	/**
- * 传进来的类型
- */
-export type JOChildFun<JO,EO>=(mx:ChildrenMXO<JO,EO>,parent:VirtualChild<EO>)=>BuildResult
-export type JOChildType<JO,EO>=JO | JOChildFun<JO,EO> | {
-  init?():void,
-  destroy?():void,
-  element:JO
+export function newArticle<JO,EO>(...lines:JOChildType<JO,EO>[]){
+  return new Article(lines)
+}
+export class Article<JO,EO>{
+  constructor(
+    public readonly out:JOChildType<JO,EO>[]=[]
+  ){}
+  append(v:JOChildType<JO,EO>){
+    this.out.push(v)
+    return this
+  }
 }
 
-export type PureJOChildren<JO,EO>=JOChildType<JO,EO>[] | JOChildType<JO,EO>
-/**兼容多种简化格式 */
-export type JOChildren<JO,EO>= PureJOChildren<JO,EO> | {
-  init?():void,
-  destroy?():void,
-  elements:PureJOChildren<JO,EO>
-}
-export function isJOChildFunType<JO,EO>(child:JOChildType<JO,EO>):child is JOChildFun<JO,EO>{
-	return typeof(child)=='function'
+
+/**重复的函数节点 */
+export interface JOChildFun<JO,EO>{
+	(mx:ChildrenMXO<JO,EO>,parent:VirtualChild<EO>):BuildResult
 }
 export interface ChildrenMXO<JO,EO>{
-  buildChildren(
+  (
     me:mve.LifeModel,
     item:JOChildren<JO,EO>,
     parent:VirtualChild<EO>
   ):BuildResult
 }
-function getItem<JO,EO>(
-  item:JOChildren<JO,EO>,
-  inits:EmptyFun[],
-  destroys:EmptyFun[]
-):JOChildType<JO,EO>[]{
-  if(typeof(item)=='object'){
-    if(mb.Array.isArray(item)){
-      return mb.Array.flatMap(item,v=>{
-        return getItem(v,inits,destroys)
-      })
-    }else
-    if('elements' in item){
-      if(item.init){
-        inits.push(item.init)
-      }
-      if(item.destroy){
-        destroys.push(item.destroy)
-      }
-      return getItem(item.elements,inits,destroys)
-    }else
-    if('element' in item){
-      if(item.init){
-        inits.push(item.init)
-      }
-      if(item.destroy){
-        destroys.push(item.destroy)
-      }
-      return [item.element]
-    }else{
-      return [ item ]
-    }
-  }else{
-    return [item]
-  }
-}
-export function childrenBuilder<JO,EO>(
-  parseView:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>
-){
-  const mx:ChildrenMXO<JO,EO>={
-    buildChildren(me,item,parent){
-      const inits:EmptyFun[]=[],destroys:EmptyFun[]=[]
-      const children=getItem(item,inits,destroys)
-      const array:BuildResult[]=[]
-      let i=0
-      while(i<children.length){
-        const child=children[i]
-        i++
-        if(isJOChildFunType(child)){
-          const cv=parent.newChildAtLast()
-          array.push(child(mx,cv))
-        }else{
-          let element:JO
-          if(typeof(child)=='object' && 'element' in child){
-            element=child.element
-            if(child.init){
-              inits.push(child.init)
-            }
-            if(child.destroy){
-              destroys.push(child.destroy)
-            }
-          }else{
-            element=child as JO
-          }
-          const o=parseView(me,element)
-          parent.push(o.element)
-          array.push(o)
-        }
-      }
-      const life=onceLife({
-        init(){
-          for(let i=0;i<array.length;i++){
-            array[i].init()
-          }
-          for(let i=0;i<inits.length;i++){
-            inits[i]()
-          }
-        },
-        destroy(){
-          for(let i=0;i<destroys.length;i++){
-            destroys[i]()
-          }
-          for(let i=0;i<array.length;i++){
-            array[i].destroy()
-          }
-        }
-      })
-      return life
-    }
-  }
 
-  return function(me:mve.LifeModel,p:VirtualChildParam<EO>,children:JOChildren<JO,EO>){
-    const vm=VirtualChild.newRootChild(p)
-    return mx.buildChildren(me,children,vm)
-  }
+
+
+
+
+
+/**子元素组的生命周期类型 */
+export interface JOChildrenLifeType<JO,EO> extends BuildResult{
+  elements:JOChildren<JO,EO>[]
+}
+/**单个非数组*/
+export type JOChildType<JO,EO>=JO | JOChildFun<JO,EO> | JOChildrenLifeType<JO,EO>
+/**子元素类型 */
+export type JOChildren<JO,EO>=JOChildType<JO,EO>[] | JOChildType<JO,EO>
+
+export function isJOChildFunType<JO,EO>(child:JOChildType<JO,EO>):child is JOChildFun<JO,EO>{
+	return typeof(child)=='function'
+}
+export function isJOChildrenLifeType<JO,EO>(child:JOChildType<JO,EO>):child is JOChildrenLifeType<JO,EO>{
+	return typeof(child)=='object' && 'elements' in child && mb.Array.isArray(child.elements)
+}
+
+function childBuilder<JO,EO>(
+	out:BuildResultList,
+	child:JOChildType<JO,EO>,
+	parent:VirtualChild<EO>,
+	me:mve.LifeModel,
+	parse:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>,
+	buildChildren:ChildrenMXO<JO,EO>
+){
+	if(isJOChildFunType(child)){
+		out.push(child(buildChildren,parent.newChildAtLast()))
+	}else
+	if(isJOChildrenLifeType(child)){
+		out.push(child)
+		childrenVSBuilder(out,child.elements,parent,me,parse,buildChildren)
+	}else{
+		const vs=parse(me,child)
+		out.orPush(vs)
+		parent.push(vs.element)
+	}
+}
+function childrenVBuilder<JO,EO>(
+	out:BuildResultList,
+	child:JOChildren<JO,EO>,
+	parent:VirtualChild<EO>,
+	me:mve.LifeModel,
+	parse:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>,
+	buildChildren:ChildrenMXO<JO,EO>
+){
+	if(mb.Array.isArray(child)){
+		let i=0
+		while(i<child.length){
+			childBuilder(out,child[i],parent,me,parse,buildChildren)
+			i++
+		}
+	}else{
+		childBuilder(out,child,parent,me,parse,buildChildren)
+	}
+}
+function childrenVSBuilder<JO,EO>(
+	out:BuildResultList,
+	children:JOChildren<JO,EO>[],
+	parent:VirtualChild<EO>,
+	me:mve.LifeModel,
+	parse:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>,
+	buildChildren:ChildrenMXO<JO,EO>
+){
+	//数组元素
+	let i=0
+	while(i<children.length){
+		const child=children[i]
+		i++
+		childrenVBuilder(out,child,parent,me,parse,buildChildren)
+	}
+}
+export function childrenBuilder<JO,EO>(parse:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>){
+	const baseBuilder:ChildrenMXO<JO,EO>=function(me,children:JOChildren<JO,EO>,parent){
+		const out=BuildResultList.init()
+		childrenVBuilder(out,children,parent,me,parse,baseBuilder)
+		return onceLife(out.getAsOne()).out
+	}
+	return function(me:mve.LifeModel,x:VirtualChildParam<EO>,children:JOChildren<JO,EO>){
+		return baseBuilder(me,children,VirtualChild.newRootChild(x))
+	}
 }

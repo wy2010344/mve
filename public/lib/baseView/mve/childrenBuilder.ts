@@ -1,4 +1,4 @@
-import { BParam } from "../arraymodel";
+import { BParam } from "../index"
 import { VirtualChild, VirtualChildParam } from "../../mve/virtualTreeChildren";
 
 
