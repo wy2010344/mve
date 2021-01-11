@@ -1,9 +1,9 @@
-import { VBuilder, CAllView } from "./index";
+import { VBuilder, CAllView, CPureView } from "./index";
 import { mve } from "../../mve/util";
-import { BView, BList, BAbsView, BListItem, BListVirtualParam } from "../index";
+import { BView, BList, BAbsView, BListItem, BListVirtualParam, BScrollList, BScrollListVirtualParam } from "../index";
 import { parseOf, parseUtil } from "../mve/index";
 import { CChildType } from "../mve/childrenBuilder";
-import { BViewVirtualParam } from "./util";
+import { BViewVirtualParam, CAbsView, buildAbs } from "./util";
 
 
 /**
@@ -12,7 +12,7 @@ import { BViewVirtualParam } from "./util";
 
 export interface CListItem{
   height:mve.TValue<number>,
-  children:CChildType<CAllView,BAbsView>[]
+  children:CChildType<CPureView,BAbsView>[]
 }
 export interface CList{
   type:"list",
@@ -22,10 +22,8 @@ export interface CList{
   children:CChildType<CListItem,BListItem>[]
 }
 
-
-export const listBuilder:VBuilder<CList,BView>=function(getAllBuilder,allParse){
-
-  const listItemParseOf=parseOf<CListItem,BListItem>(function(me,child){
+export const listItemBuilder:VBuilder<CListItem,BListItem>=function(getAllBuilder,allParse){
+  return parseOf<CListItem,BListItem>(function(me,child){
     const element=new BListItem()
     parseUtil.bind(me,child.height,function(v){
       element.height(v)
@@ -38,6 +36,9 @@ export const listBuilder:VBuilder<CList,BView>=function(getAllBuilder,allParse){
       }
     }
   })
+}
+
+export const listBuilder:VBuilder<CList,BView>=function(getAllBuilder,allParse){
   return parseOf(function(me,child){
     const list=new BList(me)
     if(child.x){
@@ -53,9 +54,42 @@ export const listBuilder:VBuilder<CList,BView>=function(getAllBuilder,allParse){
     parseUtil.bind(me,child.w,function(v){
       list.width(v)
     })
-    const childResult=listItemParseOf.children(me,new BListVirtualParam(list),child.children)
+    const childResult=getAllBuilder().listItem.children(me,new BListVirtualParam(list),child.children)
     return {
       element:list.view,
+      destroy(){
+        childResult.destroy()
+      }
+    }
+  })
+}
+
+export interface CScrollList extends CAbsView{
+  type:"scrollList",
+  children:CChildType<CListItem,BListItem>[]
+}
+export const scrollListBuilder:VBuilder<CScrollList,BView>=function(getAllBuilder,allParse){
+  return parseOf(function(me,child){
+    const list=new BScrollList(me)	
+    if(child.x){
+      parseUtil.bind(me,child.x,function(v){
+        list.outView.kSetX(v)
+      })
+    }
+    if(child.y){
+      parseUtil.bind(me,child.y,function(v){
+        list.outView.kSetY(v)
+      })
+    }
+    parseUtil.bind(me,child.w,function(v){
+      list.width(v)
+    })
+    parseUtil.bind(me,child.h,function(v){
+      list.height(v)
+    })
+    const childResult=getAllBuilder().listItem.children(me,new BScrollListVirtualParam(list),child.children)
+    return {
+      element:list.outView,
       destroy(){
         childResult.destroy()
       }

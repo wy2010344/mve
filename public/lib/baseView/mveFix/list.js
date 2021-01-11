@@ -1,8 +1,9 @@
 define(["require", "exports", "../index", "../mve/index", "./util"], function (require, exports, index_1, index_2, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.listBuilder = function (getAllBuilder, allParse) {
-        var listItemParseOf = index_2.parseOf(function (me, child) {
+    exports.scrollListBuilder = exports.listBuilder = exports.listItemBuilder = void 0;
+    var listItemBuilder = function (getAllBuilder, allParse) {
+        return index_2.parseOf(function (me, child) {
             var element = new index_1.BListItem();
             index_2.parseUtil.bind(me, child.height, function (v) {
                 element.height(v);
@@ -15,6 +16,9 @@ define(["require", "exports", "../index", "../mve/index", "./util"], function (r
                 }
             };
         });
+    };
+    exports.listItemBuilder = listItemBuilder;
+    var listBuilder = function (getAllBuilder, allParse) {
         return index_2.parseOf(function (me, child) {
             var list = new index_1.BList(me);
             if (child.x) {
@@ -30,7 +34,7 @@ define(["require", "exports", "../index", "../mve/index", "./util"], function (r
             index_2.parseUtil.bind(me, child.w, function (v) {
                 list.width(v);
             });
-            var childResult = listItemParseOf.children(me, new index_1.BListVirtualParam(list), child.children);
+            var childResult = getAllBuilder().listItem.children(me, new index_1.BListVirtualParam(list), child.children);
             return {
                 element: list.view,
                 destroy: function () {
@@ -39,4 +43,34 @@ define(["require", "exports", "../index", "../mve/index", "./util"], function (r
             };
         });
     };
+    exports.listBuilder = listBuilder;
+    var scrollListBuilder = function (getAllBuilder, allParse) {
+        return index_2.parseOf(function (me, child) {
+            var list = new index_1.BScrollList(me);
+            if (child.x) {
+                index_2.parseUtil.bind(me, child.x, function (v) {
+                    list.outView.kSetX(v);
+                });
+            }
+            if (child.y) {
+                index_2.parseUtil.bind(me, child.y, function (v) {
+                    list.outView.kSetY(v);
+                });
+            }
+            index_2.parseUtil.bind(me, child.w, function (v) {
+                list.width(v);
+            });
+            index_2.parseUtil.bind(me, child.h, function (v) {
+                list.height(v);
+            });
+            var childResult = getAllBuilder().listItem.children(me, new index_1.BScrollListVirtualParam(list), child.children);
+            return {
+                element: list.outView,
+                destroy: function () {
+                    childResult.destroy();
+                }
+            };
+        });
+    };
+    exports.scrollListBuilder = scrollListBuilder;
 });

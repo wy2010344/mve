@@ -1,6 +1,5 @@
-import { mve } from "../../mve/util";
-import { BParam, BSuper, BSub } from "../arraymodel";
-import { BAbsView } from "../index";
+import { mve } from "../../mve/util"
+import { BAbsView, BParam } from "../index";
 import { parseUtil } from "../mve/index";
 import { VirtualChildParam } from "../../mve/virtualTreeChildren";
 
@@ -55,31 +54,6 @@ export class BViewVirtualParam implements VirtualChildParam<BAbsView>{
 	}
 	insertBefore(e: BAbsView, old: BAbsView, isMove?: boolean): void {
 		const index=this.pel.indexOf(e)
-		if(index > -1){
-			this.pel.insert(index,e)
-		}else{
-			mb.log("insertBefore失败")
-		}
-	}
-}
-
-export class BArrayVirtualParam<T extends BSub> implements VirtualChildParam<T>{
-	constructor(
-		private pel:BSuper<T>
-	){}
-	remove(e: any): void {
-		const index=this.pel.indexOf(e)
-		if(index > -1){
-			this.pel.removeAt(index)
-		}else{
-			mb.log("remove失败")
-		}
-	}
-	append(e: any, isMove?: boolean): void {
-		this.pel.push(e)
-	}
-	insertBefore(e: any, old: any, isMove?: boolean): void {
-		const index=this.pel.indexOf(old)
 		if(index > -1){
 			this.pel.insert(index,e)
 		}else{

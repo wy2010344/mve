@@ -1,38 +1,52 @@
-define(["require", "exports", "../../lib/fixView/index", "../../lib/mve/util", "./main"], function (require, exports, index_1, util_1, main_1) {
+define(["require", "exports", "../../lib/mve/util", "../../lib/baseView/index", "../../lib/baseView/index", "../../lib/baseView/mveFix/index", "../../lib/baseView/mve/modelChildren"], function (require, exports, util_1, index_1, index_2, index_3, modelChildren_1) {
     "use strict";
-    return index_1.allBuilder.view.mve(function (me) {
-        var width = util_1.mve.valueOf(0);
-        var height = util_1.mve.valueOf(0);
-        var size = {
-            width: util_1.mve.valueOf(320),
-            height: util_1.mve.valueOf(640)
-        };
-        return {
-            out: {
-                width: width, height: height
+    var me = new index_2.BParamImpl();
+    var model = util_1.mve.arrayModelOf([]);
+    var result = index_3.allBuilder.stack.view(me, {
+        type: "stack",
+        w: 100,
+        h: function () {
+            return index_1.BAbsView.transH(100);
+        },
+        children: [
+            modelChildren_1.modelChildren(model, function (me, row, i) {
+                return row(me, i, model);
+            })
+        ]
+    });
+    var element = document.createElement("div");
+    element.append(result.element.getElement());
+    return {
+        out: {
+            width: function (w) {
+                index_1.BAbsView.screenW(w);
+                result.element.rewidth();
             },
-            init: function () { }, destroy: function () { },
-            element: {
-                type: "view",
-                x: 0, y: 0, h: 0, w: 0,
-                children: [
+            height: function (h) {
+                index_1.BAbsView.screenH(h);
+            }
+        },
+        element: element,
+        init: function () {
+            mb.log("初始化");
+            model.push(function (me, index, model) {
+                return [
                     {
-                        type: "view",
-                        w: size.width,
-                        h: size.height,
-                        x: function () {
-                            return (width() - size.width()) / 2;
-                        },
-                        y: function () {
-                            return (height() - size.height()) / 2;
-                        },
-                        background: "gray",
                         children: [
-                            main_1.main(size.width, size.height)
+                            {
+                                type: "view",
+                                w: 20,
+                                h: 30,
+                                background: "red"
+                            }
                         ]
                     }
-                ]
-            }
-        };
-    });
+                ];
+            });
+        },
+        destroy: function () {
+            result.destroy();
+            me.destroy();
+        }
+    };
 });

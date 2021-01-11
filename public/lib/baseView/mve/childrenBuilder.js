@@ -1,6 +1,7 @@
 define(["require", "exports", "../../mve/virtualTreeChildren"], function (require, exports, virtualTreeChildren_1) {
     "use strict";
     exports.__esModule = true;
+    exports.childrenBuilder = exports.isJOChildFunType = void 0;
     function isJOChildFunType(child) {
         return typeof (child) == 'function';
     }

@@ -4,15 +4,20 @@ import { BAbsView } from "../index";
 import { CLabel, labelBuilder } from "./label";
 import { CButton } from "./button";
 import { buttonBuilder } from "./button";
-import { CList, listBuilder } from "./list";
+import { CList, listBuilder, listItemBuilder, scrollListBuilder, CScrollList } from "./list";
+import { CGrid, gridBuilder } from "./grid";
+import { CStack, stackBuilder } from "./stack";
 
 
 
-
-export type CAllView=CView
+export type CPureView=CView
 |CLabel
 |CButton
+export type CAllView=CPureView
 |CList
+|CScrollList
+|CGrid
+|CStack
 
 
 function getAllBuilder(){
@@ -31,6 +36,10 @@ export namespace allBuilder{
   export const label=labelBuilder(getAllBuilder,allParse)
   export const button=buttonBuilder(getAllBuilder,allParse)
   export const list=listBuilder(getAllBuilder,allParse)
+  export const scrollList=scrollListBuilder(getAllBuilder,allParse)
+  export const listItem=listItemBuilder(getAllBuilder,allParse)
+  export const grid=gridBuilder(getAllBuilder,allParse)
+  export const stack=stackBuilder(getAllBuilder,allParse)
 }
 
 export type GetAllBuilderType=typeof getAllBuilder

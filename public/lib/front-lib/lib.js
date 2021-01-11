@@ -1,72 +1,5 @@
 'use strict';
-if(!Function.prototype.bind){
-	Function.prototype.bind = function(context) {
-		var self=this,args = Array.prototype.slice.call(arguments);    
-    return function(){
-      return self.apply(context, args.slice(1));
-    };
-	};
-}
-window.mb={};
-mb.Function=(function(){
-	var quote=function(){
-		return function(a){
-			return a;
-		}
-	};
-	quote.one=quote();
-	var as_null=function(){
-		return function(){
-			return null;
-		};
-	};
-	as_null.one=as_null();
-	var list=function(){
-		return function(){
-			var r=[];
-			for(var i=0;i<arguments.length;i++){
-				r.push(arguments[i]);
-			}
-			return r;
-		};
-	};
-	list.one=list();
-	return {
-		quote:quote,
-		list:list,
-		as_null:as_null,
-		or_run:function(fun){
-			if(fun){
-				fun();
-			}else{
-				fun;
-			}
-		},
-		or_apply:function(fun,array){
-			/*apply，将数组转化成参数列表*/
-			if(fun){
-				fun.apply(null,array);
-			}
-		},
-		or_call:function(fun){
-			/*call，将参数列表转化成数组*/
-			if(fun){
-				var array=Array.prototype.slice.call(arguments,1);
-				fun.apply(null,array);
-			}
-		}
-	};
-})();
-
-/**
-冻结
-*/
-if(Object.freeze){
-	mb.freeze=Object.freeze.bind(Object);
-}else{
-	mb.freeze=mb.Function.quote.one;
-}
-
+window.mb=mb;
 mb.log=(function(){
 	if(window.console && window.console.log){
 		try{
@@ -259,7 +192,7 @@ mb.ajax=(function(){
 			var dataType="application/json";
 			data=JSON.stringify(p.data);
 			xhr.setRequestHeader("Content-Type",dataType);
-		}
+		}else
 		if(p.dataType=="formdata"){
 			data=new FormData();
 			if(mb.Array.isArray(p.data)){
@@ -271,7 +204,11 @@ mb.ajax=(function(){
 					data.append(key,value);
 				});
 			}
-		}
+    }else
+    if(p.dataType=="text"){
+      data=p.data
+			xhr.setRequestHeader("Content-Type","text/plain");
+    }
 		return data;
 	};
 	var getData=common_getData;
@@ -404,11 +341,12 @@ mb.ajax=(function(){
 			 * 成功后通知
 			 * @param {any} value
 			 */
-			var loadedNotice = function (value) {
-				mb.Array.forEach(value.waits, function (wait) {
+			var loadedNotice = function (value){
+				const waits=value.waits;
+				value.waits=undefined;
+				mb.Array.forEach(waits, function (wait) {
 					wait(value.success);
 				});
-				delete value.waits;
 			};
 
 			var generateNotice=function(value){
@@ -569,7 +507,11 @@ mb.ajax=(function(){
 				if(willDef){
 					loader._required_txt=window._required_txt||{};
 					loader._saveTxt=function(k,v){
-						loader._required_txt[k]=v;
+						if(v){
+							loader._required_txt[k]=v;
+						}else{
+							loader._required_txt[k]=undefined;
+						}
 					};
 					loader._getTxt=function(k){
 						return loader._required_txt[k];
@@ -634,6 +576,11 @@ mb.ajax=(function(){
 				mb.log(JSON.stringify(ex));
 				throw ex;
 			};
+			/**清理指定路径 */
+			loader.clear=function(path){
+				loader._saveTxt(path,null)
+				loader._required[path]=undefined;
+			}
 			return loader;
 		})()
 	};
@@ -800,14 +747,14 @@ mb.DOM=(function(){
 		},
 		addEvent:(function(){
 			if(window.addEventListener){
-				return function(e,t,f){
+				return function(e,t,f,o){
 					t=transDic[t]||t;
-					e.addEventListener(t,f);
+					e.addEventListener(t,f,o);
 				};
 			}else
 			if(window.attachEvent){
-				return function(e,t,f){
-					e.attachEvent("on"+t,f);
+				return function(e,t,f,o){
+					e.attachEvent("on"+t,f,o);
 				};
 			}else{
 				alert("不支持");
@@ -815,14 +762,14 @@ mb.DOM=(function(){
 		})(),
 		removeEvent:(function(){
 			if(window.removeEventListener){
-				return function(e,t,f){
+				return function(e,t,f,o){
 					t=transDic[t]||t;
-					e.removeEventListener(t,f);
+					e.removeEventListener(t,f,o);
 				};
 			}else
 			if(window.detachEvent){
-				return function(e,t,f){
-					e.detachEvent("on"+t,f);
+				return function(e,t,f,o){
+					e.detachEvent("on"+t,f,o);
 				};
 			}else{
 				alert("不支持");
@@ -868,14 +815,10 @@ mb.DOM=(function(){
 			var cache;
 			return function(){
 				if(!cache){
-					var el=jsdom.parseElement({
-						type:"div",
-						style:{
-							width:"100px",
-							height:"100px",
-							overflow:"scroll"
-						}
-					});
+					var el=document.createElement("div");
+					el.style.width="100px";
+					el.style.height="100px";
+					el.style.overflow="scroll";
 					document.body.appendChild(el);
 					cache=el.offsetWidth-el.clientWidth;//ie下clientWidth始终是0，但width设置小一点，能看到原本的17
 					document.body.removeChild(el);
@@ -992,189 +935,8 @@ mb.DOM=(function(){
 		}
 	};
 })();
-mb.Array={
-	isArray:function(array){
-		return Object.prototype.toString.call(array) === '[object Array]';
-	},
-	ieEmpty:(function(){
-		if(mb.isIE){
-			return function(ary){
-				var ret=[];
-				mb.Array.forEach(ary, function(ar){
-					if(ar!==undefined){
-						//去除其中的undefined
-						ret.push(ar);
-					}
-				});
-				ary.length=0;
-				mb.Array.forEach(ret,function(ar){
-					ary.push(ar);
-				});
-				return ary;
-			};
-		}else{
-			return mb.Function.as_null.one;
-		}
-	})(),
-	forEach:function(array,func){
-		for(var i=0;i<array.length;i++){
-			func(array[i],i);
-		}
-	},
-	map:function(array,func){
-		var ret=[];
-		for(var i=0;i<array.length;i++){
-			ret[i]=func(array[i],i);
-		}
-		return ret;
-	},
-	flatMap:function(array,func){
-		var ret=[];
-		for(var i=0;i<array.length;i++){
-			var vr=func(array[i],i)
-			for(var x=0;x<vr.length;x++){
-				ret.push(vr[x])
-			}
-		}
-		return ret;
-	},
-	reduce:function(array,func,init){
-		for(var i=0;i<array.length;i++){
-			init=func(init,array[i],i,array);
-		}
-		return init;
-	},
-	filter:function(array,func){
-		var ret=[];
-		for(var i=0;i<array.length;i++){
-			var row=array[i];
-			if(func(row,i)){
-				ret.push(row);
-			}
-		}
-		return ret;
-	},
-	find_index:function(array,fun){
-		var ret=-1;
-		for(var i=0;i<array.length && ret==-1;i++){
-			if(fun(array[i])){
-				ret=i;
-			}
-		}
-		return ret;
-	},
-	indexOf:function(array,row){
-		return mb.Array.find_index(array,function(c){
-			return row==c;
-		});
-	},
-	find_row:function(array,fun){
-		return array[mb.Array.find_index(array,fun)];
-	},
-	find_indexes:function(array,fun){
-		var ret=[];
-		for(var i=0;i<array.length;i++){
-			if(fun(array[i])){
-				ret.push(i);
-			}
-		}
-		return ret;
-	},
-	indexesOf:function(array,row){
-		return mb.Array.find_indexes(array,function(c){
-			return row==c;
-		});
-	},
-	find_rows:function(array,fun){
-		var ret=[];
-		var indexes=mb.Array.find_indexes(array,fun);
-		for(var i=0;i<indexes.length;i++){
-			ret.push(array[indexes[i]]);
-		}
-		return ret;
-	},
-	remove:function(array,row){
-		var index=mb.Array.indexOf(array,row);
-		array.splice(index,1);
-	}
-};
-mb.Object={
-	forEach:function(object,func){
-		for(var key in object){
-			func(object[key],key);
-		}
-	},
-	map:function(object,func){
-		var ret={};
-		for(var key in object){
-			ret[key]=func(object[key],key);
-		}
-		return ret;
-	},
-	reduce:function(obj,func,init){
-		for(var k in obj){
-			init=func(init,obj[k],k);
-		}
-		return init;
-	},
-	toArray:function(obj,func){
-		var r=[];
-		for(var k in obj){
-			r.push(func(obj[k],k,obj));
-		}
-		return r;
-	},
-	ember:function(me,obj){
-		for(var key in obj){
-			me[key]=obj[key];
-		}
-		return me;
-	},
-	orDefault:function(me,obj){
-		for(var key in obj){
-			me[key]=me[key]||obj[key];
-		}
-		return me;
-	},
-	combine:function(a,b) {
-		var ret={};
-		for(var key in a){
-			ret[key]=a[key];
-		}
-		for(var key in b){
-			ret[key]=b[key];
-		}
-		return ret;
-	}
-};
-if(!String.prototype.trim){
-	String.prototype.trim=function(){  
-      return this.replace(/(^\s*)|(\s*$)/g, "");  
-  };
-}
-if(!String.prototype.startsWith){
-	String.prototype.startsWith=function(str) {
-		return (this.indexOf(str)==0);
-	};
-}
-if(!String.prototype.endsWith){
-	String.prototype.endsWith=function(str) {
-		return (this.lastIndexOf(str)==this.length-str.length);
-	};
-}
-/**
- * 时间格式化
- * yyyy-MM-dd HH:mm:ss
- */
-Date.prototype.format = function(formatStr){   
-	var str = formatStr;  
-	str=str.replace(/yyyy|YYYY/,this.getFullYear());  
-	str=str.replace(/MM/,(this.getMonth()+1)>9?(this.getMonth()+1).toString():'0' + (this.getMonth()+1));   
-	str=str.replace(/dd|DD/,this.getDate()>9?this.getDate().toString():'0' + this.getDate());
-	str=str.replace(/hh|HH/,this.getHours()>9?this.getHours().toString():'0' + this.getHours());
-	str=str.replace(/mm/,this.getMinutes()>9?this.getMinutes().toString():'0' + this.getMinutes());
-	str=str.replace(/ss/,this.getSeconds()>9?this.getSeconds().toString():'0' + this.getSeconds());   
-	return str;   
+if(!window.Promise){
+	window.Promise=mb._promise_()
 }
 if(window.load_success){
 	window.load_success("front-lib/lib.js");

@@ -1,100 +1,78 @@
-define(["require", "exports", "./virtualTreeChildren", "./onceLife"], function (require, exports, virtualTreeChildren_1, onceLife_1) {
+define(["require", "exports", "./virtualTreeChildren", "./util"], function (require, exports, virtualTreeChildren_1, util_1) {
     "use strict";
     exports.__esModule = true;
+    exports.childrenBuilder = exports.isJOChildrenLifeType = exports.isJOChildFunType = exports.Article = exports.newArticle = void 0;
+    function newArticle() {
+        var lines = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            lines[_i] = arguments[_i];
+        }
+        return new Article(lines);
+    }
+    exports.newArticle = newArticle;
+    var Article = /** @class */ (function () {
+        function Article(out) {
+            if (out === void 0) { out = []; }
+            this.out = out;
+        }
+        Article.prototype.append = function (v) {
+            this.out.push(v);
+            return this;
+        };
+        return Article;
+    }());
+    exports.Article = Article;
     function isJOChildFunType(child) {
         return typeof (child) == 'function';
     }
     exports.isJOChildFunType = isJOChildFunType;
-    function getItem(item, inits, destroys) {
-        if (typeof (item) == 'object') {
-            if (mb.Array.isArray(item)) {
-                return mb.Array.flatMap(item, function (v) {
-                    return getItem(v, inits, destroys);
-                });
-            }
-            else if ('elements' in item) {
-                if (item.init) {
-                    inits.push(item.init);
-                }
-                if (item.destroy) {
-                    destroys.push(item.destroy);
-                }
-                return getItem(item.elements, inits, destroys);
-            }
-            else if ('element' in item) {
-                if (item.init) {
-                    inits.push(item.init);
-                }
-                if (item.destroy) {
-                    destroys.push(item.destroy);
-                }
-                return [item.element];
-            }
-            else {
-                return [item];
+    function isJOChildrenLifeType(child) {
+        return typeof (child) == 'object' && 'elements' in child && mb.Array.isArray(child.elements);
+    }
+    exports.isJOChildrenLifeType = isJOChildrenLifeType;
+    function childBuilder(out, child, parent, me, parse, buildChildren) {
+        if (isJOChildFunType(child)) {
+            out.push(child(buildChildren, parent.newChildAtLast()));
+        }
+        else if (isJOChildrenLifeType(child)) {
+            out.push(child);
+            childrenVSBuilder(out, child.elements, parent, me, parse, buildChildren);
+        }
+        else {
+            var vs = parse(me, child);
+            out.orPush(vs);
+            parent.push(vs.element);
+        }
+    }
+    function childrenVBuilder(out, child, parent, me, parse, buildChildren) {
+        if (mb.Array.isArray(child)) {
+            var i = 0;
+            while (i < child.length) {
+                childBuilder(out, child[i], parent, me, parse, buildChildren);
+                i++;
             }
         }
         else {
-            return [item];
+            childBuilder(out, child, parent, me, parse, buildChildren);
         }
     }
-    function childrenBuilder(parseView) {
-        var mx = {
-            buildChildren: function (me, item, parent) {
-                var inits = [], destroys = [];
-                var children = getItem(item, inits, destroys);
-                var array = [];
-                var i = 0;
-                while (i < children.length) {
-                    var child = children[i];
-                    i++;
-                    if (isJOChildFunType(child)) {
-                        var cv = parent.newChildAtLast();
-                        array.push(child(mx, cv));
-                    }
-                    else {
-                        var element = void 0;
-                        if (typeof (child) == 'object' && 'element' in child) {
-                            element = child.element;
-                            if (child.init) {
-                                inits.push(child.init);
-                            }
-                            if (child.destroy) {
-                                destroys.push(child.destroy);
-                            }
-                        }
-                        else {
-                            element = child;
-                        }
-                        var o = parseView(me, element);
-                        parent.push(o.element);
-                        array.push(o);
-                    }
-                }
-                var life = onceLife_1.onceLife({
-                    init: function () {
-                        for (var i_1 = 0; i_1 < array.length; i_1++) {
-                            array[i_1].init();
-                        }
-                        for (var i_2 = 0; i_2 < inits.length; i_2++) {
-                            inits[i_2]();
-                        }
-                    },
-                    destroy: function () {
-                        for (var i_3 = 0; i_3 < destroys.length; i_3++) {
-                            destroys[i_3]();
-                        }
-                        for (var i_4 = 0; i_4 < array.length; i_4++) {
-                            array[i_4].destroy();
-                        }
-                    }
-                });
-                return life;
-            }
+    function childrenVSBuilder(out, children, parent, me, parse, buildChildren) {
+        //数组元素
+        var i = 0;
+        while (i < children.length) {
+            var child = children[i];
+            i++;
+            childrenVBuilder(out, child, parent, me, parse, buildChildren);
+        }
+    }
+    function childrenBuilder(parse) {
+        var baseBuilder = function (me, children, parent) {
+            var out = util_1.BuildResultList.init();
+            childrenVBuilder(out, children, parent, me, parse, baseBuilder);
+            return util_1.onceLife(out.getAsOne()).out;
         };
-        return function (me, p, children) {
-            var vm = virtualTreeChildren_1.VirtualChild.newRootChild(p);
-            return mx.buildChildren(me, children, vm);
+        return function (me, x, children) {
+            return baseBuilder(me, children, virtualTreeChildren_1.VirtualChild.newRootChild(x));
         };
     }
     exports.childrenBuilder = childrenBuilder;

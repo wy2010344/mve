@@ -2,7 +2,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -14,6 +14,31 @@ var __extends = (this && this.__extends) || (function () {
 define(["require", "exports", "../mve/util"], function (require, exports, util_1) {
     "use strict";
     exports.__esModule = true;
+    exports.BStackVirtualParam = exports.BStack = exports.BStackItem = exports.BGridVirtualParam = exports.BGrid = exports.BGridItem = exports.BScrollListVirtualParam = exports.BScrollList = exports.BListVirtualParam = exports.BList = exports.BListItem = exports.BView = exports.BInput = exports.BButton = exports.BLable = exports.BAbsView = exports.BParamImpl = void 0;
+    var BParamImpl = /** @class */ (function () {
+        function BParamImpl() {
+            this.pool = [];
+        }
+        BParamImpl.prototype.Watch = function (exp) {
+            this.pool.push(util_1.mve.Watch(exp));
+        };
+        BParamImpl.prototype.WatchExp = function (before, exp, after) {
+            this.pool.push(util_1.mve.WatchExp(before, exp, after));
+        };
+        BParamImpl.prototype.WatchBefore = function (before, exp) {
+            this.pool.push(util_1.mve.WatchBefore(before, exp));
+        };
+        BParamImpl.prototype.WatchAfter = function (exp, after) {
+            this.pool.push(util_1.mve.WatchAfter(exp, after));
+        };
+        BParamImpl.prototype.destroy = function () {
+            while (this.pool.length > 0) {
+                this.pool.pop().disable();
+            }
+        };
+        return BParamImpl;
+    }());
+    exports.BParamImpl = BParamImpl;
     var BAbsView = /** @class */ (function () {
         function BAbsView() {
             this.children = [];
@@ -21,21 +46,40 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
         BAbsView.prototype.setBackground = function (c) {
             this.getElement().style.background = c;
         };
+        BAbsView.prototype.percentOfW = function (x) {
+            return x * BAbsView.screenW() / 100;
+        };
+        /**
+         * 依高度的百分比(100)，转成依宽度的百分比
+         * @param percentH
+         */
+        BAbsView.transH = function (percentH) {
+            return percentH * BAbsView.screenH() / BAbsView.screenW();
+        };
+        BAbsView.prototype.rewidth = function () {
+            this.kSetH(this.h);
+            this.kSetW(this.w);
+            this.kSetX(this.x);
+            this.kSetY(this.y);
+            for (var i = 0; i < this.children.length; i++) {
+                this.children[i].rewidth();
+            }
+        };
         BAbsView.prototype.kSetX = function (x) {
             this.x = x;
-            this.getElement().style.left = x + "px";
+            this.getElement().style.left = this.percentOfW(x) + "px";
         };
         BAbsView.prototype.kSetY = function (y) {
             this.y = y;
-            this.getElement().style.top = y + "px";
+            this.getElement().style.top = this.percentOfW(y) + "px";
         };
         BAbsView.prototype.kSetW = function (w) {
             this.w = w;
-            this.getElement().style.width = w + "px";
+            this.getElement().style.width = this.percentOfW(w) + "px";
         };
         BAbsView.prototype.kSetH = function (h) {
             this.h = h;
-            this.getElement().style.height = h + "px";
+            this.getElement().style.height = this.percentOfW(h) + "px";
         };
         //便利的方法，感觉都不会用
         BAbsView.prototype.kSetCenterX = function (x) {
@@ -86,6 +130,8 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
         BAbsView.prototype.shift = function () {
             this.removeAt(0);
         };
+        BAbsView.screenW = util_1.mve.valueOf(window.screen.availWidth);
+        BAbsView.screenH = util_1.mve.valueOf(window.screen.availHeight);
         return BAbsView;
     }());
     exports.BAbsView = BAbsView;
@@ -263,4 +309,311 @@ define(["require", "exports", "../mve/util"], function (require, exports, util_1
         return BListVirtualParam;
     }());
     exports.BListVirtualParam = BListVirtualParam;
+    var BScrollList = /** @class */ (function () {
+        function BScrollList(me) {
+            this.outView = new BView();
+            this.view = new BView();
+            this.children = [];
+            this.size = util_1.mve.valueOf(0);
+            this.split = util_1.mve.valueOf(0);
+            this.height = util_1.mve.valueOf(0);
+            this.width = util_1.mve.valueOf(0);
+            this.outView.push(this.view);
+            var that = this;
+            //高度监视
+            me.WatchAfter(function () {
+                var size = that.size();
+                var split = that.split();
+                var h = 0;
+                for (var i = 0; i < that.size(); i++) {
+                    var child = that.children[i];
+                    child.view.kSetY(h);
+                    var ch = child.height();
+                    child.view.kSetH(ch);
+                    h = h + split + ch;
+                }
+                if (size > 0) {
+                    return h - split;
+                }
+                else {
+                    return h;
+                }
+            }, function (h) {
+                that.view.kSetH(h);
+            });
+            //宽度变化
+            me.Watch(function () {
+                var w = that.width();
+                that.view.kSetW(w);
+                that.outView.kSetW(w);
+                var size = that.size();
+                for (var i = 0; i < size; i++) {
+                    that.children[i].view.kSetW(w);
+                }
+            });
+            me.Watch(function () {
+                var h = that.height();
+                that.outView.kSetH(h);
+            });
+        }
+        BScrollList.prototype.getInnerHeight = function () {
+            return this.height();
+        };
+        BScrollList.prototype.reloadSize = function () {
+            this.size(this.children.length);
+        };
+        BScrollList.prototype.insertBefore = function (e, old) {
+            var index = this.children.indexOf(old);
+            if (index > -1) {
+                this.view.insert(index, e.view);
+                this.children.splice(index, 0, e);
+                this.reloadSize();
+            }
+            else {
+                mb.log("insert失败");
+            }
+        };
+        BScrollList.prototype.append = function (e) {
+            this.view.push(e.view);
+            this.children.push(e);
+            this.reloadSize();
+        };
+        BScrollList.prototype.remove = function (e) {
+            var index = this.children.indexOf(e);
+            if (index > -1) {
+                this.view.removeAt(index);
+                this.children.splice(index, 1);
+                this.reloadSize();
+            }
+            else {
+                mb.log("remove失败");
+            }
+        };
+        return BScrollList;
+    }());
+    exports.BScrollList = BScrollList;
+    var BScrollListVirtualParam = /** @class */ (function () {
+        function BScrollListVirtualParam(pel) {
+            this.pel = pel;
+        }
+        BScrollListVirtualParam.prototype.remove = function (e) {
+            this.pel.remove(e);
+        };
+        BScrollListVirtualParam.prototype.append = function (e, isMove) {
+            this.pel.append(e);
+        };
+        BScrollListVirtualParam.prototype.insertBefore = function (e, old, isMove) {
+            this.pel.insertBefore(e, old);
+        };
+        return BScrollListVirtualParam;
+    }());
+    exports.BScrollListVirtualParam = BScrollListVirtualParam;
+    var BGridItem = /** @class */ (function () {
+        function BGridItem() {
+            this.view = new BView();
+        }
+        return BGridItem;
+    }());
+    exports.BGridItem = BGridItem;
+    var BGrid = /** @class */ (function () {
+        function BGrid(me) {
+            this.cellWidth = util_1.mve.valueOf(0);
+            this.cellHeight = util_1.mve.valueOf(0);
+            this.columnNum = util_1.mve.valueOf(1);
+            this.width = util_1.mve.valueOf(0);
+            this.height = util_1.mve.valueOf(0);
+            this.view = new BView();
+            this.children = [];
+            this.size = util_1.mve.valueOf(0);
+            var that = this;
+            //高度监视
+            me.WatchAfter(function () {
+                var size = that.size();
+                var cw = that.cellWidth();
+                var ch = that.cellHeight();
+                var cc = that.columnNum() > 0 ? that.columnNum() : 1;
+                var i = 0;
+                var col = 0;
+                var row = 0;
+                while (i < size) {
+                    var child = that.children[i];
+                    col = i % cc;
+                    row = i % cc;
+                    child.view.kSetX(col * cw);
+                    child.view.kSetY(col * ch);
+                    i = i + 1;
+                }
+                return (row + 1) * ch;
+            }, function (h) {
+                that.view.kSetH(h);
+                that.height(h);
+            });
+            //宽度变化
+            me.Watch(function () {
+                var w = that.width();
+                that.view.kSetW(w);
+            });
+            //子视图高度相同
+            me.Watch(function () {
+                var ch = that.cellHeight();
+                var size = that.size();
+                var i = 0;
+                while (i < size) {
+                    var child = that.children[i];
+                    child.view.kSetH(ch);
+                    i = i + 1;
+                }
+            });
+            //子视图宽度相同
+            me.Watch(function () {
+                var cw = that.cellWidth();
+                var size = that.size();
+                var i = 0;
+                while (i < size) {
+                    var child = that.children[i];
+                    child.view.kSetW(cw);
+                    i = i + 1;
+                }
+            });
+        }
+        BGrid.prototype.getWidth = function () {
+            return this.width();
+        };
+        BGrid.prototype.getHeight = function () {
+            return this.height();
+        };
+        BGrid.prototype.reloadSize = function () {
+            this.size(this.children.length);
+        };
+        BGrid.prototype.insertBefore = function (e, old) {
+            var index = this.children.indexOf(old);
+            if (index > -1) {
+                this.view.insert(index, e.view);
+                this.children.splice(index, 0, e);
+                this.reloadSize();
+            }
+            else {
+                mb.log("insert失败");
+            }
+        };
+        BGrid.prototype.append = function (e) {
+            this.view.push(e.view);
+            this.children.push(e);
+            this.reloadSize();
+        };
+        BGrid.prototype.remove = function (e) {
+            var index = this.children.indexOf(e);
+            if (index > -1) {
+                this.view.removeAt(index);
+                this.children.splice(index, 1);
+                this.reloadSize();
+            }
+            else {
+                mb.log("remove失败");
+            }
+        };
+        return BGrid;
+    }());
+    exports.BGrid = BGrid;
+    var BGridVirtualParam = /** @class */ (function () {
+        function BGridVirtualParam(pel) {
+            this.pel = pel;
+        }
+        BGridVirtualParam.prototype.remove = function (e) {
+            this.pel.remove(e);
+        };
+        BGridVirtualParam.prototype.append = function (e, isMove) {
+            this.pel.append(e);
+        };
+        BGridVirtualParam.prototype.insertBefore = function (e, old, isMove) {
+            this.pel.insertBefore(e, old);
+        };
+        return BGridVirtualParam;
+    }());
+    exports.BGridVirtualParam = BGridVirtualParam;
+    var BStackItem = /** @class */ (function () {
+        function BStackItem() {
+            this.view = new BView();
+        }
+        return BStackItem;
+    }());
+    exports.BStackItem = BStackItem;
+    var BStack = /** @class */ (function () {
+        function BStack(me) {
+            this.width = util_1.mve.valueOf(0);
+            this.height = util_1.mve.valueOf(0);
+            this.view = new BView();
+            this.children = [];
+            this.size = util_1.mve.valueOf(0);
+            var that = this;
+            me.Watch(function () {
+                var w = that.width();
+                that.view.kSetW(w);
+                var size = that.size();
+                var i = 0;
+                while (i < size) {
+                    that.children[i].view.kSetW(w);
+                    i = i + 1;
+                }
+            });
+            me.Watch(function () {
+                var h = that.height();
+                that.view.kSetH(h);
+                var size = that.size();
+                var i = 0;
+                while (i < size) {
+                    that.children[i].view.kSetH(h);
+                    i = i + 1;
+                }
+            });
+        }
+        BStack.prototype.reloadSize = function () {
+            this.size(this.children.length);
+        };
+        BStack.prototype.insertBefore = function (e, old) {
+            var index = this.children.indexOf(old);
+            if (index > -1) {
+                this.view.insert(index, e.view);
+                this.children.splice(index, 0, e);
+                this.reloadSize();
+            }
+            else {
+                mb.log("insert失败");
+            }
+        };
+        BStack.prototype.append = function (e) {
+            this.view.push(e.view);
+            this.children.push(e);
+            this.reloadSize();
+        };
+        BStack.prototype.remove = function (e) {
+            var index = this.children.indexOf(e);
+            if (index > -1) {
+                this.view.removeAt(index);
+                this.children.splice(index, 1);
+                this.reloadSize();
+            }
+            else {
+                mb.log("remove失败");
+            }
+        };
+        return BStack;
+    }());
+    exports.BStack = BStack;
+    var BStackVirtualParam = /** @class */ (function () {
+        function BStackVirtualParam(pel) {
+            this.pel = pel;
+        }
+        BStackVirtualParam.prototype.remove = function (e) {
+            this.pel.remove(e);
+        };
+        BStackVirtualParam.prototype.append = function (e, isMove) {
+            this.pel.append(e);
+        };
+        BStackVirtualParam.prototype.insertBefore = function (e, old, isMove) {
+            this.pel.insertBefore(e, old);
+        };
+        return BStackVirtualParam;
+    }());
+    exports.BStackVirtualParam = BStackVirtualParam;
 });

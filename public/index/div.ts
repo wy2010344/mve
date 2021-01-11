@@ -1,9 +1,16 @@
+import { PNJO } from "../lib/mve-DOM/index";
 import { ifChildren } from "../lib/mve/ifChildren";
 
 export function div(p:{
 	text:()=>string
 }){
 
+	class Test{
+		toString(){
+			return "eafewf"
+		}
+	}
+	new Test().toString()
 	/**
 	 * 化简分数
 	 * @param a 
@@ -24,7 +31,7 @@ export function div(p:{
 		return [a,b]
 	}
 
-	return ifChildren(function(me){
+	return ifChildren<PNJO,Node>(function(me){
 		return {
 			init() {
 				mb.log("我是可选的init函数，在附着到DOM上后执行");
