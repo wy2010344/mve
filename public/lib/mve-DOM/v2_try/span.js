@@ -1,7 +1,8 @@
 define(["require", "exports", "../../mve/index"], function (require, exports, index_1) {
     "use strict";
     exports.__esModule = true;
-    exports.spanBuilder = function (getAllBuilder, allParse) {
+    exports.spanBuilder = void 0;
+    var spanBuilder = function (getAllBuilder, allParse) {
         return index_1.parseOf(function (me, child) {
             var element = document.createElement("span");
             return {
@@ -13,4 +14,5 @@ define(["require", "exports", "../../mve/index"], function (require, exports, in
             };
         });
     };
+    exports.spanBuilder = spanBuilder;
 });

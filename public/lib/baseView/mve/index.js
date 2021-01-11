@@ -1,6 +1,7 @@
 define(["require", "exports", "./childrenBuilder"], function (require, exports, childrenBuilder_1) {
     "use strict";
     exports.__esModule = true;
+    exports.parseOf = exports.parseUtil = void 0;
     exports.parseUtil = {
         bind: function (me, value, fun) {
             if (typeof (value) == 'function') {

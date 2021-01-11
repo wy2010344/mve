@@ -1,44 +1,49 @@
-define(["require", "exports", "./util", "../index", "../mve/index", "../BNavigationView"], function (require, exports, util_1, index_1, index_2, BNavigationView_1) {
+define(["require", "exports", "./util", "../index", "../mve/index"], function (require, exports, util_1, index_1, index_2) {
     "use strict";
     exports.__esModule = true;
-    exports.stackBuilder = function (getAllBuilder, allParse) {
+    exports.stackBuilder = void 0;
+    var stackBuilder = function (getAllBuilder, allParse) {
         var parseStackItem = index_2.parseOf(function (me, child) {
-            var element = new index_1.BView();
-            var childResult = allParse.children(me, new util_1.BViewVirtualParam(element), child.children);
+            var stackItem = new index_1.BStackItem();
+            var childResult = allParse.children(me, new util_1.BViewVirtualParam(stackItem.view), child.children);
             return {
-                element: element,
+                element: stackItem,
                 destroy: function () {
                     childResult.destroy();
                 }
             };
         });
         return index_2.parseOf(function (me, child) {
-            var element = new index_1.BView();
-            var stack = new BNavigationView_1.BStack(me, element);
-            index_2.parseUtil.bind(me, child.x, function (v) {
-                element.kSetX(v);
-            });
-            index_2.parseUtil.bind(me, child.y, function (v) {
-                element.kSetY(v);
-            });
+            var stack = new index_1.BStack(me);
+            if (child.x) {
+                index_2.parseUtil.bind(me, child.x, function (v) {
+                    stack.view.kSetX(v);
+                });
+            }
+            if (child.y) {
+                index_2.parseUtil.bind(me, child.y, function (v) {
+                    stack.view.kSetY(v);
+                });
+            }
             index_2.parseUtil.bind(me, child.w, function (v) {
-                element.kSetW(v);
+                stack.width(v);
             });
             index_2.parseUtil.bind(me, child.h, function (v) {
-                element.kSetH(v);
+                stack.height(v);
             });
             if (child.background) {
                 index_2.parseUtil.bind(me, child.background, function (v) {
-                    element.setBackground(v);
+                    stack.view.setBackground(v);
                 });
             }
-            var childResult = parseStackItem.children(me, new util_1.BArrayVirtualParam(stack), child.children);
+            var childResult = parseStackItem.children(me, new index_1.BStackVirtualParam(stack), child.children);
             return {
-                element: element,
+                element: stack.view,
                 destroy: function () {
                     childResult.destroy();
                 }
             };
         });
     };
+    exports.stackBuilder = stackBuilder;
 });

@@ -2,7 +2,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -14,6 +14,7 @@ var __extends = (this && this.__extends) || (function () {
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
+    exports.onceLife = exports.BuildResultList = exports.orDestroy = exports.orInit = exports.orRun = exports.mve = void 0;
     var Dep = /** @class */ (function () {
         function Dep() {
             this.id = Dep.uid++;
@@ -41,6 +42,7 @@ define(["require", "exports"], function (require, exports) {
     window[DEP_KEY] = Dep;
     var mve;
     (function (mve) {
+        /**新存储器*/
         function valueOf(v) {
             var dep = new Dep();
             return function () {
@@ -60,101 +62,140 @@ define(["require", "exports"], function (require, exports) {
             };
         }
         mve.valueOf = valueOf;
-        var ArrayModel = /** @class */ (function () {
+        function valueOrCall(a) {
+            if (typeof (a) == 'function') {
+                return a;
+            }
+            else {
+                return function () { return a; };
+            }
+        }
+        mve.valueOrCall = valueOrCall;
+        /**构造只读的模型*/
+        var CacheArrayModel = /** @class */ (function () {
+            function CacheArrayModel(size, array, views) {
+                this.size = size;
+                this.array = array;
+                this.views = views;
+            }
+            CacheArrayModel.prototype.addView = function (view) {
+                this.views.push(view);
+                //自动初始化
+                for (var i = 0; i < this.array.length; i++) {
+                    view.insert(i, this.array[i]);
+                }
+            };
+            CacheArrayModel.prototype.removeView = function (view) {
+                var index = mb.Array.indexOf(this.views, view);
+                if (index != -1) {
+                    this.views.splice(index, 1);
+                }
+            };
+            CacheArrayModel.prototype.get = function (i) {
+                //不支持响应式
+                return this.array.get(i);
+            };
+            CacheArrayModel.prototype.getLast = function () {
+                return mb.Array.getLast(this);
+            };
+            CacheArrayModel.prototype.findIndex = function (fun) {
+                return mb.Array.findIndex(this, fun);
+            };
+            CacheArrayModel.prototype.forEach = function (fun) {
+                mb.Array.forEach(this, fun);
+            };
+            CacheArrayModel.prototype.map = function (fun) {
+                return mb.Array.map(this, fun);
+            };
+            CacheArrayModel.prototype.reduce = function (fun, init) {
+                return mb.Array.reduce(this, fun, init);
+            };
+            CacheArrayModel.prototype.filter = function (fun) {
+                return mb.Array.filter(this, fun);
+            };
+            CacheArrayModel.prototype.findRow = function (fun) {
+                return mb.Array.findRow(this, fun);
+            };
+            CacheArrayModel.prototype.indexOf = function (row) {
+                return this.findIndex(function (theRow) { return theRow == row; });
+            };
+            return CacheArrayModel;
+        }());
+        mve.CacheArrayModel = CacheArrayModel;
+        var ArrayModel = /** @class */ (function (_super) {
+            __extends(ArrayModel, _super);
             function ArrayModel(array) {
-                this._array = mb.Array.map(array || [], function (row) {
+                var _this = this;
+                array = mb.Array.map(array || [], function (row) {
                     return row;
                 });
-                this._views = [];
+                var size_value = mve.valueOf(0);
+                var views_value = [];
+                _this = _super.call(this, size_value, array, views_value) || this;
+                _this.size_value = size_value;
+                _this.array_value = array;
+                _this.views_value = views_value;
                 //长度是可观察的
-                this.size = mve.valueOf(0);
-                this._reload_size_();
+                _this.reload_size();
+                return _this;
             }
-            ArrayModel.prototype._reload_size_ = function () {
-                this.size(this._array.length);
-            };
-            ArrayModel.prototype.addView = function (view) {
-                this._views.push(view);
-                //自动初始化
-                for (var i = 0; i < this._array.length; i++) {
-                    view.insert(i, this._array[i]);
-                }
-            };
-            ArrayModel.prototype.removeView = function (view) {
-                var index = mb.Array.indexOf(this._views, view);
-                if (index != -1) {
-                    this._views.splice(index, 1);
-                }
+            ArrayModel.prototype.reload_size = function () {
+                this.size_value(this.array_value.length);
             };
             ArrayModel.prototype.insert = function (index, row) {
-                this._array.splice(index, 0, row);
-                mb.Array.forEach(this._views, function (view) {
+                this.array_value.splice(index, 0, row);
+                mb.Array.forEach(this.views_value, function (view) {
                     view.insert(index, row);
                 });
-                this._reload_size_();
+                this.reload_size();
             };
-            ArrayModel.prototype.removeAt = function (index) {
+            ArrayModel.prototype.remove = function (index) {
                 /*更常识的使用方法*/
                 var row = this.get(index);
-                this._array.splice(index, 1);
-                mb.Array.forEach(this._views, function (view) {
+                this.array_value.splice(index, 1);
+                mb.Array.forEach(this.views_value, function (view) {
                     view.remove(index);
                 });
-                this._reload_size_();
+                this.reload_size();
                 return row;
             };
-            ArrayModel.prototype.remove = function (row) {
-                /*更常识的使用方法*/
-                var index = this.indexOf(row);
-                if (index > -1) {
-                    return this.removeAt(index);
-                }
+            /**清理匹配项 */
+            ArrayModel.prototype.removeWhere = function (fun) {
+                mb.Array.removeWhere(this, fun);
             };
-            ArrayModel.prototype.move = function (row, target_row) {
-                /*
-                常识的移动方式，向前手动则向前，向后移动则向后
-                如5中第3个，可移动1,2,4,5。分别是其它几个的序号而已
-                */
-                var target_index = this.indexOf(target_row);
-                if (target_index > -1) {
-                    this.moveTo(row, target_index);
-                }
+            /**清理单纯相等的项 */
+            ArrayModel.prototype.removeEqual = function (row) {
+                this.removeWhere(function (theRow) { return theRow == row; });
             };
-            ArrayModel.prototype.moveTo = function (row, target_index) {
-                var index = this.indexOf(row);
-                if (index > -1) {
-                    this._array.splice(index, 1);
-                    this._array.splice(target_index, 0, row);
-                    mb.Array.forEach(this._views, function (view) {
-                        view.move(index, target_index);
-                    });
-                    this._reload_size_();
-                }
+            ArrayModel.prototype.move = function (oldIndex, newIndex) {
+                /**有效的方法*/
+                mb.Array.move(this.array_value, oldIndex, newIndex);
+                mb.Array.forEach(this.views_value, function (view) {
+                    view.move(oldIndex, newIndex);
+                });
+                this.reload_size();
             };
             /*多控件用array和model，单控件用包装*/
-            ArrayModel.prototype.moveToFirst = function (row) {
-                this.moveTo(row, 0);
+            ArrayModel.prototype.moveToFirst = function (index) {
+                this.move(index, 0);
             };
-            ArrayModel.prototype.moveToLast = function (row) {
-                this.moveTo(row, this.size() - 1);
-            };
-            ArrayModel.prototype.get = function (index) {
-                return this._array[index];
+            ArrayModel.prototype.moveToLast = function (index) {
+                this.move(index, this.size_value() - 1);
             };
             ArrayModel.prototype.shift = function () {
-                return this.removeAt(0);
+                return this.remove(0);
             };
             ArrayModel.prototype.unshift = function (row) {
                 return this.insert(0, row);
             };
             ArrayModel.prototype.pop = function () {
-                return this.removeAt(this.size() - 1);
+                return this.remove(this.size_value() - 1);
             };
             ArrayModel.prototype.push = function (row) {
-                return this.insert(this.size(), row);
+                return this.insert(this.size_value(), row);
             };
             ArrayModel.prototype.clear = function () {
-                while (this.size() > 0) {
+                while (this.size_value() > 0) {
                     this.pop();
                 }
             };
@@ -165,57 +206,8 @@ define(["require", "exports"], function (require, exports) {
                     that.push(row);
                 });
             };
-            ArrayModel.prototype.forEach = function (fun) {
-                for (var i = 0; i < this.size(); i++) {
-                    fun(this.get(i), i);
-                }
-            };
-            ArrayModel.prototype.map = function (fun) {
-                var ret = [];
-                for (var i = 0; i < this.size(); i++) {
-                    ret[i] = fun(this.get(i), i);
-                }
-                return ret;
-            };
-            ArrayModel.prototype.reduce = function (fun, init) {
-                for (var i = 0; i < this.size(); i++) {
-                    init = fun(init, this.get(i), i);
-                }
-                return init;
-            };
-            ArrayModel.prototype.filter = function (fun) {
-                var ret = [];
-                for (var i = 0; i < this.size(); i++) {
-                    var row = this.get(i);
-                    if (fun(row, i)) {
-                        ret.push(row);
-                    }
-                }
-                return ret;
-            };
-            ArrayModel.prototype.find_index = function (fun) {
-                var ret = -1;
-                for (var i = 0; i < this.size() && ret == -1; i++) {
-                    if (fun(this.get(i), i)) {
-                        ret = i;
-                    }
-                }
-                return ret;
-            };
-            ArrayModel.prototype.indexOf = function (row, fun) {
-                var func = fun || function (c) {
-                    return c == row;
-                };
-                return this.find_index(func);
-            };
-            ArrayModel.prototype.find_row = function (fun) {
-                var index = this.find_index(fun);
-                if (index > -1) {
-                    return this.get(index);
-                }
-            };
             return ArrayModel;
-        }());
+        }(CacheArrayModel));
         mve.ArrayModel = ArrayModel;
         function arrayModelOf(array) {
             return new ArrayModel(array);
@@ -257,31 +249,8 @@ define(["require", "exports"], function (require, exports) {
         var LifeModelImpl = /** @class */ (function () {
             function LifeModelImpl() {
                 this.pool = [];
-                /////兼容性问题////
-                this.k = {};
-                ////////
             }
             LifeModelImpl.prototype.Watch = function (exp) {
-                /**兼容 */
-                if (typeof (exp) == 'object') {
-                    if (exp.before) {
-                        if (exp.after) {
-                            return this.WatchExp(exp.before, exp.exp, exp.after);
-                        }
-                        else {
-                            return this.WatchBefore(exp.before, exp.exp);
-                        }
-                    }
-                    else {
-                        if (exp.after) {
-                            return this.WatchAfter(exp.exp, exp.after);
-                        }
-                        else {
-                            return this.Watch(exp.exp);
-                        }
-                    }
-                }
-                /****/
                 this.pool.push(mve.Watch(exp));
             };
             LifeModelImpl.prototype.WatchExp = function (before, exp, after) {
@@ -309,12 +278,6 @@ define(["require", "exports"], function (require, exports) {
                 while (this.pool.length > 0) {
                     this.pool.pop().disable();
                 }
-            };
-            LifeModelImpl.prototype.Value = function (v) {
-                return mve.valueOf(v);
-            };
-            LifeModelImpl.prototype.ArrayModel = function (v) {
-                return mve.arrayModelOf(v);
             };
             return LifeModelImpl;
         }());
@@ -397,4 +360,126 @@ define(["require", "exports"], function (require, exports) {
         };
         return WatcherImplAfter;
     }(mve.Watcher));
+    function orRun(v) {
+        if (v) {
+            v();
+        }
+    }
+    exports.orRun = orRun;
+    function orInit(v) {
+        if (v.init) {
+            v.init();
+        }
+    }
+    exports.orInit = orInit;
+    function orDestroy(v) {
+        if (v.destroy) {
+            v.destroy();
+        }
+    }
+    exports.orDestroy = orDestroy;
+    var BuildResultList = /** @class */ (function () {
+        function BuildResultList() {
+            this.inits = [];
+            this.destroys = [];
+        }
+        BuildResultList.init = function () {
+            var xs = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                xs[_i] = arguments[_i];
+            }
+            var it = new BuildResultList();
+            for (var i = 0; i < xs.size(); i++) {
+                it.push(xs.get(i));
+            }
+            return it;
+        };
+        BuildResultList.prototype.orPush = function (v) {
+            if (v) {
+                this.push(v);
+            }
+        };
+        BuildResultList.prototype.push = function (v) {
+            if (v.init) {
+                this.inits.push(v.init);
+            }
+            if (v.destroy) {
+                this.destroys.push(v.destroy);
+            }
+        };
+        BuildResultList.prototype.getInit = function () {
+            var inits = this.inits;
+            var size = inits.size();
+            if (size > 1) {
+                return function () {
+                    for (var i = 0; i < size; i++) {
+                        inits[i]();
+                    }
+                };
+            }
+            else if (size == 1) {
+                return inits[0];
+            }
+        };
+        BuildResultList.prototype.getDestroy = function () {
+            var destroys = this.destroys;
+            var size = destroys.size();
+            if (size > 1) {
+                return function () {
+                    for (var i = size - 1; i > -1; i--) {
+                        destroys[i]();
+                    }
+                };
+            }
+            else if (size == 1) {
+                return destroys[0];
+            }
+        };
+        BuildResultList.prototype.getAsOne = function () {
+            return {
+                init: this.getInit(),
+                destroy: this.getDestroy()
+            };
+        };
+        return BuildResultList;
+    }());
+    exports.BuildResultList = BuildResultList;
+    function onceLife(p) {
+        var self = {
+            isInit: false,
+            isDestroy: false,
+            out: p
+        };
+        var init = p.init;
+        if (init) {
+            p.init = function () {
+                if (self.isInit) {
+                    mb.log("禁止重复init");
+                }
+                else {
+                    self.isInit = true;
+                    init();
+                }
+            };
+        }
+        var destroy = p.destroy;
+        if (destroy) {
+            p.destroy = function () {
+                if (self.isDestroy) {
+                    mb.log("禁止重复destroy");
+                }
+                else {
+                    self.isDestroy = true;
+                    if (self.isInit) {
+                        destroy();
+                    }
+                    else {
+                        mb.log("未初始化故不销毁");
+                    }
+                }
+            };
+        }
+        return self;
+    }
+    exports.onceLife = onceLife;
 });

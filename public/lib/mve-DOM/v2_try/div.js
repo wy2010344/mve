@@ -1,7 +1,8 @@
 define(["require", "exports", "../../mve/index", "../DOM", "./util"], function (require, exports, index_1, DOM, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.divBuilder = function (getAllBuilder, allParse) {
+    exports.divBuilder = void 0;
+    var divBuilder = function (getAllBuilder, allParse) {
         return index_1.parseOf(function (me, child) {
             var element = document.createElement("div");
             if (child.id) {
@@ -48,4 +49,5 @@ define(["require", "exports", "../../mve/index", "../DOM", "./util"], function (
             };
         });
     };
+    exports.divBuilder = divBuilder;
 });

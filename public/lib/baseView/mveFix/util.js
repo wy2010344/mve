@@ -1,6 +1,7 @@
 define(["require", "exports", "../mve/index"], function (require, exports, index_1) {
     "use strict";
     exports.__esModule = true;
+    exports.BViewVirtualParam = exports.buildAbs = void 0;
     function buildAbs(me, e, child) {
         if (child.x) {
             index_1.parseUtil.bind(me, child.x, function (v) {
@@ -53,32 +54,4 @@ define(["require", "exports", "../mve/index"], function (require, exports, index
         return BViewVirtualParam;
     }());
     exports.BViewVirtualParam = BViewVirtualParam;
-    var BArrayVirtualParam = /** @class */ (function () {
-        function BArrayVirtualParam(pel) {
-            this.pel = pel;
-        }
-        BArrayVirtualParam.prototype.remove = function (e) {
-            var index = this.pel.indexOf(e);
-            if (index > -1) {
-                this.pel.removeAt(index);
-            }
-            else {
-                mb.log("remove失败");
-            }
-        };
-        BArrayVirtualParam.prototype.append = function (e, isMove) {
-            this.pel.push(e);
-        };
-        BArrayVirtualParam.prototype.insertBefore = function (e, old, isMove) {
-            var index = this.pel.indexOf(old);
-            if (index > -1) {
-                this.pel.insert(index, e);
-            }
-            else {
-                mb.log("insertBefore失败");
-            }
-        };
-        return BArrayVirtualParam;
-    }());
-    exports.BArrayVirtualParam = BArrayVirtualParam;
 });

@@ -24,6 +24,9 @@ define(["require", "exports"], function (require, exports) {
             scrollKeep.el.scrollLeft = scrollKeep.left;
         });
     }
+    function notEqual(a, b) {
+        return a != b || (typeof (b) != "string" && a != b + "");
+    }
     return {
         createElement: function (type) {
             return document.createElement(type);
@@ -71,39 +74,59 @@ define(["require", "exports"], function (require, exports) {
             }
         },
         attr: function (el, key, value) {
-            if (value == undefined) {
-                el.removeAttribute(key);
-            }
-            else {
-                el.setAttribute(key, value);
+            var attr = el.getAttribute(key);
+            if (notEqual(attr, value)) {
+                if (value == undefined) {
+                    el.removeAttribute(key);
+                }
+                else {
+                    el.setAttribute(key, value);
+                }
             }
         },
         style: function (el, key, value) {
             //IE下如果设置负值，会导致错误
             try {
-                el.style[key] = value;
+                if (notEqual(el.style[key], value)) {
+                    el.style[key] = value;
+                }
             }
             catch (e) {
                 mb.log(e);
             }
         },
         prop: function (el, key, value) {
-            el[key] = value;
+            if (notEqual(el[key], value)) {
+                el[key] = value;
+            }
         },
         action: function (el, key, value) {
-            mb.DOM.addEvent(el, key, value);
+            if (typeof (value) == "function") {
+                mb.DOM.addEvent(el, key, value);
+            }
+            else {
+                mb.DOM.addEvent(el, key, value.handler, value);
+            }
         },
         text: function (el, value) {
-            el.innerText = value;
+            if (notEqual(el.innerText, value)) {
+                el.innerText = value;
+            }
         },
         content: function (el, value) {
-            el.textContent = value;
+            if (notEqual(el.textContent, value)) {
+                el.textContent = value;
+            }
         },
         value: function (el, value) {
-            el.value = value;
+            if (notEqual(el.value, value)) {
+                el.value = value;
+            }
         },
         html: function (el, value) {
-            el.innerHTML = value;
+            if (notEqual(el.innerHTML, value)) {
+                el.innerHTML = value;
+            }
         }
     };
 });

@@ -9,36 +9,32 @@ define(["require", "exports", "../../lib/mve/util", "../../lib/mve-DOM/index", "
         }
         var vm = util_1.mve.arrayModelOf(vs);
         return {
-            init: function () { },
-            destroy: function () { },
-            element: {
-                type: "div",
-                children: [
-                    {
+            type: "div",
+            children: [
+                {
+                    type: "div",
+                    text: "文字"
+                },
+                modelChildren_1.modelChildren(vm, function (me, row, index) {
+                    return {
                         type: "div",
-                        text: "文字"
-                    },
-                    modelChildren_1.modelChildren(vm, function (me, row, index) {
-                        return {
-                            type: "div",
-                            children: [
-                                {
-                                    type: "div"
-                                },
-                                {
-                                    type: "button",
-                                    text: "删除" + row.a(),
-                                    action: {
-                                        click: function () {
-                                            vm.removeAt(index());
-                                        }
+                        children: [
+                            {
+                                type: "div"
+                            },
+                            {
+                                type: "button",
+                                text: "删除" + row.a(),
+                                action: {
+                                    click: function () {
+                                        vm.remove(index());
                                     }
                                 }
-                            ]
-                        };
-                    })
-                ]
-            }
+                            }
+                        ]
+                    };
+                })
+            ]
         };
     });
 });

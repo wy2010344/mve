@@ -1,7 +1,3 @@
-
-
-
-
 export type VirtualChildType<EO>= EO | VirtualChild<EO>
 
 export interface VirtualChildParam<EO>{

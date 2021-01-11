@@ -1,7 +1,17 @@
 define(["require", "exports", "../lib/mve/ifChildren"], function (require, exports, ifChildren_1) {
     "use strict";
     exports.__esModule = true;
+    exports.div = void 0;
     function div(p) {
+        var Test = /** @class */ (function () {
+            function Test() {
+            }
+            Test.prototype.toString = function () {
+                return "eafewf";
+            };
+            return Test;
+        }());
+        new Test().toString();
         /**
          * 化简分数
          * @param a

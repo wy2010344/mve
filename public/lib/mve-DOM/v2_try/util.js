@@ -1,6 +1,7 @@
 define(["require", "exports", "../DOM"], function (require, exports, DOM) {
     "use strict";
     exports.__esModule = true;
+    exports.DOMVirtualParam = void 0;
     var DOMVirtualParam = /** @class */ (function () {
         function DOMVirtualParam(pel) {
             this.pel = pel;

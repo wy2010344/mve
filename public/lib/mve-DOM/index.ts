@@ -1,10 +1,9 @@
 
 import DOM = require("./DOM")
-import { parseOf, parseUtil, ParseOfResult} from "../mve/index"
+import { parseOf,parseUtil} from "../mve/index"
 import { JOChildren } from "../mve/childrenBuilder"
-import { BuildResult } from "../mve/model"
 import { VirtualChildParam } from "../mve/virtualTreeChildren"
-import { mve } from "../mve/util"
+import { mve,BuildResult, EOParseResult, BuildResultList, onceLife } from "../mve/util"
 export class DOMVirtualParam implements VirtualChildParam<Node>{
 	constructor(
 		private pel:Node
@@ -31,38 +30,53 @@ export class DOMVirtualParam implements VirtualChildParam<Node>{
  * 对外放出去的，必须是严格的节点
  * 所以children必须只有一种类型？其它是外部的简化语法与兼容？
  */
-type StringValue=mve.TValue<string>
-type ItemValue=mve.TValue<string|number>
-type ItemMap={[key:string]:ItemValue}
-type PropMap={ [key: string]:mve.TValue<string|number|boolean>}
-type StringMap={[key:string]:StringValue}
-type ActionMap={[key: string]: ((e) => void)}
+export type StringValue=mve.TValue<string>
+export type ItemValue=mve.TValue<string|number|boolean>
+export type AttrMap={[key:string]:ItemValue}
+export type PropMap={ [key: string]:mve.TValue<string|number|boolean>}
+export type StyleMap={[key:string]:mve.TValue<string>}
+
+export type ActionHandler=(e) => void
+/**动作树 */
+export type ActionItem=ActionHandler | {
+	capture?:boolean
+	handler:ActionHandler
+}
+export function reDefineActionHandler(e:ActionItem,fun:(h:ActionHandler)=>ActionHandler){
+	if(e){
+		if(typeof(e)=="function"){
+			return fun(e)
+		}else{
+			e.handler=fun(e.handler)
+			return e
+		}
+	}
+}
+export type ActionMap={[key: string]: ActionItem}
 export interface PNJO{
 	type:string,
+	init?(v):void
+	destroy?(v):void
 	id?:(o:any)=>void;
 	cls?:StringValue;
 	text?: ItemValue;
 	value?: ItemValue;
-	attr?: ItemMap;
-	style?: StringMap;
+	attr?: AttrMap;
+	style?: StyleMap;
 	prop?:PropMap;
 	action?: ActionMap;
 	children?:JOChildren<NJO,Node>
 }
+/**所有子节点类型 */
 export type NJO=PNJO|string
 
 function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 	if(child.id){
 		child.id(el)
 	}
-	if(child.value){
-		parseUtil.bind(me,child.value,function(v){
-			DOM.value(el,v)
-		})
-	}
-	if(child.text){
-		parseUtil.bind(me,child.text,function(v){
-			DOM.content(el,v)
+	if(child.action){
+		mb.Object.forEach(child.action,function(v,k){
+			DOM.action(el,k,v)
 		})
 	}
 	if(child.style){
@@ -80,11 +94,29 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 			DOM.prop(el,k,v)
 		})
 	}
-	if(child.action){
-		mb.Object.forEach(child.action,function(v,k){
-			DOM.action(el,k,v)
+	//value必须在Attr后面才行，不然type=range等会无效
+	if(child.value != null){
+		parseUtil.bind(me,child.value,function(v){
+			DOM.value(el,v)
 		})
 	}
+	if(child.text != null){
+		parseUtil.bind(me,child.text,function(v){
+			DOM.content(el,v)
+		})
+	}
+	const ci:BuildResult={}
+	if(child.init){
+		ci.init=function(){
+			child.init(el)
+		}
+	}
+	if(child.destroy){
+		ci.destroy=function(){
+			child.destroy(el)
+		}
+	}
+	return ci
 }
 
 function buildChildren(
@@ -101,12 +133,21 @@ function buildChildren(
 		}
 	}
 }
-export const parseHTML:ParseOfResult<NJO,Node>=parseOf(function(me,child){
+
+function buildResult(element:HTMLElement,ci:BuildResult,childResult:BuildResult){
+	const out=BuildResultList.init()
+	out.orPush(childResult)
+	out.push(ci)
+	return onceLife({
+		element,
+		init:out.getInit(),
+		destroy:out.getDestroy()
+	}).out
+}
+export const parseHTML=parseOf<NJO,Node>(function(me,child){
 	if(typeof(child)=='string'){
 		return {
-			element:DOM.createTextNode(child),
-			init(){},
-			destroy(){}
+			element:DOM.createTextNode(child)
 		}
 	}else
 	if(child){
@@ -114,41 +155,18 @@ export const parseHTML:ParseOfResult<NJO,Node>=parseOf(function(me,child){
 			return parseSVG.view(me,child)
 		}else{
 			const element=DOM.createElement(child.type)
-			buildParam(me,element,child)
+			const ci=buildParam(me,element,child)
 			const childResult=buildChildren(me,element,child,parseHTML.children)
-			return{
-				element,
-				init(){
-					if(childResult){
-						childResult.init()
-					}
-				},
-				destroy(){
-					if(childResult){
-						childResult.destroy()
-					}
-				}
-			}
+			return buildResult(element,ci,childResult) as EOParseResult<Node>
 		}
 	}else{
 		mb.log(`child为空，不生成任何东西`)
 	}
 })
-export const parseSVG:ParseOfResult<PNJO,Node>=parseOf(function(me,child){
+export const parseSVG=parseOf<PNJO,Node>(function(me,child){
 	const element=DOM.createElementNS(child.type,"http://www.w3.org/2000/svg")
-	buildParam(me,element,child)
-	const childResult=buildChildren(me,element,child,parseSVG.children)
-	return {
-		element,
-		init(){
-			if(childResult){
-				childResult.init()
-			}
-		},
-		destroy(){
-			if(childResult){
-				childResult.destroy()
-			}
-		}
-	}
+	const ci=buildParam(me,element,child)
+	const childResult=buildChildren(me,element,child, child.type=="foreignObject"?parseHTML.children:parseSVG.children)
+	return buildResult(element,ci,childResult)
 })
+export const newline={type:"br"}
