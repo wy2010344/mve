@@ -26,6 +26,7 @@ declare namespace mb{
 	
 
 	namespace Array{
+		function toObject<T,V>(vs:BaseReadArray<T>,fun:(v:T,i:number)=>[string,V]):{[key:string]:V}
 		function getLast<T>(vs:BaseReadArray<T>):T
 		function forEach<T>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>void):void;
 		function map<T,V>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>V):V[];
@@ -53,20 +54,20 @@ declare namespace mb{
 		 * @param m 
 		 * @param other 
 		 */
-		function ember<T>(m:{[key:string]:T},other:{[key:string]:T}):{[key:string]:T};
+		function ember<T extends object>(m:T,other:T):T;
 		/**
 		 * 如果m中没有，则用other中的值去覆盖
 		 * @param m 
 		 * @param other 
 		 */
-		function orDefault<T>(m:{[key:string]:T},other:{[key:string]:T}):{[key:string]:T};
+		function orDefault<T extends object>(m:T,other:T):T
 		/**
 		 * 二者结合生成一个新的
 		 * @param m 
 		 * @param other 
 		 */
-		function combine<T>(m:{[key:string]:T},other:{[key:string]:T}):{[key:string]:T};
-		function size<T>(m:{[key:string]:T}):number
+		function combine<T extends object>(m:T,other:T):T
+		function size<T extends object>(m:T):number
 	}
 
 	namespace Date{
@@ -79,6 +80,35 @@ declare namespace mb{
 	namespace repeat{
 		function forEach(n:number,fun:(i:number)=>void):void
 		function map<T>(n:number,fun:(i:number)=>T):T[]
+	}
+	function cache<T>(v:T):(()=>T)|((v:T)=>void)
+	namespace task {
+		interface AsyncLoad<T>{
+			(notice:(v:T)=>void):void
+		}
+		function queue<T>(vs:BaseReadArray<AsyncLoad<T>>,notice:(vs:T[])=>void):void
+		interface TaskQueueParam {
+			array: any[]|null;
+			trans: (o:{
+				row:any,
+				index:number,
+				notice:(v?:any)=>void
+			}) => void|null;
+			success(o):void|null;
+		}
+		function queue(p: TaskQueueParam): void;
+
+		function all<T>(o:{[key:string]:AsyncLoad<T>},notice:(o:{[key:string]:T})=>void):void
+		interface TaskAllParam {
+			data: object|null,
+			trans?: (o:{
+				value:any,
+				key:string,
+				notice:(v?:any)=>void
+			}) => void|null;
+			success(o):void|null;
+		}
+		function all(p: TaskAllParam): void;
 	}
 }
 

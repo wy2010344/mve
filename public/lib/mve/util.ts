@@ -26,7 +26,19 @@ export namespace mve{
   /**只读形式*/
   export type GValue<T>=()=>T
   /**值或获得值*/
-  export type TValue<T>=T|GValue<T>
+	export type TValue<T>=T|GValue<T>
+	/**延迟设置具体属性值 */
+	export interface MDelaySet<T>{
+		after(v:T,set:(v:T)=>void):void
+		():T
+	}
+	export function delaySetAfter<T>(fun:()=>T,after:(v:T,set:(v:T)=>void)=>void):MDelaySet<T>{
+		const newFun=fun as MDelaySet<T>
+		newFun.after=after
+		return newFun
+	}
+	/**属性节点可以的类型 */
+	export type MTValue<T>=TValue<T>|MDelaySet<T>
   /**存储器 */
   export interface Value<T>{
     (v:T):void
@@ -55,7 +67,36 @@ export namespace mve{
     }else{
       return function(){return a}
     }
-  }
+	}
+	/**
+	 * 重写属性值为可观察
+	 * @param a 
+	 * @param fun 
+	 */
+	export function reWriteMTValue<T,V>(a:MTValue<T>,fun:(v:T)=>V){
+		if(typeof(a)=='function'){
+			const after=a['after']
+			const vm=function(){return fun((a as GValue<T>)())}
+			vm.after=after
+			return vm
+		}else{
+			if(a){
+				return function() {return fun(a)}
+			}
+		}
+	}
+	export function reWriteMTValueNoWatch<T,V>(a:MTValue<T>,fun:(v:T)=>V){
+		if(typeof(a)=='function'){
+			const after=a['after']
+			const vm=function(){return fun((a as GValue<T>)())}
+			vm.after=after
+			return vm
+		}else{
+			if(a){
+				return fun(a)
+			}
+		}
+	}
   export interface ArrayModelView<T>{
     insert(index:number,row:T):void
     remove(index:number):void

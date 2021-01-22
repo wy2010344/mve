@@ -4,51 +4,29 @@ declare function require(moduleNames: string[], onLoad: (...args: any[]) => void
 declare namespace mb {
 	const isIE:boolean;
 	function log(message?: any, ...optionParams: any[]):void;
-	
+
 	namespace util{
+		function decodeURI(str:string):string
+		function dicFromUrl(search:string):{[key:string]:string}
 		function urlFromDic(dic:{[key:string]:string|number|boolean},prefix?:string):string;
 		function calAbsolutePath(base_url:string,url:string):string;
 	}
-	namespace task {
-		interface TaskQueueParam {
-			array: any[]|null;
-			trans: (o:{
-				row:any,
-				index:number,
-				notice:(v?:any)=>void
-			}) => void|null;
-			success(o):void|null;
-		}
-		function queue(p: TaskQueueParam): void;
-
-		interface TaskAllParam {
-			data: object|null,
-			trans?: (o:{
-				value:any,
-				key:string,
-				notice:(v?:any)=>void
-			}) => void|null;
-			success(o):void|null;
-		}
-		function all(p: TaskAllParam): void;
-	}
-
 	namespace ajax {
+		type DataType="text"|"json"|"formdata"
 		function get(p:{
 			url:string,
 			data?:object,
-			dataType?:string,
+			dataType?:DataType,
 			operate?(xhr:XMLHttpRequest):void;
-			success(o:any):void
+			success(o:XMLHttpRequest):void
 		}): void;
 		function post(p:{
 			url:string,
 			data?:any,
-			dataType?:string,
+			dataType?:DataType,
 			operate?(xhr:XMLHttpRequest):void;
-			success(o:any):void
-			error?(e):void;
-		}): void;
+			success(o:XMLHttpRequest):void
+		}):void;
 		interface Require{
 			(url:string,fun:(object:any)=>void):void;
 			baseUrl:string;
@@ -66,8 +44,8 @@ declare namespace mb {
 		function addEvent(e: Node, name: string, fun: (e?: Event) => void,option?:{capture:boolean}|boolean): void;
 		function removeEvent(e: Node, name: string, fun:(e?: Event) => void,option?:{capture:boolean}|boolean): void;
 		function isMobile():boolean;
-		function stopPropagation(e:Event);
-		function preventDefault(e:Event);
+		function stopPropagation(e:Event):void;
+		function preventDefault(e:Event):void;
 		function scrollWidth():number;
 		function empty(e:Node):void;
 		function divTabAllow(e:MouseEvent):void;
@@ -76,6 +54,6 @@ declare namespace mb {
 	}
 
 	namespace browser{
-		const type:string;
+		const type:"IE"|"FF"|"Opera"|"Safari";
 	}
 }

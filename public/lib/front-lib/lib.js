@@ -19,120 +19,6 @@ mb.emptyFunc=function(item){
 	return item;
 };
 var emptyFunc=mb.emptyFunc;
-mb.cache=function(obj) {
-	return function() {
-		if(arguments.length==0){
-			return obj;
-		}else{
-			obj=arguments[0];
-		}
-	};
-};
-mb.task={
-	/**
-	 * 
-	 * 无顺序执行完
-	 * @param data
-	 * @param trans{
-	 * key,
-	 * value,
-	 * notice
-	 * }如果没有trans，data中的每一个就是带回调的函数
-	 * @param success
-	 */
-	all:function(p){
-		var success=p.success||mb.Function.as_null.one;
-		var data=p.data||{};
-		var trans=p.trans||function(xp){
-			xp.value(xp.notice);
-		};
-		
-		var count=0;
-		var tcount=0;
-		for(var k in data){
-			count++;
-		}
-		
-		var ret={};
-		if(count==0){
-			//空
-			success(ret);
-		}else{
-			//有
-			var notice=function(){
-				tcount++;
-				if(tcount==count){
-					success(ret);
-				}
-			};
-			mb.Object.forEach(data, function(v,k){
-				trans({
-					value:v,
-					key:k,
-					notice:function(back){
-						ret[k]=back;
-						notice();
-					}
-				});
-			});
-		}
-	},
-	/***
-	 * 有顺序执行完
-	 * @param array
-	 * @param trans{
-	 * row
-	 * index
-	 * notice
-	 * }
-	 * @param success
-	 */
-	queue:function(p){
-		var array=p.array||[];
-		var success=p.success||mb.Function.as_null.one;
-		var trans=p.trans||function(xp){
-			xp.row(xp.notice);
-		};
-		var ret=[];
-		var cache=[];
-		mb.Array.forEach(array, function(row){
-			cache.push(row);
-		});
-		var idx=0;
-		var load=function(){
-			//这种方法总是可行的
-			if(cache.length!=0){
-				trans({
-					row:cache.shift(),
-					index:idx,
-					notice:function(val){
-						ret.push(val);
-						idx++;
-						load();
-					}
-				});
-			}else{
-				//mb.log(array.length,idx,"成功");//竟然有1、0成功的
-				success(ret);
-			}
-			//为什么总是不行！
-			/*
-			if(idx<array.length){
-				var row=array[idx];
-				row(function(val){
-				   ret.push(val);
-				   load();
-				});
-				idx=idx+1;
-				mb.log("增加了",idx,row,"xx")
-			}else{
-				success(ret);
-			}
-			*/
-		};
-		load();
-	}
-};
 mb.ajax=(function(){
 	var getXHR=(function(){
 		if(window.XMLHttpRequest){
@@ -595,15 +481,15 @@ mb.util={
 		}
 		return search;
   },
-	dicFromUrl:function(uri){
-		var url = decodeURI(uri); //获取url中"?"符后的字串
-		var theRequest = new Object();
-		if (url.indexOf("?") != -1) {
-			var str = url.substr(1);
-			var strs = str.split("&");
-			for(var i = 0; i < strs.length; i ++) {
-				theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
-			}
+	dicFromUrl:function(search){
+		var url = mb.util.decodeURI(search);
+		var theRequest ={};
+		var idx=url.indexOf("?");
+		var str=idx<0 ? url:url.substr(idx);
+		var strs = str.split("&");
+		for(var i = 0; i < strs.length; i ++) {
+			var kv=strs[i].split("=");
+			theRequest[kv[0]]=unescape(kv[1]);
 		}
 		return theRequest; 
 	},    

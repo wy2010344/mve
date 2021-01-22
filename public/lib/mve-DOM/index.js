@@ -1,4 +1,4 @@
-define(["require", "exports", "./DOM", "../mve/index"], function (require, exports, DOM, index_1) {
+define(["require", "exports", "./DOM", "../mve/index", "../mve/util"], function (require, exports, DOM, index_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.newline = exports.parseSVG = exports.parseHTML = exports.reDefineActionHandler = exports.DOMVirtualParam = void 0;
@@ -49,39 +49,69 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
                 DOM.attr(el, k, v);
             });
         }
+        if (child.cls) {
+            index_1.parseUtil.bind(me, child.cls, function (v) {
+                DOM.attr(el, "class", v);
+            });
+        }
         if (child.prop) {
             index_1.parseUtil.bindKV(me, child.prop, function (k, v) {
                 DOM.prop(el, k, v);
             });
         }
-        //value必须在Attr后面才行，不然type=range等会无效
-        if (child.value != null) {
-            index_1.parseUtil.bind(me, child.value, function (v) {
-                DOM.value(el, v);
-            });
-        }
-        if (child.text != null) {
+        if (child.text) {
             index_1.parseUtil.bind(me, child.text, function (v) {
                 DOM.content(el, v);
+            });
+        }
+        var ci = {};
+        if (child.init) {
+            ci.init = function () {
+                child.init(el);
+            };
+        }
+        if (child.destroy) {
+            ci.destroy = function () {
+                child.destroy(el);
+            };
+        }
+        return ci;
+    }
+    function buildParamAfter(me, el, child) {
+        /**
+         * value必须在Attr后面才行，不然type=range等会无效
+         * select的value必须放在children后，不然会无效
+         */
+        if (child.value) {
+            index_1.parseUtil.bind(me, child.value, function (v) {
+                DOM.value(el, v);
             });
         }
     }
     function buildChildren(me, el, child, buildChildren) {
         if (child.children) {
             if (child.text) {
-                mb.log("已经有text了，不应该有children", child);
+                mb.log("text与children冲突");
             }
             else {
                 return buildChildren(me, new DOMVirtualParam(el), child.children);
             }
         }
     }
+    function buildResult(element, ci, childResult) {
+        var out = util_1.BuildResultList.init();
+        out.orPush(childResult);
+        out.push(ci);
+        return util_1.onceLife({
+            element: element,
+            init: out.getInit(),
+            destroy: out.getDestroy()
+        }).out;
+    }
     exports.parseHTML = index_1.parseOf(function (me, child) {
         if (typeof (child) == 'string') {
             return {
-                element: DOM.createTextNode(child),
-                init: function () { },
-                destroy: function () { }
+                element: DOM.createTextNode(child)
             };
         }
         else if (child) {
@@ -89,28 +119,11 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
                 return exports.parseSVG.view(me, child);
             }
             else {
-                var element_1 = DOM.createElement(child.type);
-                buildParam(me, element_1, child);
-                var childResult_1 = buildChildren(me, element_1, child, exports.parseHTML.children);
-                return {
-                    element: element_1,
-                    init: function () {
-                        if (childResult_1) {
-                            childResult_1.init();
-                        }
-                        if (child.init) {
-                            child.init(element_1);
-                        }
-                    },
-                    destroy: function () {
-                        if (child.destroy) {
-                            child.destroy(element_1);
-                        }
-                        if (childResult_1) {
-                            childResult_1.destroy();
-                        }
-                    }
-                };
+                var element = DOM.createElement(child.type);
+                var ci = buildParam(me, element, child);
+                var childResult = buildChildren(me, element, child, exports.parseHTML.children);
+                buildParamAfter(me, element, child);
+                return buildResult(element, ci, childResult);
             }
         }
         else {
@@ -119,27 +132,10 @@ define(["require", "exports", "./DOM", "../mve/index"], function (require, expor
     });
     exports.parseSVG = index_1.parseOf(function (me, child) {
         var element = DOM.createElementNS(child.type, "http://www.w3.org/2000/svg");
-        buildParam(me, element, child);
+        var ci = buildParam(me, element, child);
         var childResult = buildChildren(me, element, child, child.type == "foreignObject" ? exports.parseHTML.children : exports.parseSVG.children);
-        return {
-            element: element,
-            init: function () {
-                if (childResult) {
-                    childResult.init();
-                }
-                if (child.init) {
-                    child.init(element);
-                }
-            },
-            destroy: function () {
-                if (child.destroy) {
-                    child.destroy(element);
-                }
-                if (childResult) {
-                    childResult.destroy();
-                }
-            }
-        };
+        buildParamAfter(me, element, child);
+        return buildResult(element, ci, childResult);
     });
     exports.newline = { type: "br" };
 });
