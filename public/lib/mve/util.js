@@ -42,6 +42,12 @@ define(["require", "exports"], function (require, exports) {
     window[DEP_KEY] = Dep;
     var mve;
     (function (mve) {
+        function delaySetAfter(fun, after) {
+            var newFun = fun;
+            newFun.after = after;
+            return newFun;
+        }
+        mve.delaySetAfter = delaySetAfter;
         /**新存储器*/
         function valueOf(v) {
             var dep = new Dep();
@@ -71,6 +77,39 @@ define(["require", "exports"], function (require, exports) {
             }
         }
         mve.valueOrCall = valueOrCall;
+        /**
+         * 重写属性值为可观察
+         * @param a
+         * @param fun
+         */
+        function reWriteMTValue(a, fun) {
+            if (typeof (a) == 'function') {
+                var after = a['after'];
+                var vm = function () { return fun(a()); };
+                vm.after = after;
+                return vm;
+            }
+            else {
+                if (a) {
+                    return function () { return fun(a); };
+                }
+            }
+        }
+        mve.reWriteMTValue = reWriteMTValue;
+        function reWriteMTValueNoWatch(a, fun) {
+            if (typeof (a) == 'function') {
+                var after = a['after'];
+                var vm = function () { return fun(a()); };
+                vm.after = after;
+                return vm;
+            }
+            else {
+                if (a) {
+                    return fun(a);
+                }
+            }
+        }
+        mve.reWriteMTValueNoWatch = reWriteMTValueNoWatch;
         /**构造只读的模型*/
         var CacheArrayModel = /** @class */ (function () {
             function CacheArrayModel(size, array, views) {

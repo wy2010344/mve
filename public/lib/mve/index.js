@@ -5,9 +5,14 @@ define(["require", "exports", "./util", "./childrenBuilder", "./singleModel"], f
     exports.parseUtil = {
         bind: function (me, value, fun) {
             if (typeof (value) == 'function') {
-                me.WatchAfter(function () {
-                    return value();
-                }, fun);
+                if ('after' in value && value.after) {
+                    me.WatchAfter(value, function (v) {
+                        value.after(v, fun);
+                    });
+                }
+                else {
+                    me.WatchAfter(value, fun);
+                }
             }
             else {
                 fun(value);

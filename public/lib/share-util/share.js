@@ -55,7 +55,7 @@ mb._promise_=function(){
 		}
 	};
 	Promise.prototype.then=function(onSuccess,onFail){
-		const that=this;
+		var that=this;
 		return new Promise(function(resolve,reject){
 			return that.attachHandler({
 				onSuccess:onSuccess?function(result){
@@ -169,6 +169,14 @@ mb.Array={
 			return mb.Function.as_null.one;
 		}
 	})(),
+	toObject:function(vs,fun){
+		var o={};
+		mb.Array.forEach(vs,function(v,i){
+			var kv=fun(v,i);
+			o[kv[0]]=kv[1]
+		});
+		return o;
+	},
 	getLast:function(array){
 		return array.get(array.size()-1)
 	},
@@ -372,21 +380,134 @@ mb.Date={
 };
 
 mb.repeat={
-	forEach(n,fun){
+	forEach:function(n,fun){
 		for(var i=0;i<n;i++){
 			fun(i);
 		}
 	},
-	map(n,fun){
+	map:function(n,fun){
 		var vs=[]
 		for(var i=0;i<n;i++){
 			vs.push(fun(i))
 		}
 		return vs;
 	}
-}
+};
 
-
+mb.cache=function(obj) {
+	return function() {
+		if(arguments.length==0){
+			return obj;
+		}else{
+			obj=arguments[0];
+		}
+	};
+};
+mb.task={
+	/**
+	 * 
+	 * 无顺序执行完
+	 * @param data
+	 * @param trans{
+	 * key,
+	 * value,
+	 * notice
+	 * }如果没有trans，data中的每一个就是带回调的函数
+	 * @param success
+	 */
+	all:function(p){
+		if(arguments.length==1){
+			var data=p.data||{};
+			var success=p.success||mb.Function.as_null.one;
+			var trans=p.trans||function(xp){
+				xp.value(xp.notice);
+			};
+		}else
+		if(arguments.length==2){
+			var data=arguments[0]||{};
+			var success=arguments[1]||mb.Function.as_null.one;
+			var trans=function(xp){
+				xp.value(xp.notice);
+			};
+		}else{
+			throw "需要1或2个参数"
+		}
+		var count=0;
+		var tcount=0;
+		for(var k in data){
+			count++;
+		}
+		var ret={};
+		if(count==0){
+			//空
+			success(ret);
+		}else{
+			//有
+			var notice=function(){
+				tcount++;
+				if(tcount==count){
+					success(ret);
+				}
+			};
+			mb.Object.forEach(data, function(v,k){
+				trans({
+					value:v,
+					key:k,
+					notice:function(back){
+						ret[k]=back;
+						notice();
+					}
+				});
+			});
+		}
+	},
+	/***
+	 * 有顺序执行完
+	 * @param array
+	 * @param trans{
+	 * row
+	 * index
+	 * notice
+	 * }
+	 * @param success
+	 */
+	queue:function(p){
+		if(arguments.length==1){
+			var array=p.array||[];
+			var success=p.success||mb.Function.as_null.one;
+			var trans=p.trans||function(xp){
+				xp.row(xp.notice);
+			};
+		}else if(arguments.length==2){
+			var array=arguments[0]
+			var success=arguments[1]||mb.Function.as_null.one;
+			var trans=function(xp){
+				xp.row(xp.notice);
+			};
+		}else{
+			throw "需要1或2个参数"
+		}
+		var ret=[];
+		var idx=0;
+		var size=array.size();
+		var load=function(){
+			if(idx<size){
+				trans({
+					row:array.get(idx),
+					index:idx,
+					notice:function(val){
+						ret.push(val);
+						idx=idx+1;
+						load();
+					}
+				});
+			}else{
+				success(ret);
+			}
+		}
+		load();
+	}
+};
 if(!String.prototype.trim){
 	String.prototype.trim=function(){  
       return this.replace(/(^\s*)|(\s*$)/g, "");  
