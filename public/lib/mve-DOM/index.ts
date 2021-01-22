@@ -30,11 +30,11 @@ export class DOMVirtualParam implements VirtualChildParam<Node>{
  * 对外放出去的，必须是严格的节点
  * 所以children必须只有一种类型？其它是外部的简化语法与兼容？
  */
-export type StringValue=mve.TValue<string>
-export type ItemValue=mve.TValue<string|number|boolean>
+export type StringValue=mve.MTValue<string>
+export type ItemValue=mve.MTValue<string|number|boolean>
 export type AttrMap={[key:string]:ItemValue}
-export type PropMap={ [key: string]:mve.TValue<string|number|boolean>}
-export type StyleMap={[key:string]:mve.TValue<string>}
+export type PropMap={ [key: string]:mve.MTValue<string|number|boolean>}
+export type StyleMap={[key:string]:mve.MTValue<string>}
 
 export type ActionHandler=(e) => void
 /**动作树 */
@@ -54,18 +54,18 @@ export function reDefineActionHandler(e:ActionItem,fun:(h:ActionHandler)=>Action
 }
 export type ActionMap={[key: string]: ActionItem}
 export interface PNJO{
-	type:string,
+	type:string
 	init?(v):void
 	destroy?(v):void
-	id?:(o:any)=>void;
-	cls?:StringValue;
-	text?: ItemValue;
-	value?: ItemValue;
-	attr?: AttrMap;
-	style?: StyleMap;
-	prop?:PropMap;
-	action?: ActionMap;
+	id?:(o:any)=>void
+	cls?:StringValue
+	text?: ItemValue
+	attr?: AttrMap
+	style?: StyleMap
+	prop?:PropMap
+	action?: ActionMap
 	children?:JOChildren<NJO,Node>
+	value?: ItemValue
 }
 /**所有子节点类型 */
 export type NJO=PNJO|string
@@ -89,18 +89,17 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 			DOM.attr(el,k,v)
 		})
 	}
+	if(child.cls){
+		parseUtil.bind(me,child.cls,function(v){
+			DOM.attr(el,"class",v)
+		})
+	}
 	if(child.prop){
 		parseUtil.bindKV(me,child.prop,function(k,v){
 			DOM.prop(el,k,v)
 		})
 	}
-	//value必须在Attr后面才行，不然type=range等会无效
-	if(child.value != null){
-		parseUtil.bind(me,child.value,function(v){
-			DOM.value(el,v)
-		})
-	}
-	if(child.text != null){
+	if(child.text){
 		parseUtil.bind(me,child.text,function(v){
 			DOM.content(el,v)
 		})
@@ -118,7 +117,17 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 	}
 	return ci
 }
-
+function buildParamAfter(me:mve.LifeModel,el:Node,child:PNJO){
+	/**
+	 * value必须在Attr后面才行，不然type=range等会无效
+	 * select的value必须放在children后，不然会无效
+	 */
+	if(child.value){
+		parseUtil.bind(me,child.value,function(v){
+			DOM.value(el,v)
+		})
+	}
+}
 function buildChildren(
 	me:mve.LifeModel,
 	el:Node,
@@ -127,7 +136,7 @@ function buildChildren(
 ){
 	if(child.children){
 		if(child.text){
-			mb.log("已经有text了，不应该有children",child)
+			mb.log("text与children冲突")
 		}else{
 			return buildChildren(me,new DOMVirtualParam(el),child.children)
 		}
@@ -157,6 +166,7 @@ export const parseHTML=parseOf<NJO,Node>(function(me,child){
 			const element=DOM.createElement(child.type)
 			const ci=buildParam(me,element,child)
 			const childResult=buildChildren(me,element,child,parseHTML.children)
+			buildParamAfter(me,element,child)
 			return buildResult(element,ci,childResult) as EOParseResult<Node>
 		}
 	}else{
@@ -167,6 +177,7 @@ export const parseSVG=parseOf<PNJO,Node>(function(me,child){
 	const element=DOM.createElementNS(child.type,"http://www.w3.org/2000/svg")
 	const ci=buildParam(me,element,child)
 	const childResult=buildChildren(me,element,child, child.type=="foreignObject"?parseHTML.children:parseSVG.children)
+	buildParamAfter(me,element,child)
 	return buildResult(element,ci,childResult)
 })
 export const newline={type:"br"}

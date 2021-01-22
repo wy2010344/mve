@@ -13,7 +13,7 @@ export interface MSetItem{
   equalsWhenNotSame(right:MSetType):boolean
 }
 /**两个集合对象是否相同*/
-export function isSetItemEqual(a:MSetType,b:MSetType){
+export function isSetItemEqual(a:MSetType,b:MSetType):boolean{
   if(a==b){
     return true
   }else{
@@ -35,7 +35,7 @@ export function isSetItemEqual(a:MSetType,b:MSetType){
   return false
 }
 /**两个列表是否匹配*/
-export function isSetListEqual(as:MSetType[],bs:MSetType){
+export function isSetListEqual(as:MSetType[],bs:MSetType):boolean{
 	if(mb.Array.isArray(bs)){
 		if(as.length==bs.length){
 			let r=true

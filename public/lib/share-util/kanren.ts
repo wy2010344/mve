@@ -25,14 +25,14 @@ export type Subsitution<V> = null | NotNullSubsitution<V>
  */
 type DelayStream<V>=()=>Stream<V>
 export type Stream<V> = null | Pair<V,DelayStream<V>>
-export const emptyDelayStream=()=>null
+export const emptyDelayStream:DelayStream<any>=()=>null
 /**
  * 增加世界线b
  * 在a流查找后（包括a的所有后继），在b的流继续查找
  * @param a 
  * @param b 
  */
-export function streamAppendStream<V>(a:Stream<V>,b:()=>Stream<V>):Stream<V>{
+export function streamAppendStream<V>(a:Stream<V>,b:DelayStream<V>):Stream<V>{
 	if(a==null){
 		return b()
 	}else{
@@ -47,7 +47,7 @@ export function streamAppendStream<V>(a:Stream<V>,b:()=>Stream<V>):Stream<V>{
  * @param a 
  * @param b 
  */
-export function streamInterleaveStream<V>(a:Stream<V>,b:()=>Stream<V>):Stream<V>{
+export function streamInterleaveStream<V>(a:Stream<V>,b:DelayStream<V>):Stream<V>{
 	if(a==null){
 		return b()
 	}else{
@@ -78,7 +78,7 @@ export type Goal<V>=(sub?:Subsitution<V>)=>Stream<Subsitution<V>>
  * @param a 
  * @param b 
  */
-export function streamBindGoal<K,V>(a:Stream<Subsitution<Pair<K,V>>>,b:Goal<Pair<K,V>>):Stream<Subsitution<Pair<K,V>>>{
+export function streamBindGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<Subsitution<V>>{
 	if(a==null){
 		return null
 	}else{
@@ -93,7 +93,7 @@ export function streamBindGoal<K,V>(a:Stream<Subsitution<Pair<K,V>>>,b:Goal<Pai
  * @param a 
  * @param b 
  */
-export function streamBindiGoal<K,V>(a:Stream<Subsitution<Pair<K,V>>>,b:Goal<Pair<K,V>>):Stream<Subsitution<Pair<K,V>>>{
+export function streamBindiGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<Subsitution<V>>{
 	if(a==null){
 		return null
 	}else{
@@ -162,7 +162,7 @@ export function walk(v:KBaseType,sub:KSubsitution):KBaseType{
  * @param b 
  * @param sub 
  */
-function unify(a:KBaseType,b:KBaseType,sub:KSubsitution):[boolean,KSubsitution]{
+export function unify(a:KBaseType,b:KBaseType,sub:KSubsitution):[boolean,KSubsitution]{
   a=walk(a,sub)
   b=walk(b,sub)
 
@@ -194,6 +194,29 @@ function unify(a:KBaseType,b:KBaseType,sub:KSubsitution):[boolean,KSubsitution]
 }
 export type KStream=Stream<KSubsitution>
 export type KGoal=Goal<KKVPair>
+
+function check(fun:(v:KBaseType)=>boolean){
+	return function(v:KBaseType):KGoal{
+		return function(sub){
+			if(fun(v)){
+				return kanren.success(sub)
+			}else{
+				return kanren.fail(sub)
+			}
+		}
+	}
+}
+function toArray(term:KBaseType):[KBaseType[],KBaseType]{
+	if(term instanceof Pair){
+		const first=term.left
+		const vm=toArray(term.right)
+		vm[0].unshift(first)
+		return vm
+	}else{
+		return [[],term]
+	}
+}
+
 export const kanren={
   fresh(){
     return new KVar()
@@ -214,24 +237,10 @@ export const kanren={
     }
     return ret
   },
-	isVar(v:KBaseType):KGoal{
-		return function(sub){
-			if(v instanceof KVar){
-				return kanren.success(sub)
-			}else{
-				return kanren.fail(sub)
-			}
-		}
-	},
-	notVar(v:KBaseType):KGoal{
-		return function(sub){
-			if(v instanceof KVar){
-				return kanren.fail(sub)
-			}else{
-				return kanren.success(sub)
-			}
-		}
-	},
+	toArray,
+	check,
+	isVar:check(v=>v instanceof KVar),
+	notVar:check(v=>!(v instanceof KVar)),
 	/**
 	 * 叶子节点的世界线。
 	 * 如果合一成功，则添加定义，返回一条世界线。

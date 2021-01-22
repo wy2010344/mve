@@ -185,6 +185,29 @@ define(["require", "exports"], function (require, exports) {
         //默认返回失败
         return [false, null];
     }
+    function check(fun) {
+        return function (v) {
+            return function (sub) {
+                if (fun(v)) {
+                    return exports.kanren.success(sub);
+                }
+                else {
+                    return exports.kanren.fail(sub);
+                }
+            };
+        };
+    }
+    function toArray(term) {
+        if (term instanceof Pair) {
+            var first = term.left;
+            var vm = toArray(term.right);
+            vm[0].unshift(first);
+            return vm;
+        }
+        else {
+            return [[], term];
+        }
+    }
     exports.kanren = {
         fresh: function () {
             return new KVar();
@@ -204,31 +227,15 @@ define(["require", "exports"], function (require, exports) {
                 args[_i] = arguments[_i];
             }
             var ret = null;
-            for (var i = args.length; i > 0; i--) {
-                ret = Pair.of(args[i - 1], ret);
+            for (var i = args.length - 1; i > -1; i--) {
+                ret = Pair.of(args[i], ret);
             }
             return ret;
         },
-        isVar: function (v) {
-            return function (sub) {
-                if (v instanceof KVar) {
-                    return exports.kanren.success(sub);
-                }
-                else {
-                    return exports.kanren.fail(sub);
-                }
-            };
-        },
-        notVar: function (v) {
-            return function (sub) {
-                if (v instanceof KVar) {
-                    return exports.kanren.fail(sub);
-                }
-                else {
-                    return exports.kanren.success(sub);
-                }
-            };
-        },
+        toArray: toArray,
+        check: check,
+        isVar: check(function (v) { return v instanceof KVar; }),
+        notVar: check(function (v) { return !(v instanceof KVar); }),
         /**
          * 叶子节点的世界线。
          * 如果合一成功，则添加定义，返回一条世界线。

@@ -3,19 +3,20 @@ import { mve,EOParseResult, BuildResult, orRun } from "./util"
 import { childrenBuilder, JOChildren } from "./childrenBuilder"
 import { singleBuilder, SingleParam } from "./singleModel"
 export const parseUtil={
-  bind<T>(me:mve.LifeModel,value:mve.TValue<T>,fun:(v:T)=>void){
+  bind<T>(me:mve.LifeModel,value:mve.MTValue<T>,fun:(v:T)=>void){
     if(typeof(value)=='function'){
-      me.WatchAfter(
-        function(){
-          return (value as any)()
-        },
-        fun
-      )
+			if('after' in value && value.after){
+				me.WatchAfter(value as mve.GValue<T>,function(v) {
+					value.after(v,fun)
+				})
+			}else{
+				me.WatchAfter(value as mve.GValue<T>,fun)
+			}
     }else{
       fun(value)
     }
   },
-  bindKV<T>(me:mve.LifeModel,map:{ [key: string]: mve.TValue<T>},fun:(k:string,v:T)=>void){
+  bindKV<T>(me:mve.LifeModel,map:{ [key: string]: mve.MTValue<T>},fun:(k:string,v:T)=>void){
     mb.Object.forEach(map,function(v,k){
       parseUtil.bind(me,v,function(value){
         fun(k,value)
