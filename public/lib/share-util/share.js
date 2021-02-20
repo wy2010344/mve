@@ -345,6 +345,9 @@ mb.Object={
 			i++;
 		}
 		return i;
+	},
+	reDefine:function(v,fun){
+		return fun(v);
 	}
 };
 

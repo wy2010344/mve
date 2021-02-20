@@ -1,4 +1,111 @@
 # mve
+
+mve的核心是vue的单线程依赖统计，使用纯javascript(目前已经全用TypeScript重写，并未开启严格类型，只渐进性地使用TypeScript)。
+
+特点：无组件。不显式定义组件，纯js函数与数据结构构成。DOM片段是自组装的嵌套Object树。不增加js/ts本身的概念。（这是数次自迭代的研究结果）。
+
+mve或vue的mvvm特点，尽可能做到了DOM树的复用。且内部操作DOM属性的根本方法，会比较所赋值与原始值，若相同则不会触发对DOM的操作。
+
+核心代码：
+
+public\lib\mve	mve的内核核心
+
+public\lib\mve-DOM	mve在DOM上的实现
+
+public\lib\share-util 自己积累的一些js基础方法。基础依赖1
+
+public\lib\front-lib 自己实现的一些与浏览器相关的js基础方法。基础依赖2
+
+本来是自己定义的一种模块方法。但可以拷贝到相应的目录下实现工作。我的目录方式一般是
+```
+index.html
+lib\
+	mve
+	mve-DOM
+	share-util
+	front-lib
+index\
+	....
+```
+
+index.html依赖了share-util\share.js和front-lib\lib.js
+定义了函数
+```js
+window.load_success=function(){
+	var cp={
+		version:new Date(),
+		baseUrl:".",
+		query:mb.util.dicFromUrl(window.location.search)
+	}
+	if(!cp.query.act){
+		cp.query.act="index"
+	}
+	mb.ajax.require.cp=cp;
+	mb.ajax.require(cp.baseUrl()+"/index/"+cp.query.act+".js",function(notice){
+		var body=document.body
+		var mve=notice.mve
+		body.appendChild(mve.element)
+		if(mve.init){
+			mve.init()
+		}
+		if(mve.destroy){
+			mb.DOM.addEvent(window,"unload",mve.destroy)
+		}
+		if(notice.resize){
+			var outResize=notice.resize
+			function resize(){
+				var w=body.clientWidth
+				var h=body.clientHeight
+				outResize({width:w,height:h})
+			}
+			mb.DOM.addEvent(window,"resize",resize)
+			resize()
+		}
+	});
+}
+```
+因为使用的typescript是生成的AMD模块，而加载AMD是自己用ajax实现的一套系统，所以有一定的预处理。AMD的优点：项目超大时不需要再考虑分割代码，虽然首屏可能加载很多，但可以通过一定处理将首屏的代码打包只加载一次。缺点：加密？全局的window.load_success，是在mb.js加载完成后才执行。mb.js依赖share.js。
+
+这里使用查询参数中的act动态定位一个页面。实际使用中可以根据情况调整。暴露到页面的生命周期可能有init\destroy，element即是渲染而成的元素。这里还使用了一个resize，从全局获得浏览器尺寸。这个根本对外暴露的节点是通过parseHTML.mve函数生成的，parseHTML.mve的唯一入参函数就是自定义代码的内容。可以根据实际需要局部使用mve。
+
+parseHTML.mve的类型是
+```ts 
+(fun:(me:mve.LifeModel)=>JO):EOParseResult<EO>
+```
+其中JO代码自定义的DOM片段，EO代表生成的HTML元素。
+
+mve.LifeModel是将类似于mve中的watch，cache作为函数暴露出来。
+
+在public\lib\mve-DOM\index.ts里定义了mve使用的DOM元素模型，NJO=PNJO|string。其中PNJO的类型为
+```ts
+export type StringValue=mve.MTValue<string>
+export type ItemValue=mve.MTValue<string|number|boolean>
+export type AttrMap={[key:string]:ItemValue}
+export type PropMap={ [key: string]:mve.MTValue<string|number|boolean>}
+export type StyleMap={[key:string]:mve.MTValue<string>}
+export interface PNJO{
+	type:string
+	init?(v):void
+	destroy?(v):void
+	id?:(o:any)=>void
+	cls?:StringValue
+	text?: ItemValue
+	attr?: AttrMap
+	style?: StyleMap
+	prop?:PropMap
+	action?: ActionMap
+	children?:JOChildren<NJO,Node>
+	value?: ItemValue
+}
+```
+总之，可变属性，就是属性节点可以是一个值，可以是一个函数。具体详见代码，并不多。
+
+从实例入手了解mve：
+
+
+---
+#旧介绍
+
 以vue单线程依赖统计为核心的一个类vue框架，更准确说是函数，用纯javascript实现而无xml/css依赖，基于自己做的简单的mb.ajax.require，附带简单的JavaScript上S-Lisp实现及简单的mve的S-Lisp版本
 
 

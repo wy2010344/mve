@@ -448,7 +448,7 @@ mb.ajax=(function(){
 					url=mb.util.calAbsolutePath(current_url,url);
 				}else{
 					//baseUrl的本质是，定位html页面与js仓库的相对路径。多html页面，不一定在同一个地方
-					url=mb.ajax.require.cp.baseUrl()+url;
+					url=mb.ajax.require.cp.baseUrl+url;
 					if(url.startsWith("./")){
 						url=url.slice(2);
 					}

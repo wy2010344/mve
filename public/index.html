@@ -23,21 +23,23 @@
         window.load_success=function(){
           var cp={
             version:new Date(),
-            baseUrl:function(){
-                return "."
-            },
+            baseUrl:".",
             query:mb.util.dicFromUrl(window.location.search)
           }
           if(!cp.query.act){
             cp.query.act="index"
           }
           mb.ajax.require.cp=cp;
-          mb.ajax.require(cp.baseUrl()+"/index/"+cp.query.act+".js",function(notice){
+          mb.ajax.require(cp.baseUrl+"/index/"+cp.query.act+".js",function(notice){
 						var body=document.body
 						var mve=notice.mve
-            body.appendChild(mve.element)
-            mve.init()
-            mb.DOM.addEvent(window,"unload",mve.destroy)
+						body.appendChild(mve.element)
+						if(mve.init){
+							mve.init()
+						}
+						if(mve.destroy){
+							mb.DOM.addEvent(window,"unload",mve.destroy)
+						}
             if(notice.resize){
               var outResize=notice.resize
               function resize(){

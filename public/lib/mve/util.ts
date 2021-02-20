@@ -61,6 +61,10 @@ export namespace mve{
       }
     }
   }
+	/**
+	 * 转化成统一的函数
+	 * @param a 
+	 */
   export function valueOrCall<T>(a:TValue<T>):mve.GValue<T>{
     if(typeof(a)=='function'){
       return a as mve.GValue<T>
@@ -73,29 +77,11 @@ export namespace mve{
 	 * @param a 
 	 * @param fun 
 	 */
-	export function reWriteMTValue<T,V>(a:MTValue<T>,fun:(v:T)=>V){
-		if(typeof(a)=='function'){
-			const after=a['after']
-			const vm=function(){return fun((a as GValue<T>)())}
-			vm.after=after
-			return vm
-		}else{
-			if(a){
-				return function() {return fun(a)}
-			}
-		}
-	}
-	export function reWriteMTValueNoWatch<T,V>(a:MTValue<T>,fun:(v:T)=>V){
-		if(typeof(a)=='function'){
-			const after=a['after']
-			const vm=function(){return fun((a as GValue<T>)())}
-			vm.after=after
-			return vm
-		}else{
-			if(a){
-				return fun(a)
-			}
-		}
+	export function reWriteMTValue<T,V>(a:MDelaySet<T>|GValue<T>,fun:(v:T)=>V){
+		const after=a['after']
+		const vm=function(){return fun(a())}
+		vm.after=after
+		return vm
 	}
   export interface ArrayModelView<T>{
     insert(index:number,row:T):void

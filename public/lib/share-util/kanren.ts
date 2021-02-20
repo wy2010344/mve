@@ -106,7 +106,7 @@ export function streamBindiGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<S
 /**变量 */
 export class KVar{
 	static UID = 0
-	constructor(public readonly flag:string=`${KVar.UID++}`){}
+	constructor(public readonly flag:string=`_${KVar.UID++}`){}
 	toString(){
 		return `Var(${this.flag})`
 	}
