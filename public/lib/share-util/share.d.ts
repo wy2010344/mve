@@ -68,6 +68,12 @@ declare namespace mb{
 		 */
 		function combine<T extends object>(m:T,other:T):T
 		function size<T extends object>(m:T):number
+		/**
+		 * 某属性的重定义，形成闭包引用
+		 * @param v 
+		 * @param fun 
+		 */
+		function reDefine<V,T>(v:V,fun:(v:V)=>T):T
 	}
 
 	namespace Date{

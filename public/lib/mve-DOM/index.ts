@@ -42,17 +42,22 @@ export type ActionItem=ActionHandler | {
 	capture?:boolean
 	handler:ActionHandler
 }
-export function reDefineActionHandler(e:ActionItem,fun:(h:ActionHandler)=>ActionHandler){
-	if(e){
-		if(typeof(e)=="function"){
-			return fun(e)
-		}else{
-			e.handler=fun(e.handler)
-			return e
-		}
+export type ActionMap={[key: string]: ActionItem | ActionItem[]}
+/**
+ * 重新定义动作
+ * @param v 
+ * @param fun 
+ */
+export function reWriteAction(v:ActionItem | ActionItem[] | null,fun:(vs:ActionItem[])=>ActionItem[]){
+	if(mb.Array.isArray(v)){
+		return fun(v)
+	}else
+	if(v){
+		return fun([v])
+	}else{
+		return fun([])
 	}
 }
-export type ActionMap={[key: string]: ActionItem}
 export interface PNJO{
 	type:string
 	init?(v):void
@@ -76,7 +81,13 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 	}
 	if(child.action){
 		mb.Object.forEach(child.action,function(v,k){
-			DOM.action(el,k,v)
+			if(mb.Array.isArray(v)){
+				mb.Array.forEach(v,function(v){
+					DOM.action(el,k,v)
+				})
+			}else{
+				DOM.action(el,k,v)
+			}
 		})
 	}
 	if(child.style){
