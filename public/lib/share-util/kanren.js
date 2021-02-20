@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    exports.kanren = exports.walk = exports.KVar = exports.streamBindiGoal = exports.streamBindGoal = exports.extendSubsitution = exports.streamInterleaveStream = exports.streamAppendStream = exports.emptyDelayStream = exports.Pair = void 0;
+    exports.kanren = exports.unify = exports.walk = exports.KVar = exports.streamBindiGoal = exports.streamBindGoal = exports.extendSubsitution = exports.streamInterleaveStream = exports.streamAppendStream = exports.emptyDelayStream = exports.Pair = void 0;
     var Pair = /** @class */ (function () {
         function Pair(left, right) {
             this.left = left;
@@ -101,7 +101,7 @@ define(["require", "exports"], function (require, exports) {
     /**变量 */
     var KVar = /** @class */ (function () {
         function KVar(flag) {
-            if (flag === void 0) { flag = "" + KVar.UID++; }
+            if (flag === void 0) { flag = "_" + KVar.UID++; }
             this.flag = flag;
         }
         KVar.prototype.toString = function () {
@@ -185,6 +185,7 @@ define(["require", "exports"], function (require, exports) {
         //默认返回失败
         return [false, null];
     }
+    exports.unify = unify;
     function check(fun) {
         return function (v) {
             return function (sub) {

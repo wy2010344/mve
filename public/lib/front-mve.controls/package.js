@@ -1,8 +1,7 @@
 (function(){
-
 	return {
 		dependences:{
-			"front-mve.controls":1,
+			"mve-DOM":1
 		}
-	}
+	};
 })()
