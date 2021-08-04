@@ -21,10 +21,65 @@ function diff(isX:boolean,e:MouseEvent,old_e:MouseEvent){
   }
 }
 
+export function dragMoveUtil(p:{
+	border?:Node
+	down?(e:MouseEvent):void
+	move(e:MouseEvent):void
+	up?(e:MouseEvent):void
+	leave?(e:MouseEvent):void
+}){
+	let isMove=false
+	function move(e:MouseEvent){
+		if(isMove){
+			p.move(e)
+		}
+	}
+	function up(e:MouseEvent){
+		canSelect()
+		if(p.up){
+			e=(e||window.event) as MouseEvent
+			p.up(e)
+		}
+		destroy()
+	}
+	function leave(e:MouseEvent){
+		canSelect()
+		if(p.leave){
+			e=(e||window.event) as MouseEvent
+			p.leave(e)
+		}
+		destroy()
+	}
+	let div=p.border
+	function init(){
+		isMove=true
+		mb.DOM.addEvent(div,"mousemove",move);
+		mb.DOM.addEvent(div,"mouseup",up);
+		mb.DOM.addEvent(div,"mouseleave",leave);
+	}
+	function destroy(){
+		isMove=false
+		mb.DOM.removeEvent(div,"mousemove",move);
+		mb.DOM.removeEvent(div,"mouseup",up);
+		mb.DOM.removeEvent(div,"mouseleave",leave);
+	}
+	return function(e:MouseEvent){
+		stopSelect()
+		e=(e||window.event) as MouseEvent
+		if(!div){
+			div=e.target as Node
+		}
+		if(p.down){
+			p.down(e)
+		}
+		init()
+	}
+}
 export interface DragMoveHelperParam{
   border?:Node
+	init?(e:MouseEvent):void
   allow?():boolean
-	diff?(v:{x:number,y:number}):void
+	diff?(v:{x:number,y:number,e:MouseEvent}):void
 	diffX?(x:number):void
 	diffY?(y:number):void
   cancel?(e:MouseEvent):void
@@ -35,13 +90,11 @@ export interface DragMoveHelperParam{
  */
 export function dragMoveHelper(p:DragMoveHelperParam){
   let laste;
-  let move=false;
 	const allow=p.allow||function(){return true};
-	
-	const diffPool:((x:number,y:number)=>void)[]=[]
+	const diffPool:((x:number,y:number,e:MouseEvent)=>void)[]=[]
 	if(p.diff){
-		diffPool.push(function(x,y){
-			p.diff({x,y})
+		diffPool.push(function(x,y,e){
+			p.diff({x,y,e})
 		})
 	}
 	if(p.diffX){
@@ -58,49 +111,43 @@ export function dragMoveHelper(p:DragMoveHelperParam){
 			}
 		})
 	}
-  const m={
-    move(e){
-      if(allow()){
-        if(move){
-					e=e||window.Event;
-					const x=e.clientX-laste.clientX
-					const y=e.clientY-laste.clientY
-					for(let diff of diffPool){
-						diff(x,y)
-					}
-          laste=e;
-					mb.DOM.stopPropagation(e);
-        }
-      }
-    },
-    cancel(e){
-			move=false;
-			destroy()
-      canSelect();
-      if(p.cancel){
-        p.cancel(e)
-      }
-    }
-  }
-	const border=p.border||document;
-	function init(){
-		mb.DOM.addEvent(border,"mousemove",m.move);
-		mb.DOM.addEvent(border,"mouseup",m.cancel);
-		mb.DOM.addEvent(border,"mouseleave",m.cancel);
+	function cancel(e:MouseEvent){
+		e=(e||window.event) as MouseEvent
+		if(p.cancel){
+			p.cancel(e)
+		}
+		mb.DOM.preventDefault(e)
+		mb.DOM.stopPropagation(e)
 	}
-	function destroy(){
-		mb.DOM.removeEvent(border,"mousemove",m.move);
-		mb.DOM.removeEvent(border,"mouseup",m.cancel);
-		mb.DOM.removeEvent(border,"mouseleave",m.cancel);
-	}
-  return function(e:MouseEvent){
-		stopSelect();
-		laste=e||window.Event;
-		move=true;
-		init()
-		mb.DOM.stopPropagation(e);
-	}
+	return dragMoveUtil({
+		border:p.border||document,
+		down(e){
+			e=(e||window.event) as MouseEvent
+			laste=e
+			if(p.init){
+				p.init(e)
+			}
+			mb.DOM.preventDefault(e)
+			mb.DOM.stopPropagation(e)
+		},
+		move(e){
+			if(allow()){
+				e=(e||window.event) as MouseEvent
+				const x=e.clientX-laste.clientX
+				const y=e.clientY-laste.clientY
+				for(let diff of diffPool){
+					diff(x,y,e)
+				}
+				laste=e
+				mb.DOM.preventDefault(e)
+				mb.DOM.stopPropagation(e)
+			}
+		},
+		up:cancel,
+		leave:cancel
+	})
 }
+
 
 export interface Direction{
   l?:boolean,

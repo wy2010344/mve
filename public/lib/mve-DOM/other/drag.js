@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    exports.dragResizeHelper = exports.dragMoveHelper = void 0;
+    exports.dragResizeHelper = exports.dragMoveHelper = exports.dragMoveUtil = void 0;
     function stopSelect() {
         document.body.style.webkitUserSelect = 'none';
         document.body.style["msUserSelect"] = 'none';
@@ -22,18 +22,66 @@ define(["require", "exports"], function (require, exports) {
             return e.clientY - old_e.clientY;
         }
     }
+    function dragMoveUtil(p) {
+        var isMove = false;
+        function move(e) {
+            if (isMove) {
+                p.move(e);
+            }
+        }
+        function up(e) {
+            canSelect();
+            if (p.up) {
+                e = (e || window.event);
+                p.up(e);
+            }
+            destroy();
+        }
+        function leave(e) {
+            canSelect();
+            if (p.leave) {
+                e = (e || window.event);
+                p.leave(e);
+            }
+            destroy();
+        }
+        var div = p.border;
+        function init() {
+            isMove = true;
+            mb.DOM.addEvent(div, "mousemove", move);
+            mb.DOM.addEvent(div, "mouseup", up);
+            mb.DOM.addEvent(div, "mouseleave", leave);
+        }
+        function destroy() {
+            isMove = false;
+            mb.DOM.removeEvent(div, "mousemove", move);
+            mb.DOM.removeEvent(div, "mouseup", up);
+            mb.DOM.removeEvent(div, "mouseleave", leave);
+        }
+        return function (e) {
+            stopSelect();
+            e = (e || window.event);
+            if (!div) {
+                div = e.target;
+            }
+            if (p.down) {
+                p.down(e);
+            }
+            init();
+        };
+    }
+    exports.dragMoveUtil = dragMoveUtil;
     /**
      * 只移动
      * @param p
      */
     function dragMoveHelper(p) {
         var laste;
-        var move = false;
         var allow = p.allow || function () { return true; };
         var diffPool = [];
         if (p.diff) {
-            diffPool.push(function (x, y) {
-                p.diff({ x: x, y: y });
+            diffPool.push(function (x, y, e) {
+                p.diff({ x: x, y: y, e: e });
             });
         }
         if (p.diffX) {
@@ -50,49 +98,42 @@ define(["require", "exports"], function (require, exports) {
                 }
             });
         }
-        var m = {
+        function cancel(e) {
+            e = (e || window.event);
+            if (p.cancel) {
+                p.cancel(e);
+            }
+            mb.DOM.preventDefault(e);
+            mb.DOM.stopPropagation(e);
+        }
+        return dragMoveUtil({
+            border: p.border || document,
+            down: function (e) {
+                e = (e || window.event);
+                laste = e;
+                if (p.init) {
+                    p.init(e);
+                }
+                mb.DOM.preventDefault(e);
+                mb.DOM.stopPropagation(e);
+            },
             move: function (e) {
                 if (allow()) {
-                    if (move) {
-                        e = e || window.Event;
-                        var x = e.clientX - laste.clientX;
-                        var y = e.clientY - laste.clientY;
-                        for (var _i = 0, diffPool_1 = diffPool; _i < diffPool_1.length; _i++) {
-                            var diff_1 = diffPool_1[_i];
-                            diff_1(x, y);
-                        }
-                        laste = e;
-                        mb.DOM.stopPropagation(e);
+                    e = (e || window.event);
+                    var x = e.clientX - laste.clientX;
+                    var y = e.clientY - laste.clientY;
+                    for (var _i = 0, diffPool_1 = diffPool; _i < diffPool_1.length; _i++) {
+                        var diff_1 = diffPool_1[_i];
+                        diff_1(x, y, e);
                     }
+                    laste = e;
+                    mb.DOM.preventDefault(e);
+                    mb.DOM.stopPropagation(e);
                 }
             },
-            cancel: function (e) {
-                move = false;
-                destroy();
-                canSelect();
-                if (p.cancel) {
-                    p.cancel(e);
-                }
-            }
-        };
-        var border = p.border || document;
-        function init() {
-            mb.DOM.addEvent(border, "mousemove", m.move);
-            mb.DOM.addEvent(border, "mouseup", m.cancel);
-            mb.DOM.addEvent(border, "mouseleave", m.cancel);
-        }
-        function destroy() {
-            mb.DOM.removeEvent(border, "mousemove", m.move);
-            mb.DOM.removeEvent(border, "mouseup", m.cancel);
-            mb.DOM.removeEvent(border, "mouseleave", m.cancel);
-        }
-        return function (e) {
-            stopSelect();
-            laste = e || window.Event;
-            move = true;
-            init();
-            mb.DOM.stopPropagation(e);
-        };
+            up: cancel,
+            leave: cancel
+        });
     }
     exports.dragMoveHelper = dragMoveHelper;
     /**

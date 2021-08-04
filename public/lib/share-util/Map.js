@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    exports.Map = void 0;
+    exports.stackLess = exports.Map = void 0;
     var Map = /** @class */ (function () {
         function Map() {
             this.kvs = [];
@@ -21,7 +21,13 @@ define(["require", "exports"], function (require, exports) {
                 this.kvs.push([k, v]);
             }
         };
-        Map.prototype.get = function (k, def) {
+        Map.prototype.get = function (k) {
+            var kv = this.getKV(k);
+            if (kv) {
+                return kv[1];
+            }
+        };
+        Map.prototype.getOr = function (k, def) {
             var kv = this.getKV(k);
             if (kv) {
                 return kv[1];
@@ -57,4 +63,15 @@ define(["require", "exports"], function (require, exports) {
         return Map;
     }());
     exports.Map = Map;
+    function stackLess(call, init) {
+        var stack = [];
+        init(function (v) {
+            stack.push(v);
+        });
+        while (stack.length > 0) {
+            var first = stack.pop();
+            call(first);
+        }
+    }
+    exports.stackLess = stackLess;
 });

@@ -1,5 +1,6 @@
-import { PNJO } from "../mve-DOM/index";
+import { dom, DOMNode } from "../mve-DOM/index";
 import { dragMoveHelper } from "../mve-DOM/other/drag";
+import { EOChildren } from "../mve/childrenBuilder";
 import { mve } from "../mve/util";
 
 export function split_two_v(me:mve.LifeModel,p:{
@@ -13,10 +14,10 @@ export function split_two_v(me:mve.LifeModel,p:{
 	})=>{
 		init?:()=>void;
 		destroy?:()=>void;
-		top:PNJO;
-		bottom:PNJO;
+		top:EOChildren<Node>;
+		bottom:EOChildren<Node>;
 	}
-}){
+}):EOChildren<Node>{
 	
 	const v_height=p.split_height||10;
 	const init=p.init||1/2;
@@ -28,34 +29,6 @@ export function split_two_v(me:mve.LifeModel,p:{
 		top_height:top_height,//允许内部改变top_height
 		bottom_height:bottom_height
 	});
-
-	render_object.top.style=render_object.top.style||{};
-	mb.Object.ember(render_object.top.style,{
-		height:function(){
-			return top_height()+"px";
-		},
-		width:function(){
-			return p.width()+"px";
-		},
-		position:"absolute",
-		left:"0px",
-		top:"0px",
-		overflow:"auto"
-	});
-	render_object.bottom.style=render_object.bottom.style||{};
-	mb.Object.ember(render_object.bottom.style,{
-		height:function(){
-			return bottom_height()+"px"
-		},
-		width:function(){
-			return p.width()+"px";
-		},
-		position:"absolute",
-		overflow:"auto",
-		left:"0px",
-		bottom:"0px"
-	});
-
 	const dragMove=dragMoveHelper({
 		diff(p){
 			const y=p.y
@@ -64,7 +37,7 @@ export function split_two_v(me:mve.LifeModel,p:{
 			}
 		}
 	})
-	return {
+	return dom({
 		type:"div",
 		init:render_object.init,
 		destroy:render_object.destroy,
@@ -78,8 +51,23 @@ export function split_two_v(me:mve.LifeModel,p:{
 			position:"relative"
 		},
 		children:[
-			render_object.top,
-			{
+			dom({
+				type:"div",
+				style:{
+					height:function(){
+						return top_height()+"px";
+					},
+					width:function(){
+						return p.width()+"px";
+					},
+					position:"absolute",
+					left:"0px",
+					top:"0px",
+					overflow:"auto"
+				},
+				children:render_object.top
+			}),
+			dom({
 				type:"div",
 				style:{
 					width(){
@@ -98,8 +86,23 @@ export function split_two_v(me:mve.LifeModel,p:{
 				action:{
 					mousedown:dragMove
 				}
-			},
-			render_object.bottom
+			}),
+			dom({
+				type:"div",
+				style:{
+					height:function(){
+						return bottom_height()+"px"
+					},
+					width:function(){
+						return p.width()+"px";
+					},
+					position:"absolute",
+					overflow:"auto",
+					left:"0px",
+					bottom:"0px"
+				},
+				children:render_object.bottom
+			})
 		]
-	} as PNJO
+	})
 }

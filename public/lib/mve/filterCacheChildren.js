@@ -1,4 +1,4 @@
-define(["require", "exports", "./util"], function (require, exports, util_1) {
+define(["require", "exports", "./childrenBuilder", "./util"], function (require, exports, childrenBuilder_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.filterCacheChildren = void 0;
@@ -18,7 +18,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
         return CacheViewModel;
     }());
     function filterCacheChildren(array, fun) {
-        return function (buildChildren, parent) {
+        return function (parent, me) {
             var views = [];
             var life = util_1.onceLife({
                 init: function () {
@@ -65,7 +65,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
                         var cs = fun(lifeModel.me, row, i);
                         //创建视图
                         var vm = parent.newChildAt(i);
-                        var vx = buildChildren(lifeModel.me, cs, vm);
+                        var vx = childrenBuilder_1.baseChildrenBuilder(lifeModel.me, cs, vm);
                         var cv = new CacheViewModel(row, lifeModel, vx);
                         //模型增加
                         views.push(cv);

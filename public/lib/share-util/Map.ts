@@ -16,7 +16,13 @@ export class Map<K,V>{
 			this.kvs.push([k,v])
 		}
 	}
-	get<O>(k:K,def?:O){
+	get(k:K):V|undefined{
+		const kv=this.getKV(k)
+		if(kv){
+			return kv[1]
+		}
+	}
+	getOr<M>(k:K,def:M):V|M{
 		const kv=this.getKV(k)
 		if(kv){
 			return kv[1]
@@ -47,5 +53,16 @@ export class Map<K,V>{
 	}
 	forEach(fun:(v:V,k:K)=>void){
 		this.kvs.forEach(kv=>fun(kv[1],kv[0]))
+	}
+}
+
+export function stackLess<V>(call:(v:V)=>void,init:(append:(v:V)=>void)=>void) {
+	const stack:V[]=[]
+	init(function(v){
+		stack.push(v)
+	})
+	while(stack.length>0){
+		const first=stack.pop()
+		call(first)
 	}
 }

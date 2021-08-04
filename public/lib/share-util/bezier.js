@@ -46,7 +46,8 @@ define(["require", "exports"], function (require, exports) {
             y += (point.y * val);
         });
         return {
-            x: x, y: y
+            x: x,
+            y: y
         };
     }
     exports.createPointBezier = createPointBezier;

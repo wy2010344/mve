@@ -1,11 +1,11 @@
 
-import { PNJO } from "../mve-DOM/index";
+import { DOMNode } from "../mve-DOM/index";
 import { dragMoveHelper } from "../mve-DOM/other/drag";
 import { mve } from "../mve/util";
 
 export interface SplitItem{
 	width?:mve.Value<number>
-	element:PNJO
+	element:DOMNode
 }
 /**
  * 对比表头的拖动。
@@ -29,7 +29,7 @@ export function split(me:mve.LifeModel,p:{
 		}
 		return w;
 	};
-	function Hill(i:number):PNJO{
+	function Hill(i:number):DOMNode{
 		return {
 			type:"div",
 			style:{
@@ -74,7 +74,7 @@ export function split(me:mve.LifeModel,p:{
 		}
 	);
 	
-	function Part(i:number):PNJO{
+	function Part(i:number):DOMNode{
 		let child=p.children[i].element;
 		child.style=child.style||{};
 		child.style.height=function(){

@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    exports.rgbFromBgColor = exports.hexFromBgColor = exports.bgColorfromHex = exports.GB_MAX_VALUE = void 0;
+    exports.randomColor = exports.random255 = exports.rgbFromBgColor = exports.hexFromBgColor = exports.bgColorfromHex = exports.GB_MAX_VALUE = void 0;
     exports.GB_MAX_VALUE = 255;
     /**
      * 从#36297b6b 转成 "{"red":54,"green":41,"blue":123,"alpha":255}"
@@ -46,4 +46,17 @@ define(["require", "exports"], function (require, exports) {
         }
     }
     exports.rgbFromBgColor = rgbFromBgColor;
+    function random255() {
+        return Math.round(Math.random() * 255);
+    }
+    exports.random255 = random255;
+    function randomColor() {
+        return hexFromBgColor({
+            red: random255(),
+            green: random255(),
+            blue: random255(),
+            alpha: random255()
+        });
+    }
+    exports.randomColor = randomColor;
 });

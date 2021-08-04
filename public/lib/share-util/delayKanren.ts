@@ -1,4 +1,4 @@
-import { KBaseType, KKVPair, KVar, Pair, Subsitution, unify } from "./kanren";
+import {KSubsitution, KType, KVar, Pair, UnifyQuery} from "./kanren";
 
 
 
@@ -7,8 +7,8 @@ type DVStreamNotice<V>=(v:VStream<V>)=>void
 type DVStream<V>=(notice:DVStreamNotice<V>)=>void
 
 
-export type DelayGoal<V>=(notice:(stream:VStream<Subsitution<V>>)=>void,sub?:Subsitution<V>)=>void
-export type DelayKGoal=DelayGoal<KKVPair>
+export type DelayGoal<V>=(notice:DVStreamNotice<V>,sub?:V)=>void
+export type DelayKGoal<T>=DelayGoal<KSubsitution<T>>
 export function delayStreamAppendStream<V>(notice:DVStreamNotice<V>,a:VStream<V>,b:DVStream<V>){
 	if(a==null){
 		b(notice)
@@ -20,7 +20,7 @@ export function delayStreamAppendStream<V>(notice:DVStreamNotice<V>,a:VStream<V>
 		}))
 	}
 }
-export function delayStreamBindGoal<V>(notice:DVStreamNotice<Subsitution<V>>,a:VStream<Subsitution<V>>,b:DelayGoal<V>){
+export function delayStreamBindGoal<V>(notice:DVStreamNotice<V>,a:VStream<V>,b:DelayGoal<V>){
 	if(a==null){
 		notice(null)
 	}else{
@@ -36,20 +36,20 @@ export function delayStreamBindGoal<V>(notice:DVStreamNotice<Subsitution<V>>,a:V
 
 export const emptyDelayStream:DVStream<any>=(notice)=>notice(null)
 export const delayKanren={
-  fresh(){
-    return new KVar()
-  },
-  fail:<DelayKGoal>function(notice,sub){
+	fresh(){
+		return new KVar()
+	},
+	fail:<DelayKGoal<any>>function(notice,sub){
 		notice(null)
-  },
-  success:<DelayKGoal>function(notice,sub){
+	},
+	success:<DelayKGoal<any>>function(notice,sub){
 		notice(Pair.of(sub,emptyDelayStream))
-  },
-	eq(a:KBaseType,b:KBaseType):DelayKGoal{
+	},
+	query<T>(a:KType<T>,b:KType<T>,unify:UnifyQuery<T>):DelayKGoal<KType<T>>{
 		return function(notice,sub){
 			const [success,sub1]=unify(a,b,sub)
 			if(success){
-			  //合一成功，添加作用域
+				//合一成功，添加作用域
 				delayKanren.success(notice,sub1)
 			}else{
 				//合一失败，返回空作用域
@@ -57,7 +57,7 @@ export const delayKanren={
 			}
 		}
 	},
-	or(a:DelayKGoal,b:DelayKGoal):DelayKGoal{
+	or<T>(a:DelayKGoal<T>,b:DelayKGoal<T>):DelayKGoal<T>{
 		return function(notice,sub){
 			a(function(av){
 				delayStreamAppendStream(notice,av,function(nv){
@@ -66,7 +66,18 @@ export const delayKanren={
 			},sub)
 		}
 	},
-	and(a:DelayKGoal,b:DelayKGoal):DelayKGoal{
+	cut<T>(a:DelayKGoal<T>,b:DelayKGoal<T>):DelayKGoal<T>{
+		return function(notice,sub){
+			a(function(av){
+				if(av){
+					notice(av)
+				}else{
+					b(notice,sub)
+				}
+			},sub)
+		}
+	},
+	and<T>(a:DelayKGoal<T>,b:DelayKGoal<T>):DelayKGoal<T>{
 		return function(notice,sub){
 			a(function(av){
 				delayStreamBindGoal(notice,av,b)

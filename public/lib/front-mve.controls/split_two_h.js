@@ -7,7 +7,7 @@
  * 像split一样改造，全局的拖动事件
  * @param p
  */
-define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function (require, exports, drag_1, util_1) {
+define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../mve/util"], function (require, exports, index_1, drag_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.split_two_h = void 0;
@@ -22,32 +22,6 @@ define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function 
             left_width: left_width,
             right_width: right_width
         });
-        render_object.right.style = render_object.right.style || {};
-        mb.Object.ember(render_object.right.style, {
-            height: function () {
-                return p.height() + "px";
-            },
-            width: function () {
-                return right_width() + "px";
-            },
-            position: "absolute",
-            overflow: "auto",
-            right: "0px",
-            top: "0px"
-        });
-        render_object.left.style = render_object.left.style || {};
-        mb.Object.ember(render_object.left.style, {
-            height: function () {
-                return p.height() + "px";
-            },
-            width: function () {
-                return left_width() + "px";
-            },
-            position: "absolute",
-            left: "0px",
-            top: "0px",
-            overflow: "auto"
-        });
         var dragMove = drag_1.dragMoveHelper({
             diff: function (p) {
                 var x = p.x;
@@ -56,7 +30,7 @@ define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function 
                 }
             }
         });
-        return {
+        return index_1.dom({
             type: "div",
             init: render_object.init,
             destroy: render_object.destroy,
@@ -70,8 +44,23 @@ define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function 
                 position: "relative"
             },
             children: [
-                render_object.left,
-                {
+                index_1.dom({
+                    type: "div",
+                    style: {
+                        height: function () {
+                            return p.height() + "px";
+                        },
+                        width: function () {
+                            return left_width() + "px";
+                        },
+                        position: "absolute",
+                        left: "0px",
+                        top: "0px",
+                        overflow: "auto"
+                    },
+                    children: render_object.left
+                }),
+                index_1.dom({
                     type: "div",
                     style: {
                         height: function () {
@@ -90,10 +79,25 @@ define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function 
                     action: {
                         mousedown: dragMove
                     }
-                },
-                render_object.right
+                }),
+                index_1.dom({
+                    type: "div",
+                    style: {
+                        height: function () {
+                            return p.height() + "px";
+                        },
+                        width: function () {
+                            return right_width() + "px";
+                        },
+                        position: "absolute",
+                        overflow: "auto",
+                        right: "0px",
+                        top: "0px"
+                    },
+                    children: render_object.right
+                })
             ]
-        };
+        });
     }
     exports.split_two_h = split_two_h;
 });

@@ -33,8 +33,34 @@ function reverScroll(store:ScrollKeep[]){
 function notEqual(a:string,b){
 	return a!=b || (typeof(b)!="string" && a!=b+"")
 }
-
+function isKey(v:number,key:string){
+	return function(e:KeyboardEvent){
+		return e.keyCode==v
+	}
+}
 export={
+	/**保存如滚动之类，在从DOM上剪切移动之前 */
+	saveBeforeMove:keepScroll,
+	/**恢复如滚动之类，在从DOM上剪切移动之后 */
+	revertAfterMove:reverScroll,
+	keyCode:{
+		BACKSPACE:isKey(8,"Backspace"),
+		ENTER:isKey(13,"Enter"),
+		TAB:isKey(9,"Tab"),
+		ARROWLEFT:isKey(37,"ArrowLeft"),
+		ARROWUP:isKey(38,"ArrowUp"),
+		ARROWRIGHT:isKey(39,"ArrowRight"),
+		ARROWDOWN:isKey(40,"ArrowDown"),
+		CONTROL:isKey(17,"Control"),
+		/**windows键 */
+		META:isKey(91,"Meta"),
+		ALT:isKey(18,"ALT"),
+		A:isKey(65,'a'),
+		Z:isKey(90,"z"),
+		V:isKey(86,"v"),
+		C:isKey(67,"c"),
+		X:isKey(88,"x")
+	},
 	createElement(type:string){
 		return document.createElement(type);
 	},
@@ -106,7 +132,8 @@ export={
 	action(el,key,value){
 		if(typeof(value)=="function"){
 			mb.DOM.addEvent(el,key,value);
-		}else{
+		}else
+		if(value){
 			mb.DOM.addEvent(el,key,value.handler,value)
 		}
 	},

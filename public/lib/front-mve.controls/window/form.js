@@ -1,14 +1,12 @@
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
 };
-define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve-DOM/other/drag", "../../mve-DOM/other/resize"], function (require, exports, index_1, title_1, util_1, drag_1, resize_1) {
+define(["require", "exports", "./index", "./title", "../../mve-DOM/index", "../../mve/util", "../../mve-DOM/other/drag", "../../mve-DOM/other/resize"], function (require, exports, index_1, title_1, index_2, util_1, drag_1, resize_1) {
     "use strict";
     exports.__esModule = true;
-    exports.addShadow = exports.topTitleResizeForm = exports.resizeForm = exports.baseResizeForm = void 0;
+    exports.addShadow = exports.autoMenuNode = exports.autoMenuMouse = exports.topTitleResizeForm = exports.resizeForm = exports.baseResizeForm = void 0;
     /**
      * 标题栏可以放在顶部，也可以放在底部
      * 首先没有标题栏，只有位置可变化
@@ -44,26 +42,23 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                     })
                 });
                 var element = result.element;
-                element.style = element.style || {};
                 function currentWidth() {
                     return result.width() + "px";
                 }
                 function currentHeight() {
                     return result.height() + "px";
                 }
-                addShadow(element.style);
                 return {
                     left: function () { return result.left() + "px"; },
                     top: function () { return result.top() + "px"; },
                     width: currentWidth,
                     height: currentHeight,
                     panels: result.panels,
-                    element: {
-                        type: "div",
-                        children: __spreadArrays([
-                            element
-                        ], zoom)
-                    }
+                    shadow: result.shadow,
+                    style: result.style,
+                    element: __spreadArray([
+                        element
+                    ], zoom)
                 };
             }
         });
@@ -126,9 +121,9 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
         var out = {
             left: util_1.mve.valueOf(20),
             top: util_1.mve.valueOf(20),
-            width: util_1.mve.valueOf(400),
+            width: util_1.mve.valueOf(800),
             height: util_1.mve.valueOf(600),
-            max: util_1.mve.valueOf(false),
+            max: util_1.mve.valueOf(mb.DOM.isMobile()),
             resizeAble: util_1.mve.valueOf(true),
             showClose: util_1.mve.valueOf(true),
             showMax: util_1.mve.valueOf(true),
@@ -139,12 +134,13 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
             panel: baseResizeForm({
                 hide: out.hide,
                 render: function (me, p, rp) {
+                    var titleHeight = 25;
                     var rect = {
                         out: out,
                         index: rp.index,
                         innerHeight: function () {
                             if (out.max()) {
-                                return p.height() - 20 - 10;
+                                return p.height() - titleHeight;
                             }
                             else {
                                 return out.height();
@@ -152,7 +148,7 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                         },
                         innerWidth: function () {
                             if (out.max()) {
-                                return p.width() - 10;
+                                return p.width();
                             }
                             else {
                                 return out.width();
@@ -169,6 +165,7 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                     };
                     var result = fun(me, p, rect);
                     var title = title_1.buildTitle({
+                        height: titleHeight,
                         move: rp.move,
                         title: result.title,
                         close_click: function () {
@@ -183,14 +180,6 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                         showClose: out.showClose,
                         showMax: out.showMax
                     });
-                    var element = result.element;
-                    element.style = element.style || {};
-                    element.style.width = function () {
-                        return rect.innerWidth() + "px";
-                    };
-                    element.style.height = function () {
-                        return rect.innerHeight() + "px";
-                    };
                     /*
                     element.style.background=function(){
                         return gstate()?"#f0f3f9":"black"
@@ -225,7 +214,7 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                                 return p.width();
                             }
                             else {
-                                return 10 + out.width();
+                                return out.width();
                             }
                         },
                         height: function () {
@@ -233,7 +222,7 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                                 return p.height();
                             }
                             else {
-                                return 10 + out.height() + 20;
+                                return out.height() + titleHeight;
                             }
                         },
                         top: function () {
@@ -252,21 +241,33 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
                                 return out.left();
                             }
                         },
+                        shadow: result.shadow,
                         shadowClick: result.shadowClick,
                         panels: result.panels,
-                        element: {
+                        element: index_2.dom({
                             type: "div",
                             init: result.init,
                             destroy: result.destroy,
-                            style: {
-                                padding: "5px",
-                                background: "#f0f3f9"
-                            },
+                            style: addShadow({
+                                background: "#ededed",
+                                "border-radius": "5px"
+                            }),
                             children: [
                                 title,
-                                element
+                                index_2.dom({
+                                    type: "div",
+                                    style: mb.Object.ember(result.style || {}, {
+                                        width: function () {
+                                            return rect.innerWidth() + "px";
+                                        },
+                                        height: function () {
+                                            return rect.innerHeight() + "px";
+                                        }
+                                    }),
+                                    children: result.element
+                                })
                             ]
-                        }
+                        })
                     };
                 },
                 focus: focus
@@ -274,6 +275,117 @@ define(["require", "exports", "./index", "./title", "../../mve/util", "../../mve
         };
     }
     exports.topTitleResizeForm = topTitleResizeForm;
+    /**
+     * 以x方向为例，菜单的最终位置
+     * @param x 鼠标触发的在父容器下的x
+     * @param pwidth 父容器宽度
+     * @param width 自己的宽度
+     * @returns 菜单应该放置的宽度
+     */
+    function menuLV(x, pwidth, width) {
+        var after = x + width;
+        if (after > pwidth) {
+            //会超出,尝试向前
+            var before = x - width;
+            if (before < 0) {
+                //尝试向前也会超出
+                if (after > before) {
+                    //向后超出的多
+                    return before;
+                }
+                else {
+                    return x;
+                }
+            }
+            else {
+                return before;
+            }
+        }
+        else {
+            return x;
+        }
+    }
+    /**
+     * 计算鼠标事件导致的相对位置
+     * @param e
+     * @param pe
+     * @param me
+     * @returns
+     */
+    function autoMenuMouse(e, pe, me) {
+        return {
+            x: menuLV(e.clientX - pe.left, pe.width, me.width),
+            y: menuLV(e.clientY - pe.top, pe.height, me.height)
+        };
+    }
+    exports.autoMenuMouse = autoMenuMouse;
+    function menuNode(rtop, rleft, peWidth, peHeight, eWidth, eHeight, meWidth, meHeight) {
+        var x = 0;
+        var y = 0;
+        var diffDownTop = peHeight - (rtop + eHeight + meHeight);
+        if (diffDownTop > 0) {
+            y = rtop + eHeight;
+        }
+        else {
+            var diffUpTop = rtop - meHeight;
+            if (diffUpTop > 0) {
+                y = diffUpTop;
+            }
+            else {
+                if (diffUpTop < diffDownTop) {
+                    //上面更小，依下面
+                    y = rtop + eHeight;
+                }
+                else {
+                    y = diffUpTop;
+                }
+            }
+        }
+        var rd = peWidth - (rleft + meWidth);
+        if (rd > 0) {
+            //靠左
+            x = rleft;
+        }
+        else {
+            var ld = rleft + eWidth - meWidth;
+            if (ld > 0) {
+                //靠右
+                x = ld;
+            }
+            else {
+                if (ld < rd) {
+                    //超得多，
+                    x = rleft;
+                }
+                else {
+                    //靠右
+                    x = ld;
+                }
+            }
+        }
+        return [x, y];
+    }
+    /**
+     * 自动排布菜单，相对定位
+     * @param e 环绕元素
+     * @param pe 父元素
+     * @param me 菜单元素
+     * @param dir 上下结构还是左右结构，默认上下结构y
+     */
+    function autoMenuNode(e, pe, me, dir) {
+        if (dir === void 0) { dir = "y"; }
+        var rtop = e.top - pe.top;
+        var rleft = e.left - pe.left;
+        if (dir == "x") {
+            var _a = menuNode(rleft, rtop, pe.height, pe.width, e.height, e.width, me.height, me.width), y = _a[0], x = _a[1];
+            return { x: x, y: y };
+        }
+        else {
+            var _b = menuNode(rtop, rleft, pe.width, pe.height, e.width, e.height, me.width, me.height), x = _b[0], y = _b[1];
+            return { x: x, y: y };
+        }
+    }
+    exports.autoMenuNode = autoMenuNode;
     function addShadow(style) {
         var shadow = "rgb(102, 102, 102) 0px 0px 20px 5px"; //"20px 20px 40px #666666";
         style["box-shadow"] = shadow;

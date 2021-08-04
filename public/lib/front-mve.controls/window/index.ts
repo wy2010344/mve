@@ -1,33 +1,26 @@
-import { NJO, parseHTML, PNJO } from "../../mve-DOM/index"
-import { JOChildren } from "../../mve/childrenBuilder"
+import { dom, DOMNodeAll, DOMNode, reWriteAction, reWriteDestroy, reWriteInit, StyleMap, ActionMap } from "../../mve-DOM/index"
+import { EOChildren } from "../../mve/childrenBuilder"
 import { modelChildren } from "../../mve/modelChildren"
 import { mve } from "../../mve/util"
 
 
 
 export interface FormPanel{
-	hide:mve.GValue<boolean>
-	render(me:mve.LifeModel,p:DesktopParam,index:mve.GValue<number>):JOChildren<NJO,Node>
+	render(me:mve.LifeModel,p:DesktopParam,index:mve.GValue<number>):EOChildren<Node>
 	focus?(v:boolean):void
 }
 export interface DesktopParam{
+	getBoundingClientRect():DOMRect
   width():number,
   height():number,
 	model:mve.ArrayModel<FormPanel>
 }
-export function DesktopIndex(init:(p:DesktopParam)=>PNJO){
-	const width=mve.valueOf(0)
-	const height=mve.valueOf(0)
-	return {
-		resize(x:{width:number,height:number}){
-			if(x.height!=height()){
-				height(x.height)
-			}
-			if(x.width!=width()){
-				width(x.width)
-			}
-		},
-		mve:parseHTML.mve(function(me){
+
+export function DesktopIndex(init:(p:DesktopParam)=>DOMNode){
+	return function(){
+		const width=mve.valueOf(0)
+		const height=mve.valueOf(0)
+		return dom.root(function(me){
 			const model=mve.arrayModelOf<FormPanel>([])
 			const move=model.move.bind(model)
 			model.move=function(fromIndex,targetIndex){
@@ -59,18 +52,52 @@ export function DesktopIndex(init:(p:DesktopParam)=>PNJO){
 				}
 			}
 			const p:DesktopParam={
+				getBoundingClientRect(){
+					return element.getBoundingClientRect()
+				},
 				width,
 				height,
 				model
 			}
-			return init(p)
+			function resize(){
+				const w=document.body.clientWidth
+				const h=document.body.clientHeight
+				if(w!=width()){
+					width(w)
+				}
+				if(h!=height()){
+					height(h)
+				}
+			}
+			const njo=init(p)
+			njo.style=njo.style||{}
+			if(njo.style.position!="absolute"){
+				njo.style.position="relative"
+			}
+			let element:HTMLDivElement
+			reWriteInit(njo,function(init){
+				init.push(function(v){
+					element=v
+					mb.DOM.addEvent(window,"resize",resize)
+					resize()
+				})
+				return init
+			})
+			reWriteDestroy(njo,function(destroy){
+				destroy.unshift(function(v){
+					mb.DOM.removeEvent(window,"resize",resize)
+				})
+				return destroy
+			})
+			return njo
 		})
 	}
 }
 
 
 export function subPanelsOf(subPanels:mve.ArrayModel<FormPanel>,p:DesktopParam){
-	const newPool={
+	const newPool:DesktopParam={
+		getBoundingClientRect:p.getBoundingClientRect,
 		width:p.width,
 		height:p.width,
 		model:subPanels
@@ -86,8 +113,13 @@ export interface FormBuilderResult{
   width:mve.TValue<string>
 	height:mve.TValue<string>
 	shadowClick?():void
-	element:PNJO
-	panels?:JOChildren<NJO,Node>
+	style?:StyleMap
+	element:EOChildren<Node>
+	/**遮罩*/
+	shadow?:EOChildren<Node>
+	shadowStyle?:StyleMap
+	shadowAction?:ActionMap
+	panels?:EOChildren<Node>
 }
 
 export function formBuilder(k:{
@@ -96,39 +128,52 @@ export function formBuilder(k:{
 	focus?:mve.GValue<void>
 }):FormPanel{
 	return {
-		hide:k.hide,
 		focus:k.focus,
 		render(me:mve.LifeModel,p:DesktopParam,index:mve.GValue<number>){
 			const v=k.render(me,p,index)
 			const element=v.element
-			element.style=element.style||{}
-			element.style.position="absolute"
-			element.style.width=v.width
-			element.style.height=v.height
-			element.style.top=v.top
-			element.style.left=v.left
-			element.style.display=mb.Object.reDefine(element.style.display,function(v){
-				if(typeof(v)=='function'){
-					//如果是函数
-					return mve.reWriteMTValue(v,function(v){
-						return k.hide()?"none":v
-					})
-				}else{
-					return function(){
-						return k.hide()?"none":v
+
+
+			v.style=v.style||{}
+			const style=mb.Object.ember(v.style,{
+				position:"absolute",
+				width:v.width,
+				height:v.height,
+				top:v.top,
+				left:v.left,
+				display:mb.Object.reDefine(v.style.display,function(v){
+					if(typeof(v)=='function'){
+						//如果是函数
+						return mve.reWriteMTValue(v,function(v){
+							return k.hide()?"none":v
+						})
+					}else{
+						return function(){
+							return k.hide()?"none":v
+						}
 					}
-				}
+				})
 			})
-			let outs:JOChildren<NJO,Node>=[
-				element
+			let outs:EOChildren<Node>[]=[
+				dom({
+					type:"div",
+					style,
+					children:element
+				})
 			]
 			if(v.panels){
 				outs=outs.concat(v.panels)
 			}
-			outs.push({
-				//遮罩
+			v.shadowAction=v.shadowAction||{}
+			reWriteAction(v.shadowAction,'click',function(vs){
+				vs.push(v.shadowClick||function(){
+					p.model.moveToLast(index())
+				})
+				return vs
+			})
+			outs.push(dom({
 				type:"div",
-				style:{
+				style:mb.Object.ember(v.shadowStyle||{},{
 					position:"absolute",
 					width:v.width,
 					height:v.height,
@@ -143,13 +188,9 @@ export function formBuilder(k:{
 							return p.model.size()-1==index()?"none":"";
 						}
 					}
-				},
-				action:{
-					click:v.shadowClick||function(){
-						p.model.moveToLast(index())
-					}
-				}
-			})
+				}),
+				action:v.shadowAction
+			}))
 			return outs
 		}
 	}

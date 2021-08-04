@@ -7,7 +7,9 @@ if(!Function.prototype.bind){
     };
 	};
 }
-var mb={};
+function mb(fun){
+	return fun();
+}
 /**惰性加载Promise*/
 mb._promise_=function(){
 	if(mb._promise_.one){
@@ -272,23 +274,32 @@ mb.Array={
 		return mb.Array.filter(array,fun);
 	},
 	removeWhere:function(array,fun){
-		var i=array.size()-1
+		var i=array.size()-1;
 		while(i>-1){
 			var theRow=array.get(i);
 			if(fun(theRow,i)){
 				array.remove(i);
 			}
-			i--
+			i--;
 		}
 	},
 	removeEqual:function(array,row){
-		mb.Array.removeEqual(function(theRow){
+		mb.Array.removeWhere(array,function(theRow){
 			return theRow==row;
-		})
+		});
 	},
 	move:function(array,oldIndex,newIndex){
 	  var row=array.splice(oldIndex,1)[0];
 		array.splice(newIndex,0,row);
+	},
+	slice:function(array,begin,end){
+		begin=begin||0;
+		end=end||array.size();
+		var vs=[]
+		for(var x=begin;x<end;x++){
+			vs.push(array.get(x))
+		}
+		return vs
 	}
 };
 mb.Object={
@@ -355,12 +366,12 @@ mb.Date={
 	stringify:function(v,format){
 		var str = format;  
 		str=str.replace(/yyyy|YYYY/,v.getFullYear());  
-		str=str.replace(/MM/,(v.getMonth()+1)>9?(v.getMonth()+1).toString():'0' + (v.getMonth()+1));   
+		str=str.replace(/MM/,(v.getMonth()+1)>9?(v.getMonth()+1).toString():'0' + (v.getMonth()+1)); 	
 		str=str.replace(/dd|DD/,v.getDate()>9?v.getDate().toString():'0' + v.getDate());
 		str=str.replace(/hh|HH/,v.getHours()>9?v.getHours().toString():'0' + v.getHours());
 		str=str.replace(/mm/,v.getMinutes()>9?v.getMinutes().toString():'0' + v.getMinutes());
-		str=str.replace(/ss/,v.getSeconds()>9?v.getSeconds().toString():'0' + v.getSeconds());   
-		return str;   
+		str=str.replace(/ss/,v.getSeconds()>9?v.getSeconds().toString():'0' + v.getSeconds()); 	
+		return str; 	
 	},
 	getDays:function(year,month){
 		if ((month == 1) || (month == 3) || (month == 5) || (month == 7) || (month == 8) || (month == 10) || (month == 12)){
@@ -517,15 +528,36 @@ if(!String.prototype.trim){
   };
 }
 if(!String.prototype.startsWith){
-	String.prototype.startsWith=function(str) {
-		return (this.indexOf(str)==0);
+	String.prototype.startsWith=function(str,i) {
+		i=i||0;
+		return (this.indexOf(str,i)==i);
 	};
 }
 if(!String.prototype.endsWith){
 	String.prototype.endsWith=function(str) {
-		return (this.lastIndexOf(str)==this.length-str.length);
+		var difLen=this.length - str.length;
+		if(difLen > 0){
+			return (this.lastIndexOf(str)==difLen);
+		}
+		return false;
 	};
 }
+String.prototype.size=function() {
+	return this.length;
+};
+String.prototype.get=function(i) {
+	return this[i];
+};
+String.prototype.join=function(s) {
+	if(s==""){
+		return this;
+	}else{
+		if(s==undefined){
+			s=",";
+		}
+		return this.split("").join(s)
+	}
+};
 /**
  * 时间格式化
  * yyyy-MM-dd HH:mm:ss
@@ -578,11 +610,19 @@ if(!Array.prototype.some){
 }
 if(!Array.prototype.find){
 	Array.prototype.find=function(fun){
-		return mb.Array.findRow(this,fun)
-	}
+		return mb.Array.findRow(this,fun);
+	};
 }
 if(!Array.prototype.findIndex){
 	Array.prototype.findIndex=function(fun){
-		return mb.Array.findIndex(this,fun)
-	}
+		return mb.Array.findIndex(this,fun);
+	};
+}
+if(!Array.prototype.fill){
+	Array.prototype.fill=function(v){
+		for(let i=0;i<this.length;i++){
+			this[i]=v;
+		}
+		return this;
+	};
 }

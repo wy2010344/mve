@@ -1,7 +1,7 @@
-define(["require", "exports", "./util"], function (require, exports, util_1) {
+define(["require", "exports", "./childrenBuilder", "./util"], function (require, exports, childrenBuilder_1, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.modelCacheChildren = exports.modelChildren = exports.modelCache = void 0;
+    exports.modelCacheChildren = exports.modelChildren = exports.modelCache = exports.moveUpdateIndex = exports.removeUpdateIndex = exports.initUpdateIndex = void 0;
     /**
      * 初始化更新计数
      * @param views
@@ -12,6 +12,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
             views.get(i).index(i);
         }
     }
+    exports.initUpdateIndex = initUpdateIndex;
     /**
      * 删除时更新计算
      * @param views
@@ -22,6 +23,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
             views.get(i).index(i);
         }
     }
+    exports.removeUpdateIndex = removeUpdateIndex;
     /**
      * 移动时更新计数
      * @param views
@@ -34,6 +36,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
             views.get(i).index(i);
         }
     }
+    exports.moveUpdateIndex = moveUpdateIndex;
     /**
      * 最终的卸载
      * @param views
@@ -48,23 +51,31 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
         model.removeView(theView);
         views.clear();
     }
-    var CacheModel = /** @class */ (function () {
-        function CacheModel(index, value, clear) {
-            this.index = index;
-            this.value = value;
-            this.clear = clear;
+    function getCacheModel(pDestroy) {
+        var CacheModel = /** @class */ (function () {
+            function CacheModel(index, value) {
+                this.index = index;
+                this.value = value;
+            }
+            CacheModel.prototype.destroy = function () { };
+            return CacheModel;
+        }());
+        if (pDestroy) {
+            CacheModel.prototype.destroy = function () {
+                pDestroy(this.value);
+            };
         }
-        CacheModel.prototype.destroy = function () {
-            util_1.orRun(this.clear);
+        return function (index, value) {
+            return new CacheModel(index, value);
         };
-        return CacheModel;
-    }());
-    function superModelCache(views, model, insert) {
+    }
+    function superModelCache(views, model, insert, destroy) {
+        var cacheModel = getCacheModel(destroy);
         var theView = {
             insert: function (index, row) {
                 var vindex = util_1.mve.valueOf(index);
                 var vrow = insert(row, vindex);
-                views.insert(index, new CacheModel(vindex, vrow.row, vrow.destroy));
+                views.insert(index, cacheModel(vindex, vrow));
                 //更新计数
                 initUpdateIndex(views, index);
             },
@@ -92,14 +103,16 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
     }
     /**
      * 从一个model到另一个model，可能有销毁事件
+     * 应该是很少用的，尽量不用
+     * 可以直接用CacheArrayModel<T>作为组件基础参数，在组件需要的字段不存在时，入参定义T到该字段的映射
      * @param model
      * @param insert
      */
-    function modelCache(model, insert) {
+    function modelCache(model, insert, destroy) {
         var views = util_1.mve.arrayModelOf([]);
         return {
             views: views,
-            destroy: superModelCache(views, model, insert)
+            destroy: superModelCache(views, model, insert, destroy)
         };
     }
     exports.modelCache = modelCache;
@@ -119,8 +132,8 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
         };
         return ViewModel;
     }());
-    function superModelChildren(views, model, fun) {
-        return function (buildChildren, parent) {
+    function superModelChildren(views, getElement, getData, model, fun) {
+        return function (parent, me) {
             var life = util_1.onceLife({
                 init: function () {
                     var size = views.size();
@@ -139,8 +152,8 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
                     var cs = fun(lifeModel.me, row, vindex);
                     //创建视图
                     var vm = parent.newChildAt(index);
-                    var vx = buildChildren(lifeModel.me, cs.element, vm);
-                    var view = new ViewModel(vindex, cs.data, lifeModel, vx);
+                    var vx = childrenBuilder_1.baseChildrenBuilder(lifeModel.me, getElement(cs), vm);
+                    var view = new ViewModel(vindex, getData(cs), lifeModel, vx);
                     //模型增加
                     views.insert(index, view);
                     //更新计数
@@ -178,22 +191,27 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
             return life.out;
         };
     }
+    ////////////////////////////////////////////通用方式////////////////////////////////////////////////
+    function emptyGet() { }
+    function quoteGet(v) { return v; }
     /**
      * 从model到视图
      * @param model
      * @param fun
      */
     function modelChildren(model, fun) {
-        return superModelChildren([], model, function (me, row, index) {
-            return {
-                data: null,
-                element: fun(me, row, index)
-            };
-        });
+        return superModelChildren([], quoteGet, emptyGet, model, fun);
     }
     exports.modelChildren = modelChildren;
+    function renderGetElement(v) {
+        return v.element;
+    }
+    function renderGetData(v) {
+        return v.data;
+    }
     /**
      * 从model到带模型视图
+     * 应该是很少用的，尽量不用
      * @param model
      * @param fun
      */
@@ -201,7 +219,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
         var views = util_1.mve.arrayModelOf([]);
         return {
             views: views,
-            children: superModelChildren(views, model, fun)
+            children: superModelChildren(views, renderGetElement, renderGetData, model, fun)
         };
     }
     exports.modelCacheChildren = modelCacheChildren;

@@ -49,9 +49,9 @@ define(["require", "exports"], function (require, exports) {
         VirtualChild.prototype.remove = function (index) {
             if (index > -1 && index < this.children.length) {
                 var view = this.pureRemove(index);
-                var that_1 = this;
+                var param_1 = this.param;
                 VirtualChild.deepRun(view, function (e) {
-                    that_1.param.remove(e);
+                    param_1.remove(e);
                 });
             }
             else {
@@ -63,16 +63,11 @@ define(["require", "exports"], function (require, exports) {
                 && newIndex > -1 && newIndex < this.children.length) {
                 var view = this.pureRemove(oldIndex);
                 var after = this.pureInsert(newIndex, view);
-                var realNextEL_1 = this.nextEL(after);
-                var that_2 = this;
-                VirtualChild.deepRun(view, function (e) {
-                    if (realNextEL_1) {
-                        that_2.param.insertBefore(e, realNextEL_1, true);
-                    }
-                    else {
-                        that_2.param.append(e, true);
-                    }
-                });
+                var realNextEL = this.nextEL(after);
+                VirtualChild.preformaceAdd(view, this.param, realNextEL, true);
+            }
+            else {
+                mb.log("\u79FB\u52A8\u5931\u8D25" + oldIndex + "->" + newIndex + ",\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.children.length);
             }
         };
         VirtualChild.prototype.pureInsert = function (index, view) {
@@ -100,21 +95,23 @@ define(["require", "exports"], function (require, exports) {
         VirtualChild.prototype.insert = function (index, view) {
             if (index > -1 && index < (this.children.length + 1)) {
                 var after = this.pureInsert(index, view);
-                var realNextEL_2 = this.nextEL(after);
-                var that_3 = this;
-                if (realNextEL_2) {
-                    VirtualChild.deepRun(view, function (e) {
-                        that_3.param.insertBefore(e, realNextEL_2);
-                    });
-                }
-                else {
-                    VirtualChild.deepRun(view, function (e) {
-                        that_3.param.append(e);
-                    });
-                }
+                var realNextEL = this.nextEL(after);
+                VirtualChild.preformaceAdd(view, this.param, realNextEL);
             }
             else {
                 mb.log("\u63D2\u5165" + index + "\u5931\u8D25,\u603B\u5BBD\u5EA6\u4EC5\u4E3A" + this.children.length);
+            }
+        };
+        VirtualChild.preformaceAdd = function (view, param, realNextEL, move) {
+            if (realNextEL) {
+                VirtualChild.deepRun(view, function (e) {
+                    param.insertBefore(e, realNextEL, move);
+                });
+            }
+            else {
+                VirtualChild.deepRun(view, function (e) {
+                    param.append(e, move);
+                });
             }
         };
         VirtualChild.realNextEO = function (view) {

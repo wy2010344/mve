@@ -1,9 +1,9 @@
 
-import DOM = require("./DOM")
-import { parseOf,parseUtil} from "../mve/index"
-import { JOChildren } from "../mve/childrenBuilder"
+import { EOChildren,childrenBuilder } from "../mve/childrenBuilder"
+import { buildElement, buildElementOrginal, parseUtil } from "../mve/index"
+import { BuildResult, BuildResultList, mve, onceLife } from "../mve/util"
 import { VirtualChildParam } from "../mve/virtualTreeChildren"
-import { mve,BuildResult, EOParseResult, BuildResultList, onceLife } from "../mve/util"
+import DOM = require("./DOM")
 export class DOMVirtualParam implements VirtualChildParam<Node>{
 	constructor(
 		private pel:Node
@@ -34,48 +34,74 @@ export type StringValue=mve.MTValue<string>
 export type ItemValue=mve.MTValue<string|number|boolean>
 export type AttrMap={[key:string]:ItemValue}
 export type PropMap={ [key: string]:mve.MTValue<string|number|boolean>}
-export type StyleMap={[key:string]:mve.MTValue<string>}
-
+export type StyleMap={
+	[key:string]:mve.MTValue<string>
+}&{
+	opacity?:mve.MTValue<number|string>
+}
 export type ActionHandler=(e) => void
 /**动作树 */
 export type ActionItem=ActionHandler | {
 	capture?:boolean
 	handler:ActionHandler
-}
-export type ActionMap={[key: string]: ActionItem | ActionItem[]}
-/**
- * 重新定义动作
- * @param v 
- * @param fun 
- */
-export function reWriteAction(v:ActionItem | ActionItem[] | null,fun:(vs:ActionItem[])=>ActionItem[]){
+} | ActionItem[]
+export type ActionMap = { [key:string]: ActionItem }
+export function reWriteAction(n:ActionMap,act:string,fun:(vs:ActionItem[])=>ActionItem[]){
+	const v=n[act]
 	if(mb.Array.isArray(v)){
-		return fun(v)
+		n[act]=fun(v)
 	}else
 	if(v){
-		return fun([v])
+		n[act]=fun([v])
 	}else{
-		return fun([])
+		n[act]=fun([])
 	}
 }
-export interface PNJO{
+
+
+
+
+type InitFun=(v,me:mve.LifeModel)=>void
+export function reWriteInit(v:DOMNode,fun:(vs:InitFun[])=>InitFun[]){
+	if(mb.Array.isArray(v.init)){
+		v.init=fun(v.init)
+	}else
+	if(v.init){
+		v.init=fun([v.init])
+	}else{
+		v.init=fun([])
+	}
+}
+
+type DestoryFun=(v)=>void
+export function reWriteDestroy(v:DOMNode,fun:(vs:DestoryFun[])=>DestoryFun[]){
+	if(mb.Array.isArray(v.destroy)){
+		v.destroy=fun(v.destroy)
+	}else
+	if(v.destroy){
+		v.destroy=fun([v.destroy])
+	}else{
+		v.destroy=fun([])
+	}
+}
+export interface DOMNode{
 	type:string
-	init?(v):void
-	destroy?(v):void
+	init?:InitFun|InitFun[]
+	destroy?:DestoryFun|DestoryFun[]
 	id?:(o:any)=>void
 	cls?:StringValue
-	text?: ItemValue
 	attr?: AttrMap
 	style?: StyleMap
 	prop?:PropMap
 	action?: ActionMap
-	children?:JOChildren<NJO,Node>
-	value?: ItemValue
-}
-/**所有子节点类型 */
-export type NJO=PNJO|string
 
-function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
+	value?: ItemValue
+	children?:EOChildren<Node>
+	text?: ItemValue
+}
+export type DOMNodeAll=DOMNode|string
+
+function buildParam(me:mve.LifeModel,el:Node,child:DOMNode){
 	if(child.id){
 		child.id(el)
 	}
@@ -100,14 +126,14 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 			DOM.attr(el,k,v)
 		})
 	}
-	if(child.cls){
-		parseUtil.bind(me,child.cls,function(v){
-			DOM.attr(el,"class",v)
-		})
-	}
 	if(child.prop){
 		parseUtil.bindKV(me,child.prop,function(k,v){
 			DOM.prop(el,k,v)
+		})
+	}
+	if(child.cls){
+		parseUtil.bind(me,child.cls,function(v){
+			DOM.attr(el,"class",v)
 		})
 	}
 	if(child.text){
@@ -117,18 +143,36 @@ function buildParam(me:mve.LifeModel,el:Node,child:PNJO){
 	}
 	const ci:BuildResult={}
 	if(child.init){
-		ci.init=function(){
-			child.init(el)
+		if(mb.Array.isArray(child.init)){
+			const inits=child.init
+			for(let init of inits){
+				init(el,me)
+			}
+		}else{
+			const init=child.init
+			ci.init=function(){
+				init(el,me)
+			}
 		}
 	}
 	if(child.destroy){
-		ci.destroy=function(){
-			child.destroy(el)
+		if(mb.Array.isArray(child.destroy)){
+			const destroys=child.destroy
+			ci.destroy=function(){
+				for(let destroy of destroys){
+					destroy(el)
+				}
+			}
+		}else{
+			const destroy=child.destroy
+			ci.destroy=function(){
+				destroy(el)
+			}
 		}
 	}
 	return ci
 }
-function buildParamAfter(me:mve.LifeModel,el:Node,child:PNJO){
+function buildParamAfter(me:mve.LifeModel,el:Node,child:DOMNode){
 	/**
 	 * value必须在Attr后面才行，不然type=range等会无效
 	 * select的value必须放在children后，不然会无效
@@ -139,56 +183,42 @@ function buildParamAfter(me:mve.LifeModel,el:Node,child:PNJO){
 		})
 	}
 }
-function buildChildren(
-	me:mve.LifeModel,
-	el:Node,
-	child:PNJO,
-	buildChildren:(me:mve.LifeModel,p:VirtualChildParam<Node>,children:JOChildren<NJO,Node>)=>BuildResult
-){
-	if(child.children){
-		if(child.text){
-			mb.log("text与children冲突")
+export const dom=buildElementOrginal<DOMNodeAll,Node>(function(me,n,life){
+	if(typeof(n)=='string'){
+		const txt=DOM.createTextNode(n)
+		if(life){
+			return {element:txt,init:life.init,destroy:life.destroy}
 		}else{
-			return buildChildren(me,new DOMVirtualParam(el),child.children)
-		}
-	}
-}
-
-function buildResult(element:HTMLElement,ci:BuildResult,childResult:BuildResult){
-	const out=BuildResultList.init()
-	out.orPush(childResult)
-	out.push(ci)
-	return onceLife({
-		element,
-		init:out.getInit(),
-		destroy:out.getDestroy()
-	}).out
-}
-export const parseHTML=parseOf<NJO,Node>(function(me,child){
-	if(typeof(child)=='string'){
-		return {
-			element:DOM.createTextNode(child)
-		}
-	}else
-	if(child){
-		if(child.type=="svg"){
-			return parseSVG.view(me,child)
-		}else{
-			const element=DOM.createElement(child.type)
-			const ci=buildParam(me,element,child)
-			const childResult=buildChildren(me,element,child,parseHTML.children)
-			buildParamAfter(me,element,child)
-			return buildResult(element,ci,childResult) as EOParseResult<Node>
+			return {element:txt,init:null,destroy:null}
 		}
 	}else{
-		mb.log(`child为空，不生成任何东西`)
+		const element=DOM.createElement(n.type)
+		const out=BuildResultList.init()
+		const ci=buildParam(me,element,n)
+		if('children' in n){
+			const children=n.children
+			if(children){
+				out.push(childrenBuilder(me,new DOMVirtualParam(element),children))
+			}
+		}
+		buildParamAfter(me,element,n)
+		out.push(ci)
+		if(life){
+			out.push(life)
+		}
+		return onceLife(out.getAsOne(element)).out
 	}
 })
-export const parseSVG=parseOf<PNJO,Node>(function(me,child){
-	const element=DOM.createElementNS(child.type,"http://www.w3.org/2000/svg")
-	const ci=buildParam(me,element,child)
-	const childResult=buildChildren(me,element,child, child.type=="foreignObject"?parseHTML.children:parseSVG.children)
-	buildParamAfter(me,element,child)
-	return buildResult(element,ci,childResult)
+export const svg=buildElement<DOMNode,Node>(function(me,n,out){
+	const element=DOM.createElementNS(n.type,"http://www.w3.org/2000/svg")
+	const ci=buildParam(me,element,n)
+	if('children' in n){
+		const children=n.children
+		if(children){
+			out.push(childrenBuilder(me,new DOMVirtualParam(element),children))
+		}
+	}
+	buildParamAfter(me,element,n)
+	out.push(ci)
+	return element
 })
-export const newline={type:"br"}

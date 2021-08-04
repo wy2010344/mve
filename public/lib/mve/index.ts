@@ -1,7 +1,6 @@
-import { VirtualChildParam } from "./virtualTreeChildren"
-import { mve,EOParseResult, BuildResult, orRun } from "./util"
-import { childrenBuilder, JOChildren } from "./childrenBuilder"
-import { singleBuilder, SingleParam } from "./singleModel"
+import { EOChildFun } from "./childrenBuilder"
+import { BuildResult, BuildResultList, EOParseResult, mve, onceLife } from "./util"
+
 export const parseUtil={
   bind<T>(me:mve.LifeModel,value:mve.MTValue<T>,fun:(v:T)=>void){
     if(typeof(value)=='function'){
@@ -25,30 +24,39 @@ export const parseUtil={
   }
 }
 
-export interface ParseOfResult<JO,EO>{
-  view(me:mve.LifeModel,child:JO):EOParseResult<EO>,
-  mve(fun:(me:mve.LifeModel)=>JO):EOParseResult<EO>,
-  children(me:mve.LifeModel,p:VirtualChildParam<EO>,children:JOChildren<JO,EO>):BuildResult
-  single(p:SingleParam<EO>,me:mve.LifeModel,target:JO):BuildResult
+interface ElementResult<JO,EO>{
+	(n:JO):EOChildFun<EO>
+	one(me:mve.LifeModel,n:JO,life?:BuildResult):EOParseResult<EO>
+	root(fun:(me:mve.LifeModel)=>JO):EOParseResult<EO>
 }
-
-export function parseOf<JO,EO>(view:(me:mve.LifeModel,child:JO)=>EOParseResult<EO>):ParseOfResult<JO,EO>{
-  return {
-    view,
-    /**自己作为返回节点的情况 */
-    mve(fun:(me:mve.LifeModel)=>JO){
-			const life=mve.newLifeModel()
-			const vr=view(life.me,fun(life.me))
-			const destroy=vr.destroy
-			vr.destroy=function(){
-        orRun(destroy)
-				life.destroy()
-			}
-			return vr
-    },
-    /**自己作为多节点的情况 */
-    children:childrenBuilder(view),
-    /**自己的子单节点的情况 */
-    single:singleBuilder(view)
-  }
+/**原始的组装*/
+export function buildElementOrginal<JO,EO>(
+	fun:(me:mve.LifeModel,n:JO,life?:BuildResult)=>EOParseResult<EO>
+){
+	const out:ElementResult<JO,EO>=function(n){
+		return function(parent,me){
+			const out=fun(me,n)
+			parent.push(out.element)
+			return out
+		}
+	}
+	out.one=fun
+	out.root=function(cal){
+		const life=mve.newLifeModel()
+		return fun(life.me,cal(life.me),life)
+	}
+	return out
+}
+/**通用的子元素组装 */
+export function buildElement<JO,EO>(
+	fun:(me:mve.LifeModel,n:JO,out:BuildResultList)=>EO
+){
+	return buildElementOrginal<JO,EO>(function(me,n,life){
+		const out=BuildResultList.init()
+		const element=fun(me,n,out)
+		if(life){
+			out.push(life)
+		}
+		return onceLife(out.getAsOne(element)).out
+	})
 }

@@ -6,6 +6,8 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -33,13 +35,9 @@ define(["require", "exports"], function (require, exports) {
             }
         };
         Dep.uid = 0;
+        Dep.watcherCount = 0;
         return Dep;
     }());
-    var DEP_KEY = "__Dep__";
-    if (window[DEP_KEY]) {
-        throw "\u91CD\u590D\u52A0\u8F7D\u4E86" + pathOf() + "\u5BFC\u81F4mve\u51FA\u73B0\u4E86\u95EE\u9898";
-    }
-    window[DEP_KEY] = Dep;
     var mve;
     (function (mve) {
         function delaySetAfter(fun, after) {
@@ -68,6 +66,10 @@ define(["require", "exports"], function (require, exports) {
             };
         }
         mve.valueOf = valueOf;
+        /**
+         * 转化成统一的函数
+         * @param a
+         */
         function valueOrCall(a) {
             if (typeof (a) == 'function') {
                 return a;
@@ -83,33 +85,12 @@ define(["require", "exports"], function (require, exports) {
          * @param fun
          */
         function reWriteMTValue(a, fun) {
-            if (typeof (a) == 'function') {
-                var after = a['after'];
-                var vm = function () { return fun(a()); };
-                vm.after = after;
-                return vm;
-            }
-            else {
-                if (a) {
-                    return function () { return fun(a); };
-                }
-            }
+            var after = a['after'];
+            var vm = function () { return fun(a()); };
+            vm.after = after;
+            return vm;
         }
         mve.reWriteMTValue = reWriteMTValue;
-        function reWriteMTValueNoWatch(a, fun) {
-            if (typeof (a) == 'function') {
-                var after = a['after'];
-                var vm = function () { return fun(a()); };
-                vm.after = after;
-                return vm;
-            }
-            else {
-                if (a) {
-                    return fun(a);
-                }
-            }
-        }
-        mve.reWriteMTValueNoWatch = reWriteMTValueNoWatch;
         /**构造只读的模型*/
         var CacheArrayModel = /** @class */ (function () {
             function CacheArrayModel(size, array, views) {
@@ -256,6 +237,7 @@ define(["require", "exports"], function (require, exports) {
             function Watcher() {
                 this.id = Watcher.uid++;
                 this.enable = true;
+                Dep.watcherCount++;
             }
             Watcher.prototype.update = function () {
                 if (this.enable) {
@@ -264,6 +246,7 @@ define(["require", "exports"], function (require, exports) {
             };
             Watcher.prototype.disable = function () {
                 this.enable = false;
+                Dep.watcherCount--;
             };
             Watcher.uid = 0;
             return Watcher;
@@ -287,6 +270,7 @@ define(["require", "exports"], function (require, exports) {
         mve.WatchAfter = WatchAfter;
         var LifeModelImpl = /** @class */ (function () {
             function LifeModelImpl() {
+                this.destroyList = [];
                 this.pool = [];
             }
             LifeModelImpl.prototype.Watch = function (exp) {
@@ -316,6 +300,10 @@ define(["require", "exports"], function (require, exports) {
             LifeModelImpl.prototype.destroy = function () {
                 while (this.pool.length > 0) {
                     this.pool.pop().disable();
+                }
+                for (var _i = 0, _a = this.destroyList; _i < _a.length; _i++) {
+                    var destroy = _a[_i];
+                    destroy();
                 }
             };
             return LifeModelImpl;
@@ -474,8 +462,9 @@ define(["require", "exports"], function (require, exports) {
                 return destroys[0];
             }
         };
-        BuildResultList.prototype.getAsOne = function () {
+        BuildResultList.prototype.getAsOne = function (e) {
             return {
+                element: e,
                 init: this.getInit(),
                 destroy: this.getDestroy()
             };
@@ -483,29 +472,61 @@ define(["require", "exports"], function (require, exports) {
         return BuildResultList;
     }());
     exports.BuildResultList = BuildResultList;
-    function onceLife(p) {
+    function onceLife(p, nowarn) {
+        var warn = !nowarn;
         var self = {
             isInit: false,
             isDestroy: false,
             out: p
         };
         var init = p.init;
+        var destroy = p.destroy;
         if (init) {
             p.init = function () {
                 if (self.isInit) {
-                    mb.log("禁止重复init");
+                    if (warn) {
+                        mb.log("禁止重复init");
+                    }
                 }
                 else {
                     self.isInit = true;
                     init();
                 }
             };
+            if (!destroy) {
+                p.destroy = function () {
+                    if (self.isDestroy) {
+                        if (warn) {
+                            mb.log("禁止重复destroy");
+                        }
+                    }
+                    else {
+                        self.isDestroy = true;
+                        if (!self.isInit) {
+                            mb.log("未初始化故不销毁");
+                        }
+                    }
+                };
+            }
         }
-        var destroy = p.destroy;
         if (destroy) {
+            if (!init) {
+                p.init = function () {
+                    if (self.isInit) {
+                        if (warn) {
+                            mb.log("禁止重复init");
+                        }
+                    }
+                    else {
+                        self.isInit = true;
+                    }
+                };
+            }
             p.destroy = function () {
                 if (self.isDestroy) {
-                    mb.log("禁止重复destroy");
+                    if (warn) {
+                        mb.log("禁止重复destroy");
+                    }
                 }
                 else {
                     self.isDestroy = true;

@@ -1,12 +1,12 @@
 define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (require, exports, index_1, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.dialogShow = exports.buildDialogN1 = void 0;
+    exports.dialogShow = exports.buildDialogN1 = exports.centerContent = void 0;
     /**
-     * 一个始终居中的窗口，自定义尺寸
+     * 一个始终居中的元素
      * @param children
      */
-    function buildDialogContent(children) {
+    function centerContent(children) {
         return {
             type: "div",
             style: {
@@ -17,7 +17,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
                 left: "0px"
             },
             children: [
-                {
+                index_1.dom({
                     type: "div",
                     style: {
                         width: "100%",
@@ -28,8 +28,8 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
                         top: "0px",
                         left: "0px"
                     }
-                },
-                {
+                }),
+                index_1.dom({
                     type: "table",
                     style: {
                         width: "100%",
@@ -38,25 +38,26 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
                         position: "relative"
                     },
                     children: [
-                        {
+                        index_1.dom({
                             type: "tbody",
                             children: [
-                                {
+                                index_1.dom({
                                     type: "tr",
                                     children: [
-                                        {
+                                        index_1.dom({
                                             type: "td",
                                             children: children
-                                        }
+                                        })
                                     ]
-                                }
+                                })
                             ]
-                        }
+                        })
                     ]
-                }
+                })
             ]
         };
     }
+    exports.centerContent = centerContent;
     /**
      * 只有展示与隐藏
      * @param fun
@@ -64,13 +65,13 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
     function buildDialogN1(fun) {
         var body = document.body;
         var show = util_1.mve.valueOf(false);
-        var dialog = index_1.parseHTML.mve(function (me) {
+        var dialog = index_1.dom.root(function (me) {
             var render_object = fun(me, {
                 hide: function () {
                     show(false);
                 }
             });
-            var element = buildDialogContent(render_object);
+            var element = centerContent(render_object);
             element.style.display = function () {
                 return show() ? "" : "none";
             };
@@ -110,9 +111,9 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
             util_1.orDestroy(dialog);
             body.removeChild(dialog.element);
         }
-        var dialog = index_1.parseHTML.mve(function (me) {
+        var dialog = index_1.dom.root(function (me) {
             var render_object = fun(me, close);
-            return buildDialogContent(render_object);
+            return centerContent(render_object);
         });
         body.appendChild(dialog.element);
         util_1.orInit(dialog);

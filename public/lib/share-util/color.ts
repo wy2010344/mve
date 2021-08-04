@@ -47,3 +47,17 @@ export function rgbFromBgColor(v:BGColor){
 		return `rgb(${v.red},${v.green},${v.blue})`
 	}
 }
+
+
+
+export function random255(){
+	return Math.round(Math.random() * 255)
+}
+export function randomColor(){
+	return hexFromBgColor({
+		red:random255(),
+		green:random255(),
+		blue:random255(),
+		alpha:random255(),
+	})
+}

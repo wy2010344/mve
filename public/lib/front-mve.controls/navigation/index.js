@@ -3,7 +3,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
     exports.__esModule = true;
     exports.navigation = void 0;
     function navigation(p) {
-        return index_1.parseHTML.mve(function (me) {
+        return index_1.dom.root(function (me) {
             var current = util_1.mve.valueOf(null);
             var model = util_1.mve.arrayModelOf([]);
             var params = {
@@ -56,7 +56,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
                         element.style.display = function () {
                             return current() == row ? "" : "none";
                         };
-                        return element;
+                        return index_1.dom(element);
                     });
                 }
             });

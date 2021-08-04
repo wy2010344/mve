@@ -2,7 +2,7 @@ import { menu, MenuFun } from "./menu";
 export function context_menu(fun:MenuFun){
 	let v_menu=menu(fun)
 	return {
-		show:function(e:MouseEvent){
+		show(e:MouseEvent){
 			v_menu.show(e.clientX,e.clientY);
 			mb.DOM.preventDefault(e);//阻止系统菜单
 			mb.DOM.stopPropagation(e);//阻止后面的菜单之类
@@ -10,7 +10,7 @@ export function context_menu(fun:MenuFun){
 		hide(){
 			v_menu.hide();
 		},
-		destroy:function(){
+		destroy(){
 			v_menu.destroy();
 		}
 	}
