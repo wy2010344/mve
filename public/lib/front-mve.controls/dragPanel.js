@@ -1,9 +1,7 @@
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
 };
 define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../mve-DOM/other/resize", "../mve/util", "./window/form"], function (require, exports, index_1, drag_1, resize_1, util_1, form_1) {
     "use strict";
@@ -42,7 +40,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                 }
             }
         };
-        var dialog = index_1.parseHTML.mve(function (me) {
+        var dialog = index_1.dom.root(function (me) {
             var result = fun(me, rect);
             function addTop(x) {
                 rect.top(rect.top() + x);
@@ -89,8 +87,8 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                     width: function () { return rect.width() + "px"; },
                     height: function () { return rect.height() + titleHeight + "px"; }
                 }),
-                children: __spreadArrays([
-                    {
+                children: __spreadArray([
+                    index_1.dom({
                         type: "div", text: result.title, style: { cursor: "pointer", height: titleHeight + "px", "line-height": titleHeight + "px" },
                         action: {
                             mousedown: drag_1.dragMoveHelper({
@@ -106,8 +104,8 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                                 }
                             })
                         }
-                    },
-                    {
+                    }),
+                    index_1.dom({
                         type: "div",
                         text: "-",
                         style: {
@@ -119,8 +117,8 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                         action: {
                             click: minClick
                         }
-                    },
-                    result.element
+                    }),
+                    index_1.dom(result.element)
                 ], zoom)
             };
         });

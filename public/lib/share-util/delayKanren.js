@@ -42,9 +42,9 @@ define(["require", "exports", "./kanren"], function (require, exports, kanren_1)
         success: function (notice, sub) {
             notice(kanren_1.Pair.of(sub, exports.emptyDelayStream));
         },
-        eq: function (a, b) {
+        query: function (a, b, unify) {
             return function (notice, sub) {
-                var _a = kanren_1.unify(a, b, sub), success = _a[0], sub1 = _a[1];
+                var _a = unify(a, b, sub), success = _a[0], sub1 = _a[1];
                 if (success) {
                     //合一成功，添加作用域
                     exports.delayKanren.success(notice, sub1);
@@ -61,6 +61,18 @@ define(["require", "exports", "./kanren"], function (require, exports, kanren_1)
                     delayStreamAppendStream(notice, av, function (nv) {
                         b(nv, sub);
                     });
+                }, sub);
+            };
+        },
+        cut: function (a, b) {
+            return function (notice, sub) {
+                a(function (av) {
+                    if (av) {
+                        notice(av);
+                    }
+                    else {
+                        b(notice, sub);
+                    }
                 }, sub);
             };
         },

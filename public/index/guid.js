@@ -14,10 +14,8 @@ define(["require", "exports", "../lib/mve-DOM/index", "../lib/mve/ifChildren", "
         type: "br"
     };
     var list = util_1.mve.valueOf([]);
-    return {
-        resize: function (x) {
-        },
-        mve: index_1.parseHTML.mve(function (me) {
+    return function () {
+        return index_1.dom.root(function (me) {
             var input;
             return {
                 type: "div",
@@ -129,8 +127,8 @@ define(["require", "exports", "../lib/mve-DOM/index", "../lib/mve/ifChildren", "
                     {
                         type: "div",
                         children: [
-                            "测试multi",
-                            "我亦是内容",
+                            index_1.dom("测试multi"),
+                            index_1.dom("我亦是内容"),
                             ifChildren_1.ifChildren(function (me) {
                                 return mb.Array.map(list(), function (row, index) {
                                     return {
@@ -211,8 +209,8 @@ define(["require", "exports", "../lib/mve-DOM/index", "../lib/mve/ifChildren", "
                             })
                         ]
                     }
-                ]
+                ].map(index_1.dom)
             };
-        })
+        });
     };
 });

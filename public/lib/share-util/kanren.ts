@@ -1,8 +1,9 @@
+
 export class Pair<L,R>{
-  private constructor(
-    public readonly left:L,
-    public readonly right:R
-  ){}
+	private constructor(
+		public readonly left:L,
+		public readonly right:R
+	){}
 	static of<L,R>(left:L,right:R){
 		return new Pair(left,right)
 	}
@@ -15,7 +16,7 @@ type NotNullList<T>=Pair<T,List<T>>
 export type List<T>=NotNullList<T> | null
 /**
  * 作用域链，空为基础，后继为
-	* 存储所有的定义<KVar,KBaseType>
+	* 存储所有的定义<KVar,KType>
  */
 type NotNullSubsitution<V> = Pair<V,Subsitution<V>>
 export type Subsitution<V> = null | NotNullSubsitution<V>
@@ -51,9 +52,9 @@ export function streamInterleaveStream<V>(a:Stream<V>,b:DelayStream<V>):Stream<
 	if(a==null){
 		return b()
 	}else{
-    return Pair.of(a.left,function(){
-      return streamInterleaveStream(b(),a.right)
-    })
+		return Pair.of(a.left,function(){
+			return streamInterleaveStream(b(),a.right)
+	  })
 	}
 }
 
@@ -70,7 +71,7 @@ export function extendSubsitution<K,V>(key:K,value:V,parent:Subsitution<Pair<K,
  * 求解目标，代入作用域在不同世界线上求解。
  * 作用域在同一世界线上是叠加的。
  */
-export type Goal<V>=(sub?:Subsitution<V>)=>Stream<Subsitution<V>>
+export type Goal<V>=(sub:V)=>Stream<V>
 /**
  * 为所有的世界线应用一个条件，变换成新的世界线列表
  * 在a流中，使用b目标查找，每一个节点的尝试
@@ -78,7 +79,7 @@ export type Goal<V>=(sub?:Subsitution<V>)=>Stream<Subsitution<V>>
  * @param a 
  * @param b 
  */
-export function streamBindGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<Subsitution<V>>{
+export function streamBindGoal<V>(a:Stream<V>,b:Goal<V>):Stream<V>{
 	if(a==null){
 		return null
 	}else{
@@ -93,7 +94,7 @@ export function streamBindGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<Su
  * @param a 
  * @param b 
  */
-export function streamBindiGoal<V>(a:Stream<Subsitution<V>>,b:Goal<V>):Stream<Subsitution<V>>{
+export function streamBindiGoal<V>(a:Stream<V>,b:Goal<V>):Stream<V>{
 	if(a==null){
 		return null
 	}else{
@@ -114,89 +115,96 @@ export class KVar{
 		return v==this || (v instanceof KVar && v.flag==this.flag)
 	}
 }
-export type KList=Pair<KBaseType,KBaseType>
-/**
- * 基础类型
- */
-export type KBaseType = KVar | KList | string | number | boolean | null
 
-export type KKVPair=Pair<KVar,KBaseType>
-export type KSubsitution=Subsitution<KKVPair>
+/**
+ * 基础类型，混合KVar和T
+ */
+export type KType<T> = KVar | T
+type KKVPair<T>=Pair<KVar,T>
+export type KSubsitution<T>=Subsitution<KKVPair<T>>
 /**
  * 在作用域中寻找变量的定义
  * @param v 变量
  * @param sub 作用域
  */
-function find(v:KVar,sub:KSubsitution):KKVPair|null{
-  while(sub!=null){
-    const kv=sub.left
-    if(kv.left==v || v.equals(kv.left)){
-      return kv
-    }
-    sub=sub.right
-  }
-  return null
+function find<T>(v:KVar,sub:KSubsitution<T>):KKVPair<T>|null{
+	while(sub!=null){
+		const kv=sub.left
+		if(kv.left==v || v.equals(kv.left)){
+			return kv
+		}
+		sub=sub.right
+	}
+	return null
 }
+
 /**
+ * @todo 进一步浓缩基本类型，不一定是Pair，Pair只是一个接口协议。基础类型也后延。通过接口化，与底层具体类型无关，形成某种遍历。
  * 替换定义，如果能找到替换则替换，不能保持变量
  * @param v 
  * @param sub 
  */
-export function walk(v:KBaseType,sub:KSubsitution):KBaseType{
-  if(v instanceof Pair){
-    //列表，递归寻找
-    return Pair.of(walk(v.left,sub),walk(v.right,sub))
-  }else
-  if(v instanceof KVar){
-    const val=find(v,sub)
-    if(val){
-      //变量如果找到定义，对定义递归寻找
-      return walk(val.right,sub)
-    }
-  }
-  return v
+export type Walk<T> = (v:KType<T>,sub:KSubsitution<KType<T>>)=>KType<T>
+export function buildWalk<T>(
+	other:(v:T,sub:KSubsitution<KType<T>>)=>KType<T>
+):Walk<T>{
+	const walk:Walk<T>=function(v,sub){
+		if(v instanceof KVar){
+			const val=find(v,sub)
+			if(val){
+				//变量如果找到定义，对定义递归寻找
+				return walk(val.right,sub)
+			}
+			return v
+		}else{
+			return other(v,sub)
+		}
+	}
+	return walk
 }
 /**
- * 合一算法
- * @param a 
- * @param b 
+ * 合一算法增强
+ * @param a 查询条件
+ * @param b 库
  * @param sub 
  */
-export function unify(a:KBaseType,b:KBaseType,sub:KSubsitution):[boolean,KSubsitution]{
-  a=walk(a,sub)
-  b=walk(b,sub)
-
-  if(a == b){
-	   return [true,sub]
+export type UnifyQuery<T>=(
+	a:KType<T>,
+	b:KType<T>,
+	sub:KSubsitution<KType<T>>
+)=>[boolean,KSubsitution<KType<T>>]
+export function buildUnifyQuery<T>(
+	walk:Walk<T>,
+	unifyQueryOther:UnifyQuery<T>
+):UnifyQuery<T>{
+	const unifyQuery:UnifyQuery<T>=function(a,b,sub){
+		a=walk(a,sub)
+		b=walk(b,sub)
+	
+		if(a == b){
+			 return [true,sub]
+		}
+		if(a instanceof KVar){
+			if(a.equals(b)){
+				return [true,sub]
+			}
+			return [true,extendSubsitution(a,b,sub)]
+		}
+		if(b instanceof KVar){
+			if(b.equals(a)){
+				return [true,sub]
+			}
+			return [true,extendSubsitution(b,a,sub)]
+		}
+		return unifyQueryOther(a,b,sub)
 	}
-  if(a instanceof KVar){
-		if(a.equals(b)){
-			return [true,sub]
-		}
-    return [true,extendSubsitution(a,b,sub)]
-  }
-  if(b instanceof KVar){
-		if(b.equals(a)){
-			return [true,sub]
-		}
-    return [true,extendSubsitution(b,a,sub)]
-  }
-  if(a instanceof Pair && b instanceof Pair){
-    const [success,sub1]=unify(a.left,b.left,sub)
-    if(success){
-      return unify(a.right,b.right,sub1)
-    }else{
-			return [false,null]
-		}
-  }
-  //默认返回失败
-  return [false,null]
+	return unifyQuery
 }
-export type KStream=Stream<KSubsitution>
-export type KGoal=Goal<KKVPair>
+export type KGoal<T>=Goal<KSubsitution<T>>
+export type KStream<T>=Stream<KSubsitution<T>>
 
-function check(fun:(v:KBaseType)=>boolean){
-	return function(v:KBaseType):KGoal{
+function check<T>(fun:(v:T)=>boolean){
+	return function(v:T):KGoal<T>{
 		return function(sub){
 			if(fun(v)){
 				return kanren.success(sub)
@@ -206,7 +214,7 @@ function check(fun:(v:KBaseType)=>boolean){
 		}
 	}
 }
-function toArray(term:KBaseType):[KBaseType[],KBaseType]{
+function toArray<T>(term:KType<T>):[KType<T>[],KType<T>]{
 	if(term instanceof Pair){
 		const first=term.left
 		const vm=toArray(term.right)
@@ -216,27 +224,26 @@ function toArray(term:KBaseType):[KBaseType[],KBaseType]{
 		return [[],term]
 	}
 }
-
 export const kanren={
-  fresh(){
-    return new KVar()
-  },
-  fail:<KGoal>function(sub){
-    return null
-  },
-  success:<KGoal>function(sub){
-    return Pair.of(sub,emptyDelayStream)
-  },
-  pair(v1:KBaseType,v2:KBaseType){
-    return Pair.of(v1,v2)
-  },
-  list(...args:KBaseType[]):List<KBaseType>{
-    let ret:List<KBaseType> | null=null
-    for(let i=args.length-1;i>-1;i--){
-      ret=Pair.of(args[i],ret)
-    }
-    return ret
-  },
+	fresh(){
+		return new KVar()
+	},
+	fail:<KGoal<any>>function(sub){
+		return null
+	},
+	success:<KGoal<any>>function(sub){
+		return Pair.of(sub,emptyDelayStream)
+	},
+	pair<T>(v1:KType<T>,v2:KType<T>){
+		return Pair.of(v1,v2)
+	},
+	list<T>(...args:KType<T>[]):List<KType<T>>{
+		let ret:List<KType<T>> | null=null
+		for(let i=args.length-1;i>-1;i--){
+			ret=Pair.of(args[i],ret)
+		}
+		return ret
+	},
 	toArray,
 	check,
 	isVar:check(v=>v instanceof KVar),
@@ -248,31 +255,41 @@ export const kanren={
 	 * @param a 
 	 * @param b 
 	 */
-  eq(a:KBaseType,b:KBaseType):KGoal{
-    return function(sub){
-      const [success,sub1]=unify(a,b,sub)
-      if(success){
-        //合一成功，添加作用域
-        return kanren.success(sub1)
-      }
-      //合一失败，返回空作用域
-      return kanren.fail(sub1)
-    }
-  },
+	query<T>(a:KType<T>,b:KType<T>,unify:UnifyQuery<T>):KGoal<KType<T>>{
+		return function(sub){
+			const [success,sub1]=unify(a,b,sub)
+			if(success){
+				//合一成功，添加作用域
+				return kanren.success(sub1)
+			}
+			//合一失败，返回空作用域
+			return kanren.fail(sub1)
+		}
+	},
 	/**
 	 * 增加世界线
 	 * 如果其中任意一个没有成功，比如是eq的goal，则只返回另一个goal，世界线并没有增加
 	 * @param a 
 	 * @param b 
 	 */
-  or(a:KGoal,b:KGoal):KGoal{
-    return function(sub){
-      return streamAppendStream(a(sub),function(){
-        return b(sub)
-    	})
-    }
-  },
-	ori(a:KGoal,b:KGoal):KGoal{
+	or<T>(a:KGoal<T>,b:KGoal<T>):KGoal<T>{
+		return function(sub){
+			return streamAppendStream(a(sub),function(){
+				return b(sub)
+			})
+		}
+	},
+	cut<T>(a:KGoal<T>,b:KGoal<T>):KGoal<T>{
+		return function(sub){
+			const v=a(sub)
+			if(v){
+				return v
+			}else{
+				return b(sub)
+			}
+		}
+	},
+	ori<T>(a:KGoal<T>,b:KGoal<T>):KGoal<T>{
 		return function(sub){
 			return streamInterleaveStream(a(sub),function(){
 				return b(sub)
@@ -287,34 +304,39 @@ export const kanren={
 	 * @param a 
 	 * @param b 
 	 */
-  and(a:KGoal,b:KGoal):KGoal{
-    return function(sub){
-      return streamBindGoal(a(sub),b)
-    }
-  },
-	andi(a:KGoal,b:KGoal):KGoal{
+	and<T>(a:KGoal<T>,b:KGoal<T>):KGoal<T>{
+		return function(sub){
+			return streamBindGoal(a(sub),b)
+		}
+	},
+	andi<T>(a:KGoal<T>,b:KGoal<T>):KGoal<T>{
 		return function(sub){
 			return streamBindiGoal(a(sub),b)
 		}
 	},
-	all(...gs:KGoal[]):KGoal{
+	all<T>(...gs:KGoal<T>[]):KGoal<T>{
 		if(gs.length==0){return kanren.success}
 		if(gs.length==1){return gs[0]}
 		return kanren.and(gs[0],kanren.all.apply(null,gs.slice(1)))
 	},
-	alli(...gs:KGoal[]):KGoal{
+	alli<T>(...gs:KGoal<T>[]):KGoal<T>{
 		if(gs.length==0){return kanren.success}
 		if(gs.length==1){return gs[0]}
 		return kanren.andi(gs[0],kanren.alli.apply(null,gs.slice(1)))
 	},
-	any(...gs:KGoal[]):KGoal{
+	any<T>(...gs:KGoal<T>[]):KGoal<T>{
 		if(gs.length==0){return kanren.fail}
 		if(gs.length==1){return gs[0]}
 		return kanren.or(gs[0],kanren.any.apply(null,gs.slice(1)))
 	},
-	anyi(...gs:KGoal[]):KGoal{
+	anyi<T>(...gs:KGoal<T>[]):KGoal<T>{
 		if(gs.length==0){return kanren.fail}
 		if(gs.length==1){return gs[0]}
 		return kanren.ori(gs[0],kanren.anyi.apply(null,gs.slice(1)))
+	},
+	match<T>(...gs:KGoal<T>[]):KGoal<T>{
+		if(gs.length==0){return kanren.fail}
+		if(gs.length==1){return gs[0]}
+		return kanren.cut(gs[0],kanren.match.apply(null,gs.slice(1)))
 	}
 }

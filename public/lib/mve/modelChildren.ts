@@ -1,13 +1,13 @@
-import { JOChildFun, JOChildren } from "./childrenBuilder";
+import { baseChildrenBuilder, EOChildFun, EOChildren } from "./childrenBuilder";
 import { BuildResult, mve, onceLife, orRun, orInit, orDestroy } from "./util";
 
 export interface ModelCacheValue<V>{
-	index:mve.GValue<number>
-	value:V
+	readonly index:mve.GValue<number>
+	readonly value:V
 }
 export type ModelCacheChildren<V>=mve.CacheArrayModel<ModelCacheValue<V>>
 
-interface ModelWriteValue<V> extends ModelCacheValue<V>{
+export interface ModelWriteValue<V> extends ModelCacheValue<V>{
 	index:mve.Value<number>
 	destroy():void
 }
@@ -17,7 +17,7 @@ interface ModelWriteValue<V> extends ModelCacheValue<V>{
  * @param views 
  * @param index 
  */
-function initUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:number){
+export function initUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:number){
 	for(let i=index+1;i<views.size();i++){
 		views.get(i).index(i)
 	}
@@ -27,7 +27,7 @@ function initUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:number
  * @param views 
  * @param index 
  */
-function removeUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:number){
+export function removeUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:number){
 	for(let i=index;i<views.size();i++){
 		views.get(i).index(i)
 	}
@@ -38,7 +38,7 @@ function removeUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,index:numb
  * @param oldIndex 
  * @param newIndex 
  */
-function moveUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,oldIndex:number,newIndex:number){
+export function moveUpdateIndex<V>(views:BaseReadArray<ModelWriteValue<V>>,oldIndex:number,newIndex:number){
 	const sort=oldIndex<newIndex?[oldIndex,newIndex]:[newIndex,oldIndex];
 	for(let i=sort[0];i<=sort[1];i++){
 		views.get(i).index(i)
@@ -61,26 +61,35 @@ function destroyViews<V,T>(views:BaseArray<ModelWriteValue<V>>,model:mve.CacheAr
 }
 
 
-class CacheModel<V> implements ModelWriteValue<V>{
-	constructor(
-		public readonly index:mve.Value<number>,
-		public readonly value:V,
-		public readonly clear?:()=>void
-	){}
-	destroy(){
-		orRun(this.clear)
+function getCacheModel<V>(pDestroy?:(v:V)=>void){
+	class CacheModel<V> implements ModelWriteValue<V>{
+		constructor(
+			public readonly index:mve.Value<number>,
+			public readonly value:V
+		){}
+		destroy(){}
+	}
+	if(pDestroy){
+		CacheModel.prototype.destroy=function(){
+			pDestroy(this.value)
+		}
+	}
+	return function(index:mve.Value<number>,value:V){
+		return new CacheModel(index,value)
 	}
 }
 function superModelCache<T,V>(
-	views:BaseArray<CacheModel<V>>,
+	views:BaseArray<ModelWriteValue<V>>,
 	model:mve.CacheArrayModel<T>,
-	insert:(row:T,index:mve.GValue<number>)=>{row:V,destroy?():void}
+	insert:(row:T,index:mve.GValue<number>)=>V,
+	destroy?:(v:V)=>void
 ){
+	const cacheModel=getCacheModel(destroy)
 	const theView:mve.ArrayModelView<T>={
 		insert(index,row){
 			const vindex=mve.valueOf(index)
 			const vrow=insert(row,vindex)
-			views.insert(index,new CacheModel(vindex,vrow.row,vrow.destroy))
+			views.insert(index,cacheModel(vindex,vrow))
 			//更新计数
 			initUpdateIndex(views,index)
 		},
@@ -106,19 +115,29 @@ function superModelCache<T,V>(
 		destroyViews(views,model,theView)
 	}
 }
+
+////////////////////////////////////////////从一个模型到另一个模型///////////////////////////////////
+
+export interface ModelCacheReturn<V>{
+	views:ModelCacheChildren<V>
+	destroy():void
+}
 /**
  * 从一个model到另一个model，可能有销毁事件
+ * 应该是很少用的，尽量不用
+ * 可以直接用CacheArrayModel<T>作为组件基础参数，在组件需要的字段不存在时，入参定义T到该字段的映射
  * @param model 
  * @param insert 
  */
 export function modelCache<T,V>(
 	model:mve.CacheArrayModel<T>,
-	insert:(row:T,index:mve.GValue<number>)=>{row:V,destroy?():void},
-){
-	const views=mve.arrayModelOf<CacheModel<V>>([])
+	insert:(row:T,index:mve.GValue<number>)=>V,
+	destroy?:(v:V)=>void
+):ModelCacheReturn<V>{
+	const views=mve.arrayModelOf<ModelWriteValue<V>>([])
 	return {
 		views:views as ModelCacheChildren<V>,
-		destroy:superModelCache<T,V>(views,model,insert)
+		destroy:superModelCache<T,V>(views,model,insert,destroy)
 	}
 }
 class ViewModel<V> implements ModelWriteValue<V>{
@@ -136,16 +155,14 @@ class ViewModel<V> implements ModelWriteValue<V>{
 		orDestroy(this.result)
   }
 }
-export interface ModelChildrenRenderReturn<V,JO,EO>{
-	data:V
-	element:JOChildren<JO,EO>
-}
-function superModelChildren<T,V,JO,EO>(
+function superModelChildren<T,V,F,EO>(
 	views:BaseArray<ViewModel<V>>,
+	getElement:(f:F)=>EOChildren<EO>,
+	getData:(f:F)=>V,
 	model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>ModelChildrenRenderReturn<V,JO,EO>
-):JOChildFun<JO,EO>{
-	return function(buildChildren,parent){
+	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>F
+):EOChildFun<EO>{
+	return function(parent,me){
 		const life=onceLife({
 			init(){
 				const size=views.size()
@@ -164,8 +181,8 @@ function superModelChildren<T,V,JO,EO>(
 				const cs=fun(lifeModel.me,row,vindex)
 				//创建视图
 				const vm=parent.newChildAt(index)
-				const vx=buildChildren(lifeModel.me,cs.element,vm)
-				const view=new ViewModel<V>(vindex,cs.data,lifeModel,vx)
+				const vx=baseChildrenBuilder(lifeModel.me,getElement(cs),vm)
+				const view=new ViewModel<V>(vindex,getData(cs),lifeModel,vx)
 				//模型增加
 				views.insert(index,view)
 				//更新计数
@@ -203,34 +220,44 @@ function superModelChildren<T,V,JO,EO>(
 		return life.out
 	}
 }
+////////////////////////////////////////////通用方式////////////////////////////////////////////////
+function emptyGet(){}
+function quoteGet<T>(v:T){return v}
 /**
  * 从model到视图 
  * @param model 
  * @param fun 
  */
-export function modelChildren<T,JO,EO>(
+export function modelChildren<T,EO>(
   model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>JOChildren<JO,EO>
-):JOChildFun<JO,EO>{
-	return superModelChildren([],model,function(me,row:T,index){
-		return {
-			data:null,
-			element:fun(me,row,index)
-		}
-	})
+	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>EOChildren<EO>
+):EOChildFun<EO>{
+	return superModelChildren([],quoteGet,emptyGet,model,fun)
+}
+///////////////////////////////////////////一种方式/////////////////////////////////////////////////
+export interface ModelChildrenRenderReturn<V,EO>{
+	data:V
+	element:EOChildren<EO>
+}
+function renderGetElement<V,EO>(v:ModelChildrenRenderReturn<V,EO>){
+	return v.element
+}
+function renderGetData<V,EO>(v:ModelChildrenRenderReturn<V,EO>){
+	return v.data
 }
 /**
  * 从model到带模型视图
+ * 应该是很少用的，尽量不用
  * @param model 
  * @param fun 
  */
-export function modelCacheChildren<T,V,JO,EO>(
+export function modelCacheChildren<T,V,EO>(
   model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>ModelChildrenRenderReturn<V,JO,EO>
+	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>ModelChildrenRenderReturn<V,EO>
 ){
 	const views=mve.arrayModelOf<ViewModel<V>>([])
 	return {
 		views:views as ModelCacheChildren<V>,
-		children:superModelChildren(views,model, fun)
+		children:superModelChildren(views,renderGetElement,renderGetData,model, fun)
 	}
 }

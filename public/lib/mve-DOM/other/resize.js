@@ -1,4 +1,4 @@
-define(["require", "exports"], function (require, exports) {
+define(["require", "exports", "../index"], function (require, exports, index_1) {
     "use strict";
     exports.__esModule = true;
     exports.resizeZoom = void 0;
@@ -15,7 +15,7 @@ define(["require", "exports"], function (require, exports) {
         } : "";
         return [
             //四边
-            {
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -29,8 +29,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ t: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -44,8 +44,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ r: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -59,8 +59,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ l: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -74,8 +74,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ b: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -89,8 +89,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ t: true, l: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -104,8 +104,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ t: true, r: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -119,8 +119,8 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ b: true, l: true })
                 }
-            },
-            {
+            }),
+            index_1.dom({
                 type: "div",
                 style: {
                     display: display,
@@ -134,7 +134,7 @@ define(["require", "exports"], function (require, exports) {
                 action: {
                     mousedown: makeResize({ b: true, r: true })
                 }
-            }
+            })
         ];
     }
     exports.resizeZoom = resizeZoom;

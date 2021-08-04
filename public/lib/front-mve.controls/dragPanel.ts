@@ -1,4 +1,4 @@
-import { parseHTML, PNJO } from "../mve-DOM/index"
+import { dom, DOMNode } from "../mve-DOM/index"
 import { dragMoveHelper, dragResizeHelper } from "../mve-DOM/other/drag"
 import { resizeZoom } from "../mve-DOM/other/resize"
 import { mve, orDestroy, orInit } from "../mve/util"
@@ -23,7 +23,7 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 	minClick?():void
 	init?():void
 	destroy?():void
-	element:PNJO
+	element:DOMNode
 }){
 	let firstShow=true
 	const show=mve.valueOf(false)
@@ -52,7 +52,7 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 			}
 		}
 	}
-	const dialog=parseHTML.mve(function(me){
+	const dialog=dom.root(function(me){
 		const result=fun(me,rect)
 		function addTop(x:number){
 			rect.top(rect.top()+x)
@@ -100,7 +100,7 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 				height(){return rect.height() + titleHeight +"px"}
 			}),
 			children:[
-				{
+				dom({
 					type:"div",text:result.title,style:{cursor:"pointer",height:titleHeight+"px","line-height":titleHeight+"px"},
 					action:{
 						mousedown:dragMoveHelper({
@@ -116,8 +116,8 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 							}
 						})
 					}
-				},
-				{
+				}),
+				dom({
 					type:"div",
 					text:"-",
 					style:{
@@ -129,8 +129,8 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 					action:{
 						click:minClick
 					}
-				},
-				result.element,
+				}),
+				dom(result.element),
 				...zoom
 			]
 		}

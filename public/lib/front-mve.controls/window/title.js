@@ -1,13 +1,20 @@
-define(["require", "exports"], function (require, exports) {
+define(["require", "exports", "../../mve-DOM/index"], function (require, exports, index_1) {
     "use strict";
     exports.__esModule = true;
     exports.buildTitle = void 0;
     function buildTitle(p) {
-        return {
+        return index_1.dom({
             type: "div",
             style: {
-                background: "#beceeb",
-                cursor: "move"
+                "background-image": "linear-gradient(180deg, #e6e6e6, #bab9ba)",
+                cursor: "move",
+                "border-radius": "5px 5px 0 0",
+                "white-space": "nowrap",
+                overflow: "hidden",
+                "text-overflow": "ellipsis",
+                height: p.height - 1 + "px",
+                "line-height": p.height - 1 + "px",
+                "border-bottom": "1px solid #696969"
             },
             action: {
                 mousedown: function (e) {
@@ -16,7 +23,7 @@ define(["require", "exports"], function (require, exports) {
             },
             children: [
                 /*按钮部分*/
-                {
+                index_1.dom({
                     type: "img",
                     attr: {
                         src: pathOf("./close.png"),
@@ -28,6 +35,8 @@ define(["require", "exports"], function (require, exports) {
                         cursor: "pointer",
                         "vertical-align": "middle",
                         backgroundColor: "white",
+                        "border-radius": "5px",
+                        "margin-left": "5px",
                         display: function () {
                             return p.showClose() ? "" : "none";
                         }
@@ -38,8 +47,8 @@ define(["require", "exports"], function (require, exports) {
                         },
                         click: p.close_click
                     }
-                },
-                {
+                }),
+                index_1.dom({
                     type: "img",
                     attr: {
                         src: function () {
@@ -53,6 +62,8 @@ define(["require", "exports"], function (require, exports) {
                         cursor: "pointer",
                         "vertical-align": "middle",
                         backgroundColor: "white",
+                        "border-radius": "5px",
+                        "margin-left": "5px",
                         display: function () {
                             if (mb.DOM.isMobile()) {
                                 return "none";
@@ -70,22 +81,22 @@ define(["require", "exports"], function (require, exports) {
                             p.max(!p.max());
                         }
                     }
-                },
+                }),
                 /*标题部分*/
-                {
+                index_1.dom({
                     type: "div",
                     style: {
                         "font-weight": "bold",
                         "font-size": "15px",
                         "vertical-align": "middle",
-                        display: "inline-block",
+                        display: "inline",
                         "margin": "0 5px",
-                        color: "#120def"
+                        color: "#645d61"
                     },
                     text: p.title
-                }
+                })
             ]
-        };
+        });
     }
     exports.buildTitle = buildTitle;
 });

@@ -1,44 +1,39 @@
 class Dep{
-  static uid=0
-  static target?:mve.Watcher
-  id=Dep.uid++
-  subs:{[key:number]:mve.Watcher}={}
-  depend(){
-    if(Dep.target){
-      this.subs[Dep.target.id]=Dep.target
-    }
-  }
-  notify(){
-    const oldSubs=this.subs
-    this.subs={}
-    for(const key in oldSubs){
-      oldSubs[key].update()
-    }
-  }
+	static uid=0
+	id=Dep.uid++
+	static target:mve.Watcher
+	static watcherCount=0
+	subs:{[key:number]:mve.Watcher}={}
+	depend(){
+		if(Dep.target){
+			this.subs[Dep.target.id]=Dep.target
+		}
+	}
+	notify(){
+		const oldSubs=this.subs
+		this.subs={}
+		for(const key in oldSubs){
+			oldSubs[key].update()
+		}
+	}
 }
-const DEP_KEY="__Dep__"
-if(window[DEP_KEY]){
-  throw `重复加载了${pathOf()}导致mve出现了问题`
-}
-window[DEP_KEY]=Dep
-
 export namespace mve{
   /**只读形式*/
   export type GValue<T>=()=>T
   /**值或获得值*/
 	export type TValue<T>=T|GValue<T>
 	/**延迟设置具体属性值 */
-	export interface MDelaySet<T>{
-		after(v:T,set:(v:T)=>void):void
-		():T
+	export interface MDelaySet<T,A=any>{
+		after(v:A,set:(v:T)=>void):void
+		():A
 	}
-	export function delaySetAfter<T>(fun:()=>T,after:(v:T,set:(v:T)=>void)=>void):MDelaySet<T>{
-		const newFun=fun as MDelaySet<T>
+	export function delaySetAfter<T,A>(fun:()=>A,after:(v:A,set:(v:T)=>void)=>void):MDelaySet<T,A>{
+		const newFun=fun as MDelaySet<T,A>
 		newFun.after=after
 		return newFun
 	}
 	/**属性节点可以的类型 */
-	export type MTValue<T>=TValue<T>|MDelaySet<T>
+	export type MTValue<T,A=any>=TValue<T>|MDelaySet<T,A>
   /**存储器 */
   export interface Value<T>{
     (v:T):void
@@ -77,7 +72,7 @@ export namespace mve{
 	 * @param a 
 	 * @param fun 
 	 */
-	export function reWriteMTValue<T,V>(a:MDelaySet<T>|GValue<T>,fun:(v:T)=>V){
+	export function reWriteMTValue<T,V>(a:MDelaySet<V,T>|GValue<T>,fun:(v:T)=>V){
 		const after=a['after']
 		const vm=function(){return fun(a())}
 		vm.after=after
@@ -227,6 +222,9 @@ export namespace mve{
   }
 
   export abstract class Watcher{
+		constructor(){
+			Dep.watcherCount++
+		}
     static uid=0
     id=Watcher.uid++
     private enable=true
@@ -237,6 +235,7 @@ export namespace mve{
     }
     disable(){
       this.enable=false
+			Dep.watcherCount--
     }
     protected abstract realUpdate():void;
   }
@@ -263,9 +262,11 @@ export namespace mve{
     WatchBefore<A>(before:()=>A,exp:(a:A)=>void):void
     WatchAfter<B>(exp:()=>B,after:(b:B)=>void):void
     Cache<T>(fun:()=>T):()=>T
+		destroyList:(()=>void)[]
   }
 
   class LifeModelImpl implements LifeModel{
+		destroyList=[]
     private pool:Watcher[]=[]
     Watch(exp){
       this.pool.push(mve.Watch(exp))
@@ -295,6 +296,9 @@ export namespace mve{
       while(this.pool.length>0){
         this.pool.pop().disable()
       }
+			for(let destroy of this.destroyList){
+				destroy()
+			}
     }
   }
   export function newLifeModel():{
@@ -443,45 +447,76 @@ export class BuildResultList{
       return destroys[0]
     }
   }
-  getAsOne(){
+  getAsOne<E>(e?:E):EOParseResult<E>{
     return {
+			element:e,
       init:this.getInit(),
       destroy:this.getDestroy()
-    } as BuildResult
+    }
   }
 }
 /**单元素的解析返回*/
 export interface EOParseResult<EO> extends BuildResult{
   element:EO
 }
-export function onceLife<T extends BuildResult>(p:T){
+export function onceLife<T extends BuildResult>(p:T,nowarn?:boolean){
+	const warn=!nowarn
   const self={
     isInit:false,
     isDestroy:false,
     out:p
   }
   const init=p.init
+  const destroy=p.destroy
   if(init){
     p.init=function(){
       if(self.isInit){
-        mb.log("禁止重复init")
+				if(warn){
+					mb.log("禁止重复init")
+				}
       }else{
         self.isInit=true
         init()
       }
     }
+		if(!destroy){
+			p.destroy=function(){
+				if(self.isDestroy){
+					if(warn){
+						mb.log("禁止重复destroy")
+					}
+				}else{
+					self.isDestroy=true
+					if(!self.isInit){
+						mb.log("未初始化故不销毁")
+					}
+				}
+			}
+		}
   }
-  const destroy=p.destroy
   if(destroy){
+		if(!init){
+			p.init=function(){
+				if(self.isInit){
+					if(warn){
+						mb.log("禁止重复init")
+					}
+				}else{
+					self.isInit=true
+				}
+			}
+		}
     p.destroy=function(){
       if(self.isDestroy){
-        mb.log("禁止重复destroy")
+				if(warn){
+					mb.log("禁止重复destroy")
+				}
       }else{
         self.isDestroy=true
         if(self.isInit){
           destroy()
         }else{
-          mb.log("未初始化故不销毁")
+					mb.log("未初始化故不销毁")
         }
       }
     }

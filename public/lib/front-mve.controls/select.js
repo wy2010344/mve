@@ -9,7 +9,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util", "./menu"], func
     value:观察者
     */
     function select(p) {
-        return index_1.parseHTML.mve(function (me) {
+        return index_1.dom.root(function (me) {
             var filter = util_1.mve.valueOf("");
             var inputElement;
             var input = p.input(me, {
@@ -36,12 +36,12 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util", "./menu"], func
                 });
             });
             var destroy = input.destroy;
-            input.destroy = function (v) {
-                v_menu.destroy();
-                if (destroy) {
-                    destroy(v);
-                }
-            };
+            index_1.reWriteDestroy(input, function (destroy) {
+                destroy.unshift(function () {
+                    v_menu.destroy();
+                });
+                return destroy;
+            });
             return input;
         });
     }

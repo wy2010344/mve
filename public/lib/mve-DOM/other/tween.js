@@ -6,15 +6,80 @@
 * d: duration（持续时间）。
 * you can visit 'http://easings.net/zh-cn' to get effect
 */
-define(["require", "exports"], function (require, exports) {
+define(["require", "exports", "../../mve/util"], function (require, exports, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.drawOfBezier3 = exports.Tween = exports.TweenAnimation = void 0;
+    exports.drawOfBezier3 = exports.Tween = exports.TweenAnimation = exports.cacheAnimation = exports.TweenAnimationValue = exports.TweenAnimationOf = void 0;
+    /**
+     * 一般动画起始与结束是确定的，只在于用什么动画。
+     * 多个元素可以使用相同的动画，虽然内部是不同的Animation。
+     * 如果内部要使用相同的Animation，需要显式地start。
+     * @param change 动画形式
+     * @param duration 时间
+     * @returns (起始值，终止值，回调)=>void
+     */
+    function TweenAnimationOf(change, duration) {
+        if (duration === void 0) { duration = 1000; }
+        return function (min, max, call) {
+            return TweenAnimation({
+                duration: duration,
+                min: min,
+                max: max,
+                call: call,
+                change: change
+            });
+        };
+    }
+    exports.TweenAnimationOf = TweenAnimationOf;
+    /**
+     * 用动画装饰的存储值
+     * @param change
+     * @param duration
+     * @returns
+     */
+    function TweenAnimationValue(change, duration) {
+        if (duration === void 0) { duration = 1000; }
+        return function (v) {
+            return function () {
+                if (arguments.length == 0) {
+                    return v();
+                }
+                else {
+                    var k = arguments[0];
+                    TweenAnimation({
+                        duration: duration,
+                        min: v(),
+                        max: k,
+                        call: v,
+                        change: change
+                    });
+                }
+            };
+        };
+    }
+    exports.TweenAnimationValue = TweenAnimationValue;
+    function cacheAnimation(call, cache) {
+        return function (fun) {
+            var last = 0;
+            var lastCancel;
+            return util_1.mve.delaySetAfter(cache, function (v, set) {
+                if (lastCancel) {
+                    lastCancel();
+                }
+                lastCancel = call(last, v, function (n) {
+                    set(fun(n));
+                });
+                last = v;
+            });
+        };
+    }
+    exports.cacheAnimation = cacheAnimation;
     /**
      * 产生动画
      * @param xp
      */
     function TweenAnimation(xp) {
+        var cancel = false;
         var start = Date.now();
         var calls = [];
         if (xp.call) {
@@ -45,12 +110,17 @@ define(["require", "exports"], function (require, exports) {
                 }
             }
             else {
-                var y = xp.change(t, 0, xp.max, xp.duration);
+                var y = xp.change(t, xp.min || 0, xp.max, xp.duration);
                 oneCall(y, t);
-                requestAnimationFrame(animate);
+                if (!cancel) {
+                    requestAnimationFrame(animate);
+                }
             }
         }
         animate();
+        return function () {
+            cancel = true;
+        };
     }
     exports.TweenAnimation = TweenAnimation;
     exports.Tween = {

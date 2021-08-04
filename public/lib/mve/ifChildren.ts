@@ -1,14 +1,14 @@
 import { VirtualChild } from "./virtualTreeChildren";
-import { JOChildFun, JOChildren } from "./childrenBuilder";
+import { baseChildrenBuilder, EOChildFun, EOChildren } from "./childrenBuilder";
 import { mve,BuildResult, onceLife, orInit, orDestroy } from "./util";
 /**
  * 子元素集片段是动态生成的，watchAfter后直接新入
  * @param fun 
  */
-export function ifChildren<JO,EO>(
-  fun:(me:mve.LifeModel)=>JOChildren<JO,EO>|null
-):JOChildFun<JO,EO>{
-  return function(buildChildren,parent){
+export function ifChildren<EO>(
+  fun:(me:mve.LifeModel)=>EOChildren<EO>|null
+):EOChildFun<EO>{
+  return function(parent,me){
     let currentObject:BuildResult|null
     let virtualChild:VirtualChild<EO>|null
     let currentLifeModel:mve.LifeModelReturn
@@ -50,7 +50,7 @@ export function ifChildren<JO,EO>(
         if(children){
           //初始化
           virtualChild=parent.newChildAtLast()
-          currentObject=buildChildren(currentLifeModel.me,children,virtualChild)
+          currentObject=baseChildrenBuilder(currentLifeModel.me,children,virtualChild)
           if(life.isInit){
             orInit(currentObject)
           }

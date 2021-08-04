@@ -1,8 +1,7 @@
 import { resizeForm } from "../form";
 import { modelChildren } from "../../../mve/modelChildren";
 import { mve } from "../../../mve/util";
-import { PNJO } from "../../../mve-DOM/index";
-import { dragMoveHelper } from "../../../mve-DOM/other/drag";
+import { DOMNode, svg } from "../../../mve-DOM/index";
 
 
 
@@ -28,7 +27,7 @@ export function vRuler(param:{
       allow(){
         return true
       },
-      element:{
+      element:svg({
         type:"svg",
         action:{
           mousedown:rp.move
@@ -42,7 +41,7 @@ export function vRuler(param:{
           }
         },
         children:[
-          {
+          svg({
             type:"rect",
             style:{
               background:"gray",
@@ -56,11 +55,11 @@ export function vRuler(param:{
                 return rp.out.height()
               }
             }
-          },
+          }),
           modelChildren(model,function(me,row,index){
             let color="red"
             let diff = 20
-            const lines:PNJO[]=[]
+            const lines:DOMNode[]=[]
             if(row % 10 == 0){
               color ="black"
               diff = diff + 20
@@ -89,7 +88,7 @@ export function vRuler(param:{
               color="orange"
               diff = diff + 10
             }
-            lines.push( {
+            lines.push({
               type:"line",
               style:{
                 "stroke":color,
@@ -106,10 +105,10 @@ export function vRuler(param:{
                 }
               }
             })
-            return lines
+            return lines.map(svg)
           })
         ]
-      }
+      })
     }
   })
 }

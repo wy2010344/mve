@@ -7,7 +7,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
         var show = util_1.mve.valueOf(false);
         var top = util_1.mve.valueOf(0);
         var left = util_1.mve.valueOf(0);
-        var menu = index_1.parseHTML.mve(function (me) {
+        var menu = index_1.dom.root(function (me) {
             var render_object = fun(me, {});
             var p = render_object.element;
             p.type = p.type || "div";

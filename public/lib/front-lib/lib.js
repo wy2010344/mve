@@ -381,6 +381,8 @@ mb.ajax=(function(){
 						if(window.top.mb){
 							loader._getTxt=window.top.mb.ajax.require._getTxt;
 							loader._saveTxt=window.top.mb.ajax.require._saveTxt;
+							loader.clear=window.top.mb.ajax.require.clear;
+							loader.clearAll=window.top.mb.ajax.require.clearAll;
 						}else{
 							willDef=true;
 						}
@@ -401,6 +403,18 @@ mb.ajax=(function(){
 					};
 					loader._getTxt=function(k){
 						return loader._required_txt[k];
+					};
+					/**清理指定路径 */
+					loader.clear=function(path){
+						loader._saveTxt(path,null);
+						_required[path]=undefined;
+						mb.ajax.require.cp.version=Date.now();
+					};
+					loader.clearAll=function(){
+						_required={};
+						loader._required=_required;
+						loader._required_txt={};
+						mb.ajax.require.cp.version=Date.now();
 					};
 				}
 			})();
@@ -462,17 +476,46 @@ mb.ajax=(function(){
 				mb.log(JSON.stringify(ex));
 				throw ex;
 			};
-			/**清理指定路径 */
-			loader.clear=function(path){
-				loader._saveTxt(path,null)
-				loader._required[path]=undefined;
-			}
 			return loader;
 		})()
 	};
 	return me;
 })();
 mb.util={
+	delaySkipCall:function(time,fun){
+		var end = true;
+		if (fun) {
+			var vs_2 = [];
+			var endCall_2 = function () {
+				var v=vs_2.pop();
+				vs_2.length=0;
+				fun.apply(null,v);
+				end = true;
+			};
+			return function () {
+				vs_2.push(arguments)
+				if (end) {
+					setTimeout(endCall_2, time);
+					end = false;
+				}
+			};
+		}else {
+			var vs_1 = [];
+			var endCall_1 = function () {
+				var v = vs_1.pop();
+				vs_1.length = 0;
+				v();
+				end = true;
+			};
+			return function (fun) {
+				vs_1.push(fun);
+				if (end) {
+					setTimeout(endCall_1, time);
+					end = false;
+				}
+			};
+		}
+	},
   decodeURI:function(search){
 		var dsearch;
 		while(search!=dsearch){
@@ -590,7 +633,7 @@ mb.browser=(function(){
 	mb.log(ret,navigator.userAgent);
 	return ret;
 })();
-mb.DOM=(function(){
+mb.DOM=mb(function(){
 	var isTouch= ("ontouchend" in document)? true : false;
 	var transDic={};
 	if(isTouch){
@@ -601,7 +644,24 @@ mb.DOM=(function(){
 			mouseup:"touchend"
 		};
 	}
-	return {
+	var dom={
+		contentEditable:{
+			text:mb.browser.type=="FF"?"true":"plaintext-only"
+		},
+		isNode:( typeof HTMLElement === 'object' ) ?
+			function(obj){
+					return obj instanceof HTMLElement;
+			} :
+			function(obj){
+					return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
+			},
+		wheelDelta:function(e){
+			if(e.wheelDelta){
+				return e.wheelDelta
+			}else{
+				return - e.detail * 40
+			}
+		},
 		cls:function(el){
 			var clss=[];
 			var update=function(){
@@ -627,6 +687,7 @@ mb.DOM=(function(){
 			};
 		},
 		empty:function(el){
+			el.innerText="";
 			while(el.firstChild){
 				el.removeChild(el.firstChild);
 			};
@@ -820,10 +881,137 @@ mb.DOM=(function(){
 			document.execCommand('Copy');
 		}
 	};
-})();
+	/**
+	 * 深度遍历，先子后弟
+	 * @param editor
+	 * @param visitor
+	 */
+	dom.visit=function(editor, visitor){
+		var queue = [];
+		if (editor.firstChild) {
+			queue.push(editor.firstChild);
+		}
+		var el = queue.pop();
+		while (el) {
+			if (visitor(el)) {
+				break;
+			}
+			if (el.nextSibling) {
+				queue.push(el.nextSibling);
+			}
+			if (el.firstChild) {
+				queue.push(el.firstChild);
+			}
+			el = queue.pop();
+		}
+	};
+	dom.getSelectionRange=function(editor){
+		var s = window.getSelection();
+		var pos = { start: 0, end: 0 };
+		dom.visit(editor, function (el) {
+			if (el.nodeType != Node.TEXT_NODE)
+				return;
+			if (el == s.anchorNode) {
+				if (el == s.focusNode) {
+					pos.start += s.anchorOffset;
+					pos.end += s.focusOffset;
+					pos.dir = s.anchorOffset <= s.focusOffset ? "->" : "<-";
+					return true;
+				}
+				else {
+					pos.start += s.anchorOffset;
+					if (pos.dir) {
+						return true;
+					}
+					else {
+						//选遇到开始点
+						pos.dir = "->";
+					}
+				}
+			}
+			else if (el == s.focusNode) {
+				pos.end += s.focusOffset;
+				if (pos.dir) {
+					return true;
+				}
+				else {
+					//先遇到结束点
+					pos.dir = "<-";
+				}
+			}
+			if (el.nodeType == Node.TEXT_NODE) {
+				var len = (el.nodeValue || "").length;
+				if (pos.dir != "->") {
+					pos.start += len;
+				}
+				if (pos.dir != "<-") {
+					pos.end += len;
+				}
+			}
+		});
+		function restoreVerifyPos(pos) {
+			var _a;
+			var dir = pos.dir;
+			var start = pos.start;
+			var end = pos.end;
+			if (!dir) {
+				dir = "->";
+			}
+			if (start < 0) {
+				start = 0;
+			}
+			if (end < 0) {
+				end = 0;
+			}
+			if (dir == "<-") {
+					//交换开始与结束的位置，以便顺序遍历
+				_a = [end, start], start = _a[0], end = _a[1];
+			}
+			return [start, end, dir];
+		}
+		dom.setSelectionRange=function(editor, pos){
+			var _a;
+			var s = window.getSelection();
+			var startNode, startOffset = 0;
+			var endNode, endOffset = 0;
+			var _b = restoreVerifyPos(pos), start = _b[0], end = _b[1], dir = _b[2];
+			var current = 0;
+			dom.visit(editor, function (el) {
+				if (el.nodeType != Node.TEXT_NODE)
+					return;
+				var len = (el.nodeValue || "").length;
+				if (current + len >= start) {
+					if (!startNode) {
+						startNode = el;
+						startOffset = start - current;
+					}
+					if (current + len >= end) {
+						endNode = el;
+						endOffset = end - current;
+						return true;
+					}
+				}
+				current += len;
+			});
+			if (!startNode) {
+				startNode = editor;
+			}
+			if (!endNode) {
+				endNode = editor;
+			}
+			if (dir == "<-") {
+				_a = [endNode, endOffset, startNode, startOffset], startNode = _a[0], startOffset = _a[1], endNode = _a[2], endOffset = _a[3];
+			}
+			s.setBaseAndExtent(startNode, startOffset, endNode, endOffset);
+			return s;
+		}
+		return pos;
+	};
+	return dom;
+});
 if(!window.Promise){
-	window.Promise=mb._promise_()
+	window.Promise=mb._promise_();
 }
 if(window.load_success){
-	window.load_success("front-lib/lib.js");
+	window.load_success("front-lib");
 }

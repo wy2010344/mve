@@ -54,9 +54,9 @@ export class VirtualChild<EO>{
   remove(index:number){
     if(index>-1 && index<this.children.length){
       const view=this.pureRemove(index)
-      const that=this
+      const param=this.param
       VirtualChild.deepRun(view,function(e){
-        that.param.remove(e)
+        param.remove(e)
       })
     }else{
       mb.log(`删除${index}失败,总宽度仅为${this.children.length}`)
@@ -68,15 +68,10 @@ export class VirtualChild<EO>{
       const view=this.pureRemove(oldIndex)
       const after=this.pureInsert(newIndex,view)
       const realNextEL=this.nextEL(after)
-      const that=this
-      VirtualChild.deepRun(view,function(e){
-        if(realNextEL){
-          that.param.insertBefore(e,realNextEL,true)
-        }else{
-          that.param.append(e,true)
-        }
-      })
-    }
+			VirtualChild.preformaceAdd(view,this.param,realNextEL,true)
+    }else{
+			mb.log(`移动失败${oldIndex}->${newIndex},总宽度仅为${this.children.length}`)
+		}
   }
   private pureInsert(index:number,view:VirtualChildType<EO>){
     this.children.splice(index,0,view)
@@ -103,21 +98,23 @@ export class VirtualChild<EO>{
     if(index>-1 && index<(this.children.length+1)){
       const after=this.pureInsert(index,view)
       const realNextEL=this.nextEL(after)
-      const that=this
-      if(realNextEL){
-        VirtualChild.deepRun(view,function(e){
-          that.param.insertBefore(e,realNextEL) 
-        })
-      }else{
-        VirtualChild.deepRun(view,function(e){
-          that.param.append(e)
-        })
-      }
+			VirtualChild.preformaceAdd(view,this.param,realNextEL)
     }else{
       mb.log(`插入${index}失败,总宽度仅为${this.children.length}`)
     }
   }
 
+	private static preformaceAdd<EO>(view:VirtualChildType<EO>,param:VirtualChildParam<EO>,realNextEL?:EO,move?:boolean){
+		if(realNextEL){
+			VirtualChild.deepRun(view,function(e){
+				param.insertBefore(e,realNextEL,move) 
+			})
+		}else{
+			VirtualChild.deepRun(view,function(e){
+				param.append(e,move)
+			})
+		}
+	}
   private static realNextEO<EO>(view:VirtualChildType<EO>):EO|null{
     if(view instanceof VirtualChild){
       const childrenFirst=view.children[0]

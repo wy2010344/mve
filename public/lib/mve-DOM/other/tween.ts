@@ -7,6 +7,8 @@
 * you can visit 'http://easings.net/zh-cn' to get effect
 */
 
+import { mve } from "../../mve/util"
+
 export interface TweenFun{
 	/**
 	 * @param t current time（当前时间）
@@ -24,6 +26,66 @@ export interface TweenPkg{
 	easeInOut:TweenFun
 }
 
+export type AnimationCall=(min:number,max:number,call:(n:number)=>void)=>()=>void
+/**
+ * 一般动画起始与结束是确定的，只在于用什么动画。
+ * 多个元素可以使用相同的动画，虽然内部是不同的Animation。
+ * 如果内部要使用相同的Animation，需要显式地start。
+ * @param change 动画形式
+ * @param duration 时间
+ * @returns (起始值，终止值，回调)=>void
+ */
+export function TweenAnimationOf(change:TweenFun,duration=1000):AnimationCall{
+	return function(min:number,max:number,call:(n:number)=>void){
+		return TweenAnimation({
+			duration,
+			min,
+			max,
+			call,
+			change
+		})
+	}
+}
+/**
+ * 用动画装饰的存储值
+ * @param change 
+ * @param duration 
+ * @returns 
+ */
+export function TweenAnimationValue(change:TweenFun,duration=1000){
+	return function(v:mve.Value<number>):mve.Value<number>{
+		return function(){
+			if(arguments.length==0){
+				return v()
+			}else{
+				const k=arguments[0]
+				TweenAnimation({
+					duration,
+					min:v(),
+					max:k,
+					call:v,
+					change
+				})
+			}
+		}
+	}
+}
+
+export function cacheAnimation<T>(call:AnimationCall,cache:()=>number){
+	return function(fun:(n:number)=>T){
+		let last=0
+		let lastCancel
+		return mve.delaySetAfter(cache,function(v,set){
+			if(lastCancel){
+				lastCancel()
+			}
+			lastCancel=call(last,v,function(n){
+				set(fun(n))
+			})
+			last=v
+		})
+	}
+}
 /**
  * 产生动画
  * @param xp 
@@ -31,6 +93,8 @@ export interface TweenPkg{
 export function TweenAnimation(xp:{
 	/**持续时间 毫秒，1000毫秒是1秒*/
 	duration:number
+	/**开始的值 */
+	min?:number
 	/**结束的值 */
 	max:number
 	/**回调位移,与时间 */
@@ -42,7 +106,7 @@ export function TweenAnimation(xp:{
 	/**结束时调用 */
 	end?():void
 }){
-
+	let cancel=false
 	const start=Date.now()
 	const calls:((num:number,t:number)=>void)[]=[]
 	if(xp.call){
@@ -71,12 +135,17 @@ export function TweenAnimation(xp:{
 				xp.end()
 			}
 		}else{
-			const y=xp.change(t,0,xp.max,xp.duration)
+			const y=xp.change(t,xp.min||0,xp.max,xp.duration)
 			oneCall(y,t)
-			requestAnimationFrame(animate)
+			if(!cancel){
+				requestAnimationFrame(animate)
+			}
 		}
 	}
 	animate()
+	return function(){
+		cancel=true
+	}
 }
 
 export const Tween={

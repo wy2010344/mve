@@ -1,4 +1,4 @@
-import { parseHTML, PNJO } from "../mve-DOM/index";
+import { dom, DOMNode, reWriteDestroy } from "../mve-DOM/index";
 import { mve } from "../mve/util";
 import { menu } from "./menu";
 
@@ -17,14 +17,14 @@ export function select(p:{
 		setInput(v:HTMLInputElement):void
 		show_menu:()=>void;
 		filter:(v:string)=>void;
-	})=>PNJO;
+	})=>DOMNode;
 	menu:(me:mve.LifeModel,x:{})=>{
 		init?:()=>void;
 		destroy?:()=>void;
-		element:PNJO;
+		element:DOMNode;
 	}
 }){
-	return parseHTML.mve(function(me){
+	return dom.root(function(me){
 		var filter=mve.valueOf("");
 		let inputElement:HTMLInputElement
 		const input=p.input(me,{
@@ -51,12 +51,12 @@ export function select(p:{
 			});
 		});
 		const destroy=input.destroy
-		input.destroy=function(v){
-			v_menu.destroy();
-			if(destroy){
-				destroy(v);
-			}
-		}
+		reWriteDestroy(input,function(destroy){
+			destroy.unshift(function(){
+				v_menu.destroy();
+			})
+			return destroy
+		})
 		return input
 	});
 }

@@ -1,4 +1,4 @@
-define(["require", "exports", "../form", "../../../mve/modelChildren", "../../../mve/util"], function (require, exports, form_1, modelChildren_1, util_1) {
+define(["require", "exports", "../form", "../../../mve/modelChildren", "../../../mve/util", "../../../mve-DOM/index"], function (require, exports, form_1, modelChildren_1, util_1, index_1) {
     "use strict";
     exports.__esModule = true;
     exports.vRuler = void 0;
@@ -18,7 +18,7 @@ define(["require", "exports", "../form", "../../../mve/modelChildren", "../../..
                 allow: function () {
                     return true;
                 },
-                element: {
+                element: index_1.svg({
                     type: "svg",
                     action: {
                         mousedown: rp.move
@@ -32,7 +32,7 @@ define(["require", "exports", "../form", "../../../mve/modelChildren", "../../..
                         }
                     },
                     children: [
-                        {
+                        index_1.svg({
                             type: "rect",
                             style: {
                                 background: "gray",
@@ -46,7 +46,7 @@ define(["require", "exports", "../form", "../../../mve/modelChildren", "../../..
                                     return rp.out.height();
                                 }
                             }
-                        },
+                        }),
                         modelChildren_1.modelChildren(model, function (me, row, index) {
                             var color = "red";
                             var diff = 20;
@@ -96,10 +96,10 @@ define(["require", "exports", "../form", "../../../mve/modelChildren", "../../..
                                     }
                                 }
                             });
-                            return lines;
+                            return lines.map(index_1.svg);
                         })
                     ]
-                }
+                })
             };
         });
     }

@@ -1,4 +1,4 @@
-import { JOChildFun, JOChildren } from "./childrenBuilder";
+import { baseChildrenBuilder, EOChildFun, EOChildren } from "./childrenBuilder";
 import { mve,onceLife, BuildResult, orInit, orDestroy } from "./util"
 
 
@@ -19,11 +19,11 @@ class CacheViewModel<T>{
   }
 }
 
-export function filterCacheChildren<T,JO,EO>(
+export function filterCacheChildren<T,EO>(
   array:()=>T[],
-  fun:(me:mve.LifeModel,row:()=>T,index:number)=>JOChildren<JO,EO>
-):JOChildFun<JO,EO>{
-  return function (buildChildren,parent){
+  fun:(me:mve.LifeModel,row:()=>T,index:number)=>EOChildren<EO>
+):EOChildFun<EO>{
+  return function(parent,me){
     const views:CacheViewModel<T>[]=[]
     const life=onceLife({
       init(){
@@ -69,7 +69,7 @@ export function filterCacheChildren<T,JO,EO>(
           const cs=fun(lifeModel.me,row,i)
           //创建视图
           const vm=parent.newChildAt(i)
-          const vx=buildChildren(lifeModel.me,cs,vm)
+          const vx=baseChildrenBuilder(lifeModel.me,cs,vm)
           const cv=new CacheViewModel(row,lifeModel,vx)
           //模型增加
           views.push(cv)

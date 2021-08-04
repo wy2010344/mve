@@ -3,7 +3,8 @@
  * 与之对应的是dialog模块，是全局顶级的，弹窗可相互
  */
 
-import { PNJO } from "../mve-DOM/index"
+import { dom, DOMNode } from "../mve-DOM/index"
+import { EOChildren } from "../mve/childrenBuilder"
 import { modelChildren } from "../mve/modelChildren"
 import { mve } from "../mve/util"
 
@@ -11,7 +12,7 @@ export type VirtualPage=(
   me:mve.LifeModel,
   p:VirtualAlertShow,
   close:()=>void
-)=>PNJO
+)=>EOChildren<Node>
 
 export interface VirtualAlertShow{
   width():number,
@@ -22,7 +23,7 @@ export function alertShow(p:{
   width():number,
   height():number,
   page:VirtualPage
-}):PNJO{
+}):EOChildren<Node>{
   const model=mve.arrayModelOf<VirtualPage>([])
   const ps:VirtualAlertShow={
     width:p.width,
@@ -38,7 +39,7 @@ export function alertShow(p:{
   function sameHeight(){
     return p.height()+"px"
   }
-  return {
+  return dom({
     type:"div",
     style:{
       position:"relative"
@@ -48,16 +49,20 @@ export function alertShow(p:{
         const urs=row(me,ps,function(){
           model.remove(index())
         })
-        urs.style = urs.style||{}
-        urs.style.position="absolute"
-        urs.style.top="0px"
-        urs.style.left="0px"
-        urs.style.width=sameWidth
-        urs.style.height=sameHeight
-        return urs
+        return dom({
+					type:"div",
+					style:{
+						position:"absolute",
+						top:"0px",
+						left:"0px",
+						width:sameWidth,
+						height:sameHeight
+					},
+					children:urs
+				})
       })
     ]
-  }
+  })
 }
 
 
@@ -66,18 +71,18 @@ export function dialogOf(fun:(me:mve.LifeModel,p:VirtualAlertShow,close:()=>void
   destroy?():void,
   opacity?:string,
   backClick?():void,
-  content:PNJO
+  content:EOChildren<Node>
 }):VirtualPage{
   return function(me,p,close){
     const result=fun(me,p,close)
     const opacity=result.opacity || "0.2"
-    return {
+    return dom({
 			type:"div",
 			init:result.init,
 			destroy:result.destroy,
 			children:[
 				//背景
-				{
+				dom({
 					type:"div",
 					style:{
 						position:"absolute",
@@ -88,9 +93,9 @@ export function dialogOf(fun:(me:mve.LifeModel,p:VirtualAlertShow,close:()=>void
 						background:"gray",
 						opacity
 					}
-				},
+				}),
 				//前景
-				{
+				dom({
 					type:"div",
 					style:{
 						position:"absolute",
@@ -105,12 +110,10 @@ export function dialogOf(fun:(me:mve.LifeModel,p:VirtualAlertShow,close:()=>void
 					action:{
 						click:result.backClick
 					},
-					children:[
-						result.content
-					]
-				}
+					children:result.content
+				})
 			]
-		}
+		})
   }
 }
 
@@ -132,14 +135,14 @@ export function showWaitting(pv:{
         },second * 1000)
       },
       opacity:"0",
-      content:{
+      content:dom({
         type:"label",
         style:{
           background:"gray",
           color:"white"
         },
         text:pv.message
-      }
+      })
     }
   })
 }
