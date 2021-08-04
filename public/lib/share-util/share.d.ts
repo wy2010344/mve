@@ -1,4 +1,4 @@
-
+declare function mb<T>(fun:()=>T):T
 declare namespace mb{
 	namespace Function{
 		interface Quote{
@@ -30,7 +30,7 @@ declare namespace mb{
 		function getLast<T>(vs:BaseReadArray<T>):T
 		function forEach<T>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>void):void;
 		function map<T,V>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>V):V[];
-		function flatMap<T,V>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>BaseReadArray<T>):V[]
+		function flatMap<T,V>(vs:BaseReadArray<T>,fun:(row:T,index:number)=>BaseReadArray<V>):V[]
 		function findRow<T>(vs:BaseReadArray<T>,fun:(v:T,index:number)=>boolean):T;
 		function findIndex<T>(vs:BaseReadArray<T>,fun:(v:T,index:number)=>boolean):number;
 		function reduce<T,V>(vs:BaseReadArray<T>,fun:(v:V,t:T,i:number)=>V,init:V):V;
@@ -42,6 +42,7 @@ declare namespace mb{
 		function removeWhere<T>(vs:BaseArray<T>,fun:(row:T,i:number)=>boolean):void
 		function removeEqual<T>(vs:BaseArray<T>,row:T):void
 		function move<T>(vs:T[],oldIndex:number,newIndex:number):void
+		function slice<T>(vs:BaseReadArray<T>,from?:number,end?:number):T[]
 	}
 
 	namespace Object{
@@ -87,7 +88,7 @@ declare namespace mb{
 		function forEach(n:number,fun:(i:number)=>void):void
 		function map<T>(n:number,fun:(i:number)=>T):T[]
 	}
-	function cache<T>(v:T):(()=>T)|((v:T)=>void)
+	function cache<T>(v:T):(()=>T)&((v:T)=>void)
 	namespace task {
 		interface AsyncLoad<T>{
 			(notice:(v:T)=>void):void
@@ -123,9 +124,10 @@ declare interface Date{
 	format(v:string):string;
 }
 
-declare interface String{
+declare interface String extends BaseReadArray<string>{
 	endsWith(v:string):boolean
-	startsWith(v:string):boolean
+	startsWith(v:string,index?:number):boolean
+	join(v?:string):string
 }
 /**只读列表*/
 declare interface BaseReadArray<T>{
@@ -140,6 +142,7 @@ declare interface BaseArray<T> extends BaseReadArray<T>{
 	clear():void
 }
 declare interface Array<T> extends BaseArray<T>{
+	fill(v:T):Array<T>
 	find(fun:(v:T,i:number)=>boolean):T
 	getLast():T
 	findIndex(fun:(v:T,i:number)=>boolean):number

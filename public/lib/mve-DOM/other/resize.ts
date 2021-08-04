@@ -1,12 +1,12 @@
-import { JOChildType } from "../../mve/childrenBuilder";
-import { NJO } from "../index";
+import { EOChildren } from "../../mve/childrenBuilder";
+import { dom } from "../index";
 import { Direction } from "./drag";
 
 
 export function resizeZoom(p:{
   resize(e:Event,dir:Direction):void;
   allow?():boolean;
-}):JOChildType<NJO,Node>[]{
+}):EOChildren<Node>[]{
   function makeResize(dir:Direction){
     return function(e){
       e=e||window.event;
@@ -18,7 +18,7 @@ export function resizeZoom(p:{
   }:""
   return [
     //四边
-    {
+    dom({
       type:"div",
       style:{
         display:display,
@@ -32,8 +32,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({t:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -47,8 +47,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({r:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -62,8 +62,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({l:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -77,8 +77,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({b:true})
       }
-    },//四角
-    {
+    }),//四角
+    dom({
       type:"div",
       style:{
         display:display,
@@ -92,8 +92,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({t:true,l:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -107,8 +107,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({t:true,r:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -122,8 +122,8 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({b:true,l:true})
       }
-    },
-    {
+    }),
+    dom({
       type:"div",
       style:{
         display:display,
@@ -137,6 +137,6 @@ export function resizeZoom(p:{
       action:{
         mousedown:makeResize({b:true,r:true})
       }
-    }
+    })
   ];
 }

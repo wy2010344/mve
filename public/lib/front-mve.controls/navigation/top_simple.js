@@ -1,9 +1,9 @@
-define(["require", "exports", "./index"], function (require, exports, index_1) {
+define(["require", "exports", "../../mve-DOM/index", "./index"], function (require, exports, index_1, index_2) {
     "use strict";
     exports.__esModule = true;
     exports.top_simple_navigation = void 0;
     function top_simple_navigation(p) {
-        return index_1.navigation({
+        return index_2.navigation({
             render: function (me, x, v) {
                 var content_param = {
                     width: p.width,
@@ -26,13 +26,13 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                         }
                     },
                     children: [
-                        {
+                        index_1.dom({
                             type: "div",
                             style: {
                                 height: "30px"
                             },
                             children: [
-                                {
+                                index_1.dom({
                                     type: "button",
                                     text: "返回上一页",
                                     style: {
@@ -41,15 +41,15 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                     action: {
                                         click: x.pop
                                     }
-                                },
-                                {
+                                }),
+                                index_1.dom({
                                     type: "span",
                                     text: "|",
                                     style: {
                                         display: on_hidden
                                     }
-                                },
-                                {
+                                }),
+                                index_1.dom({
                                     type: "button",
                                     text: "<",
                                     style: {
@@ -61,8 +61,8 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                             c.scrollLeft = c.scrollLeft - 10;
                                         }
                                     }
-                                },
-                                {
+                                }),
+                                index_1.dom({
                                     type: "span",
                                     id: function (v) {
                                         contentElement = v;
@@ -83,16 +83,16 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                         }
                                     },
                                     children: [
-                                        {
+                                        index_1.dom({
                                             type: "span",
                                             style: {
                                                 "white-space": "nowrap"
                                             },
                                             children: v.build_head_children(function (me, row, index) {
-                                                return {
+                                                return index_1.dom({
                                                     type: "span",
                                                     children: [
-                                                        {
+                                                        index_1.dom({
                                                             type: "a",
                                                             attr: {
                                                                 href: function () {
@@ -107,8 +107,8 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                                                 }
                                                             },
                                                             text: row.title
-                                                        },
-                                                        {
+                                                        }),
+                                                        index_1.dom({
                                                             type: "span",
                                                             text: ">",
                                                             style: {
@@ -116,14 +116,14 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                                                     return (index() == x.size() - 1) ? "none" : "";
                                                                 }
                                                             }
-                                                        }
+                                                        })
                                                     ]
-                                                };
+                                                });
                                             })
-                                        }
+                                        })
                                     ]
-                                },
-                                {
+                                }),
+                                index_1.dom({
                                     type: "button",
                                     text: ">",
                                     style: {
@@ -135,15 +135,15 @@ define(["require", "exports", "./index"], function (require, exports, index_1) {
                                             c.scrollLeft = c.scrollLeft + 10;
                                         }
                                     }
-                                }
+                                })
                             ]
-                        },
-                        {
+                        }),
+                        index_1.dom({
                             type: "div",
                             children: v.build_body_children(function (me, row, index) {
                                 return row.render(me, content_param);
                             })
-                        }
+                        })
                     ]
                 };
             }

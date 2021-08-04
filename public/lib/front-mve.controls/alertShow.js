@@ -1,7 +1,7 @@
 /**
  * 与之对应的是dialog模块，是全局顶级的，弹窗可相互
  */
-define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (require, exports, modelChildren_1, util_1) {
+define(["require", "exports", "../mve-DOM/index", "../mve/modelChildren", "../mve/util"], function (require, exports, index_1, modelChildren_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.showWaitting = exports.dialogOf = exports.alertShow = void 0;
@@ -21,7 +21,7 @@ define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (
         function sameHeight() {
             return p.height() + "px";
         }
-        return {
+        return index_1.dom({
             type: "div",
             style: {
                 position: "relative"
@@ -31,29 +31,33 @@ define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (
                     var urs = row(me, ps, function () {
                         model.remove(index());
                     });
-                    urs.style = urs.style || {};
-                    urs.style.position = "absolute";
-                    urs.style.top = "0px";
-                    urs.style.left = "0px";
-                    urs.style.width = sameWidth;
-                    urs.style.height = sameHeight;
-                    return urs;
+                    return index_1.dom({
+                        type: "div",
+                        style: {
+                            position: "absolute",
+                            top: "0px",
+                            left: "0px",
+                            width: sameWidth,
+                            height: sameHeight
+                        },
+                        children: urs
+                    });
                 })
             ]
-        };
+        });
     }
     exports.alertShow = alertShow;
     function dialogOf(fun) {
         return function (me, p, close) {
             var result = fun(me, p, close);
             var opacity = result.opacity || "0.2";
-            return {
+            return index_1.dom({
                 type: "div",
                 init: result.init,
                 destroy: result.destroy,
                 children: [
                     //背景
-                    {
+                    index_1.dom({
                         type: "div",
                         style: {
                             position: "absolute",
@@ -64,9 +68,9 @@ define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (
                             background: "gray",
                             opacity: opacity
                         }
-                    },
+                    }),
                     //前景
-                    {
+                    index_1.dom({
                         type: "div",
                         style: {
                             position: "absolute",
@@ -81,12 +85,10 @@ define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (
                         action: {
                             click: result.backClick
                         },
-                        children: [
-                            result.content
-                        ]
-                    }
+                        children: result.content
+                    })
                 ]
-            };
+            });
         };
     }
     exports.dialogOf = dialogOf;
@@ -103,14 +105,14 @@ define(["require", "exports", "../mve/modelChildren", "../mve/util"], function (
                     }, second * 1000);
                 },
                 opacity: "0",
-                content: {
+                content: index_1.dom({
                     type: "label",
                     style: {
                         background: "gray",
                         color: "white"
                     },
                     text: pv.message
-                }
+                })
             };
         });
     }

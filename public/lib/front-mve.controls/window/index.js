@@ -3,18 +3,10 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
     exports.__esModule = true;
     exports.buildSubPanel = exports.formBuilder = exports.subPanelsOf = exports.DesktopIndex = void 0;
     function DesktopIndex(init) {
-        var width = util_1.mve.valueOf(0);
-        var height = util_1.mve.valueOf(0);
-        return {
-            resize: function (x) {
-                if (x.height != height()) {
-                    height(x.height);
-                }
-                if (x.width != width()) {
-                    width(x.width);
-                }
-            },
-            mve: index_1.parseHTML.mve(function (me) {
+        return function () {
+            var width = util_1.mve.valueOf(0);
+            var height = util_1.mve.valueOf(0);
+            return index_1.dom.root(function (me) {
                 var model = util_1.mve.arrayModelOf([]);
                 var move = model.move.bind(model);
                 model.move = function (fromIndex, targetIndex) {
@@ -47,17 +39,51 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
                     }
                 };
                 var p = {
+                    getBoundingClientRect: function () {
+                        return element.getBoundingClientRect();
+                    },
                     width: width,
                     height: height,
                     model: model
                 };
-                return init(p);
-            })
+                function resize() {
+                    var w = document.body.clientWidth;
+                    var h = document.body.clientHeight;
+                    if (w != width()) {
+                        width(w);
+                    }
+                    if (h != height()) {
+                        height(h);
+                    }
+                }
+                var njo = init(p);
+                njo.style = njo.style || {};
+                if (njo.style.position != "absolute") {
+                    njo.style.position = "relative";
+                }
+                var element;
+                index_1.reWriteInit(njo, function (init) {
+                    init.push(function (v) {
+                        element = v;
+                        mb.DOM.addEvent(window, "resize", resize);
+                        resize();
+                    });
+                    return init;
+                });
+                index_1.reWriteDestroy(njo, function (destroy) {
+                    destroy.unshift(function (v) {
+                        mb.DOM.removeEvent(window, "resize", resize);
+                    });
+                    return destroy;
+                });
+                return njo;
+            });
         };
     }
     exports.DesktopIndex = DesktopIndex;
     function subPanelsOf(subPanels, p) {
         var newPool = {
+            getBoundingClientRect: p.getBoundingClientRect,
             width: p.width,
             height: p.width,
             model: subPanels
@@ -69,30 +95,51 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
     exports.subPanelsOf = subPanelsOf;
     function formBuilder(k) {
         return {
-            hide: k.hide,
             focus: k.focus,
             render: function (me, p, index) {
                 var v = k.render(me, p, index);
                 var element = v.element;
-                element.style = element.style || {};
-                element.style.position = "absolute";
-                element.style.width = v.width;
-                element.style.height = v.height;
-                element.style.top = v.top;
-                element.style.left = v.left;
-                element.style.display = util_1.mve.reWriteMTValue(element.style.display, function (v) {
-                    return k.hide() ? "none" : v;
+                v.style = v.style || {};
+                var style = mb.Object.ember(v.style, {
+                    position: "absolute",
+                    width: v.width,
+                    height: v.height,
+                    top: v.top,
+                    left: v.left,
+                    display: mb.Object.reDefine(v.style.display, function (v) {
+                        if (typeof (v) == 'function') {
+                            //如果是函数
+                            return util_1.mve.reWriteMTValue(v, function (v) {
+                                return k.hide() ? "none" : v;
+                            });
+                        }
+                        else {
+                            return function () {
+                                return k.hide() ? "none" : v;
+                            };
+                        }
+                    })
                 });
                 var outs = [
-                    element
+                    index_1.dom({
+                        type: "div",
+                        style: style,
+                        children: element
+                    })
                 ];
                 if (v.panels) {
                     outs = outs.concat(v.panels);
                 }
-                outs.push({
-                    //遮罩
+                v.shadowAction = v.shadowAction || {};
+                index_1.reWriteAction(v.shadowAction, 'click', function (vs) {
+                    vs.push(v.shadowClick || function () {
+                        p.model.moveToLast(index());
+                    });
+                    return vs;
+                });
+                outs.push(index_1.dom({
                     type: "div",
-                    style: {
+                    style: mb.Object.ember(v.shadowStyle || {}, {
                         position: "absolute",
                         width: v.width,
                         height: v.height,
@@ -108,13 +155,9 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
                                 return p.model.size() - 1 == index() ? "none" : "";
                             }
                         }
-                    },
-                    action: {
-                        click: v.shadowClick || function () {
-                            p.model.moveToLast(index());
-                        }
-                    }
-                });
+                    }),
+                    action: v.shadowAction
+                }));
                 return outs;
             }
         };

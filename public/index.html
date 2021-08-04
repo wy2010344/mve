@@ -19,42 +19,9 @@
 			position: fixed;
 		}
 	</style>
-    <script type="text/javascript">
-        window.load_success=function(){
-          var cp={
-            version:new Date(),
-            baseUrl:".",
-            query:mb.util.dicFromUrl(window.location.search)
-          }
-          if(!cp.query.act){
-            cp.query.act="index"
-          }
-          mb.ajax.require.cp=cp;
-          mb.ajax.require(cp.baseUrl+"/index/"+cp.query.act+".js",function(notice){
-						var body=document.body
-						var mve=notice.mve
-						body.appendChild(mve.element)
-						if(mve.init){
-							mve.init()
-						}
-						if(mve.destroy){
-							mb.DOM.addEvent(window,"unload",mve.destroy)
-						}
-            if(notice.resize){
-              var outResize=notice.resize
-              function resize(){
-                var w=body.clientWidth
-                var h=body.clientHeight
-                outResize({width:w,height:h})
-              }
-              mb.DOM.addEvent(window,"resize",resize)
-              resize()
-            }
-          });
-        }
-    </script>
-    <script type="text/javascript" src="./lib/share-util/share.js"></script>
-    <script type="text/javascript" src="./lib/front-lib/lib.js"></script>
+	<script type="text/javascript" src="./lib/share-util/share.js"></script>
+	<script type="text/javascript" src="./lib/front-lib/lib.js"></script>
+	<script type="text/javascript" src="./lib/front-lib.init.hash/index.js"></script>
 </head>
 <body>
 </body>

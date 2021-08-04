@@ -1,4 +1,4 @@
-define(["require", "exports", "../lib/mve/ifChildren"], function (require, exports, ifChildren_1) {
+define(["require", "exports", "../lib/mve-DOM/index", "../lib/mve/childrenBuilder", "../lib/mve/ifChildren"], function (require, exports, index_1, childrenBuilder_1, ifChildren_1) {
     "use strict";
     exports.__esModule = true;
     exports.div = void 0;
@@ -33,19 +33,19 @@ define(["require", "exports", "../lib/mve/ifChildren"], function (require, expor
             return [a, b];
         }
         return ifChildren_1.ifChildren(function (me) {
-            return {
-                init: function () {
-                    mb.log("我是可选的init函数，在附着到DOM上后执行");
-                },
-                elements: [
-                    {
-                        type: "div",
-                        text: function () {
-                            return p.text();
-                        }
+            return [
+                childrenBuilder_1.ChildLife.of({
+                    init: function () {
+                        mb.log("我是可选的init函数，在附着到DOM上后执行");
                     }
-                ]
-            };
+                }),
+                index_1.dom({
+                    type: "div",
+                    text: function () {
+                        return p.text();
+                    }
+                })
+            ];
         });
     }
     exports.div = div;

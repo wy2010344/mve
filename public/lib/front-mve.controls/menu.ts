@@ -1,11 +1,11 @@
-import { parseHTML, PNJO } from "../mve-DOM/index";
+import { dom, DOMNode } from "../mve-DOM/index";
 import { mve, orDestroy, orInit, orRun } from "../mve/util";
 
 
 
 
 export type MenuFun=(me:mve.LifeModel,x:{})=>{
-	element:PNJO;
+	element:DOMNode;
 	init?():void;
 	destroy?():void;
 }
@@ -15,7 +15,7 @@ export function menu(fun:MenuFun){
   const show=mve.valueOf(false);
   const top=mve.valueOf(0);
   const left=mve.valueOf(0);
-	const menu=parseHTML.mve(function(me){
+	const menu=dom.root(function(me){
 
 		var render_object=fun(me,{});
 		var p=render_object.element;

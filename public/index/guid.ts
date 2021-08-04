@@ -1,11 +1,11 @@
-import { parseHTML, PNJO } from "../lib/mve-DOM/index";
+import { dom } from "../lib/mve-DOM/index";
 import { ifChildren } from "../lib/mve/ifChildren";
 import { mve } from "../lib/mve/util";
 import { filterCacheChildren } from "../lib/mve/filterCacheChildren";
 import { filterChildren } from "../lib/mve/fiilterChildren";
 import { div } from "./div";
 
-const a=function(text:string,href:string):PNJO{
+const a=function(text:string,href:string){
 	return {
 		type:"a",
 		text:text,
@@ -19,11 +19,8 @@ const br={
 	type:"br"
 };
 const list=mve.valueOf<string[]>([]);
-export={
-	resize(x){
-
-	},
-	mve:parseHTML.mve(function(me){
+export=function(){
+	return dom.root(function(me){
 		let input:HTMLInputElement
 		return {
 			type:"div",
@@ -134,8 +131,8 @@ export={
 				{
 					type:"div",
 					children:[
-						"测试multi",
-						"我亦是内容",
+						dom("测试multi"),
+						dom("我亦是内容"),
 						ifChildren(function(me){
 							return mb.Array.map(list(),function(row,index){
 								return {
@@ -215,7 +212,7 @@ export={
 						})
 					]
 				}
-			]
+			].map(dom)
 		}
 	})
 }

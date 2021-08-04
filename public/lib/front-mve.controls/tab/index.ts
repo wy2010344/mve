@@ -1,5 +1,5 @@
-import { PNJO } from "../../mve-DOM/index";
-import { JOChildFun, JOChildren } from "../../mve/childrenBuilder";
+import { dom, DOMNode, reWriteAction } from "../../mve-DOM/index";
+import { EOChildFun, EOChildren } from "../../mve/childrenBuilder";
 import { modelChildren } from "../../mve/modelChildren";
 import { mve } from "../../mve/util";
 
@@ -9,14 +9,14 @@ current
 render
 */
 export function tab<T>(me:mve.LifeModel,p:{
-	tabs:mve.ArrayModel<T>;
-	current:mve.Value<T>;
+	tabs?:mve.ArrayModel<T>
+	current?:mve.Value<T>
 	render:(me:mve.LifeModel,x:{
-		tabs:mve.ArrayModel<T>;
-		current:mve.Value<T>;
-		build_head_children(fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>PNJO):JOChildFun<PNJO,Node>,
-		build_body_children(fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>PNJO):JOChildFun<PNJO,Node>,
-	})=>JOChildren<PNJO,Node>
+		tabs:mve.ArrayModel<T>
+		current:mve.Value<T>
+		build_head_children(fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>DOMNode):EOChildFun<Node>,
+		build_body_children(fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>DOMNode):EOChildFun<Node>,
+	})=>EOChildren<Node>
 }){
 	var tabs=p.tabs||mve.arrayModelOf<T>([]);
 	var current=p.current||mve.valueOf<T>(null);
@@ -27,20 +27,23 @@ export function tab<T>(me:mve.LifeModel,p:{
       return modelChildren(tabs,function(me,row,index){
         const element=fun(me,row,index);
         element.action=element.action||{};
-        element.action.click=function(){
-          current(row);
-        };
-        return element;
+			  reWriteAction(element.action,'mousedown',function(vs){
+					vs.push(function(){
+						current(row)
+					})
+					return vs
+				})
+        return dom(element)
       })
     },
     build_body_children(fun){
       return modelChildren(tabs,function(me,row,index){
-        	const element=fun(me,row,index);
-          element.style=element.style||{};
-          element.style.display=function(){
-            return current()==row?"":"none";
-          };
-          return element;
+				const element=fun(me,row,index);
+				element.style=element.style||{};
+				element.style.display=function(){
+					return current()==row?"":"none";
+				};
+				return dom(element)
       })
     }
 	});

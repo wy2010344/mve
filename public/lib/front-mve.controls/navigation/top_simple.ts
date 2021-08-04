@@ -1,4 +1,4 @@
-import { ItemValue, PNJO } from "../../mve-DOM/index";
+import { dom, ItemValue, DOMNode } from "../../mve-DOM/index";
 import { mve } from "../../mve/util";
 import { navigation, NavMethod } from "./index";
 
@@ -12,7 +12,7 @@ export interface Top_simple_nav_item{
 	render:(me:mve.LifeModel,params:{
 		width:mve.GValue<number>;
 		height:mve.GValue<number>;
-	})=>PNJO
+	})=>DOMNode
 }
 export function top_simple_navigation(p:{
 	width:mve.GValue<number>;
@@ -42,13 +42,13 @@ export function top_simple_navigation(p:{
 					}
 				},
 				children:[
-					{
+					dom({
 						type:"div",
 						style:{
 							height:"30px"
 						},
 						children:[
-							{
+							dom({
 								type:"button",
 								text:"返回上一页",
 								style:{
@@ -57,15 +57,15 @@ export function top_simple_navigation(p:{
 								action:{
 									click:x.pop
 								}
-							},
-							{
+							}),
+							dom({
 								type:"span",
 								text:"|",
 								style:{
 									display:on_hidden
 								}
-							},
-							{
+							}),
+							dom({
 								type:"button",
 								text:"<",
 								style:{
@@ -77,8 +77,8 @@ export function top_simple_navigation(p:{
 										c.scrollLeft=c.scrollLeft-10;
 									}
 								}
-							},
-							{
+							}),
+							dom({
 								type:"span",
 								id(v){
 									contentElement=v
@@ -99,16 +99,16 @@ export function top_simple_navigation(p:{
 									}
 								},
 								children:[
-									{
+									dom({
 										type:"span",
 										style:{
 											"white-space":"nowrap"
 										},
 										children:v.build_head_children(function(me,row,index){
-											return {
+											return dom({
 												type:"span",
 												children:[
-													{	
+													dom({	
 														type:"a",
 														attr:{
 															href:function(){
@@ -123,8 +123,8 @@ export function top_simple_navigation(p:{
 															}
 														},
 														text:row.title
-													},
-													{
+													}),
+													dom({
 														type:"span",
 														text:">",
 														style:{
@@ -132,14 +132,14 @@ export function top_simple_navigation(p:{
 																return (index()==x.size()-1)?"none":"";
 															}
 														}
-													}
+													})
 												]
-											};
+											})
 										})
-									}
+									})
 								]
-							},
-							{
+							}),
+							dom({
 								type:"button",
 								text:">",
 								style:{
@@ -151,15 +151,15 @@ export function top_simple_navigation(p:{
 										c.scrollLeft=c.scrollLeft+10;
 									}
 								}
-							}
+							})
 						]
-					},
-					{
+					}),
+					dom({
 						type:"div",
 						children:v.build_body_children(function(me,row,index){
-							return row.render(me,content_param);
+							return row.render(me,content_param)
 						})
-					}
+					})
 				]
 			}
 		}

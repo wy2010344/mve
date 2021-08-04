@@ -1,5 +1,5 @@
-import { NJO, parseHTML, PNJO } from "../../mve-DOM/index";
-import { JOChildren } from "../../mve/childrenBuilder";
+import { dom, DOMNode } from "../../mve-DOM/index";
+import { EOChildren } from "../../mve/childrenBuilder";
 import { modelChildren } from "../../mve/modelChildren";
 import { mve } from "../../mve/util";
 
@@ -26,11 +26,11 @@ export interface NavMethod<T>{
 }
 export function navigation<T>(p:{
 	render:(me:mve.LifeModel,params:NavMethod<T>,x:{
-		build_head_children:(repeat:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>JOChildren<NJO,Node>)=>JOChildren<NJO,Node>
-		build_body_children:(repeat:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>PNJO)=>JOChildren<PNJO,Node>
-	})=>PNJO
+		build_head_children:(repeat:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>EOChildren<Node>)=>EOChildren<Node>
+		build_body_children:(repeat:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>DOMNode)=>EOChildren<Node>
+	})=>DOMNode
 }){
-	return parseHTML.mve(function(me){
+	return dom.root(function(me){
 		var current=mve.valueOf<T>(null);
 		var model=mve.arrayModelOf<T>([]);
 		var params:NavMethod<T>={
@@ -83,7 +83,7 @@ export function navigation<T>(p:{
           element.style.display=function(){
             return current()==row?"":"none";
           };
-          return element;
+          return dom(element)
         });
 			}
 		});

@@ -1,4 +1,4 @@
-define(["require", "exports", "../../mve/modelChildren", "../../mve/util"], function (require, exports, modelChildren_1, util_1) {
+define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", "../../mve/util"], function (require, exports, index_1, modelChildren_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.tab = void 0;
@@ -17,10 +17,13 @@ define(["require", "exports", "../../mve/modelChildren", "../../mve/util"], func
                 return modelChildren_1.modelChildren(tabs, function (me, row, index) {
                     var element = fun(me, row, index);
                     element.action = element.action || {};
-                    element.action.click = function () {
-                        current(row);
-                    };
-                    return element;
+                    index_1.reWriteAction(element.action, 'mousedown', function (vs) {
+                        vs.push(function () {
+                            current(row);
+                        });
+                        return vs;
+                    });
+                    return index_1.dom(element);
                 });
             },
             build_body_children: function (fun) {
@@ -30,7 +33,7 @@ define(["require", "exports", "../../mve/modelChildren", "../../mve/util"], func
                     element.style.display = function () {
                         return current() == row ? "" : "none";
                     };
-                    return element;
+                    return index_1.dom(element);
                 });
             }
         });

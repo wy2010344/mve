@@ -1,7 +1,8 @@
 
 import { mve } from "../../mve/util"
-import { ItemValue } from "../../mve-DOM/index";
+import { dom, ItemValue, DOMNode } from "../../mve-DOM/index";
 export function buildTitle(p:{
+	height:number,
   move(e:Event):void,
   showClose():boolean,
   close_click?(e:Event):void;
@@ -9,11 +10,18 @@ export function buildTitle(p:{
   showMax():boolean;
   title?:ItemValue;
 }){
-  return {
+  return dom({
     type:"div",
     style:{
-      background:"#beceeb",
-      cursor:"move"
+      "background-image":"linear-gradient(180deg, #e6e6e6, #bab9ba)",
+      cursor:"move",
+			"border-radius":"5px 5px 0 0",
+			"white-space":"nowrap",
+			overflow:"hidden",
+			"text-overflow":"ellipsis",
+			height:p.height-1+"px",
+			"line-height":p.height-1+"px",
+			"border-bottom":"1px solid #696969"
     },
     action:{
       mousedown(e){
@@ -22,7 +30,7 @@ export function buildTitle(p:{
     },
     children:[
       /*按钮部分*/                              
-      {
+      dom({
         type:"img",
         attr:{
           src:pathOf("./close.png"),
@@ -34,6 +42,8 @@ export function buildTitle(p:{
           cursor:"pointer",
           "vertical-align":"middle",
           backgroundColor:"white",
+					"border-radius":"5px",
+					"margin-left":"5px",
           display(){
             return p.showClose()?"":"none";
           }
@@ -44,8 +54,8 @@ export function buildTitle(p:{
           },
           click:p.close_click
         }
-      },
-      {
+      }),
+      dom({
         type:"img",
         attr:{
           src(){
@@ -59,6 +69,8 @@ export function buildTitle(p:{
           cursor:"pointer",
           "vertical-align":"middle",
           backgroundColor:"white",
+					"border-radius":"5px",
+					"margin-left":"5px",
           display(){
             if(mb.DOM.isMobile()){
               return "none"
@@ -75,20 +87,20 @@ export function buildTitle(p:{
             p.max(!p.max());
           }
         }
-      },
+      }),
       /*标题部分*/
-      {
+      dom({
         type:"div",
         style:{
 					"font-weight":"bold",
 					"font-size":"15px",
           "vertical-align":"middle",
-          display:"inline-block",
+          display:"inline",
           "margin":"0 5px",
-          color:"#120def"
+          color:"#645d61"
         },
         text:p.title
-      }
+      })
     ]
-  };
+  })
 }

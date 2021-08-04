@@ -1,7 +1,7 @@
 define(["require", "exports"], function (require, exports) {
     "use strict";
     exports.__esModule = true;
-    exports.kanren = exports.unify = exports.walk = exports.KVar = exports.streamBindiGoal = exports.streamBindGoal = exports.extendSubsitution = exports.streamInterleaveStream = exports.streamAppendStream = exports.emptyDelayStream = exports.Pair = void 0;
+    exports.kanren = exports.buildUnifyQuery = exports.buildWalk = exports.KVar = exports.streamBindiGoal = exports.streamBindGoal = exports.extendSubsitution = exports.streamInterleaveStream = exports.streamAppendStream = exports.emptyDelayStream = exports.Pair = void 0;
     var Pair = /** @class */ (function () {
         function Pair(left, right) {
             this.left = left;
@@ -129,63 +129,47 @@ define(["require", "exports"], function (require, exports) {
         }
         return null;
     }
-    /**
-     * 替换定义，如果能找到替换则替换，不能保持变量
-     * @param v
-     * @param sub
-     */
-    function walk(v, sub) {
-        if (v instanceof Pair) {
-            //列表，递归寻找
-            return Pair.of(walk(v.left, sub), walk(v.right, sub));
-        }
-        else if (v instanceof KVar) {
-            var val = find(v, sub);
-            if (val) {
-                //变量如果找到定义，对定义递归寻找
-                return walk(val.right, sub);
-            }
-        }
-        return v;
-    }
-    exports.walk = walk;
-    /**
-     * 合一算法
-     * @param a
-     * @param b
-     * @param sub
-     */
-    function unify(a, b, sub) {
-        a = walk(a, sub);
-        b = walk(b, sub);
-        if (a == b) {
-            return [true, sub];
-        }
-        if (a instanceof KVar) {
-            if (a.equals(b)) {
-                return [true, sub];
-            }
-            return [true, extendSubsitution(a, b, sub)];
-        }
-        if (b instanceof KVar) {
-            if (b.equals(a)) {
-                return [true, sub];
-            }
-            return [true, extendSubsitution(b, a, sub)];
-        }
-        if (a instanceof Pair && b instanceof Pair) {
-            var _a = unify(a.left, b.left, sub), success = _a[0], sub1 = _a[1];
-            if (success) {
-                return unify(a.right, b.right, sub1);
+    function buildWalk(other) {
+        var walk = function (v, sub) {
+            if (v instanceof KVar) {
+                var val = find(v, sub);
+                if (val) {
+                    //变量如果找到定义，对定义递归寻找
+                    return walk(val.right, sub);
+                }
+                return v;
             }
             else {
-                return [false, null];
+                return other(v, sub);
             }
-        }
-        //默认返回失败
-        return [false, null];
+        };
+        return walk;
     }
-    exports.unify = unify;
+    exports.buildWalk = buildWalk;
+    function buildUnifyQuery(walk, unifyQueryOther) {
+        var unifyQuery = function (a, b, sub) {
+            a = walk(a, sub);
+            b = walk(b, sub);
+            if (a == b) {
+                return [true, sub];
+            }
+            if (a instanceof KVar) {
+                if (a.equals(b)) {
+                    return [true, sub];
+                }
+                return [true, extendSubsitution(a, b, sub)];
+            }
+            if (b instanceof KVar) {
+                if (b.equals(a)) {
+                    return [true, sub];
+                }
+                return [true, extendSubsitution(b, a, sub)];
+            }
+            return unifyQueryOther(a, b, sub);
+        };
+        return unifyQuery;
+    }
+    exports.buildUnifyQuery = buildUnifyQuery;
     function check(fun) {
         return function (v) {
             return function (sub) {
@@ -244,7 +228,7 @@ define(["require", "exports"], function (require, exports) {
          * @param a
          * @param b
          */
-        eq: function (a, b) {
+        query: function (a, b, unify) {
             return function (sub) {
                 var _a = unify(a, b, sub), success = _a[0], sub1 = _a[1];
                 if (success) {
@@ -266,6 +250,17 @@ define(["require", "exports"], function (require, exports) {
                 return streamAppendStream(a(sub), function () {
                     return b(sub);
                 });
+            };
+        },
+        cut: function (a, b) {
+            return function (sub) {
+                var v = a(sub);
+                if (v) {
+                    return v;
+                }
+                else {
+                    return b(sub);
+                }
             };
         },
         ori: function (a, b) {
@@ -344,6 +339,19 @@ define(["require", "exports"], function (require, exports) {
                 return gs[0];
             }
             return exports.kanren.ori(gs[0], exports.kanren.anyi.apply(null, gs.slice(1)));
+        },
+        match: function () {
+            var gs = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                gs[_i] = arguments[_i];
+            }
+            if (gs.length == 0) {
+                return exports.kanren.fail;
+            }
+            if (gs.length == 1) {
+                return gs[0];
+            }
+            return exports.kanren.cut(gs[0], exports.kanren.match.apply(null, gs.slice(1)));
         }
     };
 });

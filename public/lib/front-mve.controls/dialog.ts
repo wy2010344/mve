@@ -1,13 +1,13 @@
-import { JOChildren } from "../mve/childrenBuilder";
-import { parseHTML, PNJO } from "../mve-DOM/index"
+import { EOChildren } from "../mve/childrenBuilder";
+import { dom, DOMNode } from "../mve-DOM/index"
 import { mve, orDestroy, orInit } from "../mve/util";
 
 
 /**
- * 一个始终居中的窗口，自定义尺寸
+ * 一个始终居中的元素
  * @param children 
  */
-function buildDialogContent(children:JOChildren<PNJO,Node>):PNJO {
+export function centerContent(children:EOChildren<Node>):DOMNode {
 	return {
 		type:"div",
 		style:{
@@ -18,7 +18,7 @@ function buildDialogContent(children:JOChildren<PNJO,Node>):PNJO {
 			left:"0px"
 		},
 		children:[
-			{
+			dom({
 				type:"div",
 				style:{
 					width:"100%",
@@ -29,8 +29,8 @@ function buildDialogContent(children:JOChildren<PNJO,Node>):PNJO {
 					top:"0px",
 					left:"0px",
 				}
-			},
-			{
+			}),
+			dom({
 				type:"table",
 				style:{
 					width:"100%",
@@ -39,22 +39,22 @@ function buildDialogContent(children:JOChildren<PNJO,Node>):PNJO {
 					position:"relative"
 				},
 				children:[
-					{
+					dom({
 						type:"tbody",
 						children:[
-							{
+							dom({
 								type:"tr",
 								children:[
-									{
+									dom({
 										type:"td",
 										children:children
-									}
+									})
 								]
-							}
+							})
 						]
-					}
+					})
 				]
-			}
+			})
 		]
 	}
 }
@@ -65,16 +65,16 @@ function buildDialogContent(children:JOChildren<PNJO,Node>):PNJO {
  */
 export function buildDialogN1(fun:(me:mve.LifeModel,x:{
 	hide():void;
-})=>JOChildren<PNJO,Node>){
+})=>EOChildren<Node>){
 	const body=document.body;
   const show=mve.valueOf(false);
-	const dialog=parseHTML.mve(function(me){
+	const dialog=dom.root(function(me){
 		const render_object=fun(me,{
 			hide(){
 				show(false);
 			}
 		});
-		const element=buildDialogContent(render_object);
+		const element=centerContent(render_object);
 		element.style.display=function(){
 			return show()?"":"none";
 		};
@@ -107,15 +107,15 @@ export function buildDialogN1(fun:(me:mve.LifeModel,x:{
  * 全局居中窗口，一次性销毁关闭
  * @param fun 
  */
-export function dialogShow(fun:(me:mve.LifeModel,close:()=>void)=>JOChildren<PNJO,Node>){
+export function dialogShow(fun:(me:mve.LifeModel,close:()=>void)=>EOChildren<Node>){
 	const body=document.body;
 	function close(){
 		orDestroy(dialog)
 		body.removeChild(dialog.element);
 	}
-	const dialog=parseHTML.mve(function(me){
+	const dialog=dom.root(function(me){
 		const render_object=fun(me,close)
-		return buildDialogContent(render_object)
+		return centerContent(render_object)
 	});
 	body.appendChild(dialog.element);
 	orInit(dialog)

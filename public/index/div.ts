@@ -1,4 +1,5 @@
-import { PNJO } from "../lib/mve-DOM/index";
+import { dom } from "../lib/mve-DOM/index";
+import { ChildLife } from "../lib/mve/childrenBuilder";
 import { ifChildren } from "../lib/mve/ifChildren";
 
 export function div(p:{
@@ -31,19 +32,19 @@ export function div(p:{
 		return [a,b]
 	}
 
-	return ifChildren<PNJO,Node>(function(me){
-		return {
-			init() {
-				mb.log("我是可选的init函数，在附着到DOM上后执行");
-			},
-			elements:[
-				{
-					type:"div",
-					text() {
-						return p.text()
-					}
+	return ifChildren<Node>(function(me){
+		return [
+			ChildLife.of({
+				init() {
+					mb.log("我是可选的init函数，在附着到DOM上后执行");
 				}
-			]
-		}
+			}),
+			dom({
+				type:"div",
+				text() {
+					return p.text()
+				}
+			})
+		]
 	})
 }

@@ -1,16 +1,17 @@
-import { PNJO } from "../mve-DOM/index"
+import DOM = require("../mve-DOM/DOM")
+import { DOMNode, reWriteAction } from "../mve-DOM/index"
 import { mve } from "../mve/util"
 /**
  * 固定参数，返回一个延时函数
  * @param cb 
  * @param wait 
  */
-function debounce(cb:(...args:any[])=>void,wait:number){
+function debounce<TS extends any[]>(cb:(...ts:TS)=>void,wait:number){
 	let timeOut=0
-	return function(...args){
+	return function(...ts:TS){
 		clearTimeout(timeOut)
 		timeOut=setTimeout(function(){
-			cb(...args)
+			cb(...ts)
 		},wait)
 	}
 }
@@ -18,132 +19,13 @@ function debounce(cb:(...args:any[])=>void,wait:number){
 function shouldRecord(e:KeyboardEvent){
 	return !isUndo(e) 
 			&& !isRedo(e) 
-			&& e.key != "Meta"
-			&& e.key != "Control"
-			&& e.key != "Alt"
-			&& !e.key.startsWith("Arrow")
-}
-
-/**
- * 深度遍历，先子后弟
- * @param editor 
- * @param visitor 
- */
-function visit(editor:HTMLElement,visitor:(el:Node)=>(boolean|void)){
-	const queue:Node[]=[]
-	if(editor.firstChild){
-		queue.push(editor.firstChild)
-	}
-	let el=queue.pop()
-	while(el){
-		if(visitor(el)){
-			break
-		}
-		if(el.nextSibling){
-			queue.push(el.nextSibling)
-		}
-		if(el.firstChild){
-			queue.push(el.firstChild)
-		}
-		el=queue.pop()
-	}
-}
-/**
- * 保存选中位置
- * anchor开始点，focus结束点
- */
-function save(editor:HTMLElement){
-	const s=window.getSelection()
-	const pos:Position={start:0,end:0}
-	visit(editor,function(el){
-		if(el.nodeType!=Node.TEXT_NODE)return
-
-		if(el==s.anchorNode){
-			if(el==s.focusNode){
-				pos.start += s.anchorOffset
-				pos.end += s.focusOffset
-				pos.dir = s.anchorOffset <= s.focusOffset ? "->" : "<-"
-				return true
-			}else{
-				pos.start += s.anchorOffset
-				if(pos.dir){
-					return true
-				}else{
-					//选遇到开始点
-					pos.dir="->"
-				}
-			}
-		}else
-		if(el==s.focusNode){
-			pos.end += s.focusOffset
-			if(pos.dir){
-				return true
-			}else{
-				//先遇到结束点
-				pos.dir="<-"
-			}
-		}
-
-		if(el.nodeType == Node.TEXT_NODE){
-			const len=(el.nodeValue||"").length
-			if(pos.dir!="->"){
-				pos.start += len
-			}
-			if(pos.dir!="<-"){
-				pos.end += len
-			}
-		}
-	})
-	return pos
-}
-
-function restoreVerifyPos(pos:Position){
-	let dir=pos.dir
-	let start=pos.start
-	let end=pos.end
-	if(!dir){dir="->"}
-	if(start<0){start=0}
-	if(end<0){end=0}
-	if(dir=="<-"){
-		//交换开始与结束的位置，以便顺序遍历
-		[start,end]=[end,start]
-	}
-	return [start,end,dir] as const
-}
-/**
- * 恢复选中位置
- * @param editor 
- * @param pos 
- */
-function restore(editor:HTMLElement,pos:Position){
-	const s=window.getSelection()
-	let startNode:Node,startOffset=0
-	let endNode:Node,endOffset=0
-	const [start,end,dir]=restoreVerifyPos(pos)
-	let current=0
-	visit(editor,function(el){
-		if(el.nodeType!=Node.TEXT_NODE)return
-		const len=(el.nodeValue || "").length
-		if(current + len >= start){
-			if(!startNode){
-				startNode=el
-				startOffset=start-current
-			}
-			if(current + len >=end){
-				endNode=el
-				endOffset=end-current
-				return true
-			}
-		}
-		current+=len
-	})
-	if(!startNode){startNode=editor}
-	if(!endNode){endNode=editor}
-	if(dir=="<-"){
-		[startNode,startOffset,endNode,endOffset]=[endNode,endOffset,startNode,startOffset]
-	}
-	s.setBaseAndExtent(startNode,startOffset,endNode,endOffset)
-	return s
+			&& !DOM.keyCode.META(e)
+			&& !DOM.keyCode.CONTROL(e)
+			&& !DOM.keyCode.ALT(e)
+			&& !DOM.keyCode.ARROWDOWN(e)
+			&& !DOM.keyCode.ARROWLEFT(e) 
+			&& !DOM.keyCode.ARROWUP(e) 
+			&& !DOM.keyCode.ARROWDOWN(e)
 }
 /**
  * 光标前的内容
@@ -171,7 +53,7 @@ function afterCursor(editor:HTMLElement){
 }
 
 /**
- * 寻找字符串从某一点开始的空格
+ * 寻找字符串从某一点开始的空格或tab
  * @param text 
  * @param from 
  */
@@ -189,7 +71,13 @@ function findBeforePadding(beforeText:string){
 	const i=beforeText.lastIndexOf('\n')+1
 	return findPadding(beforeText,i)
 }
-
+/**
+ * 新行。需要与上一行的tab对齐
+ * @param editor 
+ * @param indentOn 
+ * @param tab 
+ * @param e 
+ */
 function handleNewLine(
 	editor:HTMLElement,
 	indentOn:RegExp,
@@ -198,7 +86,7 @@ function handleNewLine(
 	const before=beforeCursor(editor)
 	const after=afterCursor(editor)
 
-	let [padding]=findBeforePadding(before)
+	const [padding]=findBeforePadding(before)
 	let newLinePadding = padding
 
 	if(indentOn.test(before)){
@@ -210,9 +98,9 @@ function handleNewLine(
 	}
 
 	if(newLinePadding != padding && after[0] == "}"){
-		const pos=save(editor)
+		const pos=mb.DOM.getSelectionRange(editor)
 		insert("\n"+padding)
-		restore(editor,pos)
+		mb.DOM.setSelectionRange(editor,pos)
 	}
 }
 
@@ -233,39 +121,52 @@ function handleSelfClosingCharacters(
 		const end=closePair.find(v=>v[1]==e.key)
 		if(end && codeAfter.substr(0,1)==e.key){
 			//后继已为某括号，不输入
-			const pos=save(editor)
+			const pos=mb.DOM.getSelectionRange(editor)
 			mb.DOM.preventDefault(e)
 			pos.start=++pos.end
-			restore(editor,pos)
+			mb.DOM.setSelectionRange(editor,pos)
 		}else{
 			const begin=closePair.find(v=>v[0]==e.key)
 			if(begin){
 				//匹配某括号，不插入
-				const pos=save(editor)
+				const pos=mb.DOM.getSelectionRange(editor)
 				mb.DOM.preventDefault(e)
 				const text = e.key + begin[1]
 				insert(text)
 				pos.start=++pos.end
-				restore(editor,pos)
+				mb.DOM.setSelectionRange(editor,pos)
 			}
 		}
 	}
 }
-
+/**
+ * 删除tab
+ * @param editor 
+ * @param start 
+ * @param padding 
+ * @param tab 
+ * @returns 
+ */
 function deleteTab(editor:HTMLElement,start:number,padding:string,tab:string){
 	const len=Math.min(tab.length,padding.length)
 	if(len>0){
-		restore(editor,{start,end:start+len}).deleteFromDocument()
+		mb.DOM.setSelectionRange(editor,{start,end:start+len}).deleteFromDocument()
 	}
 	return len
 }
+/**
+ * 输入tab
+ * @param editor 
+ * @param tab 
+ * @param e 
+ */
 function handleTabCharacters(editor:HTMLElement,tab:string,e:KeyboardEvent){
 	mb.DOM.preventDefault(e)
 	const selection=window.getSelection()
 	const selected=selection.toString()
 	if(selected.length>0){
 		//多行
-		const pos=save(editor)
+		const pos=mb.DOM.getSelectionRange(editor)
 		const before=beforeCursor(editor)
 		const [padding,start]=findBeforePadding(before)
 		const inlines=selected.split('\n')
@@ -303,17 +204,17 @@ function handleTabCharacters(editor:HTMLElement,tab:string,e:KeyboardEvent){
 				pos.end-=beginSub
 				pos.start-=endSub
 			}
-			restore(editor,pos)
+			mb.DOM.setSelectionRange(editor,pos)
 		}else{
 			//插入
 			//第一行
-			restore(editor,{start,end:start})
+			mb.DOM.setSelectionRange(editor,{start,end:start})
 			insert(tab)
 			let nstart=before.length+inlines[0].length+tab.length+1
 			//其它行
 			let i=1
 			while(i<inlines.length){
-				restore(editor,{start:nstart,end:nstart})
+				mb.DOM.setSelectionRange(editor,{start:nstart,end:nstart})
 				insert(tab)
 				nstart=nstart+inlines[i].length+tab.length+1
 				i++
@@ -325,7 +226,7 @@ function handleTabCharacters(editor:HTMLElement,tab:string,e:KeyboardEvent){
 				pos.start = pos.start + (tab.length*inlines.length)
 				pos.end = pos.end + tab.length
 			}
-			restore(editor,pos)
+			mb.DOM.setSelectionRange(editor,pos)
 		}
 	}else{
 		//单行
@@ -333,16 +234,21 @@ function handleTabCharacters(editor:HTMLElement,tab:string,e:KeyboardEvent){
 			const before=beforeCursor(editor)
 			const [padding,start]=findBeforePadding(before)
 			if(padding.length>0){
-				const pos=save(editor)
+				const pos=mb.DOM.getSelectionRange(editor)
 				const len=deleteTab(editor,start,padding,tab)
 				pos.start -= len
 				pos.end -= len
-				restore(editor,pos)
+				mb.DOM.setSelectionRange(editor,pos)
 			}
 		}else{
 			insert(tab)
 		}
 	}
+}
+////////////////////////////////历史记录///////////////////////////////////////////////
+interface HistoryRecord{
+	html:string
+	pos:mb.DOM.Range
 }
 /**
  * 记录历史
@@ -360,7 +266,7 @@ function recordHistory(
 ){
 	if(!focus)return at
 	const html=editor.innerHTML
-	const pos=save(editor)
+	const pos=mb.DOM.getSelectionRange(editor)
 
 	const lastRecord=history[at]
 
@@ -381,18 +287,23 @@ function recordHistory(
 	return at
 }
 
-
+/**
+ * 处理粘贴
+ * @param editor 
+ * @param hightlight 
+ * @param e 
+ */
 function handlePaste(
 	editor:HTMLElement,
-	hightlight:(e:HTMLElement)=>void,
+	hightlight:(e:HTMLElement,pos:mb.DOM.Range)=>void,
 	e:ClipboardEvent
 ){
 	mb.DOM.preventDefault(e)
 	const text=((e as any).originalEvent || e).clipboardData.getData("text/plain") as string
-	const pos=save(editor)
+	const pos=mb.DOM.getSelectionRange(editor)
 	insert(text)
-	hightlight(editor)
-	restore(editor,{
+	hightlight(editor,pos)
+	mb.DOM.setSelectionRange(editor,{
 		start:pos.start+text.length,
 		end:pos.start+text.length
 	})
@@ -402,10 +313,10 @@ function isCtrl(e:KeyboardEvent){
 	return e.metaKey || e.ctrlKey
 }
 function isUndo(e:KeyboardEvent){
-	return isCtrl(e) && !e.shiftKey && e.key.toLocaleLowerCase()=='z'
+	return isCtrl(e) && !e.shiftKey && DOM.keyCode.Z(e)
 }
 function isRedo(e:KeyboardEvent){
-	return isCtrl(e) && e.shiftKey && e.key.toLocaleLowerCase()=='z'
+	return isCtrl(e) && e.shiftKey && DOM.keyCode.Z(e)
 }
 
 
@@ -419,31 +330,23 @@ function insert(text:string){
 	document.execCommand("insertHTML",false,text)
 }
 
-
-
-interface HistoryRecord{
-	html:string
-	pos:Position
-}
-
-interface Position{
-	start:number
-	end:number
-	dir?:"->"|"<-"
-}
-
+/*
+需要将cursor作为观察属性暴露出来，但设置cursor，是否会循环触发光标的定位？
+内容改变也可作属性，只是内容改变，要设置新内容，是否触发观察？
+绝对禁止从观察属性去循环改变属性本身，如内容变化通知改变内容。
+*/
 export interface CodeJar{
 	getContent():string
+	getSelection():mb.DOM.Range
+	setSelection(v:mb.DOM.Range):void
 }
-const contentEditable=mb.browser.type=="FF"?"true":"plaintext-only"
 export interface CodeJarOption{
 	type?:string
-	content:mve.TValue<string>
+	content?:mve.TValue<string>
 	/**内容改变时触发，包括设置内容|keyup|paste */
-	highlight(e:HTMLElement):void
+	highlight(e:HTMLElement,pos:mb.DOM.Range):void
 	id?(v:CodeJar):void
 	callback?(content:string):string
-	cls?:mve.MTValue<string>
 	tab?:mve.TValue<string>
 	indentOn?:mve.TValue<RegExp>
 	spellcheck?:mve.TValue<boolean>
@@ -452,8 +355,9 @@ export interface CodeJarOption{
 	width?:mve.TValue<number>
 	height?:mve.TValue<number>
 	readonly?:mve.TValue<boolean>
+	element?:DOMNode
 }
-export function codeJar(p:CodeJarOption):PNJO{
+export function codeJar(p:CodeJarOption):DOMNode{
 	p.tab=p.tab||"\t"
 	p.indentOn=p.indentOn||/{$/
 	p.closePair=p.closePair||["()","[]",'{}','""',"''"]
@@ -463,17 +367,18 @@ export function codeJar(p:CodeJarOption):PNJO{
 		spellcheck:mve.valueOrCall(p.spellcheck),
 		noClosing:mve.valueOrCall(p.noClosing),
 		closePair:mve.valueOrCall(p.closePair),
-		content:mve.valueOrCall(p.content)
+		content:mve.valueOrCall(p.content||'')
 	}
 	let editor:HTMLElement
 	const debounceHighlight=debounce(function(){
-		const pos=save(editor)
-		p.highlight(editor)
-		restore(editor,pos)
+		const pos=mb.DOM.getSelectionRange(editor)
+		p.highlight(editor,pos)
+		mb.DOM.setSelectionRange(editor,pos)
 	},30)
 	let recording=false
 	const debounceRecordHistory=debounce(function(event:KeyboardEvent){
 		if(shouldRecord(event)){
+			//记录keydown-up之间的改变。
 			at=recordHistory(editor,history,focus,at)
 			recording=false
 		}
@@ -487,6 +392,12 @@ export function codeJar(p:CodeJarOption):PNJO{
 	const jar:CodeJar={
 		getContent(){
 			return editor.textContent || ""
+		},
+		getSelection(){
+			return mb.DOM.getSelectionRange(editor)
+		},
+		setSelection(v){
+			mb.DOM.setSelectionRange(editor,v)
 		}
 	}
 	function orCallback(){
@@ -494,125 +405,144 @@ export function codeJar(p:CodeJarOption):PNJO{
 			p.callback(jar.getContent())
 		}
 	}
-	return {
-		type:p.type||"div",
-		id(v){
-			editor=v
-			if(p.id){
-				p.id(jar)
-			}
-		},
-		attr:{
-			contentEditable:mb.Object.reDefine(p.readonly,function(r){
-				if(typeof(r)=='function'){
-					return function(){
-						return r()?undefined:contentEditable
-					}
-				}else{
-					return r?undefined:contentEditable
-				}
-			}),
-			spellcheck:p.spellcheck
-		},
-		text:mve.delaySetAfter(vm.content,function(content,set) {
-			if(content!=jar.getContent()){
-				set(content)
-				p.highlight(editor)
-			}
-		}),
-		cls:p.cls,
-		style:{
-			outline:"none",
-			"overflow-wrap":"break-word",
-			"overflow-y":"auto",
-			resize:p.height?"none":"vertical",
-			"white-space":"pre-wrap",
-			width:mb.Object.reDefine(p.width,function(w){
-				if(typeof(w)=='function'){
-					return function(){
-						return w()+"px"
-					}
-				}else{
-					return w+"px"
-				}
-			}),
-			height:mb.Object.reDefine(p.height,function(height){
-				if(typeof(height)=='function'){
-					return function(){
-						return height()+"px"
-					}
-				}else{
-					return height+"px"
-				}
-			})
-		},
-		action:{
-			keydown(e:KeyboardEvent){
-				if(e.defaultPrevented)return
-				prev=jar.getContent()
-				if(e.key=="Enter"){
-					//换行
-					handleNewLine(editor,vm.indentOn(),vm.tab(),e)
-				}else
-				if(e.key=="Tab"){
-					//缩进与反缩进
-					handleTabCharacters(editor,vm.tab(),e)
-				}else
-				if(isUndo(e)){
-					//撤销
-					mb.DOM.preventDefault(e)
-					at--
-					const record=history[at]
-					if(record){
-						editor.innerHTML=record.html
-						//会对history的record产生副作用
-						restore(editor,record.pos)
-					}
-					if(at<0){at=0}
-				}else
-				if(isRedo(e)){
-					//重做
-					mb.DOM.preventDefault(e)
-					at++
-					const record=history[at]
-					if(record){
-						editor.innerHTML=record.html
-						//会对history的record产生副作用
-						restore(editor,record.pos)
-					}
-					if(at>=history.length){at--}
-				}else
-				if(!p.noClosing){
-					//补全括号
-					handleSelfClosingCharacters(editor,e,vm.closePair())
-				}
-				if(shouldRecord(e) && !recording){
-					at=recordHistory(editor,history,focus,at)
-					recording=true
-				}
-			},
-			keyup(e:KeyboardEvent){
-				if(e.defaultPrevented)return
-				if(e.isComposing)return
 
-				if(prev != jar.getContent()){
-					debounceHighlight()
+	const element:DOMNode=p.element||{
+		type:"pre"
+	}
+	element.action=element.action||{}
+	const action=element.action
+
+	reWriteAction(action,'keydown',function(vs){
+		vs.push(function(e:KeyboardEvent){
+			if(e.defaultPrevented)return
+			prev=jar.getContent()
+			if(DOM.keyCode.ENTER(e)){
+				//换行
+				handleNewLine(editor,vm.indentOn(),vm.tab(),e)
+			}else
+			if(DOM.keyCode.TAB(e)){
+				//缩进与反缩进
+				handleTabCharacters(editor,vm.tab(),e)
+			}else
+			if(isUndo(e)){
+				//撤销
+				mb.DOM.preventDefault(e)
+				at--
+				const record=history[at]
+				if(record){
+					editor.innerHTML=record.html
+					//会对history的record产生副作用
+					mb.DOM.setSelectionRange(editor,record.pos)
 				}
-				debounceRecordHistory(e)
-				orCallback()
-			},
-			focus(e){
-				focus=true
-			},
-			blur(e){
-				focus=false
-			},
-			paste(e){
-				at=recordHistory(editor,history,focus,at)
-				handlePaste(editor,p.highlight,e)
-				at=recordHistory(editor,history,focus,at)
-				orCallback()
+				if(at<0){at=0}
+			}else
+			if(isRedo(e)){
+				//重做
+				mb.DOM.preventDefault(e)
+				at++
+				const record=history[at]
+				if(record){
+					editor.innerHTML=record.html
+					//会对history的record产生副作用
+					mb.DOM.setSelectionRange(editor,record.pos)
+				}
+				if(at>=history.length){at--}
+			}else
+			if(!p.noClosing){
+				//补全括号
+				handleSelfClosingCharacters(editor,e,vm.closePair())
 			}
+			if(shouldRecord(e) && !recording){
+				at=recordHistory(editor,history,focus,at)
+				recording=true
+			}
+		})
+		return vs
+	})
+	reWriteAction(action,'keyup',function(vs){
+		vs.unshift(function(e:KeyboardEvent){
+			if(e.defaultPrevented)return
+			if(e.isComposing)return
+
+			if(prev != jar.getContent()){
+				debounceHighlight()
+			}
+			debounceRecordHistory(e)
+			orCallback()
+		})
+		return vs
+	})
+	reWriteAction(action,'focus',function(vs){
+		vs.push(function(e){
+			focus=true
+		})
+		return vs
+	})
+	reWriteAction(action,'blur',function(vs){
+		vs.push(function(e){
+			focus=false
+		})
+		return vs
+	})
+	reWriteAction(action,'paste',function(vs){
+		vs.push(function(e){
+			at=recordHistory(editor,history,focus,at)
+			handlePaste(editor,p.highlight,e)
+			at=recordHistory(editor,history,focus,at)
+			orCallback()
+		})
+		return vs
+	})
+
+	element.id=function(v){
+		editor=v
+		if(p.id){
+			p.id(jar)
 		}
 	}
+
+	element.attr=mb.Object.ember(element.attr||{},{
+		contentEditable:mb.Object.reDefine(p.readonly,function(r){
+			if(typeof(r)=='function'){
+				return function(){
+					return r()?undefined:mb.DOM.contentEditable.text
+				}
+			}else{
+				return r?undefined:mb.DOM.contentEditable.text
+			}
+		}),
+		spellcheck:p.spellcheck
+	})
+	element.text=mve.delaySetAfter(vm.content,function(content,set) {
+		if(content!=jar.getContent()){
+			set(content)
+			p.highlight(editor,jar.getSelection())
+		}
+	})
+	element.style=mb.Object.ember(element.style||{},{
+		outline:"none",
+		"overflow-wrap":"break-word",
+		"overflow-y":"auto",
+		resize:p.height?"none":"vertical",
+		"white-space":"pre-wrap",
+		width:mb.Object.reDefine(p.width,function(w){
+			if(typeof(w)=='function'){
+				return function(){
+					return w()+"px"
+				}
+			}else{
+				return w+"px"
+			}
+		}),
+		height:mb.Object.reDefine(p.height,function(height){
+			if(typeof(height)=='function'){
+				return function(){
+					return height()+"px"
+				}
+			}else{
+				return height+"px"
+			}
+		})
+	})
+	return element
 }

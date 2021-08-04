@@ -1,79 +1,48 @@
 define(["require", "exports", "./virtualTreeChildren", "./util"], function (require, exports, virtualTreeChildren_1, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.childrenBuilder = exports.isJOChildrenLifeType = exports.isJOChildFunType = exports.Article = exports.newArticle = void 0;
-    function newArticle() {
-        var lines = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            lines[_i] = arguments[_i];
+    exports.childrenBuilder = exports.baseChildrenBuilder = exports.isEOChildFunType = exports.ChildLife = void 0;
+    /**存放空的生命周期 */
+    var ChildLife = /** @class */ (function () {
+        function ChildLife(result) {
+            this.result = result;
         }
-        return new Article(lines);
-    }
-    exports.newArticle = newArticle;
-    var Article = /** @class */ (function () {
-        function Article(out) {
-            if (out === void 0) { out = []; }
-            this.out = out;
-        }
-        Article.prototype.append = function (v) {
-            this.out.push(v);
-            return this;
+        ChildLife.of = function (result) {
+            return new ChildLife(result);
         };
-        return Article;
+        return ChildLife;
     }());
-    exports.Article = Article;
-    function isJOChildFunType(child) {
+    exports.ChildLife = ChildLife;
+    function isEOChildFunType(child) {
         return typeof (child) == 'function';
     }
-    exports.isJOChildFunType = isJOChildFunType;
-    function isJOChildrenLifeType(child) {
-        return typeof (child) == 'object' && 'elements' in child && mb.Array.isArray(child.elements);
-    }
-    exports.isJOChildrenLifeType = isJOChildrenLifeType;
-    function childBuilder(out, child, parent, me, parse, buildChildren) {
-        if (isJOChildFunType(child)) {
-            out.push(child(buildChildren, parent.newChildAtLast()));
-        }
-        else if (isJOChildrenLifeType(child)) {
-            out.push(child);
-            childrenVSBuilder(out, child.elements, parent, me, parse, buildChildren);
-        }
-        else {
-            var vs = parse(me, child);
-            out.orPush(vs);
-            parent.push(vs.element);
-        }
-    }
-    function childrenVBuilder(out, child, parent, me, parse, buildChildren) {
+    exports.isEOChildFunType = isEOChildFunType;
+    function childBuilder(out, child, parent, me) {
         if (mb.Array.isArray(child)) {
             var i = 0;
             while (i < child.length) {
-                childBuilder(out, child[i], parent, me, parse, buildChildren);
+                childBuilder(out, child[i], parent, me);
                 i++;
             }
         }
+        else if (isEOChildFunType(child)) {
+            out.push(child(parent.newChildAtLast(), me));
+        }
+        else if (child instanceof ChildLife) {
+            out.push(child.result);
+        }
         else {
-            childBuilder(out, child, parent, me, parse, buildChildren);
+            parent.push(child);
         }
     }
-    function childrenVSBuilder(out, children, parent, me, parse, buildChildren) {
-        //数组元素
-        var i = 0;
-        while (i < children.length) {
-            var child = children[i];
-            i++;
-            childrenVBuilder(out, child, parent, me, parse, buildChildren);
-        }
+    function baseChildrenBuilder(me, children, parent) {
+        var out = util_1.BuildResultList.init();
+        childBuilder(out, children, parent, me);
+        return util_1.onceLife(out.getAsOne()).out;
     }
-    function childrenBuilder(parse) {
-        var baseBuilder = function (me, children, parent) {
-            var out = util_1.BuildResultList.init();
-            childrenVBuilder(out, children, parent, me, parse, baseBuilder);
-            return util_1.onceLife(out.getAsOne()).out;
-        };
-        return function (me, x, children) {
-            return baseBuilder(me, children, virtualTreeChildren_1.VirtualChild.newRootChild(x));
-        };
+    exports.baseChildrenBuilder = baseChildrenBuilder;
+    function childrenBuilder(me, x, children) {
+        return baseChildrenBuilder(me, children, virtualTreeChildren_1.VirtualChild.newRootChild(x));
     }
     exports.childrenBuilder = childrenBuilder;
 });

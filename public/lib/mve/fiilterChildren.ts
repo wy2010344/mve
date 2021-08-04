@@ -1,4 +1,4 @@
-import { JOChildFun, JOChildren, JOChildType } from "./childrenBuilder";
+import { EOChildFun, EOChildren } from "./childrenBuilder";
 import { ifChildren } from "./ifChildren";
 import { mve } from "./util";
 
@@ -9,12 +9,12 @@ import { mve } from "./util";
  * @param array 
  * @param fun 
  */
-export function filterChildren<T,JO,EO>(
+export function filterChildren<T,EO>(
 	array:()=>T[],
-	fun:(me:mve.LifeModel,row:T,index:number)=>JOChildren<JO,EO>
-):JOChildFun<JO,EO>{
+	fun:(me:mve.LifeModel,row:T,index:number)=>EOChildren<EO>
+):EOChildFun<EO>{
 	return ifChildren(function(me){
-		const vs:JOChildType<JO,EO>[]=[]
+		const vs:EOChildren<EO>[]=[]
 		mb.Array.forEach(array(),function(row,index){
 			const v=fun(me,row,index)
 			if(mb.Array.isArray(v)){

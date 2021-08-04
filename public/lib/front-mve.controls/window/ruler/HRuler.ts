@@ -1,7 +1,8 @@
 import { resizeForm } from "../form";
 import { modelChildren } from "../../../mve/modelChildren";
 import { mve } from "../../../mve/util";
-import { PNJO } from "../../../mve-DOM/index";
+import { DOMNode, svg } from "../../../mve-DOM/index";
+import { EOChildren } from "../../../mve/childrenBuilder";
 
 
 
@@ -26,7 +27,7 @@ export function hRuler(param:{
       allow(){
         return true
       },
-      element:{
+      element:svg({
         type:"svg",
         action:{
           mousedown:rp.move
@@ -40,7 +41,7 @@ export function hRuler(param:{
           }
         },
         children:[
-          {
+          svg({
             type:"rect",
             style:{
               background:"gray",
@@ -54,11 +55,11 @@ export function hRuler(param:{
                 return rp.out.height()
               }
             }
-          },
+          }),
           modelChildren(model,function(me,row,index){
             let color="red"
             let diff = 20
-            const lines:PNJO[]=[]
+            const lines:DOMNode[]=[]
             if(row % 10 == 0){
               color ="black"
               diff = diff + 20
@@ -104,10 +105,10 @@ export function hRuler(param:{
                 }
               }
             })
-            return lines
+            return lines.map(svg)
           })
         ]
-      }
+      })
     }
   })
 }

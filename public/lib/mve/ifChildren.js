@@ -1,4 +1,4 @@
-define(["require", "exports", "./util"], function (require, exports, util_1) {
+define(["require", "exports", "./childrenBuilder", "./util"], function (require, exports, childrenBuilder_1, util_1) {
     "use strict";
     exports.__esModule = true;
     exports.ifChildren = void 0;
@@ -7,7 +7,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
      * @param fun
      */
     function ifChildren(fun) {
-        return function (buildChildren, parent) {
+        return function (parent, me) {
             var currentObject;
             var virtualChild;
             var currentLifeModel;
@@ -46,7 +46,7 @@ define(["require", "exports", "./util"], function (require, exports, util_1) {
                 if (children) {
                     //初始化
                     virtualChild = parent.newChildAtLast();
-                    currentObject = buildChildren(currentLifeModel.me, children, virtualChild);
+                    currentObject = childrenBuilder_1.baseChildrenBuilder(currentLifeModel.me, children, virtualChild);
                     if (life.isInit) {
                         util_1.orInit(currentObject);
                     }

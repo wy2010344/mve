@@ -1,10 +1,10 @@
-import { DesktopParam, formBuilder } from "./index";
+import { DesktopParam, formBuilder, FormPanel } from "./index";
 import { buildTitle } from "./title";
-import { NJO, PNJO, StyleMap } from "../../mve-DOM/index";
+import { dom, DOMNodeAll, DOMNode, StyleMap } from "../../mve-DOM/index";
 import { mve } from "../../mve/util";
 import { dragMoveHelper, dragResizeHelper } from "../../mve-DOM/other/drag";
 import { resizeZoom } from "../../mve-DOM/other/resize";
-import { JOChildren } from "../../mve/childrenBuilder";
+import { EOChildren } from "../../mve/childrenBuilder";
 export interface BaseResizeFormParam{
 	move(e:MouseEvent):void
 	index:mve.GValue<number>
@@ -30,8 +30,10 @@ export function baseResizeForm(x:{
     addHeight(h:number):void,
     addTop(t:number):void,
     addLeft(l:number):void
-    element:PNJO
-		panels?:JOChildren<NJO,Node>
+		style?:StyleMap
+    element:EOChildren<Node>
+		shadow?:EOChildren<Node>
+		panels?:EOChildren<Node>
 	},
 	focus?:mve.GValue<void>
 }){
@@ -61,27 +63,24 @@ export function baseResizeForm(x:{
 				})
 			})
 			const element=result.element
-			element.style=element.style||{}
 			function currentWidth(){
 				return result.width()+"px"
 			}
 			function currentHeight(){
 				return result.height()+"px"
 			}
-			addShadow(element.style)
 			return {
 				left(){return result.left()+"px"},
 				top(){return result.top()+"px" },
 				width:currentWidth,
 				height:currentHeight,
 				panels:result.panels,
-				element:{
-					type:"div",
-					children:[
-						element,
-						...zoom
-					]
-				}
+				shadow:result.shadow,
+				style:result.style,
+				element:[
+					element,
+					...zoom
+				]
 			}
 		}
 	})
@@ -100,7 +99,7 @@ export function resizeForm(
   fun:(me:mve.LifeModel,p:DesktopParam,r:ResizeFormParam)=>{
 		shadowClick?():void
     allow():boolean,
-    element:PNJO
+    element:EOChildren<Node>
   },focus?:mve.GValue<void>){
     const rect={
       left:mve.valueOf(20),
@@ -147,7 +146,7 @@ export function resizeForm(
 						},
 						left(){
 							return rect.left()
-						},
+						}
 					}
 				}
 			})
@@ -175,11 +174,13 @@ export type TopTitleResizeForm=ReturnType<typeof topTitleResizeForm>
 export function topTitleResizeForm(
   fun:(me:mve.LifeModel,p:DesktopParam,r:TitleResizeFormParam)=>{
     title:mve.TValue<string>
-    element:PNJO
-		panels?:JOChildren<NJO,Node>
+		style?:StyleMap
+    element:EOChildren<Node>
+		panels?:EOChildren<Node>
 		close?():void
 		init?():void
 		destroy?():void
+		shadow?:EOChildren<Node>
 		shadowClick?():void
   },
   focus?:mve.GValue<void>
@@ -187,9 +188,9 @@ export function topTitleResizeForm(
   const out={
     left:mve.valueOf(20),
     top:mve.valueOf(20),
-    width:mve.valueOf(400),
+    width:mve.valueOf(800),
     height:mve.valueOf(600),
-    max:mve.valueOf(false),
+    max:mve.valueOf(mb.DOM.isMobile()),
     resizeAble:mve.valueOf(true),
     showClose:mve.valueOf(true),
 		showMax:mve.valueOf(true),
@@ -200,19 +201,20 @@ export function topTitleResizeForm(
     panel:baseResizeForm({
 			hide:out.hide,
 			render(me,p,rp){
+				const titleHeight=25
 				const rect={
 					out,
 					index:rp.index,
 					innerHeight(){
 						if(out.max()){
-							return p.height() - 20 - 10
+							return p.height() - titleHeight
 						}else{
 							return out.height()
 						}
 					},
 					innerWidth(){
 						if(out.max()){
-							return p.width() - 10
+							return p.width()
 						}else{
 							return out.width()
 						}
@@ -228,6 +230,7 @@ export function topTitleResizeForm(
 				}
 				const result=fun(me,p,rect)
 				const title=buildTitle({
+					height:titleHeight,
 					move:rp.move,
 					title:result.title,
 					close_click(){
@@ -241,14 +244,6 @@ export function topTitleResizeForm(
 					showClose:out.showClose,
 					showMax:out.showMax
 				})
-				const element=result.element
-				element.style=element.style||{}
-				element.style.width=function(){
-					return rect.innerWidth() +"px"
-				}
-				element.style.height=function(){
-					return rect.innerHeight() +"px"
-				}
 				/*
 				element.style.background=function(){
 					return gstate()?"#f0f3f9":"black"
@@ -281,14 +276,14 @@ export function topTitleResizeForm(
 						if(out.max()){
 							return p.width()
 						}else{
-							return 10 + out.width()
+							return out.width()
 						}
 					},
 					height(){
 						if(out.max()){
 							return p.height()
 						}else{
-							return 10 + out.height() + 20
+							return out.height() + titleHeight
 						}
 					},
 					top(){
@@ -305,27 +300,150 @@ export function topTitleResizeForm(
 							return out.left()
 						}
 					},
+					shadow:result.shadow,
 					shadowClick:result.shadowClick,
 					panels:result.panels,
-					element:{
+					element:dom({
 						type:"div",
 						init:result.init,
 						destroy:result.destroy,
-						style:{
-							padding:"5px",
-							background:"#f0f3f9"
-						},
+						style:addShadow({
+							background:"#ededed",
+							"border-radius":"5px"
+						}),
 						children:[
 							title,
-							element
+							dom({
+								type:"div",
+								style:mb.Object.ember(result.style||{},{
+									width(){
+										return rect.innerWidth() +"px"
+									},
+									height(){
+										return rect.innerHeight() +"px"
+									}
+								}),
+								children:result.element
+							})
 						]
-					}
+					})
 				}
 			},
 			focus
 		})
   }
 }
+
+/**
+ * 以x方向为例，菜单的最终位置
+ * @param x 鼠标触发的在父容器下的x
+ * @param pwidth 父容器宽度
+ * @param width 自己的宽度
+ * @returns 菜单应该放置的宽度
+ */
+function menuLV(x:number,pwidth:number,width:number){
+	const after = x + width
+	if(after > pwidth){
+		//会超出,尝试向前
+		const before= x - width
+		if(before < 0){
+			//尝试向前也会超出
+			if(after > before){
+				//向后超出的多
+				return before
+			}else{
+				return x
+			}
+		}else{
+			return before
+		}
+	}else{
+		return x
+	}
+}
+
+/**
+ * 计算鼠标事件导致的相对位置
+ * @param e 
+ * @param pe 
+ * @param me 
+ * @returns 
+ */
+export function autoMenuMouse(e:MouseEvent,pe:DOMRect,me:DOMRect){
+	return {
+		x:menuLV(e.clientX-pe.left,pe.width,me.width),
+		y:menuLV(e.clientY-pe.top,pe.height,me.height)
+	}
+}
+
+function menuNode(
+	rtop:number,
+	rleft:number,
+	peWidth:number,
+	peHeight:number,
+	eWidth:number,
+	eHeight:number,
+	meWidth:number,
+	meHeight:number
+) {
+	let x=0
+	let y=0
+	const diffDownTop= peHeight - (rtop  + eHeight + meHeight)
+	if(diffDownTop > 0){
+		y = rtop + eHeight
+	}else{
+		const diffUpTop=rtop - meHeight
+		if(diffUpTop > 0){
+			y = diffUpTop
+		}else{
+			if(diffUpTop < diffDownTop){
+				//上面更小，依下面
+				y = rtop + eHeight
+			}else{
+				y = diffUpTop
+			}
+		}
+	}
+	const rd=peWidth - (rleft + meWidth)
+	if(rd > 0){
+		//靠左
+		x = rleft
+	}else{
+		const ld=rleft + eWidth - meWidth
+		if(ld > 0){
+			//靠右
+			x = ld
+		}else{
+			if(ld < rd){
+				//超得多，
+				x = rleft
+			}else{
+				//靠右
+				x = ld
+			}
+		}
+	}
+	return [x,y]
+}
+/**
+ * 自动排布菜单，相对定位
+ * @param e 环绕元素
+ * @param pe 父元素
+ * @param me 菜单元素
+ * @param dir 上下结构还是左右结构，默认上下结构y
+ */
+export function autoMenuNode(e:DOMRect,pe:DOMRect,me:DOMRect,dir:"x"|"y"="y"){
+	const rtop=e.top - pe.top
+	const rleft=e.left - pe.left
+	if(dir=="x"){
+		const [y,x]=menuNode(rleft,rtop,pe.height,pe.width,e.height,e.width,me.height,me.width)
+		return {x,y}
+	}else{
+		const [x,y]=menuNode(rtop,rleft,pe.width,pe.height,e.width,e.height,me.width,me.height)
+		return {x,y}
+	}
+}
+
 export function addShadow(style:StyleMap){
   const shadow="rgb(102, 102, 102) 0px 0px 20px 5px"//"20px 20px 40px #666666";
   style["box-shadow"]=shadow
