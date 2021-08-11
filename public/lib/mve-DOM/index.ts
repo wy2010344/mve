@@ -3,7 +3,7 @@ import { EOChildren,childrenBuilder } from "../mve/childrenBuilder"
 import { buildElement, buildElementOrginal, parseUtil } from "../mve/index"
 import { BuildResult, BuildResultList, mve, onceLife } from "../mve/util"
 import { VirtualChildParam } from "../mve/virtualTreeChildren"
-import DOM = require("./DOM")
+import * as DOM from "./DOM"
 export class DOMVirtualParam implements VirtualChildParam<Node>{
 	constructor(
 		private pel:Node
@@ -39,22 +39,22 @@ export type StyleMap={
 }&{
 	opacity?:mve.MTValue<number|string>
 }
-export type ActionHandler=(e) => void
+export type EventHandler=(e) => void
 /**动作树 */
-export type ActionItem=ActionHandler | {
+export type EventItem=EventHandler | {
 	capture?:boolean
-	handler:ActionHandler
-} | ActionItem[]
-export type ActionMap = { [key:string]: ActionItem }
-export function reWriteAction(n:ActionMap,act:string,fun:(vs:ActionItem[])=>ActionItem[]){
-	const v=n[act]
+	handler:EventHandler
+} | EventItem[]
+export type EventMap = { [key:string]: EventItem }
+export function reWriteEvent(n:EventMap,eventName:string,fun:(vs:EventItem[])=>EventItem[]){
+	const v=n[eventName]
 	if(mb.Array.isArray(v)){
-		n[act]=fun(v)
+		n[eventName]=fun(v)
 	}else
 	if(v){
-		n[act]=fun([v])
+		n[eventName]=fun([v])
 	}else{
-		n[act]=fun([])
+		n[eventName]=fun([])
 	}
 }
 
@@ -88,12 +88,12 @@ export interface DOMNode{
 	type:string
 	init?:InitFun|InitFun[]
 	destroy?:DestoryFun|DestoryFun[]
-	id?:(o:any)=>void
+	id?:StringValue
 	cls?:StringValue
 	attr?: AttrMap
 	style?: StyleMap
 	prop?:PropMap
-	action?: ActionMap
+	event?: EventMap
 
 	value?: ItemValue
 	children?:EOChildren<Node>
@@ -102,17 +102,14 @@ export interface DOMNode{
 export type DOMNodeAll=DOMNode|string
 
 function buildParam(me:mve.LifeModel,el:Node,child:DOMNode){
-	if(child.id){
-		child.id(el)
-	}
-	if(child.action){
-		mb.Object.forEach(child.action,function(v,k){
+	if(child.event){
+		mb.Object.forEach(child.event,function(v,k){
 			if(mb.Array.isArray(v)){
 				mb.Array.forEach(v,function(v){
-					DOM.action(el,k,v)
+					DOM.event(el,k,v)
 				})
 			}else{
-				DOM.action(el,k,v)
+				DOM.event(el,k,v)
 			}
 		})
 	}
@@ -134,6 +131,11 @@ function buildParam(me:mve.LifeModel,el:Node,child:DOMNode){
 	if(child.cls){
 		parseUtil.bind(me,child.cls,function(v){
 			DOM.attr(el,"class",v)
+		})
+	}
+	if(child.id){
+		parseUtil.bind(me,child.id,function(v){
+			DOM.attr(el,"id",v)
 		})
 	}
 	if(child.text){
@@ -222,3 +224,15 @@ export const svg=buildElement<DOMNode,Node>(function(me,n,out){
 	out.push(ci)
 	return element
 })
+
+
+let idCount=0
+/**生成唯一ID*/
+export function idOf(name:string){
+	return name+(idCount++)
+}
+let clsCount=0
+/**生成唯一class */
+export function clsOf(name:string){
+	return name+(clsCount++)
+}

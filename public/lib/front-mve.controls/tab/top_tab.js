@@ -24,7 +24,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                     style: {
                                         display: on_hiden
                                     },
-                                    action: {
+                                    event: {
                                         click: function () {
                                             var c = contentSpan;
                                             c.scrollLeft = c.scrollLeft - 10;
@@ -33,7 +33,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                 }),
                                 index_1.dom({
                                     type: "span",
-                                    id: function (v) {
+                                    init: function (v) {
                                         contentSpan = v;
                                     },
                                     style: {
@@ -46,7 +46,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                             }
                                         }
                                     },
-                                    action: {
+                                    event: {
                                         wheel: function (e) {
                                             var c = contentSpan;
                                             c.scrollLeft = c.scrollLeft + mb.DOM.wheelDelta(e);
@@ -87,7 +87,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                                         }
                                                     },
                                                     text: p.title(me, row, index),
-                                                    action: {
+                                                    event: {
                                                         mousedown: drag_1.dragMoveHelper({
                                                             diff: function (v) {
                                                                 var lf = left() + v.x;
@@ -122,7 +122,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                     style: {
                                         display: on_hiden
                                     },
-                                    action: {
+                                    event: {
                                         click: function () {
                                             var c = contentSpan;
                                             c.scrollLeft = c.scrollLeft + 10;

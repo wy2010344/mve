@@ -75,6 +75,7 @@ declare namespace mb{
 		 * @param fun 
 		 */
 		function reDefine<V,T>(v:V,fun:(v:V)=>T):T
+		function defineProperty<T>(o: T, p: PropertyKey, attributes: PropertyDescriptor & ThisType<any>): T;
 	}
 
 	namespace Date{
@@ -124,7 +125,7 @@ declare interface Date{
 	format(v:string):string;
 }
 
-declare interface String extends BaseReadArray<string>{
+declare interface String extends BaseReadArray<number>{
 	endsWith(v:string):boolean
 	startsWith(v:string,index?:number):boolean
 	join(v?:string):string
@@ -138,6 +139,7 @@ declare interface BaseReadArray<T>{
 declare interface BaseArray<T> extends BaseReadArray<T>{
 	insert(i:number,v:T):void
 	remove(i:number):void
+	set(i:number,v:T):T
 	move(oldI:number,newI:number):void
 	clear():void
 }

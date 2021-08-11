@@ -81,6 +81,7 @@ export namespace mve{
   export interface ArrayModelView<T>{
     insert(index:number,row:T):void
     remove(index:number):void
+		set(index:number,row:T):void
     move(oldIndex:number,newIndex:number):void
 	}
 	/**构造只读的模型*/
@@ -156,18 +157,26 @@ export namespace mve{
       this.array_value.splice(index,0,row);
       mb.Array.forEach(this.views_value,function(view){
         view.insert(index,row);
-      });
+      })
       this.reload_size();
     }
     remove(index:number){
       /*更常识的使用方法*/
-      var row=this.get(index);
+      const row=this.get(index);
       this.array_value.splice(index,1);
       mb.Array.forEach(this.views_value,function(view){
         view.remove(index);
-      });
+      })
       this.reload_size();
       return row;
+		}
+		set(index:number,row:T){
+			const oldRow=this.array_value.splice(index,1,row)[0]
+			mb.Array.forEach(this.views_value,function(view){
+				view.set(index,row)
+			})
+			this.reload_size()
+			return oldRow
 		}
 		/**清理匹配项 */
 		removeWhere(fun:(row:T,i:number)=>boolean){

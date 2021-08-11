@@ -153,30 +153,41 @@ class ModelChildView<T> implements ModelWriteValue<T>{
 		public readonly destroy:DestroyFun
 	){}
 }
+
+export type RenderListModelChildren<K,V>=(row:K,index:mve.GValue<number>)=>ModelItem<V>
+function getView<K,V>(index:number,row:K,parent:VirtualChild<V>,fun:RenderListModelChildren<K,V>){
+	const vindex=mve.valueOf(index)
+	const value=fun(row,vindex)
+	const vm=parent.newChildAt(index)
+	const vx=baseChildrenBuilder(value,vm)
+	return new ModelChildView(value,vindex,vx)
+}
 function superListModelChildren<K,V>(
 	views:BaseArray<ModelChildView<ModelItem<V>>>,
 	model:mve.CacheArrayModel<K>,
-	fun:(row:K,index:mve.GValue<number>)=>ModelItem<V>
+	fun:RenderListModelChildren<K,V>
 ):ModelItemFun<V>{
 	return function(parent){
 		const theView:mve.ArrayModelView<K>={
 			insert(index,row){
-				const vindex=mve.valueOf(index)
-				const value=fun(row,vindex)
-				const vm=parent.newChildAt(index)
-				const vx=baseChildrenBuilder(value,vm)
-				const view=new ModelChildView(value,vindex,vx)
+				const view=getView(index,row,parent,fun)
 				views.insert(index,view)
 				initUpdateIndex(views,index)
 			},
 			remove(index){
 				const view=views.get(index)
 				if(view){
+					view.destroy()
 					views.remove(index)
 					parent.remove(index)
 					removeUpdateIndex(views,index)
-					view.destroy()
 				}
+			},
+			set(index,row){
+				const view=getView(index,row,parent,fun)
+				const oldView=views.set(index,view)
+				oldView.destroy()
+				parent.remove(index+1)
 			},
 			move(oldIndex,newIndex){
 				views.move(oldIndex,newIndex)
@@ -198,7 +209,7 @@ function superListModelChildren<K,V>(
  */
 export function listModelChilren<K,V>(
 	model:mve.CacheArrayModel<K>,
-	fun:(row:K,index:mve.GValue<number>)=>ModelItem<V>
+	fun:RenderListModelChildren<K,V>
 ){
 	return superListModelChildren([],model,fun)
 }

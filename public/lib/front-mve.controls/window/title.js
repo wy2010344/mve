@@ -16,7 +16,7 @@ define(["require", "exports", "../../mve-DOM/index"], function (require, exports
                 "line-height": p.height - 1 + "px",
                 "border-bottom": "1px solid #696969"
             },
-            action: {
+            event: {
                 mousedown: function (e) {
                     p.move(e || window.event);
                 }
@@ -41,7 +41,7 @@ define(["require", "exports", "../../mve-DOM/index"], function (require, exports
                             return p.showClose() ? "" : "none";
                         }
                     },
-                    action: {
+                    event: {
                         mousedown: function (e) {
                             mb.DOM.stopPropagation(e);
                         },
@@ -73,7 +73,7 @@ define(["require", "exports", "../../mve-DOM/index"], function (require, exports
                             }
                         }
                     },
-                    action: {
+                    event: {
                         mousedown: function (e) {
                             mb.DOM.stopPropagation(e);
                         },

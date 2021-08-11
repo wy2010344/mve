@@ -46,7 +46,7 @@ export function split(me:mve.LifeModel,p:{
 				cursor:"w-resize",
 				position:"absolute"
 			},
-			action:{
+			event:{
 				mousedown(e){
 					move_index=i;
 					dragMove(e);

@@ -26,7 +26,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     left: "0",
                     cursor: "n-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ t: true })
                 }
             }),
@@ -41,7 +41,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     top: "0",
                     cursor: "e-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ r: true })
                 }
             }),
@@ -56,7 +56,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     top: "0",
                     cursor: "w-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ l: true })
                 }
             }),
@@ -71,7 +71,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     left: "0",
                     cursor: "s-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ b: true })
                 }
             }),
@@ -86,7 +86,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     left: "-7px",
                     cursor: "nw-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ t: true, l: true })
                 }
             }),
@@ -101,7 +101,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     right: "-7px",
                     cursor: "ne-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ t: true, r: true })
                 }
             }),
@@ -116,7 +116,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     left: "-7px",
                     cursor: "sw-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ b: true, l: true })
                 }
             }),
@@ -131,7 +131,7 @@ define(["require", "exports", "../index"], function (require, exports, index_1) 
                     right: "-7px",
                     cursor: "se-resize"
                 },
-                action: {
+                event: {
                     mousedown: makeResize({ b: true, r: true })
                 }
             })

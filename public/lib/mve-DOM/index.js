@@ -1,7 +1,7 @@
 define(["require", "exports", "../mve/childrenBuilder", "../mve/index", "../mve/util", "./DOM"], function (require, exports, childrenBuilder_1, index_1, util_1, DOM) {
     "use strict";
     exports.__esModule = true;
-    exports.svg = exports.dom = exports.reWriteDestroy = exports.reWriteInit = exports.reWriteAction = exports.DOMVirtualParam = void 0;
+    exports.clsOf = exports.idOf = exports.svg = exports.dom = exports.reWriteDestroy = exports.reWriteInit = exports.reWriteEvent = exports.DOMVirtualParam = void 0;
     var DOMVirtualParam = /** @class */ (function () {
         function DOMVirtualParam(pel) {
             this.pel = pel;
@@ -18,19 +18,19 @@ define(["require", "exports", "../mve/childrenBuilder", "../mve/index", "../mve/
         return DOMVirtualParam;
     }());
     exports.DOMVirtualParam = DOMVirtualParam;
-    function reWriteAction(n, act, fun) {
-        var v = n[act];
+    function reWriteEvent(n, eventName, fun) {
+        var v = n[eventName];
         if (mb.Array.isArray(v)) {
-            n[act] = fun(v);
+            n[eventName] = fun(v);
         }
         else if (v) {
-            n[act] = fun([v]);
+            n[eventName] = fun([v]);
         }
         else {
-            n[act] = fun([]);
+            n[eventName] = fun([]);
         }
     }
-    exports.reWriteAction = reWriteAction;
+    exports.reWriteEvent = reWriteEvent;
     function reWriteInit(v, fun) {
         if (mb.Array.isArray(v.init)) {
             v.init = fun(v.init);
@@ -56,18 +56,15 @@ define(["require", "exports", "../mve/childrenBuilder", "../mve/index", "../mve/
     }
     exports.reWriteDestroy = reWriteDestroy;
     function buildParam(me, el, child) {
-        if (child.id) {
-            child.id(el);
-        }
-        if (child.action) {
-            mb.Object.forEach(child.action, function (v, k) {
+        if (child.event) {
+            mb.Object.forEach(child.event, function (v, k) {
                 if (mb.Array.isArray(v)) {
                     mb.Array.forEach(v, function (v) {
-                        DOM.action(el, k, v);
+                        DOM.event(el, k, v);
                     });
                 }
                 else {
-                    DOM.action(el, k, v);
+                    DOM.event(el, k, v);
                 }
             });
         }
@@ -89,6 +86,11 @@ define(["require", "exports", "../mve/childrenBuilder", "../mve/index", "../mve/
         if (child.cls) {
             index_1.parseUtil.bind(me, child.cls, function (v) {
                 DOM.attr(el, "class", v);
+            });
+        }
+        if (child.id) {
+            index_1.parseUtil.bind(me, child.id, function (v) {
+                DOM.attr(el, "id", v);
             });
         }
         if (child.text) {
@@ -183,4 +185,16 @@ define(["require", "exports", "../mve/childrenBuilder", "../mve/index", "../mve/
         out.push(ci);
         return element;
     });
+    var idCount = 0;
+    /**生成唯一ID*/
+    function idOf(name) {
+        return name + (idCount++);
+    }
+    exports.idOf = idOf;
+    var clsCount = 0;
+    /**生成唯一class */
+    function clsOf(name) {
+        return name + (clsCount++);
+    }
+    exports.clsOf = clsOf;
 });

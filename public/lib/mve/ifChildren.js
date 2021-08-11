@@ -33,15 +33,17 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
             }, function () {
                 return fun(currentLifeModel.me);
             }, function (children) {
-                if (virtualChild) {
-                    parent.remove(0);
-                    virtualChild = null;
-                }
+                //生命周期销毁
                 if (currentObject) {
                     if (life.isInit) {
                         util_1.orDestroy(currentObject);
                     }
                     currentObject = null;
+                }
+                //视图销毁
+                if (virtualChild) {
+                    parent.remove(0);
+                    virtualChild = null;
                 }
                 if (children) {
                     //初始化

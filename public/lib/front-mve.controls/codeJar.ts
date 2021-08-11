@@ -1,5 +1,5 @@
 import DOM = require("../mve-DOM/DOM")
-import { DOMNode, reWriteAction } from "../mve-DOM/index"
+import { dom, DOMNode, reWriteEvent, reWriteInit } from "../mve-DOM/index"
 import { mve } from "../mve/util"
 /**
  * 固定参数，返回一个延时函数
@@ -345,7 +345,7 @@ export interface CodeJarOption{
 	content?:mve.TValue<string>
 	/**内容改变时触发，包括设置内容|keyup|paste */
 	highlight(e:HTMLElement,pos:mb.DOM.Range):void
-	id?(v:CodeJar):void
+	init?(v:CodeJar):void
 	callback?(content:string):string
 	tab?:mve.TValue<string>
 	indentOn?:mve.TValue<RegExp>
@@ -357,7 +357,7 @@ export interface CodeJarOption{
 	readonly?:mve.TValue<boolean>
 	element?:DOMNode
 }
-export function codeJar(p:CodeJarOption):DOMNode{
+export function codeJar(p:CodeJarOption){
 	p.tab=p.tab||"\t"
 	p.indentOn=p.indentOn||/{$/
 	p.closePair=p.closePair||["()","[]",'{}','""',"''"]
@@ -391,7 +391,7 @@ export function codeJar(p:CodeJarOption):DOMNode{
 
 	const jar:CodeJar={
 		getContent(){
-			return editor.textContent || ""
+			return editor?.textContent || ""
 		},
 		getSelection(){
 			return mb.DOM.getSelectionRange(editor)
@@ -409,10 +409,10 @@ export function codeJar(p:CodeJarOption):DOMNode{
 	const element:DOMNode=p.element||{
 		type:"pre"
 	}
-	element.action=element.action||{}
-	const action=element.action
+	element.event=element.event||{}
+	const action=element.event
 
-	reWriteAction(action,'keydown',function(vs){
+	reWriteEvent(action,'keydown',function(vs){
 		vs.push(function(e:KeyboardEvent){
 			if(e.defaultPrevented)return
 			prev=jar.getContent()
@@ -459,7 +459,7 @@ export function codeJar(p:CodeJarOption):DOMNode{
 		})
 		return vs
 	})
-	reWriteAction(action,'keyup',function(vs){
+	reWriteEvent(action,'keyup',function(vs){
 		vs.unshift(function(e:KeyboardEvent){
 			if(e.defaultPrevented)return
 			if(e.isComposing)return
@@ -472,19 +472,19 @@ export function codeJar(p:CodeJarOption):DOMNode{
 		})
 		return vs
 	})
-	reWriteAction(action,'focus',function(vs){
+	reWriteEvent(action,'focus',function(vs){
 		vs.push(function(e){
 			focus=true
 		})
 		return vs
 	})
-	reWriteAction(action,'blur',function(vs){
+	reWriteEvent(action,'blur',function(vs){
 		vs.push(function(e){
 			focus=false
 		})
 		return vs
 	})
-	reWriteAction(action,'paste',function(vs){
+	reWriteEvent(action,'paste',function(vs){
 		vs.push(function(e){
 			at=recordHistory(editor,history,focus,at)
 			handlePaste(editor,p.highlight,e)
@@ -493,14 +493,15 @@ export function codeJar(p:CodeJarOption):DOMNode{
 		})
 		return vs
 	})
-
-	element.id=function(v){
-		editor=v
-		if(p.id){
-			p.id(jar)
-		}
-	}
-
+	reWriteInit(element,function(vs){
+		vs.push(function(v){
+			editor=v
+			if(p.init){
+				p.init(jar)
+			}
+		})
+		return vs
+	})
 	element.attr=mb.Object.ember(element.attr||{},{
 		contentEditable:mb.Object.reDefine(p.readonly,function(r){
 			if(typeof(r)=='function'){
@@ -544,5 +545,5 @@ export function codeJar(p:CodeJarOption):DOMNode{
 			}
 		})
 	})
-	return element
+	return dom(element)
 }

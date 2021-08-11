@@ -16,8 +16,8 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
             build_head_children: function (fun) {
                 return modelChildren_1.modelChildren(tabs, function (me, row, index) {
                     var element = fun(me, row, index);
-                    element.action = element.action || {};
-                    index_1.reWriteAction(element.action, 'mousedown', function (vs) {
+                    element.event = element.event || {};
+                    index_1.reWriteEvent(element.event, 'mousedown', function (vs) {
                         vs.push(function () {
                             current(row);
                         });

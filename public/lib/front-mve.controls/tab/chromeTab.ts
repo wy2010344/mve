@@ -88,7 +88,7 @@ export function chromeTab(x:{
 					return onMove()?envr().current()==it?envr().tabs.size()+"":"":""
 				}
 			},
-			action:{
+			event:{
 				mousedown:dragMoveHelper({
 					init(){
 						envr().current(it)
@@ -274,7 +274,7 @@ export function chromeWindow(init:(env:ChromeTabEnv)=>void){
 							children:modelChildren(out.tabs,function(me,row,i){
 								return row.head
 							}),
-							action:{
+							event:{
 								mousedown:dragMoveHelper({
 									diffX(x){
 										out.left(out.left()+x)
@@ -303,7 +303,7 @@ export function chromeWindow(init:(env:ChromeTabEnv)=>void){
 				}),
 				shadow:dom({
 					type:"div",
-					action:{
+					event:{
 						mouseup(e){
 							if(e.offsetY < out.header.height()){
 								if(dynamicFloatWindow()){

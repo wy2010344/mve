@@ -179,6 +179,14 @@ define(["require", "exports"], function (require, exports) {
                 this.reload_size();
                 return row;
             };
+            ArrayModel.prototype.set = function (index, row) {
+                var oldRow = this.array_value.splice(index, 1, row)[0];
+                mb.Array.forEach(this.views_value, function (view) {
+                    view.set(index, row);
+                });
+                this.reload_size();
+                return oldRow;
+            };
             /**清理匹配项 */
             ArrayModel.prototype.removeWhere = function (fun) {
                 mb.Array.removeWhere(this, fun);
