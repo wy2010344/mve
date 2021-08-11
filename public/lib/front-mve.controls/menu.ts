@@ -22,9 +22,9 @@ export function menu(fun:MenuFun){
 
 		p.type=p.type||"div";
 		p.style=p.style||{};
-		p.action=p.action||{};
+		p.event=p.event||{};
 		const style=p.style;
-		const action=p.action;
+		const action=p.event;
 
 		style.position="absolute";
 		style.display=function(){

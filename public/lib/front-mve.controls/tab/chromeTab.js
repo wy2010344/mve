@@ -72,7 +72,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                         return onMove() ? envr().current() == it ? envr().tabs.size() + "" : "" : "";
                     }
                 },
-                action: {
+                event: {
                     mousedown: drag_1.dragMoveHelper({
                         init: function () {
                             envr().current(it);
@@ -263,7 +263,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                                 children: modelChildren_1.modelChildren(out.tabs, function (me, row, i) {
                                     return row.head;
                                 }),
-                                action: {
+                                event: {
                                     mousedown: drag_1.dragMoveHelper({
                                         diffX: function (x) {
                                             out.left(out.left() + x);
@@ -292,7 +292,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve-DOM/other/drag",
                     }),
                     shadow: index_1.dom({
                         type: "div",
-                        action: {
+                        event: {
                             mouseup: function (e) {
                                 if (e.offsetY < out.header.height()) {
                                     if (dynamicFloatWindow()) {

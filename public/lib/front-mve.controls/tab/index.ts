@@ -1,4 +1,4 @@
-import { dom, DOMNode, reWriteAction } from "../../mve-DOM/index";
+import { dom, DOMNode, reWriteEvent } from "../../mve-DOM/index";
 import { EOChildFun, EOChildren } from "../../mve/childrenBuilder";
 import { modelChildren } from "../../mve/modelChildren";
 import { mve } from "../../mve/util";
@@ -26,8 +26,8 @@ export function tab<T>(me:mve.LifeModel,p:{
     build_head_children(fun){
       return modelChildren(tabs,function(me,row,index){
         const element=fun(me,row,index);
-        element.action=element.action||{};
-			  reWriteAction(element.action,'mousedown',function(vs){
+        element.event=element.event||{};
+			  reWriteEvent(element.event,'mousedown',function(vs){
 					vs.push(function(){
 						current(row)
 					})

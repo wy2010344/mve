@@ -54,7 +54,7 @@ export function top_simple_navigation(p:{
 								style:{
 									display:on_hidden
 								},
-								action:{
+								event:{
 									click:x.pop
 								}
 							}),
@@ -71,7 +71,7 @@ export function top_simple_navigation(p:{
 								style:{
 									display:on_hidden
 								},
-								action:{
+								event:{
 									click:function(){
 										var c=contentElement
 										c.scrollLeft=c.scrollLeft-10;
@@ -80,7 +80,7 @@ export function top_simple_navigation(p:{
 							}),
 							dom({
 								type:"span",
-								id(v){
+								init(v){
 									contentElement=v
 								},
 								style:{
@@ -92,7 +92,7 @@ export function top_simple_navigation(p:{
 										return w-60+"px";
 									}
 								},
-								action:{
+								event:{
 									wheel:function(e:any){
 										var c=contentElement
 										c.scrollLeft=c.scrollLeft+e.wheelDelta;
@@ -115,7 +115,7 @@ export function top_simple_navigation(p:{
 																return (x.size()-1==index())?null:"javascript:void(0)";
 															}
 														},
-														action:{
+														event:{
 															click:function(){
 																while(row!=x.current()){
 																	x.pop();
@@ -145,7 +145,7 @@ export function top_simple_navigation(p:{
 								style:{
 									display:on_hidden
 								},
-								action:{
+								event:{
 									click:function(){
 										var c=contentElement
 										c.scrollLeft=c.scrollLeft+10;

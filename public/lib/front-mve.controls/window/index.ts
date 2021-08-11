@@ -1,4 +1,4 @@
-import { dom, DOMNodeAll, DOMNode, reWriteAction, reWriteDestroy, reWriteInit, StyleMap, ActionMap } from "../../mve-DOM/index"
+import { dom, DOMNodeAll, DOMNode, reWriteEvent, reWriteDestroy, reWriteInit, StyleMap, EventMap } from "../../mve-DOM/index"
 import { EOChildren } from "../../mve/childrenBuilder"
 import { modelChildren } from "../../mve/modelChildren"
 import { mve } from "../../mve/util"
@@ -118,7 +118,7 @@ export interface FormBuilderResult{
 	/**遮罩*/
 	shadow?:EOChildren<Node>
 	shadowStyle?:StyleMap
-	shadowAction?:ActionMap
+	shadowAction?:EventMap
 	panels?:EOChildren<Node>
 }
 
@@ -165,7 +165,7 @@ export function formBuilder(k:{
 				outs=outs.concat(v.panels)
 			}
 			v.shadowAction=v.shadowAction||{}
-			reWriteAction(v.shadowAction,'click',function(vs){
+			reWriteEvent(v.shadowAction,'click',function(vs){
 				vs.push(v.shadowClick||function(){
 					p.model.moveToLast(index())
 				})
@@ -189,7 +189,7 @@ export function formBuilder(k:{
 						}
 					}
 				}),
-				action:v.shadowAction
+				event:v.shadowAction
 			}))
 			return outs
 		}

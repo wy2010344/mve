@@ -29,7 +29,7 @@ export function vRuler(param:{
       },
       element:svg({
         type:"svg",
-        action:{
+        event:{
           mousedown:rp.move
         },
         style:{

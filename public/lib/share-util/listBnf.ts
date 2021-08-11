@@ -403,29 +403,31 @@ export function between(begin:string,end:string){
 	}
 	throw `不合法的${begin} - ${end}`
 }
-type StringCharRule=string|BetweenRule
+type StringCharRule=number|string|BetweenRule
 function stringToChar(v:StringCharRule){
 	if(v instanceof BetweenRule){
 		return v
-	}
+	}else
+	if(typeof(v)=='number'){
+		return v
+	}else 
 	if(v && v.length==1){
 		return v.charCodeAt(0)
 	}
 	throw `不是合法的字符格式${v}`
 }
-export function rangeOf(..._rules:StringCharRule[]):Match<string>{
+export function rangeOf(..._rules:StringCharRule[]):Match<number>{
 	const rules=_rules.map(stringToChar)
 	return Match.of(function(vs,i){
 		if(i<vs.size()){
 			const v=vs.get(i)
-			const c=v.charCodeAt(0)
 			for(const r of rules){
 				if(r instanceof BetweenRule){
-					if(r.begin <= c && c <=r.end){
+					if(r.begin <= v && v <=r.end){
 						return i+1
 					}
 				}else
-				if(r==c){
+				if(r==v){
 					return i+1
 				}
 			}
@@ -434,19 +436,18 @@ export function rangeOf(..._rules:StringCharRule[]):Match<string>{
 		return `到达文件结尾`
 	})
 }
-export function rangeNotOf(..._rules:StringCharRule[]):Match<string>{
+export function rangeNotOf(..._rules:StringCharRule[]):Match<number>{
 	const rules=_rules.map(stringToChar)
 	return Match.of(function(vs,i){
 		if(i<vs.size()){
 			const v=vs.get(i)
-			const c=v.charCodeAt(0)
 			for(const r of rules){
 				if(r instanceof BetweenRule){
-					if(r.begin <= c && c <=r.end){
+					if(r.begin <= v && v <=r.end){
 						return `在区间[${String.fromCharCode(r.begin)}-${String.fromCharCode(r.end)}]`
 					}
 				}else
-				if(r==c){
+				if(r==v){
 					return `匹配了规则${String.fromCharCode(r)}`
 				}
 			}
@@ -455,11 +456,11 @@ export function rangeNotOf(..._rules:StringCharRule[]):Match<string>{
 		return `到达文件结尾`
 	})
 }
-export function stringMatch(xs:string):Match<string>{
+export function stringMatch(xs:string):Match<number>{
 	return Match.of(function(vs,i){
 		if(i+xs.length<vs.size()+1){		
 			for(let k=0;k<xs.length;k++){
-				if(xs[k]==vs.get(i)){
+				if(xs.get(i)==vs.get(i)){
 					i++
 				}else{
 					return `未匹配规则${xs}`

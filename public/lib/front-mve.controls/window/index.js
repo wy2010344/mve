@@ -131,7 +131,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
                     outs = outs.concat(v.panels);
                 }
                 v.shadowAction = v.shadowAction || {};
-                index_1.reWriteAction(v.shadowAction, 'click', function (vs) {
+                index_1.reWriteEvent(v.shadowAction, 'click', function (vs) {
                     vs.push(v.shadowClick || function () {
                         p.model.moveToLast(index());
                     });
@@ -156,7 +156,7 @@ define(["require", "exports", "../../mve-DOM/index", "../../mve/modelChildren", 
                             }
                         }
                     }),
-                    action: v.shadowAction
+                    event: v.shadowAction
                 }));
                 return outs;
             }

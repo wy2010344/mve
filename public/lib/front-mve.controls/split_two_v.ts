@@ -83,7 +83,7 @@ export function split_two_v(me:mve.LifeModel,p:{
 					cursor:"s-resize",
 					position:"absolute"
 				},
-				action:{
+				event:{
 					mousedown:dragMove
 				}
 			}),
