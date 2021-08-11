@@ -39,13 +39,8 @@ export=topTitleResizeForm(function(me,p,r){
 			{
 				type:"table",
 				children:[
-					hrefOf("modelChildren","自定义模型的重复节点",function(){
-						import("./modelChildren").then(function(modelChildren){
-							p.model.push(modelChildren.panel)
-						})
-					}),
 					dom({
-						type:"button",text:"测试",action:{
+						type:"button",text:"测试",event:{
 							click(){
 								vs.push("dddd")
 							}

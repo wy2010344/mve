@@ -90,7 +90,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                 children: __spreadArray([
                     index_1.dom({
                         type: "div", text: result.title, style: { cursor: "pointer", height: titleHeight + "px", "line-height": titleHeight + "px" },
-                        action: {
+                        event: {
                             mousedown: drag_1.dragMoveHelper({
                                 diff: function (v) {
                                     var vx = v.x;
@@ -114,7 +114,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                             "text-align": "center",
                             border: "1px solid black"
                         },
-                        action: {
+                        event: {
                             click: minClick
                         }
                     }),

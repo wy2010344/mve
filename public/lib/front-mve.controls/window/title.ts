@@ -23,7 +23,7 @@ export function buildTitle(p:{
 			"line-height":p.height-1+"px",
 			"border-bottom":"1px solid #696969"
     },
-    action:{
+    event:{
       mousedown(e){
         p.move(e||window.event);
       }
@@ -48,7 +48,7 @@ export function buildTitle(p:{
             return p.showClose()?"":"none";
           }
         },
-        action:{
+        event:{
           mousedown(e){
             mb.DOM.stopPropagation(e)
           },
@@ -79,7 +79,7 @@ export function buildTitle(p:{
             }
           }
         },
-        action:{
+        event:{
           mousedown(e){
             mb.DOM.stopPropagation(e)
           },

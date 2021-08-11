@@ -38,7 +38,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                     style: {
                                         display: on_hidden
                                     },
-                                    action: {
+                                    event: {
                                         click: x.pop
                                     }
                                 }),
@@ -55,7 +55,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                     style: {
                                         display: on_hidden
                                     },
-                                    action: {
+                                    event: {
                                         click: function () {
                                             var c = contentElement;
                                             c.scrollLeft = c.scrollLeft - 10;
@@ -64,7 +64,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                 }),
                                 index_1.dom({
                                     type: "span",
-                                    id: function (v) {
+                                    init: function (v) {
                                         contentElement = v;
                                     },
                                     style: {
@@ -76,7 +76,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                             return w - 60 + "px";
                                         }
                                     },
-                                    action: {
+                                    event: {
                                         wheel: function (e) {
                                             var c = contentElement;
                                             c.scrollLeft = c.scrollLeft + e.wheelDelta;
@@ -99,7 +99,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                                                     return (x.size() - 1 == index()) ? null : "javascript:void(0)";
                                                                 }
                                                             },
-                                                            action: {
+                                                            event: {
                                                                 click: function () {
                                                                     while (row != x.current()) {
                                                                         x.pop();
@@ -129,7 +129,7 @@ define(["require", "exports", "../../mve-DOM/index", "./index"], function (requi
                                     style: {
                                         display: on_hidden
                                     },
-                                    action: {
+                                    event: {
                                         click: function () {
                                             var c = contentElement;
                                             c.scrollLeft = c.scrollLeft + 10;

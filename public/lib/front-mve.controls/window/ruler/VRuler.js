@@ -20,7 +20,7 @@ define(["require", "exports", "../form", "../../../mve/modelChildren", "../../..
                 },
                 element: index_1.svg({
                     type: "svg",
-                    action: {
+                    event: {
                         mousedown: rp.move
                     },
                     style: {

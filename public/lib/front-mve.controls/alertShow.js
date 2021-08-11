@@ -82,7 +82,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve/modelChildren", "../mv
                             "align-items": "center",
                             "justify-content": "center"
                         },
-                        action: {
+                        event: {
                             click: result.backClick
                         },
                         children: result.content

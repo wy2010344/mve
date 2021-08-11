@@ -102,7 +102,7 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 			children:[
 				dom({
 					type:"div",text:result.title,style:{cursor:"pointer",height:titleHeight+"px","line-height":titleHeight+"px"},
-					action:{
+					event:{
 						mousedown:dragMoveHelper({
 							diff(v){
 								const vx=v.x
@@ -126,7 +126,7 @@ export function dragPanel(fun:(me:mve.LifeModel,rect:{
 						"text-align":"center",
 						border:"1px solid black"
 					},
-					action:{
+					event:{
 						click:minClick
 					}
 				}),

@@ -338,7 +338,7 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
         var prev;
         var jar = {
             getContent: function () {
-                return editor.textContent || "";
+                return (editor === null || editor === void 0 ? void 0 : editor.textContent) || "";
             },
             getSelection: function () {
                 return mb.DOM.getSelectionRange(editor);
@@ -355,9 +355,9 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
         var element = p.element || {
             type: "pre"
         };
-        element.action = element.action || {};
-        var action = element.action;
-        index_1.reWriteAction(action, 'keydown', function (vs) {
+        element.event = element.event || {};
+        var action = element.event;
+        index_1.reWriteEvent(action, 'keydown', function (vs) {
             vs.push(function (e) {
                 if (e.defaultPrevented)
                     return;
@@ -409,7 +409,7 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
             });
             return vs;
         });
-        index_1.reWriteAction(action, 'keyup', function (vs) {
+        index_1.reWriteEvent(action, 'keyup', function (vs) {
             vs.unshift(function (e) {
                 if (e.defaultPrevented)
                     return;
@@ -423,19 +423,19 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
             });
             return vs;
         });
-        index_1.reWriteAction(action, 'focus', function (vs) {
+        index_1.reWriteEvent(action, 'focus', function (vs) {
             vs.push(function (e) {
                 focus = true;
             });
             return vs;
         });
-        index_1.reWriteAction(action, 'blur', function (vs) {
+        index_1.reWriteEvent(action, 'blur', function (vs) {
             vs.push(function (e) {
                 focus = false;
             });
             return vs;
         });
-        index_1.reWriteAction(action, 'paste', function (vs) {
+        index_1.reWriteEvent(action, 'paste', function (vs) {
             vs.push(function (e) {
                 at = recordHistory(editor, history, focus, at);
                 handlePaste(editor, p.highlight, e);
@@ -444,12 +444,15 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
             });
             return vs;
         });
-        element.id = function (v) {
-            editor = v;
-            if (p.id) {
-                p.id(jar);
-            }
-        };
+        index_1.reWriteInit(element, function (vs) {
+            vs.push(function (v) {
+                editor = v;
+                if (p.init) {
+                    p.init(jar);
+                }
+            });
+            return vs;
+        });
         element.attr = mb.Object.ember(element.attr || {}, {
             contentEditable: mb.Object.reDefine(p.readonly, function (r) {
                 if (typeof (r) == 'function') {
@@ -496,7 +499,7 @@ define(["require", "exports", "../mve-DOM/DOM", "../mve-DOM/index", "../mve/util
                 }
             })
         });
-        return element;
+        return index_1.dom(element);
     }
     exports.codeJar = codeJar;
 });

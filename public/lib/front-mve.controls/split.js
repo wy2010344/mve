@@ -36,7 +36,7 @@ define(["require", "exports", "../mve-DOM/other/drag", "../mve/util"], function 
                     cursor: "w-resize",
                     position: "absolute"
                 },
-                action: {
+                event: {
                     mousedown: function (e) {
                         move_index = i;
                         dragMove(e);

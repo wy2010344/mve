@@ -96,7 +96,7 @@ export function split_two_h(me:mve.LifeModel,p:{
 					cursor:"w-resize",
 					position:"absolute"
 				},
-				action:{
+				event:{
 					mousedown:dragMove
 				}
 			}),

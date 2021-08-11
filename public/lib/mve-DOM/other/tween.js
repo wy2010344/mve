@@ -9,7 +9,7 @@
 define(["require", "exports", "../../mve/util"], function (require, exports, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.drawOfBezier3 = exports.Tween = exports.TweenAnimation = exports.cacheAnimation = exports.TweenAnimationValue = exports.TweenAnimationOf = void 0;
+    exports.drawOfBezier3 = exports.Tween = exports.TweenAnimation = exports.cacheAnimation = exports.TweenAnimationValue = exports.animationChange = exports.TweenAnimationOf = void 0;
     /**
      * 一般动画起始与结束是确定的，只在于用什么动画。
      * 多个元素可以使用相同的动画，虽然内部是不同的Animation。
@@ -32,7 +32,36 @@ define(["require", "exports", "../../mve/util"], function (require, exports, uti
     }
     exports.TweenAnimationOf = TweenAnimationOf;
     /**
-     * 用动画装饰的存储值
+     * 对所有的value进行更新
+     * @param data
+     * @param change
+     * @param duration
+     */
+    function animationChange(data, change, duration) {
+        if (duration === void 0) { duration = 1000; }
+        var vs = (mb.Array.isArray(data) ? data : [data]);
+        for (var _i = 0, vs_1 = vs; _i < vs_1.length; _i++) {
+            var v = vs_1[_i];
+            v.from = v.value();
+            v.update = v.update || function (from, to, percent) {
+                return (to - from) * percent;
+            };
+        }
+        TweenAnimation({
+            duration: duration,
+            max: 1,
+            call: function (n, t) {
+                for (var _i = 0, vs_2 = vs; _i < vs_2.length; _i++) {
+                    var v = vs_2[_i];
+                    v.value(v.update(v.from, v.to, n));
+                }
+            },
+            change: change
+        });
+    }
+    exports.animationChange = animationChange;
+    /**
+     * 用动画装饰的存储值。每次存储值改变都先引发动画。
      * @param change
      * @param duration
      * @returns

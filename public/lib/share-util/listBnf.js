@@ -356,7 +356,10 @@ define(["require", "exports", "./map"], function (require, exports, map_1) {
         if (v instanceof BetweenRule) {
             return v;
         }
-        if (v && v.length == 1) {
+        else if (typeof (v) == 'number') {
+            return v;
+        }
+        else if (v && v.length == 1) {
             return v.charCodeAt(0);
         }
         throw "\u4E0D\u662F\u5408\u6CD5\u7684\u5B57\u7B26\u683C\u5F0F" + v;
@@ -370,15 +373,14 @@ define(["require", "exports", "./map"], function (require, exports, map_1) {
         return Match.of(function (vs, i) {
             if (i < vs.size()) {
                 var v = vs.get(i);
-                var c = v.charCodeAt(0);
                 for (var _i = 0, rules_3 = rules; _i < rules_3.length; _i++) {
                     var r = rules_3[_i];
                     if (r instanceof BetweenRule) {
-                        if (r.begin <= c && c <= r.end) {
+                        if (r.begin <= v && v <= r.end) {
                             return i + 1;
                         }
                     }
-                    else if (r == c) {
+                    else if (r == v) {
                         return i + 1;
                     }
                 }
@@ -397,15 +399,14 @@ define(["require", "exports", "./map"], function (require, exports, map_1) {
         return Match.of(function (vs, i) {
             if (i < vs.size()) {
                 var v = vs.get(i);
-                var c = v.charCodeAt(0);
                 for (var _i = 0, rules_4 = rules; _i < rules_4.length; _i++) {
                     var r = rules_4[_i];
                     if (r instanceof BetweenRule) {
-                        if (r.begin <= c && c <= r.end) {
+                        if (r.begin <= v && v <= r.end) {
                             return "\u5728\u533A\u95F4[" + String.fromCharCode(r.begin) + "-" + String.fromCharCode(r.end) + "]";
                         }
                     }
-                    else if (r == c) {
+                    else if (r == v) {
                         return "\u5339\u914D\u4E86\u89C4\u5219" + String.fromCharCode(r);
                     }
                 }
@@ -419,7 +420,7 @@ define(["require", "exports", "./map"], function (require, exports, map_1) {
         return Match.of(function (vs, i) {
             if (i + xs.length < vs.size() + 1) {
                 for (var k = 0; k < xs.length; k++) {
-                    if (xs[k] == vs.get(i)) {
+                    if (xs.get(i) == vs.get(i)) {
                         i++;
                     }
                     else {

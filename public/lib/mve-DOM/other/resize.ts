@@ -29,7 +29,7 @@ export function resizeZoom(p:{
         left:"0",
         cursor:"n-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({t:true})
       }
     }),
@@ -44,7 +44,7 @@ export function resizeZoom(p:{
         top:"0",
         cursor:"e-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({r:true})
       }
     }),
@@ -59,7 +59,7 @@ export function resizeZoom(p:{
         top:"0",
         cursor:"w-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({l:true})
       }
     }),
@@ -74,7 +74,7 @@ export function resizeZoom(p:{
         left:"0",
         cursor:"s-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({b:true})
       }
     }),//四角
@@ -89,7 +89,7 @@ export function resizeZoom(p:{
         left:"-7px",
         cursor:"nw-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({t:true,l:true})
       }
     }),
@@ -104,7 +104,7 @@ export function resizeZoom(p:{
         right:"-7px",
         cursor:"ne-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({t:true,r:true})
       }
     }),
@@ -119,7 +119,7 @@ export function resizeZoom(p:{
         left:"-7px",
         cursor:"sw-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({b:true,l:true})
       }
     }),
@@ -134,7 +134,7 @@ export function resizeZoom(p:{
         right:"-7px",
         cursor:"se-resize"
       },
-      action:{
+      event:{
         mousedown:makeResize({b:true,r:true})
       }
     })

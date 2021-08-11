@@ -69,13 +69,19 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
             return new CacheModel(index, value);
         };
     }
-    function superModelCache(views, model, insert, destroy) {
+    function buildModelCacheView(insert, destroy) {
         var cacheModel = getCacheModel(destroy);
+        return function (index, row) {
+            var vindex = util_1.mve.valueOf(index);
+            var vrow = insert(row, vindex);
+            return cacheModel(vindex, vrow);
+        };
+    }
+    function superModelCache(views, model, getView) {
         var theView = {
             insert: function (index, row) {
-                var vindex = util_1.mve.valueOf(index);
-                var vrow = insert(row, vindex);
-                views.insert(index, cacheModel(vindex, vrow));
+                var view = getView(index, row);
+                views.insert(index, view);
                 //更新计数
                 initUpdateIndex(views, index);
             },
@@ -88,6 +94,11 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
                     removeUpdateIndex(views, index);
                     view.destroy();
                 }
+            },
+            set: function (index, row) {
+                var view = getView(index, row);
+                var oldView = views.set(index, view);
+                oldView.destroy();
             },
             move: function (oldIndex, newIndex) {
                 //模型变更
@@ -110,9 +121,10 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
      */
     function modelCache(model, insert, destroy) {
         var views = util_1.mve.arrayModelOf([]);
+        var getView = buildModelCacheView(insert, destroy);
         return {
             views: views,
-            destroy: superModelCache(views, model, insert, destroy)
+            destroy: superModelCache(views, model, getView)
         };
     }
     exports.modelCache = modelCache;
@@ -132,7 +144,18 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         };
         return ViewModel;
     }());
-    function superModelChildren(views, getElement, getData, model, fun) {
+    function buildGetView(getElement, getData) {
+        return function (index, row, parent, fun) {
+            var vindex = util_1.mve.valueOf(index);
+            var lifeModel = util_1.mve.newLifeModel();
+            var cs = fun(lifeModel.me, row, vindex);
+            //创建视图
+            var vm = parent.newChildAt(index);
+            var vx = childrenBuilder_1.baseChildrenBuilder(lifeModel.me, getElement(cs), vm);
+            return new ViewModel(vindex, getData(cs), lifeModel, vx);
+        };
+    }
+    function superModelChildren(views, model, fun, getView) {
         return function (parent, me) {
             var life = util_1.onceLife({
                 init: function () {
@@ -147,13 +170,7 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
             });
             var theView = {
                 insert: function (index, row) {
-                    var vindex = util_1.mve.valueOf(index);
-                    var lifeModel = util_1.mve.newLifeModel();
-                    var cs = fun(lifeModel.me, row, vindex);
-                    //创建视图
-                    var vm = parent.newChildAt(index);
-                    var vx = childrenBuilder_1.baseChildrenBuilder(lifeModel.me, getElement(cs), vm);
-                    var view = new ViewModel(vindex, getData(cs), lifeModel, vx);
+                    var view = getView(index, row, parent, fun);
                     //模型增加
                     views.insert(index, view);
                     //更新计数
@@ -168,15 +185,24 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
                     var view = views.get(index);
                     views.remove(index);
                     if (view) {
-                        //视图减少
-                        parent.remove(index);
-                        //更新计数
-                        removeUpdateIndex(views, index);
                         //销毁
                         if (life.isInit) {
                             view.destroy();
                         }
+                        //更新计数
+                        removeUpdateIndex(views, index);
+                        //视图减少
+                        parent.remove(index);
                     }
+                },
+                set: function (index, row) {
+                    var view = getView(index, row, parent, fun);
+                    var oldView = views.set(index, view);
+                    if (life.isInit) {
+                        view.init();
+                        oldView.destroy();
+                    }
+                    parent.remove(index + 1);
                 },
                 move: function (oldIndex, newIndex) {
                     //模型变更
@@ -192,15 +218,14 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         };
     }
     ////////////////////////////////////////////通用方式////////////////////////////////////////////////
-    function emptyGet() { }
-    function quoteGet(v) { return v; }
+    var modelChildrenGetView = buildGetView(function (v) { return v; }, function () { return null; });
     /**
      * 从model到视图
      * @param model
      * @param fun
      */
     function modelChildren(model, fun) {
-        return superModelChildren([], quoteGet, emptyGet, model, fun);
+        return superModelChildren([], model, fun, modelChildrenGetView);
     }
     exports.modelChildren = modelChildren;
     function renderGetElement(v) {
@@ -209,6 +234,7 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
     function renderGetData(v) {
         return v.data;
     }
+    var modelCacheChildrenGetView = buildGetView(renderGetElement, renderGetData);
     /**
      * 从model到带模型视图
      * 应该是很少用的，尽量不用
@@ -219,7 +245,7 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         var views = util_1.mve.arrayModelOf([]);
         return {
             views: views,
-            children: superModelChildren(views, renderGetElement, renderGetData, model, fun)
+            children: superModelChildren(views, model, fun, modelCacheChildrenGetView)
         };
     }
     exports.modelCacheChildren = modelCacheChildren;

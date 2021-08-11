@@ -31,7 +31,7 @@ export function top_tab<T>(me:mve.LifeModel,p:{
 								style:{
 									display:on_hiden
 								},
-								action:{
+								event:{
 									click(){
 										var c=contentSpan;
 										c.scrollLeft=c.scrollLeft-10;
@@ -40,7 +40,7 @@ export function top_tab<T>(me:mve.LifeModel,p:{
 							}),
 							dom({
 								type:"span",
-								id(v){
+								init(v){
 									contentSpan=v
 								},
 								style:{
@@ -53,7 +53,7 @@ export function top_tab<T>(me:mve.LifeModel,p:{
 										}
 									}
 								},
-								action:{
+								event:{
 									wheel(e:WheelEvent){
 										var c=contentSpan;
 										c.scrollLeft=c.scrollLeft + mb.DOM.wheelDelta(e);
@@ -94,7 +94,7 @@ export function top_tab<T>(me:mve.LifeModel,p:{
 													}
 												},
 												text:p.title(me,row,index),
-												action:{
+												event:{
 													mousedown:dragMoveHelper({
 														diff(v){
 															const lf=left()+v.x
@@ -128,7 +128,7 @@ export function top_tab<T>(me:mve.LifeModel,p:{
 								style:{
 									display:on_hiden
 								},
-								action:{
+								event:{
 									click:function(){
 										var c=contentSpan;
 										c.scrollLeft=c.scrollLeft+10;

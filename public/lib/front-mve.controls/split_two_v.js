@@ -67,7 +67,7 @@ define(["require", "exports", "../mve-DOM/index", "../mve-DOM/other/drag", "../m
                         cursor: "s-resize",
                         position: "absolute"
                     },
-                    action: {
+                    event: {
                         mousedown: dragMove
                     }
                 }),

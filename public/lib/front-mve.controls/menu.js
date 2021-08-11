@@ -12,9 +12,9 @@ define(["require", "exports", "../mve-DOM/index", "../mve/util"], function (requ
             var p = render_object.element;
             p.type = p.type || "div";
             p.style = p.style || {};
-            p.action = p.action || {};
+            p.event = p.event || {};
             var style = p.style;
-            var action = p.action;
+            var action = p.event;
             style.position = "absolute";
             style.display = function () {
                 return show() ? "" : "none";

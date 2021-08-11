@@ -1,5 +1,6 @@
 import { baseChildrenBuilder, EOChildFun, EOChildren } from "./childrenBuilder";
 import { BuildResult, mve, onceLife, orRun, orInit, orDestroy } from "./util";
+import { VirtualChild } from "./virtualTreeChildren";
 
 export interface ModelCacheValue<V>{
 	readonly index:mve.GValue<number>
@@ -78,18 +79,26 @@ function getCacheModel<V>(pDestroy?:(v:V)=>void){
 		return new CacheModel(index,value)
 	}
 }
-function superModelCache<T,V>(
-	views:BaseArray<ModelWriteValue<V>>,
-	model:mve.CacheArrayModel<T>,
+function buildModelCacheView<T,V>(
 	insert:(row:T,index:mve.GValue<number>)=>V,
 	destroy?:(v:V)=>void
 ){
 	const cacheModel=getCacheModel(destroy)
+	return function(index:number,row:T){
+		const vindex=mve.valueOf(index)
+		const vrow=insert(row,vindex)
+		return cacheModel(vindex,vrow)
+	}
+}
+function superModelCache<T,V>(
+	views:BaseArray<ModelWriteValue<V>>,
+	model:mve.CacheArrayModel<T>,
+	getView:(index:number,row:T)=>ModelWriteValue<V>
+){
 	const theView:mve.ArrayModelView<T>={
 		insert(index,row){
-			const vindex=mve.valueOf(index)
-			const vrow=insert(row,vindex)
-			views.insert(index,cacheModel(vindex,vrow))
+			const view=getView(index,row)
+			views.insert(index,view)
 			//更新计数
 			initUpdateIndex(views,index)
 		},
@@ -102,6 +111,11 @@ function superModelCache<T,V>(
 				removeUpdateIndex(views,index)
 				view.destroy()
 			}
+		},
+		set(index,row){
+			const view=getView(index,row)
+			const oldView=views.set(index,view)
+			oldView.destroy()
 		},
 		move(oldIndex,newIndex){
 			//模型变更
@@ -135,9 +149,10 @@ export function modelCache<T,V>(
 	destroy?:(v:V)=>void
 ):ModelCacheReturn<V>{
 	const views=mve.arrayModelOf<ModelWriteValue<V>>([])
+	const getView=buildModelCacheView(insert,destroy)
 	return {
 		views:views as ModelCacheChildren<V>,
-		destroy:superModelCache<T,V>(views,model,insert,destroy)
+		destroy:superModelCache<T,V>(views,model,getView)
 	}
 }
 class ViewModel<V> implements ModelWriteValue<V>{
@@ -155,12 +170,34 @@ class ViewModel<V> implements ModelWriteValue<V>{
 		orDestroy(this.result)
   }
 }
+export type RenderModelChildren<T,F>=(
+	me:mve.LifeModel,
+	row:T,
+	index:mve.GValue<number>
+)=>F
+function buildGetView<V,F,EO>(
+	getElement:(f:F)=>EOChildren<EO>,
+	getData:(f:F)=>V
+){
+	return function<T>(
+		index:number,row:T,
+		parent:VirtualChild<EO>,
+		fun:RenderModelChildren<T,F>
+	){
+		const vindex=mve.valueOf(index)
+		const lifeModel=mve.newLifeModel()
+		const cs=fun(lifeModel.me,row,vindex)
+		//创建视图
+		const vm=parent.newChildAt(index)
+		const vx=baseChildrenBuilder(lifeModel.me,getElement(cs),vm)
+		return new ViewModel<V>(vindex,getData(cs),lifeModel,vx)
+	}
+}
 function superModelChildren<T,V,F,EO>(
 	views:BaseArray<ViewModel<V>>,
-	getElement:(f:F)=>EOChildren<EO>,
-	getData:(f:F)=>V,
 	model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>F
+	fun:RenderModelChildren<T,F>,
+	getView:(index:number,row:T,parent:VirtualChild<EO>,fun:RenderModelChildren<T,F>)=>ViewModel<V>
 ):EOChildFun<EO>{
 	return function(parent,me){
 		const life=onceLife({
@@ -176,13 +213,7 @@ function superModelChildren<T,V,F,EO>(
 		})
 		const theView:mve.ArrayModelView<T>={
 			insert(index,row){
-				const vindex=mve.valueOf(index)
-				const lifeModel=mve.newLifeModel()
-				const cs=fun(lifeModel.me,row,vindex)
-				//创建视图
-				const vm=parent.newChildAt(index)
-				const vx=baseChildrenBuilder(lifeModel.me,getElement(cs),vm)
-				const view=new ViewModel<V>(vindex,getData(cs),lifeModel,vx)
+				const view=getView(index,row,parent,fun)
 				//模型增加
 				views.insert(index,view)
 				//更新计数
@@ -197,15 +228,24 @@ function superModelChildren<T,V,F,EO>(
 				const view=views.get(index)
 				views.remove(index)
 				if(view){
-					//视图减少
-					parent.remove(index)
-					//更新计数
-					removeUpdateIndex(views,index)
 					//销毁
 					if(life.isInit){
 						view.destroy()
 					}
+					//更新计数
+					removeUpdateIndex(views,index)
+					//视图减少
+					parent.remove(index)
 				}
+			},
+			set(index,row){
+				const view=getView(index,row,parent,fun)
+				const oldView=views.set(index,view)
+				if(life.isInit){
+					view.init()
+					oldView.destroy()
+				}
+				parent.remove(index+1)
 			},
 			move(oldIndex,newIndex){
 				//模型变更
@@ -221,8 +261,7 @@ function superModelChildren<T,V,F,EO>(
 	}
 }
 ////////////////////////////////////////////通用方式////////////////////////////////////////////////
-function emptyGet(){}
-function quoteGet<T>(v:T){return v}
+const modelChildrenGetView=buildGetView((v)=>v,()=>null);
 /**
  * 从model到视图 
  * @param model 
@@ -230,9 +269,9 @@ function quoteGet<T>(v:T){return v}
  */
 export function modelChildren<T,EO>(
   model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>EOChildren<EO>
+	fun:RenderModelChildren<T,EOChildren<EO>>
 ):EOChildFun<EO>{
-	return superModelChildren([],quoteGet,emptyGet,model,fun)
+	return superModelChildren([],model,fun,modelChildrenGetView)
 }
 ///////////////////////////////////////////一种方式/////////////////////////////////////////////////
 export interface ModelChildrenRenderReturn<V,EO>{
@@ -245,6 +284,7 @@ function renderGetElement<V,EO>(v:ModelChildrenRenderReturn<V,EO>){
 function renderGetData<V,EO>(v:ModelChildrenRenderReturn<V,EO>){
 	return v.data
 }
+const modelCacheChildrenGetView=buildGetView(renderGetElement,renderGetData)
 /**
  * 从model到带模型视图
  * 应该是很少用的，尽量不用
@@ -253,11 +293,11 @@ function renderGetData<V,EO>(v:ModelChildrenRenderReturn<V,EO>){
  */
 export function modelCacheChildren<T,V,EO>(
   model:mve.CacheArrayModel<T>,
-	fun:(me:mve.LifeModel,row:T,index:mve.GValue<number>)=>ModelChildrenRenderReturn<V,EO>
+	fun:RenderModelChildren<T,ModelChildrenRenderReturn<V,EO>>
 ){
 	const views=mve.arrayModelOf<ViewModel<V>>([])
 	return {
 		views:views as ModelCacheChildren<V>,
-		children:superModelChildren(views,renderGetElement,renderGetData,model, fun)
+		children:superModelChildren(views,model,fun,modelCacheChildrenGetView)
 	}
 }

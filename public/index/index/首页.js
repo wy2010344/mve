@@ -34,13 +34,8 @@ define(["require", "exports", "../../lib/front-mve.controls/window/form", "../..
                 {
                     type: "table",
                     children: [
-                        hrefOf("modelChildren", "自定义模型的重复节点", function () {
-                            new Promise(function (resolve_1, reject_1) { require(["./modelChildren"], resolve_1, reject_1); }).then(function (modelChildren) {
-                                p.model.push(modelChildren.panel);
-                            });
-                        }),
                         index_1.dom({
-                            type: "button", text: "测试", action: {
+                            type: "button", text: "测试", event: {
                                 click: function () {
                                     vs.push("dddd");
                                 }

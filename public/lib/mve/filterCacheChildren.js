@@ -44,12 +44,12 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
                     }
                     var minLength = vs.length - 1;
                     for (var i = views.length - 1; i > minLength; i--) {
-                        //删除视图
-                        parent.remove(i);
                         //销毁
                         if (life.isInit) {
                             views[i].destroy();
                         }
+                        //删除视图
+                        parent.remove(i);
                     }
                     views.length = vs.length;
                 }

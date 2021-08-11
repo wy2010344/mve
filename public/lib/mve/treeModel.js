@@ -146,26 +146,35 @@ define(["require", "exports", "./modelChildren", "./util", "./virtualTreeChildre
         }
         return ModelChildView;
     }());
+    function getView(index, row, parent, fun) {
+        var vindex = util_1.mve.valueOf(index);
+        var value = fun(row, vindex);
+        var vm = parent.newChildAt(index);
+        var vx = baseChildrenBuilder(value, vm);
+        return new ModelChildView(value, vindex, vx);
+    }
     function superListModelChildren(views, model, fun) {
         return function (parent) {
             var theView = {
                 insert: function (index, row) {
-                    var vindex = util_1.mve.valueOf(index);
-                    var value = fun(row, vindex);
-                    var vm = parent.newChildAt(index);
-                    var vx = baseChildrenBuilder(value, vm);
-                    var view = new ModelChildView(value, vindex, vx);
+                    var view = getView(index, row, parent, fun);
                     views.insert(index, view);
                     modelChildren_1.initUpdateIndex(views, index);
                 },
                 remove: function (index) {
                     var view = views.get(index);
                     if (view) {
+                        view.destroy();
                         views.remove(index);
                         parent.remove(index);
                         modelChildren_1.removeUpdateIndex(views, index);
-                        view.destroy();
                     }
+                },
+                set: function (index, row) {
+                    var view = getView(index, row, parent, fun);
+                    var oldView = views.set(index, view);
+                    oldView.destroy();
+                    parent.remove(index + 1);
                 },
                 move: function (oldIndex, newIndex) {
                     views.move(oldIndex, newIndex);

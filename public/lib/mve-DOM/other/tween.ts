@@ -46,8 +46,43 @@ export function TweenAnimationOf(change:TweenFun,duration=1000):AnimationCall{
 		})
 	}
 }
+
+export interface AChange<T=number>{
+	value:mve.Value<T>
+	to:T
+	update?:(from:T,to:T,percent:number)=>T
+}
+interface ACChange<T=number> extends AChange{
+	from:T
+}
 /**
- * 用动画装饰的存储值
+ * 对所有的value进行更新
+ * @param data 
+ * @param change 
+ * @param duration 
+ */
+export function animationChange(data:AChange|AChange[],change:TweenFun,duration=1000){
+	const vs=(mb.Array.isArray(data)?data:[data]) as ACChange[]
+	for(const v of vs){
+		v.from=v.value()
+		v.update=v.update||function(from,to,percent){
+			return (to - from) * percent
+		}
+	}
+	TweenAnimation({
+		duration,
+		max:1,
+		call(n,t){
+			for(const v of vs){
+				v.value(v.update(v.from,v.to,n))
+			}
+		},
+		change
+	})
+}
+
+/**
+ * 用动画装饰的存储值。每次存储值改变都先引发动画。
  * @param change 
  * @param duration 
  * @returns 
