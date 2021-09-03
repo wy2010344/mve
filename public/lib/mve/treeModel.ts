@@ -1,4 +1,4 @@
-import { initUpdateIndex, ModelWriteValue, moveUpdateIndex, removeUpdateIndex } from "./modelChildren";
+import { initUpdateIndex, initUpdateIndexReverse, ModelWriteValue, moveUpdateIndex, moveUpdateIndexReverse, removeUpdateIndex, removeUpdateIndexReverse } from "./modelChildren";
 import { mve } from "./util";
 import { VirtualChild, VirtualChildParam } from "./virtualTreeChildren";
 
@@ -212,6 +212,72 @@ export function listModelChilren<K,V>(
 	fun:RenderListModelChildren<K,V>
 ){
 	return superListModelChildren([],model,fun)
+}
+
+
+function superListModelChildrenReverse<K,V>(
+	views:BaseArray<ModelChildView<ModelItem<V>>>,
+	model:mve.CacheArrayModel<K>,
+	fun:RenderListModelChildren<K,V>
+):ModelItemFun<V>{
+	return function(parent){
+		const theView:mve.ArrayModelView<K>={
+			insert(index,row){
+				index=views.size()-index
+
+				const view=getView(index,row,parent,fun)
+				views.insert(index,view)
+				initUpdateIndexReverse(views,index)
+			},
+			remove(index){
+				index=views.size()-1-index
+
+				const view=views.get(index)
+				if(view){
+					view.destroy()
+					views.remove(index)
+					parent.remove(index)
+					removeUpdateIndexReverse(views,index)
+				}
+			},
+			set(index,row){
+				const s=views.size()-1
+				index=s-index
+
+				const view=getView(index,row,parent,fun)
+				const oldView=views.set(index,view)
+				oldView.destroy()
+				parent.remove(index+1)
+
+				view.index(s-index)
+			},
+			move(oldIndex,newIndex){
+				const s=views.size()-1
+				oldIndex=s-oldIndex
+				newIndex=s-newIndex
+
+				views.move(oldIndex,newIndex)
+				parent.move(oldIndex,newIndex)
+				moveUpdateIndexReverse(views,oldIndex,newIndex)
+			}
+		}
+		model.addView(theView)
+		return function(){
+			model.removeView(theView)
+		}
+	}
+}
+/**
+ * 类似于modelChildren
+ * 但是如果单纯的树，叶子节点交换，并不能观察到是交换
+ * @param model 
+ * @param fun 
+ */
+export function listModelChilrenReverse<K,V>(
+	model:mve.CacheArrayModel<K>,
+	fun:RenderListModelChildren<K,V>
+){
+	return superListModelChildrenReverse([],model,fun)
 }
 /////////////////////////一种特例/////////////////////////////////////////////////////////////////////////////////
 /**

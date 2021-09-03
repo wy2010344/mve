@@ -1,7 +1,7 @@
 define(["require", "exports", "./modelChildren", "./util", "./virtualTreeChildren"], function (require, exports, modelChildren_1, util_1, virtualTreeChildren_1) {
     "use strict";
     exports.__esModule = true;
-    exports.rnModelList = exports.rwNodeOf = exports.listModelChilren = exports.superModelList = exports.ModelLife = exports.VirtualListParam = void 0;
+    exports.rnModelList = exports.rwNodeOf = exports.listModelChilrenReverse = exports.listModelChilren = exports.superModelList = exports.ModelLife = exports.VirtualListParam = void 0;
     var VirtualListParam = /** @class */ (function () {
         function VirtualListParam(list, up) {
             this.list = list;
@@ -198,6 +198,59 @@ define(["require", "exports", "./modelChildren", "./util", "./virtualTreeChildre
         return superListModelChildren([], model, fun);
     }
     exports.listModelChilren = listModelChilren;
+    function superListModelChildrenReverse(views, model, fun) {
+        return function (parent) {
+            var theView = {
+                insert: function (index, row) {
+                    index = views.size() - index;
+                    var view = getView(index, row, parent, fun);
+                    views.insert(index, view);
+                    modelChildren_1.initUpdateIndexReverse(views, index);
+                },
+                remove: function (index) {
+                    index = views.size() - 1 - index;
+                    var view = views.get(index);
+                    if (view) {
+                        view.destroy();
+                        views.remove(index);
+                        parent.remove(index);
+                        modelChildren_1.removeUpdateIndexReverse(views, index);
+                    }
+                },
+                set: function (index, row) {
+                    var s = views.size() - 1;
+                    index = s - index;
+                    var view = getView(index, row, parent, fun);
+                    var oldView = views.set(index, view);
+                    oldView.destroy();
+                    parent.remove(index + 1);
+                    view.index(s - index);
+                },
+                move: function (oldIndex, newIndex) {
+                    var s = views.size() - 1;
+                    oldIndex = s - oldIndex;
+                    newIndex = s - newIndex;
+                    views.move(oldIndex, newIndex);
+                    parent.move(oldIndex, newIndex);
+                    modelChildren_1.moveUpdateIndexReverse(views, oldIndex, newIndex);
+                }
+            };
+            model.addView(theView);
+            return function () {
+                model.removeView(theView);
+            };
+        };
+    }
+    /**
+     * 类似于modelChildren
+     * 但是如果单纯的树，叶子节点交换，并不能观察到是交换
+     * @param model
+     * @param fun
+     */
+    function listModelChilrenReverse(model, fun) {
+        return superListModelChildrenReverse([], model, fun);
+    }
+    exports.listModelChilrenReverse = listModelChilrenReverse;
     function rwNodeOf(v) {
         return new RWNode(v);
     }
