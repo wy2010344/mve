@@ -1,4 +1,4 @@
-define(["require", "exports", "../../lib/front-mve.controls/window/form", "../../lib/mve-DOM/index", "../../lib/mve/modelChildren", "../../lib/mve/util"], function (require, exports, form_1, index_1, modelChildren_1, util_1) {
+define(["require", "exports", "../../lib/front-mve.controls/window/form", "../../lib/mve-DOM/index", "../../lib/mve/modelChildren", "../../lib/mve/util", "./util"], function (require, exports, form_1, index_1, modelChildren_1, util_1, util_2) {
     "use strict";
     function hrefOf(text, description, goto) {
         return index_1.dom({
@@ -13,7 +13,7 @@ define(["require", "exports", "../../lib/front-mve.controls/window/form", "../..
                             attr: {
                                 href: "javascript:void(0)"
                             },
-                            action: {
+                            event: {
                                 click: goto
                             }
                         }
@@ -41,23 +41,30 @@ define(["require", "exports", "../../lib/front-mve.controls/window/form", "../..
                                 }
                             }
                         }),
+                        index_1.dom({
+                            type: "button", text: "测试滚动", event: {
+                                click: function () {
+                                    new Promise(function (resolve_1, reject_1) { require(["./测试prop滚动"], resolve_1, reject_1); }).then(function (pv) {
+                                        p.model.push(pv.panel);
+                                    });
+                                }
+                            }
+                        }),
                         modelChildren_1.modelChildren(vs, function (me, row, index) {
                             return index_1.dom({
                                 type: "div",
                                 children: [
-                                    {
+                                    index_1.dom({
                                         type: "button",
                                         text: "X",
-                                        destroy: function () {
-                                            mb.log("销毁");
-                                        },
-                                        action: {
+                                        event: {
                                             click: function () {
                                                 vs.remove(index());
                                             }
                                         }
-                                    }
-                                ].map(index_1.dom)
+                                    }),
+                                    util_2.testDomNode()
+                                ]
                             });
                         })
                     ]

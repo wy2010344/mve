@@ -1,7 +1,7 @@
 define(["require", "exports", "./childrenBuilder", "./util"], function (require, exports, childrenBuilder_1, util_1) {
     "use strict";
     exports.__esModule = true;
-    exports.modelCacheChildren = exports.modelChildren = exports.modelCache = exports.moveUpdateIndex = exports.removeUpdateIndex = exports.initUpdateIndex = void 0;
+    exports.modelCacheChildrenReverse = exports.modelCacheChildren = exports.modelChildrenReverse = exports.modelChildren = exports.modelCacheReverse = exports.modelCache = exports.moveUpdateIndexReverse = exports.removeUpdateIndexReverse = exports.initUpdateIndexReverse = exports.moveUpdateIndex = exports.removeUpdateIndex = exports.initUpdateIndex = void 0;
     /**
      * 初始化更新计数
      * @param views
@@ -38,6 +38,44 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
     }
     exports.moveUpdateIndex = moveUpdateIndex;
     /**
+     * 初始化更新计数
+     * @param views
+     * @param index
+     */
+    function initUpdateIndexReverse(views, index) {
+        var s = views.size() - 1;
+        for (var i = index; i > -1; i--) {
+            views.get(i).index(s - i);
+        }
+    }
+    exports.initUpdateIndexReverse = initUpdateIndexReverse;
+    /**
+     * 删除时更新计算
+     * @param views
+     * @param index
+     */
+    function removeUpdateIndexReverse(views, index) {
+        var s = views.size() - 1;
+        for (var i = index - 1; i > -1; i--) {
+            views.get(i).index(s - i);
+        }
+    }
+    exports.removeUpdateIndexReverse = removeUpdateIndexReverse;
+    /**
+     * 移动时更新计数
+     * @param views
+     * @param oldIndex
+     * @param newIndex
+     */
+    function moveUpdateIndexReverse(views, oldIndex, newIndex) {
+        var sort = oldIndex < newIndex ? [oldIndex, newIndex] : [newIndex, oldIndex];
+        var s = views.size() - 1;
+        for (var i = sort[0]; i <= sort[1]; i++) {
+            views.get(i).index(s - i);
+        }
+    }
+    exports.moveUpdateIndexReverse = moveUpdateIndexReverse;
+    /**
      * 最终的卸载
      * @param views
      * @param model
@@ -46,6 +84,20 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
     function destroyViews(views, model, theView) {
         var size = views.size();
         for (var i = size - 1; i > -1; i--) {
+            views.get(i).destroy();
+        }
+        model.removeView(theView);
+        views.clear();
+    }
+    /**
+     * 最终的卸载
+     * @param views
+     * @param model
+     * @param theView
+     */
+    function destroyViewsReverse(views, model, theView) {
+        var size = views.size();
+        for (var i = 0; i < size; i++) {
             views.get(i).destroy();
         }
         model.removeView(theView);
@@ -112,6 +164,49 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
             destroyViews(views, model, theView);
         };
     }
+    function superModelCacheReverse(views, model, getView) {
+        var theView = {
+            insert: function (index, row) {
+                index = views.size() - index;
+                var view = getView(index, row);
+                views.insert(index, view);
+                //更新计数
+                initUpdateIndexReverse(views, index);
+            },
+            remove: function (index) {
+                index = views.size() - 1 - index;
+                //模型减少
+                var view = views.get(index);
+                views.remove(index);
+                if (view) {
+                    //更新计数
+                    removeUpdateIndexReverse(views, index);
+                    view.destroy();
+                }
+            },
+            set: function (index, row) {
+                var s = views.size() - 1;
+                index = s - index;
+                var view = getView(index, row);
+                var oldView = views.set(index, view);
+                oldView.destroy();
+                view.index(s - index);
+            },
+            move: function (oldIndex, newIndex) {
+                var s = views.size() - 1;
+                oldIndex = s - oldIndex;
+                newIndex = s - newIndex;
+                //模型变更
+                views.move(oldIndex, newIndex);
+                //更新计数
+                moveUpdateIndexReverse(views, oldIndex, newIndex);
+            }
+        };
+        model.addView(theView);
+        return function () {
+            destroyViewsReverse(views, model, theView);
+        };
+    }
     /**
      * 从一个model到另一个model，可能有销毁事件
      * 应该是很少用的，尽量不用
@@ -128,6 +223,22 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         };
     }
     exports.modelCache = modelCache;
+    /**
+     * 从一个model到另一个model，可能有销毁事件
+     * 应该是很少用的，尽量不用
+     * 可以直接用CacheArrayModel<T>作为组件基础参数，在组件需要的字段不存在时，入参定义T到该字段的映射
+     * @param model
+     * @param insert
+     */
+    function modelCacheReverse(model, insert, destroy) {
+        var views = util_1.mve.arrayModelOf([]);
+        var getView = buildModelCacheView(insert, destroy);
+        return {
+            views: views,
+            destroy: superModelCacheReverse(views, model, getView)
+        };
+    }
+    exports.modelCacheReverse = modelCacheReverse;
     var ViewModel = /** @class */ (function () {
         function ViewModel(index, value, life, result) {
             this.index = index;
@@ -217,6 +328,76 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
             return life.out;
         };
     }
+    function superModelChildrenReverse(views, model, fun, getView) {
+        return function (parent, me) {
+            var life = util_1.onceLife({
+                init: function () {
+                    var size = views.size();
+                    for (var i = size - 1; i > -1; i--) {
+                        views.get(i).init();
+                    }
+                },
+                destroy: function () {
+                    destroyViewsReverse(views, model, theView);
+                }
+            });
+            var theView = {
+                insert: function (index, row) {
+                    index = views.size() - index;
+                    var view = getView(index, row, parent, fun);
+                    //模型增加
+                    views.insert(index, view);
+                    //更新计数
+                    initUpdateIndexReverse(views, index);
+                    //初始化
+                    if (life.isInit) {
+                        view.init();
+                    }
+                },
+                remove: function (index) {
+                    index = views.size() - 1 - index;
+                    //模型减少
+                    var view = views.get(index);
+                    views.remove(index);
+                    if (view) {
+                        //销毁
+                        if (life.isInit) {
+                            view.destroy();
+                        }
+                        //更新计数
+                        removeUpdateIndexReverse(views, index);
+                        //视图减少
+                        parent.remove(index);
+                    }
+                },
+                set: function (index, row) {
+                    var s = views.size() - 1;
+                    index = s - index;
+                    var view = getView(index, row, parent, fun);
+                    var oldView = views.set(index, view);
+                    if (life.isInit) {
+                        view.init();
+                        oldView.destroy();
+                    }
+                    view.index(s - index);
+                    parent.remove(index + 1);
+                },
+                move: function (oldIndex, newIndex) {
+                    var s = views.size() - 1;
+                    oldIndex = s - oldIndex;
+                    newIndex = s - newIndex;
+                    //模型变更
+                    views.move(oldIndex, newIndex);
+                    //视图变更
+                    parent.move(oldIndex, newIndex);
+                    //更新计数
+                    moveUpdateIndexReverse(views, oldIndex, newIndex);
+                }
+            };
+            model.addView(theView);
+            return life.out;
+        };
+    }
     ////////////////////////////////////////////通用方式////////////////////////////////////////////////
     var modelChildrenGetView = buildGetView(function (v) { return v; }, function () { return null; });
     /**
@@ -228,6 +409,15 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         return superModelChildren([], model, fun, modelChildrenGetView);
     }
     exports.modelChildren = modelChildren;
+    /**
+     * 从model到视图
+     * @param model
+     * @param fun
+     */
+    function modelChildrenReverse(model, fun) {
+        return superModelChildrenReverse([], model, fun, modelChildrenGetView);
+    }
+    exports.modelChildrenReverse = modelChildrenReverse;
     function renderGetElement(v) {
         return v.element;
     }
@@ -249,4 +439,18 @@ define(["require", "exports", "./childrenBuilder", "./util"], function (require,
         };
     }
     exports.modelCacheChildren = modelCacheChildren;
+    /**
+     * 从model到带模型视图
+     * 应该是很少用的，尽量不用
+     * @param model
+     * @param fun
+     */
+    function modelCacheChildrenReverse(model, fun) {
+        var views = util_1.mve.arrayModelOf([]);
+        return {
+            views: views,
+            children: superModelChildrenReverse(views, model, fun, modelCacheChildrenGetView)
+        };
+    }
+    exports.modelCacheChildrenReverse = modelCacheChildrenReverse;
 });
