@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "packages": {
+    "mve-core": {
+      "signature": "c213385edf2f3d0de225fa4f46313587",
+      "file": true
+    },
+    "wy-helper": {
+      "signature": "afafde7460243169f4d7e7aa135ad491",
+      "file": true
+    }
+  }
+}
