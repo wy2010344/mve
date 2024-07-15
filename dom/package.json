@@ -1,0 +1,22 @@
+{
+  "name": "dom",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.25",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.4",
+    "vite-plugin-dts": "^3.7.3"
+  },
+  "dependencies": {
+    "mve-core": "file:.yalc/mve-core",
+    "mve-helper": "file:.yalc/mve-helper",
+    "wy-helper": "file:.yalc/wy-helper"
+  }
+}
