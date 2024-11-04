@@ -2,7 +2,11 @@
   "version": "v1",
   "packages": {
     "wy-helper": {
-      "signature": "0a49e518d3c90d78f6b1e1b36cf0431c",
+      "signature": "bb29aa76ed4a0ab73a1d9ba7ad9604ae",
+      "file": true
+    },
+    "wy-dom-helper": {
+      "signature": "ace84ac226530ee67014b80f1efa570b",
       "file": true
     }
   }
