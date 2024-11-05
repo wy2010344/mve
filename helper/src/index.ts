@@ -1,14 +1,7 @@
-export * from './renderFragment'
-export * from './renderHasValue'
+import { hookAddDestroy } from "mve-core";
+import { GetValue, SetValue, trackSignal } from "wy-helper";
 export * from './renderMap'
-export * from './renderOne'
-export * from './useCallback'
-export * from './useEffect'
-export * from './useEvent'
-export * from './useReducer'
-export * from './useRef'
-export * from './useRefReducer'
-export * from './useState'
-export * from './useStoreTriggerRender'
-export * from './useVersion'
-export * from './util'
+
+export function hookTrackSignal<T>(get: GetValue<T>, set: SetValue<T>) {
+  hookAddDestroy(trackSignal(get, set))
+}

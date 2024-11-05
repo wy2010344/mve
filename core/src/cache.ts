@@ -1,23 +1,21 @@
 import { EmptyFun, GetValue, SetValue, trackSignal } from "wy-helper"
-import { HookChild } from "./hookChildren"
 
 const mve_global_key = "mve_global_key"
 let gt = globalThis as any
 
 const mveGlobal = (gt[mve_global_key] || {}) as {
-  currentChildren?: HookChild[]
-
+  currentChildren?: any[]
   destroyList?: EmptyFun[]
 }
 
 
-export function hookAlterChildren(vs?: HookChild[]) {
+export function hookAlterChildren(vs?: any[]) {
   const before = mveGlobal.currentChildren
   mveGlobal.currentChildren = vs
   return before
 }
 
-export function hookAddResult(node: HookChild) {
+export function hookAddResult(node: any) {
   const children = mveGlobal.currentChildren
   if (children) {
     children.push(node)
@@ -32,7 +30,7 @@ export function hookAddDestroy(fun: EmptyFun) {
   if (destroyList) {
     destroyList.push(fun)
   } else {
-    throw '不在render执行添加到children'
+    throw '不在render执行添加到Destroy'
   }
 }
 
@@ -42,7 +40,3 @@ export function hookAlterDestroyList(vs?: EmptyFun[]) {
   return before
 }
 
-
-export function hookTrackSignal<T>(get: GetValue<T>, set: SetValue<T>) {
-  hookAddDestroy(trackSignal(get, set))
-}
