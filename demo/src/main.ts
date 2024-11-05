@@ -1,20 +1,17 @@
-import { hookBuildChildren } from "./hookChildren"
-import { dom } from "./dom"
-import { Signal, trackSignal } from "./signal"
-import { emptyArray, EmptyFun, GetValue, quote, ReadArray, run } from "wy-helper"
-import { hookAlterDestroyList } from "./cache"
-import { renderForEach } from "./renderForEach"
-
+import { emptyArray, quote, createSignal, trackSignal } from "wy-helper"
+import { createRoot, dom } from 'mve-dom'
+import { renderArray } from 'mve-helper'
+import { hookAddDestroy } from "mve-core"
 const app = document.querySelector<HTMLDivElement>('#app')!
 
-const destroy = renderApp(app, () => {
+const destroy = createRoot(app, () => {
   dom.div({
     className: "p-8 bg-green-400"
   }).render(() => {
-    const a = Signal(0)
-    const b = Signal(0)
+    const a = createSignal(0)
+    const b = createSignal(0)
 
-    const list = Signal<number[]>(emptyArray as number[])
+    const list = createSignal<number[]>(emptyArray as number[])
     dom.button({
       onClick() {
         a.set(a.get() + 1)
@@ -35,36 +32,28 @@ const destroy = renderApp(app, () => {
     dom.hr().render()
 
     renderArray(list.get, quote, getRow => {
-      dom.div().renderText`ddd`//`---${() => getRow()[0]}--- ${() => getRow()[1]}---`
+      dom.div().renderText`---${() => getRow().item}--- ${() => getRow().index}---`
+      dom.button({
+        onClick() {
+          list.set(list.get().filter(v => v != getRow().item))
+        }
+      }).renderText`删除`
+      count()
+      hookAddDestroy(() => {
+        console.log("销毁了...")
+      })
     })
   })
 })
 
 
-function renderApp(app: Node, fun: EmptyFun) {
-  const list: EmptyFun[] = []
-  hookAlterDestroyList(list)
-  hookBuildChildren(app, fun)
-  hookAlterDestroyList(undefined)
-  return () => {
-    list.forEach(run)
-  }
-}
 
+function count() {
+  const s = createSignal(0)
 
-export function renderArray<T>(
-  getVs: GetValue<ReadArray<T>>,
-  getKey: (v: T, i: number) => any,
-  render: (get: GetValue<readonly [T, number]>) => void,
-) {
-  renderForEach<readonly [T, number]>(
-    function (callback) {
-      const vs = getVs()
-      for (let i = 0; i < vs.length; i++) {
-        const v = vs[i]
-        const key = getKey(v, i)
-        const setValue = callback(key, render)
-        setValue([v, i])
-      }
-    })
+  dom.button({
+    onClick() {
+      s.set(s.get() + 1)
+    }
+  }).renderText`增加数字${s.get}`
 }

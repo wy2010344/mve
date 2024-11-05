@@ -2,15 +2,19 @@
   "version": "v1",
   "packages": {
     "mve-core": {
-      "signature": "0f15b27f48b2b6e716a863d614252bd0",
+      "signature": "5acfe8bfc9a03d896359b43857248a5f",
       "file": true
     },
     "mve-helper": {
-      "signature": "c6b3801b9bf8e6112245b356cc075b77",
+      "signature": "1277eafdb6b2a746ebbf7b2a9bc82b80",
       "file": true
     },
     "wy-helper": {
-      "signature": "afafde7460243169f4d7e7aa135ad491",
+      "signature": "fa18708750662729c825092c38fa3215",
+      "file": true
+    },
+    "wy-dom-helper": {
+      "signature": "ace84ac226530ee67014b80f1efa570b",
       "file": true
     }
   }
