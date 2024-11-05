@@ -1,6 +1,6 @@
 import { emptyArray, SetValue } from "wy-helper"
-import { trackSignal } from "./signal"
-import { hookAddDestroy, hookAlterChildren, hookTrackSignal } from "./cache"
+import { hookAlterChildren } from "mve-core"
+import { hookTrackSignal } from "mve-helper"
 
 
 

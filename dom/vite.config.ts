@@ -13,7 +13,14 @@ export default defineConfig({
       },
       formats: ["es", "cjs"]
     },
-    minify: false
+    minify: false,
+    rollupOptions: {
+      external: [
+        "wy-helper",
+        "mve-core",
+        "mve-helper"
+      ]
+    }
   },
   plugins: [dts()]
 })

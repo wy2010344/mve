@@ -1,11 +1,10 @@
 import { render } from "mve-core"
-import { createStoreValueCreater } from "./util"
-export * from './html'
-export * from './dom'
-export * from './util'
-export function createRoot(node: Node, reconcile: () => void) {
-  return render(
-    createStoreValueCreater(node),
-    reconcile
-  )
+import { EmptyFun } from "wy-helper"
+import { hookBuildChildren } from "./hookChildren"
+export { dom } from './dom'
+export { svg } from './svg'
+export function createRoot(node: Node, create: EmptyFun) {
+  return render(() => {
+    hookBuildChildren(node, create)
+  })
 }
