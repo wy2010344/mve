@@ -3,7 +3,7 @@
 import { BDomAttribute, DomElement, DomElementType, React } from "wy-dom-helper"
 import { emptyObject } from "wy-helper"
 import { domTagNames } from "wy-dom-helper"
-import { NodeCreater, OrFun } from "./node"
+import { NodeCreater, OrFun, StyleGetProps, StyleProps } from "./node"
 
 const emptyKeys = ['href', 'className']
 export function updateDomProps(node: any, key: string, value?: any) {
@@ -25,7 +25,10 @@ function create(type: string) {
  * 静态的
  * 动态的
  */
-type DomEffectAttr<T extends DomElementType> = (OrFun<BDomAttribute<T>> & React.DOMAttributes<DomElement<T>>) | (() => BDomAttribute<T>)
+type DomEffectAttr<T extends DomElementType> = (OrFun<BDomAttribute<T>>
+  & StyleProps
+  & React.DOMAttributes<DomElement<T>>)
+  | (() => (BDomAttribute<T> & StyleGetProps))
 type DomCreater<key extends DomElementType> = NodeCreater<key, DomElement<key>, DomEffectAttr<key>>
 let dom: {
   readonly [key in DomElementType]: {
