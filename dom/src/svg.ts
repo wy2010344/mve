@@ -1,10 +1,13 @@
 import { BSvgAttribute, getAttributeAlias, React, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
 import { emptyObject } from "wy-helper"
-import { NodeCreater, OrFun } from "./node"
+import { NodeCreater, OrFun, StyleGetProps, StyleProps } from "./node"
 import { updateDomProps } from "./dom"
 
 
-type SvgEffectAttr<T extends SvgElementType> = (OrFun<BSvgAttribute<T>> & React.DOMAttributes<SvgElement<T>>) | (() => BSvgAttribute<T>)
+type SvgEffectAttr<T extends SvgElementType> = (OrFun<BSvgAttribute<T>>
+  & StyleProps
+  & React.DOMAttributes<SvgElement<T>>)
+  | (() => (BSvgAttribute<T> & StyleGetProps))
 
 
 export function updateSVGProps(node: any, key: string, value?: any) {
