@@ -1,8 +1,9 @@
-import { animate, AnimationControls, spring } from "motion";
+import { animate, AnimationControls, spring, timeline } from "motion";
 import { dom } from "mve-dom"
+import { animateSignal } from "mve-dom-helper";
 import { hookTrackSignal } from "mve-helper";
-import { animateFrame } from "wy-dom-helper";
-import { batchSignalEnd, createSignal, extrapolationClamp, getInterpolate, getSpringBaseAnimationConfig, GetValue, getZtaAndOmega0From, memo, trackSignal } from "wy-helper";
+import { animateFrame, requestBatchAnimationFrame } from "wy-dom-helper";
+import { batchSignalEnd, createSignal, cubicBezier, easeFns, extrapolationClamp, GetDeltaXAnimationConfig, getInterpolate, getSpringBaseAnimationConfig, getTweenAnimationConfig, GetValue, getZtaAndOmega0From, memo, trackSignal } from "wy-helper";
 const APPS = [
   'Safari',
   'Mail',
@@ -22,33 +23,6 @@ const SPRING = {
   stiffness: 170,
   damping: 12,
 };
-function hookSpring(get: GetValue<number>) {
-  const value = createSignal(0)
-
-  let ct: AnimationControls
-  hookTrackSignal(get, v => {
-    const diff = v - value.get()
-    const last = value.get()
-    if (diff) {
-      ct?.stop()
-      ct = animate(x => {
-        value.set(diff * x + last)
-        batchSignalEnd()
-      }, {
-        easing: spring(SPRING)
-      })
-    }
-  })
-  return value.get
-  // const value = animateFrame(0)
-  // hookTrackSignal(get, v => {
-  //   if (value.getTargetValue() != v) {
-  //     value.animateTo(v, sp)
-  //   }
-  // })
-  // return value.get.bind(value)
-}
-
 const DISTANCE = 110; // pixels before mouse affects an icon
 const SCALE = 2.25; // max scale factor of an icon
 const NUDGE = 40; // pixels icons are moved away from mouse
@@ -62,8 +36,9 @@ const scaleMap = getInterpolate({
   0: SCALE,
   [DISTANCE]: 1
 }, extrapolationClamp)
-
-
+/**
+ * https://buildui.com/recipes/magnified-dock
+ */
 export default () => {
 
   dom.div({
@@ -73,10 +48,10 @@ export default () => {
     const mouseRight = createSignal(-Infinity)
 
 
-    const left = hookSpring(() => {
+    const left = animateSignal(() => {
       return gp(mouseLeft.get())
     })
-    const right = hookSpring(() => {
+    const right = animateSignal(() => {
       return gp(mouseRight.get())
     })
 
@@ -119,8 +94,8 @@ export default () => {
         const scaleBase = memo(() => {
           return scaleMap(distance())
         })
-        const scale = hookSpring(scaleBase)
-        const x = hookSpring(() => {
+        const scale = animateSignal(scaleBase)
+        const x = animateSignal(() => {
           const d = distance();
           if (d === -Infinity) {
             return 0;
@@ -130,26 +105,25 @@ export default () => {
             return (-d / DISTANCE) * NUDGE * scaleBase();
           }
         })
+
+        const y = animateFrame(0, requestBatchAnimationFrame)
         const btn = dom.button({
           className: "aspect-square block w-10 rounded-full bg-white shadow origin-bottom",
           style: {
             background: "red",
             // scale,
             transform() {
-              return `translate(${x()}px,0px) scale(${scale()})`
+              return `translate(${x()}px,${y.get()}px) scale(${scale()})`
             }
           },
-          onClick() {
-            animate(btn, {
-              y: [0, -40, 0]
-            }, {
-              easing: [
-                [0, 0, 0.2, 1],
-                [0.8, 0, 1, 1],
-              ],
-              repeat: 2,
-              duration: 0.7
-            })
+          async onClick() {
+            async function fun() {
+              await y.animateTo(-40, getTweenAnimationConfig(0.7 / 2 * 1000, cubicBezier(0, 0, 0.2, 1)))
+              await y.animateTo(0, getTweenAnimationConfig(0.7 / 2 * 1000, cubicBezier(0.8, 0, 1, 1)))
+            }
+            await fun()
+            await fun()
+            await fun()
           }
         }).render(() => {
           // dom.span({
