@@ -20,6 +20,7 @@
     "motion": "^10.18.0",
     "mve-core": "file:.yalc/mve-core",
     "mve-dom": "file:.yalc/mve-dom",
+    "mve-dom-helper": "file:.yalc/mve-dom-helper",
     "mve-helper": "file:.yalc/mve-helper",
     "wy-dom-helper": "file:.yalc/wy-dom-helper",
     "wy-helper": "file:.yalc/wy-helper"
