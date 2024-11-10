@@ -105,4 +105,5 @@ export function renderForEach<T, K, O>(
     createSignal()
     return thisChildren.flatMap(child => child.children)
   })
+  return createSignal
 }
