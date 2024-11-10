@@ -32,10 +32,9 @@ export function renderArrayToMap<T, K, O>(
   createMap: <V>() => RMap<K, V> = normalMapCreater
 ): GetValue<RMap<K, GetValue<O>>> {
   let gets: RMap<K, GetValue<O>>
-  const getVS1 = memo(getVs)
-  renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
+  const getSignal = renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
     function (callback) {
-      const vs = getVS1()
+      const vs = getVs()
       gets = createMap<GetValue<O>>()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
@@ -48,7 +47,7 @@ export function renderArrayToMap<T, K, O>(
       }
     }, createMap)
   return function () {
-    getVS1()
+    getSignal()
     return gets
   }
 }
@@ -59,10 +58,9 @@ export function renderArrayToArray<T, K, O>(
   createMap?: <V>() => RMap<K, V>
 ): GetValue<O[]> {
   let gets: GetValue<O>[]
-  const getVS1 = memo(getVs)
-  renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
+  const getSignal = renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
     function (callback) {
-      const vs = getVS1()
+      const vs = getVs()
       gets = []
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
@@ -75,7 +73,7 @@ export function renderArrayToArray<T, K, O>(
       }
     }, createMap)
   return function () {
-    getVS1()
+    getSignal()
     return gets.flatMap(run)
   }
 }
