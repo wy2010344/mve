@@ -17,6 +17,8 @@
     "vite": "^5.4.10"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.2.0",
+    "konva": "^9.3.16",
     "motion": "^10.18.0",
     "mve-core": "file:.yalc/mve-core",
     "mve-dom": "file:.yalc/mve-dom",
