@@ -39,4 +39,3 @@ export function hookAlterDestroyList(vs?: EmptyFun[]) {
   mveGlobal.destroyList = vs
   return before
 }
-
