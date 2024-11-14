@@ -4,7 +4,6 @@ import { hookTrackSignal } from "mve-helper"
 import { CSSProperties, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
 import { hookBuildChildren } from "./hookChildren"
-import { updateDomProps } from "./dom"
 
 export type OrFun<T extends {}> = {
   [key in keyof T]: T[key] | GetValue<T[key]>
@@ -202,8 +201,6 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   public updateProps!: (node: N, key: string, value?: any) => void
 
   public attrsEffect: Attr = emptyObject as any
-  public portal?: boolean
-
   attrs(v: Attr) {
     this.attrsEffect = v
     return this
@@ -212,16 +209,10 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   events(v: React.DOMAttributes<N>) {
     this.e = v
   }
-  setPortal(b: any) {
-    this.portal = b
-    return this
-  }
 
   private useHelper() {
     const node = this.create(this.type)
-    if (!this.portal) {
-      hookAddResult(node)
-    }
+    hookAddResult(node)
     mergeAttrs(this.attrsEffect, node, this.updateProps)
     mergeEvents(this.e, node)
     return node

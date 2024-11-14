@@ -32,7 +32,7 @@ type DomEffectAttr<T extends DomElementType> = (OrFun<BDomAttribute<T>>
 type DomCreater<key extends DomElementType> = NodeCreater<key, DomElement<key>, DomEffectAttr<key>>
 let dom: {
   readonly [key in DomElementType]: {
-    (props?: DomEffectAttr<key>, isPortal?: boolean): DomCreater<key>
+    (props?: DomEffectAttr<key>): DomCreater<key>
   }
 }
 if ('Proxy' in globalThis) {
@@ -43,14 +43,13 @@ if ('Proxy' in globalThis) {
       if (oldV) {
         return oldV
       }
-      const newV = function (args: any, isPortal: any) {
+      const newV = function (args: any) {
         const creater = NodeCreater.instance
         creater.type = p as any
         creater.create = create
         creater.updateProps = updateDomProps
 
         creater.attrsEffect = args
-        creater.portal = isPortal
         return creater
       }
       cacheDomMap.set(p as any, newV)
@@ -61,14 +60,13 @@ if ('Proxy' in globalThis) {
   const cacheDom = {} as any
   dom = cacheDom
   domTagNames.forEach(function (tag) {
-    cacheDom[tag] = function (args: any, isPortal: any) {
+    cacheDom[tag] = function (args: any) {
       const creater = NodeCreater.instance
       creater.type = tag as any
       creater.create = create
       creater.updateProps = updateDomProps
 
       creater.attrsEffect = args
-      creater.portal = isPortal
       return creater
     }
   })

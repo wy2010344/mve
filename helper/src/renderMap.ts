@@ -1,5 +1,5 @@
 import { renderForEach } from "mve-core"
-import { GetValue, memo, normalMapCreater, ReadArray, RMap, run } from "wy-helper"
+import { GetValue, normalMapCreater, ReadArray, RMap, run } from "wy-helper"
 
 
 export type ItemWithIndex<T> = {
