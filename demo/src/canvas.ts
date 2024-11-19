@@ -1,10 +1,8 @@
-import { faker } from "@faker-js/faker";
-import { dir } from "console";
 import { hookAddResult, hookAlterChildren } from "mve-core";
 import { dom } from "mve-dom";
 import { hookTrackSignal, renderArray } from "mve-helper";
-import { drawRoundedRect, RoundedRectParam, roundRect } from "wy-dom-helper";
-import { createSignal, emptyArray, emptyFun, EmptyFun, GetValue, getValueOrGet, memo, PointKey, Quote, quote, ValueOrGet } from "wy-helper";
+import { drawRoundedRect } from "wy-dom-helper";
+import { constraintEvaluation, ConstraintResult, createSignal, emptyFun, EmptyFun, GetValue, getValueOrGet, memo, PointKey, Quote, quote, ValueOrGet } from "wy-helper";
 
 class MemoInfo {
   private symbol!: Symbol
@@ -31,6 +29,7 @@ class MemoInfo {
  * flex大部分时候会变形,所以只是减少绝对定位的计算
  * 简单点,child没有自己的size,则父节点设置size
  * 从根向叶子遍历
+ * 不能在flex定位了size后再size,有偏移
  */
 export default function () {
 
@@ -51,12 +50,8 @@ export default function () {
     hookRect({
       attr() {
         const n: Attr = {
-          x(n) {
-            return n + 5 + 100
-          },
-          y(n) {
-            return n + 5
-          },
+          x: 105,
+          y: 5,
           width(n) {
             return n - 250
           },
@@ -91,11 +86,7 @@ export default function () {
             width: 200,
             height: 200,
             borderWidth: 2,
-            borderStyle: 'blue',
-            display: flex({
-              justifyContent: "between",
-              alignItems: "center"
-            }),
+            borderStyle: 'blue'
           },
           children() {
             hookRect({
@@ -133,31 +124,47 @@ export default function () {
     })
   })
 
-
+  const resultSet = new Set<ConstraintResult<number>>()
+  const calculates = new Set<EmptyFun>()
+  function addResult(n: ConstraintResult<number>) {
+    n.reset()
+    resultSet.add(n)
+  }
   hookTrackSignal(memo(() => {
     const ctx = canvas.getContext("2d")!
-    ctx.reset()
-    function draw(
-      children: CNode[],
-      parent?: CNode
-    ) {
+    resultSet.clear()
+    calculates.clear()
+    function prepare(children: CNode[], parent?: CNode) {
       children.forEach((child, i) => {
         child.index = i
         child.parent = parent
         child.ctx = ctx
         child.refresh()
-        const x = child.x()
-        const y = child.y()
+        addResult(child.x)
+        addResult(child.y)
+        addResult(child.width)
+        addResult(child.height)
+        child.insertRules(calculates)
+        prepare(child.children(), child)
+      })
+    }
+    prepare(getChildren())
+    constraintEvaluation(calculates, resultSet)
+    function draw(
+      children: CNode[]
+    ) {
+      children.forEach((child, i) => {
+        const x = child.x.get()
+        const y = child.y.get()
         child.draw(ctx)
         //因为是累加的,所以返回
         ctx.translate(x, y)
-        draw(
-          child.children(),
-          child
-        )
+
+        draw(child.children())
         ctx.translate(-x, -y)
       })
     }
+    ctx.reset()
     draw(getChildren())
   }), emptyFun)
 }
@@ -167,6 +174,33 @@ function hookRect(rect: Rect) {
   hookAddResult(new CNode(rect))
 }
 
+
+function setPosition(direction: PointKey, child: CNode, ca: Attr, start: number,) {
+  if (ca.position == 'absolute') {
+    child[direction].set(start, true)
+  } else {
+    child[direction].set(start + (ca[direction] || 0))
+  }
+}
+function layoutFlexBegin(
+  cs: CNode[],
+  direction: PointKey,
+  attr: Attr,
+  size: SizeKey,
+  gap: number
+) {
+
+  const pstart = gatPaddingStart(direction, attr)
+  let all = pstart
+  cs.forEach(child => {
+    const car = child.attr()
+    setPosition(direction, child, car, all)
+    if (car.position == 'relative') {
+      all = all + child[size].get() + gap
+    }
+  })
+  return all - pstart
+}
 class CNode extends MemoInfo {
   constructor(
     public readonly rect: Rect
@@ -174,80 +208,164 @@ class CNode extends MemoInfo {
     super()
     this.children = canvasChildren(rect.children || emptyFun)
     this.attr = this.cacheGet(() => {
-      return getValueOrGet(this.rect.attr)
+      const attr = getValueOrGet(this.rect.attr)
+      attr.position = attr.position || 'relative'
+      attr.display = attr.display || 'flex'
+
+      attr.paddingLeft = attr.paddingLeft || 0
+      attr.paddingRight = attr.paddingRight || 0
+      attr.paddingTop = attr.paddingTop || 0
+      attr.paddingBottom = attr.paddingBottom || 0
+
+      if (attr.display == 'flex') {
+        attr.flexDirection = attr.flexDirection || 'x'
+        attr.flexJustifyContent = attr.flexJustifyContent || 'gap'
+        attr.flexGap = attr.flexGap || 0
+        attr.flexAlignItems = attr.flexAlignItems || 'center'
+        attr.flexAlignGrow = attr.flexAlignGrow || 'none'
+        if (typeof attr.flex == 'number' && attr.flex <= 0) {
+          throw 'flex必须为正数'
+        } else {
+          attr.flex = undefined
+        }
+      }
+      return attr
     })
   }
   public readonly attr: GetValue<Attr>
   public parent?: CNode
   public index: number = 0
   public ctx!: CanvasRenderingContext2D
+  /**
+   * x与y由parent写入
+   */
+  x = new ConstraintResult<number>()
+  y = new ConstraintResult<number>()
+  width = new ConstraintResult<number>()
+  height = new ConstraintResult<number>()
+  insertRules(calculates: Set<EmptyFun>) {
+    this.insertSize('x', calculates)
+    this.insertSize('y', calculates)
+    const it = this
 
+    calculates.add(() => {
+      const attr = this.attr()
+      const display = attr.display!
 
-  
-  x = this.cacheGet(() => {
-    const x = this.attr().x
-    const tp = typeof x
-    if (tp == 'number') {
-      return x as number
-    } else if (tp == 'function') {
-      return (x as any)(this.parent?.getDisplayInfo('x', this.index) || 0)
-    } else if (!this.parent) {
-      return 0
-    }
-  })
-  y = this.cacheGet(() => {
-    const x = this.attr().y || 0
-    const tp = typeof x
-    if (tp == 'number') {
-      return x as number
-    } else if (tp == 'function') {
-      return (x as any)(this.parent?.getDisplayInfo('y', this.index) || 0)
-    } else if (!this.parent) {
-      return 0
-    }
-    return this.parent.getDisplayInfo('y', this.index)
-  })
+      if (display == 'flex') {
+        const direction = attr.flexDirection!
+        const gap = attr.flexGap!
+        const size = directionToSize(direction)
+        if (attr.flexJustifyContent == 'gap' && !this.children().some(v => {
+          const attr = v.attr()
+          return attr.position == 'relative' && attr.flex
+        })) {
+          //子扩展父,gap,且子元素无flex
+          calculates.add(() => {
+            let all = layoutFlexBegin(it.children(), direction, attr, size, gap)
+            if (all) {
+              all = all - gap
+            }
+            it[size].set(all + getPadding(direction, attr))
+          })
+        } else {
+          //父宽度约束子
+          calculates.add(() => {
+            const allSize = it[size].get()
+            if (attr.flexJustifyContent == 'start') {
+              layoutFlexBegin(it.children(), direction, attr, size, gap)
+            } else {
+              if (attr.flexJustifyContent == 'gap') {
+                let allChildrenSize = 0
+                let allFlex = 0
+                it.children().forEach(child => {
+                  const ca = child.attr()
+                  if (ca.position == 'relative') {
+                    if (ca.flex) {
+                      allFlex += ca.flex
+                    } else {
+                      allChildrenSize += child[size].get() + gap
+                    }
+                  }
+                })
+                if (allChildrenSize) {
+                  allChildrenSize -= gap
+                }
+                let remaing = allSize - getPadding(direction, attr) - allChildrenSize
+                if (allFlex <= 0) {
+                  throw '总和应该大于0'
+                }
+                let start = 0
+                it.children().forEach(child => {
+                  const ca = child.attr()
+                  //这里要细化
+                  setPosition(direction, child, ca, start + gatPaddingStart(direction, attr))
+                  if (ca.position == 'relative') {
+                    if (ca.flex) {
+                      child[size].set(ca.flex * remaing / allFlex)
+                    }
+                    start = start + child[size].get()
+                  }
+                })
+              } else {
+                //其它几种
+              }
+            }
+          })
+        }
 
-  width = this.cacheGet(() => {
-    const x = this.attr().width
-    const tp = typeof x
-    if (tp == 'number') {
-      return x as number
-    } else if (tp == 'function') {
-      return (x as any)(this.parent?._getChildInfo().info('width') || this.ctx.canvas.width)
-    } else if (!this.parent) {
-      return this.ctx.canvas.width
-    }
-    return this._getChildInfo().info("width")
-  })
+        const pdirection = oppositeDirection(direction)
+        const osize = directionToSize(pdirection)
+        if (attr.flexAlignGrow == 'grow') {
+          //子撑开父
+          calculates.add(() => {
+            let maxSize = 0
+            it.children().forEach(child => {
+              const ca = child.attr()
+              if (ca.position == 'relative') {
+                maxSize = Math.max(maxSize, child[osize].get())
+              }
+            })
+            it[osize].set(maxSize + getPadding(pdirection, attr))
+          })
+        }
 
-  height = this.cacheGet(() => {
-    const x = this.attr().height
-    const tp = typeof x
-    if (tp == 'number') {
-      return x as number
-    } else if (tp == 'function') {
-      return (x as any)(this.parent?._getChildInfo().info('height') || this.ctx.canvas.height)
-    } else if (!this.parent) {
-      return this.ctx.canvas.height
-    }
-    return this._getChildInfo().info("height")
-  })
-  private _getChildInfo = this.cacheGet(() => {
-    const display = this.attr().display
-    if (display) {
-      return display(this)
-    }
-    throw '需要子节点自己定义位置'
-  })
+        //父影响子
+        calculates.add(() => {
+          const pstart = gatPaddingStart(pdirection, attr)
+          if (attr.flexAlignItems == 'start') {
+            it.children().forEach(child => {
+              const ca = child.attr()
+              setPosition(pdirection, child, ca, pstart)
+            })
+          } else {
+            const centerSize = it[osize].get() - getPadding(pdirection, attr)
+            if (attr.flexAlignItems == 'center') {
+              it.children().forEach(child => {
+                const ca = child.attr()
+                const csize = child[osize].get()
+                setPosition(pdirection, child, ca, pstart + ((centerSize - csize) / 2))
+              })
+            } else if (attr.flexAlignItems == 'end') {
+              it.children().forEach(child => {
+                const ca = child.attr()
+                const csize = child[osize].get()
+                setPosition(pdirection, child, ca, pstart + centerSize - csize)
+              })
+            }
+          }
+        })
+      }
+    })
+  }
   readonly children: GetValue<CNode[]>
   draw(ctx: MyCtx) {
     const r = this.attr()
     drawRoundedRect(ctx, {
-      x: this.x(),
-      y: this.y(),
-      width: this.width(),
-      height: this.height(),
+      x: this.x.get(),
+      y: this.y.get(),
+      width: this.width.get(),
+      height: this.height.get(),
       bl: r.borderBottomLeftRadius || 0,
       br: r.borderBottomRightRadius || 0,
       tl: r.borderTopLeftRadius || 0,
@@ -264,7 +382,41 @@ class CNode extends MemoInfo {
     }
   }
 
+
+  private insertSize(key: PointKey, calculates: Set<EmptyFun>) {
+    const it = this
+    const sizeKey = directionToSize(key)
+    calculates.add(() => {
+      const attr = it.attr()
+      if (attr.position == 'absolute') {
+        const loc = attr[key]
+        if (typeof loc == 'number') {
+          it[key].set(loc)
+        }
+      }
+    })
+    calculates.add(() => {
+      const attr = it.attr()
+      const size = attr[sizeKey]
+      const tw = typeof size
+      if (tw == 'number') {
+        it[key].set(size as number)
+      } else if (tw == 'function') {
+        calculates.add(() => {
+          let pw = 0
+          if (it.parent) {
+            pw = it.parent[key].get()
+          } else {
+            pw = it.ctx.canvas.width
+          }
+          it[sizeKey].set((size as any)(pw))
+        })
+      }
+    })
+  }
 }
+
+
 type MyCtx = Omit<CanvasRenderingContext2D, 'translate'>
 
 
@@ -276,25 +428,46 @@ type PureRect = {
 }
 
 
-type DisplayInfo = {
-  childInfo(index: number, i: Info): number
-  info(i: SizeKey): number
-}
-
 /**
  * 因为整体在render中,要么relayParent(就是函数),要么绝对(就是数字)
  */
 type Attr = {
-  display?(arg0: CNode): DisplayInfo;
+  display?: 'flex' | 'zstack'
+  zstackX?: 'center' | 'left' | 'right'
+  zstackY?: 'center' | 'top' | 'right'
 
-  x?: Quote<number> | number
-  y?: Quote<number> | number
+  flexDirection?: 'x' | 'y'
   /**
-   * 子决定尺寸、自己决定尺寸最优先
-   * 子决定尺寸:自己的布局之后,再转化
+   * gap,就是撑开容器,但如果children里面有grow,就是占据剩余容器
+   */
+  flexJustifyContent?: 'gap' | 'center' | 'start' | 'end' | 'between' | 'evenly' | 'around'
+  flexGap?: number
+  /**
+   * grow,就是撑开容器
+   * 这个方向上,children不能有百分比
+   */
+  flexAlignItems?: 'center' | 'start' | 'end'
+  flexAlignGrow?: 'grow' | 'none'
+  /**
+   * relative是相对叠加偏移
+   * absolute是绝对定位,脱离布局
+   */
+  position?: 'relative' | 'absolute'
+  x?: number
+  y?: number
+  /**
+   * Quote:相对于父的百分比例
+   * 为什么使用Quote<number>?总涉及计算calc
+   * 其实就是与alignItem:stretch相关了
+   * flex也相关,则如果没有比例,会依flex的伸缩度
+   * 
+   * 如果是子容器决定尺寸,是固定的,受子容器总和+padding
+   * 如果width/height都没有,则是受子容器影响
    */
   width?: Quote<number> | number
   height?: Quote<number> | number
+  /**伸缩度,由父决定尺寸 */
+  flex?: number
 
 
   borderTopLeftRadius?: number
@@ -304,12 +477,7 @@ type Attr = {
   borderStyle?: string
   borderWidth?: number
   fillStyle?: string
-
-  /**伸缩度,由父决定尺寸 */
-  flex?: number
-  /**如果有自己的flex-alignSelf,由父决定尺寸 */
-  alignSelf?: Quote<number>
-}
+} & PaddingInfo
 interface Rect {
   attr: ValueOrGet<Attr>
   draw?(c: MyCtx, self: PureRect): void
@@ -368,114 +536,24 @@ function oppositeSize(x: SizeKey): SizeKey {
   }
 }
 
-// function cacheMemo() {
-//   let current: Symbol
-//   return [
-//     function <T>(get: GetValue<T>) {
-//       let lastValue: T
-//       let lastSymbol: Symbol
-//       return function () {
-//         if (lastSymbol != current) {
-//           lastValue = get()
-//           lastSymbol = current
-//         }
-//         return lastValue
-//       }
-//     },
-//     function () {
-//       current = Symbol()
-//     }
-//   ] as const
-// }
 
-
-function flex(arg: FlexInfo) {
-
-  return function (n: CNode): DisplayInfo {
-    return new FlexDisplayInfo(n, arg)
+type PaddingInfo = {
+  paddingLeft?: number
+  paddingRight?: number
+  paddingTop?: number
+  paddingBottom?: number
+}
+function getPadding(n: PointKey, x: PaddingInfo) {
+  if (n == 'x') {
+    return (x.paddingLeft!) + (x.paddingRight!)
+  } else {
+    return (x.paddingTop!) + (x.paddingBottom!)
   }
 }
-type JustifyGap = {
-  /**
-   * match,匹配所有子节点的和
-   * grow,子节点有伸缩度
-   */
-  justifyContent: "start" | "center" | "end" | "match" | "grow"
-  gap?: number
-}
-type Justify = {
-  /**
-   * evenly:左右与间隔相等
-   * around:左右是间隔的一半,
-   * gap可以为负
-   */
-  justifyContent: "between" | "evenly" | "around"
-  gap?: never
-}
-type FlexInfo = {
-  direction?: 'x' | 'y'
-  /**
-   * match,是依赖子节点的宽度之和
-   */
-  alignItems: "start" | "center" | "end" | "stretch" | "match"
-} & (JustifyGap | Justify)
-
-
-
-class FlexDisplayInfo implements DisplayInfo {
-  constructor(
-    public readonly node: CNode,
-    public readonly arg: FlexInfo
-  ) {
-    const direction = arg.direction || 'x'
-    const odirection = oppositeDirection(direction)
-
-    const gap = arg.gap || 0
-    const justifyContent = arg.justifyContent
-    if (justifyContent == 'start') {
-
-    } else if (justifyContent == 'around') {
-
-    } else if (justifyContent == 'between') {
-      const s = directionToSize(direction)
-      const allWidth = node.children().reduce((init, row) => {
-        if (row.fromParent(s)) {
-          throw '不支持从父节点获得尺寸'
-        }
-        const w = row[s]()
-        return init + w
-      }, 0)
-      const list = [0]
-      if (node.children().length > 1) {
-        const r = (node.width() - allWidth) / node.children().length - 1
-        node.children().reduce((init, row) => {
-          init.push(r + row.width())
-          return init
-        }, list)
-      }
-      const os = directionToSize(odirection)
-      const maxSize = node.children().reduce((init, row) => {
-        if (row.fromParent(os)) {
-          return init
-        }
-        return Math.max(init, row[os]())
-      }, 0)
-
-      this.childInfo = (index, i) => {
-        if (i == direction) {
-          return list[index]
-        } else if (i == odirection) {
-
-        } else {
-          throw '不支持'
-        }
-      }
-    }
-  }
-  childInfo(index: number, i: Info): number {
-    throw 'no support'
-  }
-  info(i: SizeKey): number {
-    throw 'no support'
+function gatPaddingStart(n: PointKey, x: PaddingInfo) {
+  if (n == 'x') {
+    return x.paddingLeft!
+  } else {
+    return x.paddingTop!
   }
 }
