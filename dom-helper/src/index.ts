@@ -1,7 +1,7 @@
 import { hookAddDestroy } from "mve-core"
 import { animateFrame } from "wy-dom-helper"
 import { createAnimateSignal, defaultSpringBaseAnimationConfig, GetDeltaXAnimationConfig, GetValue } from "wy-helper"
-
+export * from './canvasRender'
 export function animateSignal(
   get: GetValue<number>,
   config: GetDeltaXAnimationConfig = defaultSpringBaseAnimationConfig

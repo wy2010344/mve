@@ -1,5 +1,6 @@
 import { EmptyFun, run } from 'wy-helper'
-import { hookAlterDestroyList } from './cache'
+import { hookAlterStateHolder } from './cache'
+import { StateHolder } from './stateHolder'
 
 export * from './renderForEach'
 export {
@@ -7,13 +8,14 @@ export {
   hookAddResult,
   hookAlterChildren
 } from './cache'
+export { createContext } from './context'
 
 export function render(create: EmptyFun) {
-  const list: EmptyFun[] = []
-  hookAlterDestroyList(list)
+  const stateHolder = new StateHolder()
+  hookAlterStateHolder(stateHolder)
   create()
-  hookAlterDestroyList(undefined)
+  hookAlterStateHolder(undefined)
   return () => {
-    list.forEach(run)
+    stateHolder.destroy()
   }
 }
