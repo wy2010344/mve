@@ -6,7 +6,7 @@
       "file": true
     },
     "wy-dom-helper": {
-      "signature": "9b1e042600b97ae831c865c1b4f6c2c8",
+      "signature": "bc8b68d3a0228c80ea2b12846a491b0c",
       "file": true
     },
     "mve-core": {
@@ -22,7 +22,7 @@
       "file": true
     },
     "mve-dom-helper": {
-      "signature": "0aaeb14e8e419dc8fec7828b0d5c837d",
+      "signature": "3231a5928a93443ebb25e16dc61b4eb3",
       "file": true
     }
   }

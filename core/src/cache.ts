@@ -1,11 +1,12 @@
 import { EmptyFun, GetValue, SetValue, trackSignal } from "wy-helper"
+import { StateHolder } from "./stateHolder"
 
 const mve_global_key = "mve_global_key"
 let gt = globalThis as any
 
 const mveGlobal = (gt[mve_global_key] || {}) as {
   currentChildren?: any[]
-  destroyList?: EmptyFun[]
+  stateHolder?: StateHolder
 }
 
 
@@ -26,16 +27,20 @@ export function hookAddResult(node: any) {
 
 
 export function hookAddDestroy(fun: EmptyFun) {
-  const destroyList = mveGlobal.destroyList
-  if (destroyList) {
-    destroyList.push(fun)
+  const stateHolder = mveGlobal.stateHolder
+  if (stateHolder) {
+    stateHolder.addDestroy(fun)
   } else {
     throw '不在render执行添加到Destroy'
   }
 }
 
-export function hookAlterDestroyList(vs?: EmptyFun[]) {
-  const before = mveGlobal.destroyList
-  mveGlobal.destroyList = vs
+export function hookAlterStateHolder(stateHolder?: StateHolder) {
+  const before = mveGlobal.stateHolder
+  mveGlobal.stateHolder = stateHolder
   return before
+}
+
+export function hookCurrentStateHolder() {
+  return mveGlobal.stateHolder
 }
