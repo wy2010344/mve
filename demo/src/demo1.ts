@@ -11,6 +11,31 @@ export default () => {
     const a = createSignal(0)
     const b = createSignal(0)
 
+    /**
+     * 溢出而不隐藏,则仍然能点击
+     */
+    dom.div({
+      className: "s",
+      style: {
+        width: '300px',
+        height: '200px',
+        background: 'blue',
+        position: 'absolute',
+        right: 0,
+        overflow: 'hidden'
+      }
+    }).render(() => {
+      dom.button({
+        style: {
+          left: '-100px',
+
+          position: 'absolute'
+        },
+        onClick() {
+          console.log("click")
+        }
+      }).renderText`abc`
+    })
     const list = createSignal<number[]>(emptyArray as number[])
     dom.button({
       onClick() {

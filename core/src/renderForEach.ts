@@ -1,5 +1,6 @@
-import { alawaysTrue, EmptyFun, GetValue, run, SetValue, memo, trackSignal, RMap, normalMapCreater } from "wy-helper"
-import { hookAddDestroy, hookAddResult, hookAlterChildren, hookAlterDestroyList } from "./cache"
+import { alawaysTrue, EmptyFun, GetValue, memo, trackSignal, RMap, normalMapCreater } from "wy-helper"
+import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
+import { StateHolder } from "./stateHolder"
 
 export interface RMapCreater<K, V> {
   (): RMap<K, V>
@@ -16,7 +17,7 @@ export function cloneMap<T>(
 }
 
 type EachValue<T, O> = {
-  destroyList: EmptyFun[]
+  stateHolder: StateHolder
   value: T
   children: any[],
   out: O,
@@ -41,6 +42,12 @@ export function renderForEach<T, K, O>(
     build: (get: GetValue<T>, key: K) => O
   }[] = []
   const thisChildren: EachValue<T, O>[] = []
+
+  const stateHolder = hookCurrentStateHolder()
+  if (!stateHolder) {
+    throw '需要在stateHolder里面'
+  }
+  const contextIndex = stateHolder.contexts.length
   const createSignal = memo(() => {
     oldMap = cloneMap(cacheMap, createMap)
     newMap = createMap()
@@ -54,7 +61,10 @@ export function renderForEach<T, K, O>(
       } else {
         x = {
           children: [],
-          destroyList: [],
+          stateHolder: new StateHolder(
+            stateHolder,
+            contextIndex
+          ),
           value: undefined!,
           out: undefined!,
           getOut() {
@@ -80,23 +90,23 @@ export function renderForEach<T, K, O>(
       return x.getOut
     })
   }, alawaysTrue)
-  hookAddDestroy(trackSignal(createSignal, () => {
+  stateHolder.addDestroy(trackSignal(createSignal, () => {
     //清理、销毁事件
     oldMap.forEach(function (values) {
       values.forEach(value => {
-        value.destroyList.forEach(run)
+        stateHolder.removeChild(value.stateHolder)
       })
     })
     //构造新的
     thisTimeAdd.forEach(add => {
-      const before = hookAlterDestroyList(add.x.destroyList)
+      const before = hookAlterStateHolder(add.x.stateHolder)
       const beforeChildren = hookAlterChildren(add.x.children)
       add.x.out = add.build(() => {
         createSignal()
         return add.x.value
       }, add.key)
       hookAlterChildren(beforeChildren)
-      hookAlterDestroyList(before)
+      hookAlterStateHolder(before)
     })
     //重新生成
     cacheMap = newMap
