@@ -22,7 +22,7 @@ function purifyList(children: HookChild[], list: Node[]) {
   }
 }
 
-export function hookBuildChildren<T extends Node>(node: T, fun: SetValue<T>) {
+export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
   const list: HookChild[] = []
   const beforeList = hookAlterChildren(list)
   fun(node)
@@ -59,7 +59,7 @@ function changeChildren(pNode: Node, newList: Node[], oldList: Node[]) {
     }
   }
   oldList.forEach(lastChild => {
-    if (!newList.includes(lastChild)) {
+    if (!newList.includes(lastChild) && lastChild.parentNode == pNode) {
       lastChild.parentNode?.removeChild(lastChild)
     }
   })

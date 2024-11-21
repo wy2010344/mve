@@ -3,18 +3,14 @@ import { hookTrackSignal } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
 import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
-export function hookRect(rect: Rect | ((c: CMNode) => Rect)) {
-  const n = new CNode()
-  if (typeof rect == 'function') {
-    n.setRect(rect(n))
-  } else {
-    n.setRect(rect)
-  }
+export function hookRect(rect: CNodeConfigure) {
+  const n = new CNode(rect)
   hookAddResult(n)
+  return n
 }
 
 type MyCtx = Omit<CanvasRenderingContext2D, 'translate' | 'reset' | 'save' | 'restore'>
-function toCall(rect: Rect, key: PointKey) {
+function toCall(rect: CNodeConfigure, key: PointKey) {
   const x = rect[key]
   if (typeof x == 'function') {
     return memo(x)
@@ -31,7 +27,22 @@ export interface CMNode {
   ctx: MyCtx
 }
 class CNode implements CMNode {
-  private rect?: Rect
+  constructor(
+    public readonly configure: CNodeConfigure
+  ) {
+    this.x = toCall(configure, 'x')
+    this.y = toCall(configure, 'y')
+    if (configure.beforeChildren) {
+      this.beforeChildren = canvasChildren(configure.beforeChildren)
+    } else {
+      this.beforeChildren = asLazy(emptyArray as any[])
+    }
+    if (configure.children) {
+      this.children = canvasChildren(configure.children)
+    } else {
+      this.children = asLazy(emptyArray as any[])
+    }
+  }
 
   private parent?: CNode
   private _index!: number
@@ -61,38 +72,18 @@ class CNode implements CMNode {
     return this._index
   }
 
-  x!: GetValue<number>
-  y!: GetValue<number>
-  children!: GetValue<CNode[]>
+  x: GetValue<number>
+  y: GetValue<number>
+  beforeChildren: GetValue<CNode[]>
+  children: GetValue<CNode[]>
 
-  setRect(rect: Rect) {
-    if (this.rect) {
-      throw '禁止重复写入'
-    }
-    if (!rect) {
-      throw '禁止写入空'
-    }
-    this.x = toCall(rect, 'x')
-    this.y = toCall(rect, 'y')
-    this.rect = rect
-    if (rect.children) {
-      this.children = canvasChildren(rect.children)
-    } else {
-      this.children = asLazy(emptyArray as any[])
-    }
-  }
-  getRect() {
-    return this.rect!
-  }
-
-  path!: Path2D
+  path?: Path2D
 }
-interface Rect {
+interface CNodeConfigure {
   x: ValueOrGet<number>
   y: ValueOrGet<number>
-  path?(): PathResult
-
-  draw?(ctx: MyCtx): void
+  beforeChildren?(): void
+  draw?(ctx: MyCtx): PathResult | void
   //这里可能有children()
   children?(): void
 
@@ -155,7 +146,10 @@ export function renderCanvas(
       const child = children[i]
       const nx = x - child.x()
       const ny = y - child.y()
-      if (_ctx.isPointInPath(child.path, nx, ny) || _ctx.isPointInStroke(child.path, nx, ny)) {
+
+      will = doToEvent(child.beforeChildren(), nx, ny, cs, callback)
+
+      if (will && child.path && (_ctx.isPointInPath(child.path, nx, ny) || _ctx.isPointInStroke(child.path, nx, ny))) {
         cs.unshift(child)
         if (callback(child)) {
           will = false
@@ -191,10 +185,10 @@ export function renderCanvas(
       e.offsetX,
       e.offsetY,
       child => {
-        return child.getRect().onClickCapture?.(e)
+        return child.configure.onClickCapture?.(e)
       },
       child => {
-        return child.getRect().onClick?.(e)
+        return child.configure.onClick?.(e)
       }
     )
   })
@@ -204,6 +198,7 @@ export function renderCanvas(
       getChildren().forEach((child, i) => {
         child.ctx = ctx
         child.setParentAndIndex(getChildren, i, parent)
+        prepare(child.beforeChildren, child)
         prepare(child.children, child)
       })
     }
@@ -214,17 +209,15 @@ export function renderCanvas(
       children.forEach((child) => {
         const x = child.x()
         const y = child.y()
-        const rect = child.getRect()
         ctx.save()
         //因为是累加的,所以返回
         ctx.translate(x, y)
-        if (rect) {
-          const path = rect.path?.()
-          if (path) {
-            child.path = path.path
-            path2DOperate(ctx, path.path, path.operates || emptyArray)
-          }
-          rect.draw?.(ctx)
+        child.path = undefined
+        draw(child.beforeChildren())
+        const path = child.configure.draw?.(ctx)
+        if (path) {
+          child.path = path.path
+          path2DOperate(ctx, path.path, path.operates || emptyArray)
         }
         draw(child.children())
         // ctx.translate(-x, -y)

@@ -1,5 +1,5 @@
-import { EmptyFun, run } from 'wy-helper'
-import { hookAlterStateHolder } from './cache'
+import { EmptyFun, GetValue, run } from 'wy-helper'
+import { hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from './cache'
 import { StateHolder } from './stateHolder'
 
 export * from './renderForEach'
@@ -17,5 +17,27 @@ export function render(create: EmptyFun) {
   hookAlterStateHolder(undefined)
   return () => {
     stateHolder.destroy()
+  }
+}
+
+
+export function renderStateHolder<T>(fun: GetValue<T>) {
+  const c = hookCurrentStateHolder()!
+  const before = hookAlterStateHolder(new StateHolder(
+    c,
+    c.contexts.length
+  ))
+  const o = fun()
+  hookAlterStateHolder(before)
+  return o
+}
+
+export function renderSubOps(fun: EmptyFun) {
+  const children: any[] | undefined = []
+  const beforeChildren = hookAlterChildren(children)
+  fun()
+  hookAlterChildren(beforeChildren)
+  return function () {
+    return children
   }
 }
