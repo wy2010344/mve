@@ -1,6 +1,7 @@
 import { hookAddDestroy } from "mve-core";
-import { createAnimateSignal, GetDeltaXAnimationConfig, GetValue, SetValue, trackSignal } from "wy-helper";
+import { GetValue, SetValue, trackSignal } from "wy-helper";
 export * from './renderMap'
+export * from './renderIf'
 
 export function hookTrackSignal<T>(get: GetValue<T>, set: SetValue<T>): void;
 export function hookTrackSignal<T, A>(get: GetValue<T>, set: (v: T, a: A) => void, a: A): void;

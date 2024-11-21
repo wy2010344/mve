@@ -9,7 +9,7 @@ export type ItemWithIndex<T> = {
 export function renderArray<T, K>(
   getVs: GetValue<ReadArray<T>>,
   getKey: (v: T, i: number) => K,
-  render: (get: GetValue<Readonly<ItemWithIndex<T>>>) => void,
+  render: (get: GetValue<Readonly<ItemWithIndex<T>>>, key: K) => void,
   createMap?: <V>() => RMap<K, V>
 ) {
   renderForEach<Readonly<ItemWithIndex<T>>, K, void>(

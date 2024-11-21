@@ -3,7 +3,7 @@ import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, v
 import { hookTrackSignal } from "mve-helper"
 import { CSSProperties, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
-import { hookBuildChildren } from "./hookChildren"
+import { renderPortal } from "./hookChildren"
 
 export type OrFun<T extends {}> = {
   [key in keyof T]: T[key] | GetValue<T[key]>
@@ -242,7 +242,7 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   }
   render(fun: (node: N) => void = emptyFun): N {
     const node = this.useHelper()
-    hookBuildChildren(node, fun)
+    renderPortal(node, fun)
     return node
   }
 }

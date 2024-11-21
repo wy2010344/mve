@@ -4,9 +4,11 @@ import magnifiedDock from './magnified-dock'
 import observer from './oberver'
 import konvaDemo from './konva-demo'
 import canvas from './canvas'
+import changePortal from './changePortal'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
+  // changePortal()
   canvas()
   // konvaDemo()
   // observer()
