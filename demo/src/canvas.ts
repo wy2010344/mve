@@ -64,7 +64,7 @@ export default function () {
       hookRect({
         x: 100,
         y: 100,
-        path: colorRectPath(),
+        draw: colorRectPath(),
         // draw(ctx, x, y) {
         //   const p = new Path2D()
         //   drawRoundedRect(p, {
@@ -85,24 +85,24 @@ export default function () {
           hookRect({
             x: 10,
             y: 10,
-            path: colorRectPath(),
+            draw: colorRectPath(),
           })
           hookRect({
             x: 40,
             y: 40,
-            path: colorRectPath("yellow", true),
+            draw: colorRectPath("yellow", true),
             children() {
               hookRect({
                 x: 0,
                 y: 10,
-                path: colorRectPath('orange'),
+                draw: colorRectPath('orange'),
               })
 
 
               hookRect({
                 x: 0,
                 y: 30,
-                path: colorRectPath('yellow'),
+                draw: colorRectPath('yellow'),
               })
             }
           })
@@ -114,7 +114,7 @@ export default function () {
               y() {
                 return getRow().index * 20 + 100
               },
-              path: colorRectPath('red'),
+              draw: colorRectPath('red'),
               onClick(e) {
                 console.log("a", getRow())
                 return true
