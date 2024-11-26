@@ -1,4 +1,4 @@
-import { emptyArray, quote, createSignal, trackSignal } from "wy-helper"
+import { emptyArray, quote, createSignal, trackSignal, memo } from "wy-helper"
 import { createRoot, dom } from 'mve-dom'
 import { renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
@@ -36,6 +36,18 @@ export default () => {
         }
       }).renderText`abc`
     })
+
+
+    const ab = memo(() => {
+      console.log("ab", a.get() + b.get())
+      return a.get() + b.get()
+    })
+
+    dom.div({
+      onClick() {
+        console.log("sab", ab())
+      }
+    }).renderText`测试memo`
     const list = createSignal<number[]>(emptyArray as number[])
     dom.button({
       onClick() {
