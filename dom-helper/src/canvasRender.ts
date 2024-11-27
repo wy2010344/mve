@@ -1,7 +1,8 @@
 import { hookAddResult, hookAlterChildren } from "mve-core"
-import { hookTrackSignal } from "mve-helper"
+import { getRenderChildren } from "mve-dom"
+import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export function hookRect(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -10,14 +11,6 @@ export function hookRect(rect: CNodeConfigure) {
 }
 
 type MyCtx = Omit<CanvasRenderingContext2D, 'translate' | 'reset' | 'save' | 'restore'>
-function toCall(rect: CNodeConfigure, key: PointKey) {
-  const x = rect[key]
-  if (typeof x == 'function') {
-    return memo(x)
-  } else {
-    return asLazy(x)
-  }
-}
 
 export interface CMNode {
   x: GetValue<number>
@@ -30,15 +23,15 @@ class CNode implements CMNode {
   constructor(
     public readonly configure: CNodeConfigure
   ) {
-    this.x = toCall(configure, 'x')
-    this.y = toCall(configure, 'y')
+    this.x = valueOrGetToGet(configure.x, true)
+    this.y = valueOrGetToGet(configure.y, true)
     if (configure.beforeChildren) {
-      this.beforeChildren = canvasChildren(configure.beforeChildren)
+      this.beforeChildren = getRenderChildren<CNode, undefined>(configure.beforeChildren, undefined)
     } else {
       this.beforeChildren = asLazy(emptyArray as any[])
     }
     if (configure.children) {
-      this.children = canvasChildren(configure.children)
+      this.children = getRenderChildren<CNode, undefined>(configure.children, undefined)
     } else {
       this.children = asLazy(emptyArray as any[])
     }
@@ -96,40 +89,11 @@ export type PathResult = {
   operates?: Path2DOperate[]
 }
 
-type CanvasChild = CNode | (() => CanvasChild[])
-
-
-function purifyList(children: CanvasChild[], list: CNode[]) {
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i]
-    if (typeof child == 'function') {
-      purifyList(child(), list)
-    } else {
-      list.push(child)
-    }
-  }
-}
-
-
-
-
-function canvasChildren(fun: EmptyFun) {
-  const list: CanvasChild[] = []
-  const beforeList = hookAlterChildren(list)
-  fun()
-  hookAlterChildren(beforeList)
-  return memo(() => {
-    const newList: CNode[] = []
-    purifyList(list, newList)
-    return newList
-  })
-}
-
 export function renderCanvas(
   canvas: HTMLCanvasElement,
   children: EmptyFun
 ) {
-  const getChildren = canvasChildren(children)
+  const getChildren = getRenderChildren<CNode, undefined>(children, undefined)
   let _ctx: CanvasRenderingContext2D
   let _children: CNode[]
 
@@ -192,7 +156,7 @@ export function renderCanvas(
       }
     )
   })
-  hookTrackSignal(memo(() => {
+  hookTrackSignalMemo(() => {
     const ctx = canvas.getContext("2d")!
     function prepare(getChildren: GetValue<CNode[]>, parent?: CNode) {
       getChildren().forEach((child, i) => {
@@ -228,5 +192,5 @@ export function renderCanvas(
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx
-  }), emptyFun)
+  }, emptyFun)
 }
