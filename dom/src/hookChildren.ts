@@ -1,67 +1,78 @@
-import { emptyArray, SetValue } from "wy-helper"
+import { emptyArray, EmptyFun, memo, quote, SetValue } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
-import { hookTrackSignal } from "mve-helper"
+import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 
 
 
 
 
-export type HookChild = Node | (() => HookChild[])
+export type HookChild<T> = T | (() => HookChild<T>[])
 
 
 
 
-function purifyList(children: HookChild[], list: Node[]) {
+function purifyList<T>(children: HookChild<T>[], list: T[]) {
   for (let i = 0; i < children.length; i++) {
     const child = children[i]
     if (typeof child == 'function') {
-      purifyList(child(), list)
+      purifyList((child as any)(), list)
     } else {
       list.push(child)
     }
   }
 }
 
-export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
-  const list: HookChild[] = []
+export function getRenderChildren<T, N>(fun: SetValue<N>, n: N) {
+  const list: HookChild<T>[] = []
   const beforeList = hookAlterChildren(list)
-  fun(node)
+  fun(n)
   hookAlterChildren(beforeList)
-  let lastList = emptyArray as Node[]
-  hookTrackSignal(() => {
-    const newList: Node[] = []
+  return memo(function () {
+    const newList: T[] = []
     purifyList(list, newList)
     return newList
-  }, (newList) => {
-    lastList = changeChildren(node, newList, lastList)
   })
 }
 
+export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
+  hookTrackSignal(
+    getRenderChildren<T, T>(fun, node),
+    diffChangeChildren(node, quote)
+  )
+}
 
-function changeChildren(pNode: Node, newList: Node[], oldList: Node[]) {
-  let changed = false
-  let beforeNode: Node | null = null
-  for (let i = 0; i < newList.length; i++) {
-    const newChild = newList[i]
-    if (changed) {
-      if (newChild != beforeNode) {
-        pNode.insertBefore(newChild, beforeNode)
+export function diffChangeChildren<T>(
+  pNode: Node,
+  get: (v: T) => Node) {
+  let oldList: T[] = emptyArray as T[]
+  return function (
+    newList: T[]
+  ) {
+    let changed = false
+    let beforeNode: Node | null = null
+    for (let i = 0; i < newList.length; i++) {
+      const newChild = get(newList[i])
+      if (changed) {
+        if (newChild != beforeNode) {
+          pNode.insertBefore(newChild, beforeNode)
+        } else {
+          beforeNode = beforeNode?.nextSibling
+        }
       } else {
-        beforeNode = beforeNode?.nextSibling
-      }
-    } else {
-      const lastChild = oldList[i]
-      if (newChild != lastChild) {
-        changed = true
-        pNode.insertBefore(newChild, lastChild)
-        beforeNode = lastChild
+        const lastChild = get(oldList[i])
+        if (newChild != lastChild) {
+          changed = true
+          pNode.insertBefore(newChild, lastChild)
+          beforeNode = lastChild
+        }
       }
     }
+    oldList.forEach(last => {
+      const lastChild = get(last)
+      if (!newList.includes(last) && lastChild.parentNode == pNode) {
+        lastChild.parentNode?.removeChild(lastChild)
+      }
+    })
+    oldList = newList
   }
-  oldList.forEach(lastChild => {
-    if (!newList.includes(lastChild) && lastChild.parentNode == pNode) {
-      lastChild.parentNode?.removeChild(lastChild)
-    }
-  })
-  return newList
 }
