@@ -1,5 +1,5 @@
 import { hookAddResult, hookAlterChildren } from "mve-core"
-import { hookTrackSignal } from "mve-helper"
+import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
 import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
@@ -192,7 +192,7 @@ export function renderCanvas(
       }
     )
   })
-  hookTrackSignal(memo(() => {
+  hookTrackSignalMemo(() => {
     const ctx = canvas.getContext("2d")!
     function prepare(getChildren: GetValue<CNode[]>, parent?: CNode) {
       getChildren().forEach((child, i) => {
@@ -228,5 +228,5 @@ export function renderCanvas(
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx
-  }), emptyFun)
+  }, emptyFun)
 }
