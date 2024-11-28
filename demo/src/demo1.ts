@@ -1,4 +1,4 @@
-import { emptyArray, quote, createSignal, trackSignal, memo } from "wy-helper"
+import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef } from "wy-helper"
 import { createRoot, dom } from 'mve-dom'
 import { renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
@@ -49,10 +49,12 @@ export default () => {
       }
     }).renderText`测试memo`
     const list = createSignal<number[]>(emptyArray as number[])
+    const list1 = createSignal<number[]>(emptyArray as number[])
     dom.button({
       onClick() {
         a.set(a.get() + 1)
         b.set(b.get() + 2)
+        list1.set([Date.now()].concat(list1.get()))
         list.set(list.get().concat(Date.now()))
       }
     }).renderText`点击${a.get}`
@@ -68,17 +70,27 @@ export default () => {
 
     dom.hr().render()
 
-    renderArray(list.get, quote, getRow => {
-      dom.div().renderText`---${() => getRow().item}--- ${() => getRow().index}---`
-      dom.button({
-        onClick() {
-          list.set(list.get().filter(v => v != getRow().item))
-        }
-      }).renderText`删除`
-      count()
-      hookAddDestroy(() => {
-        console.log("销毁了...")
-      })
+
+    dom.div().render(() => {
+      renderList(list1)
+      dom.hr().render()
+      renderList(list)
+    })
+  })
+}
+
+function renderList(list: StoreRef<number[]>) {
+
+  renderArray(list.get, quote, getRow => {
+    dom.div().renderText`---${() => getRow().item}--- ${() => getRow().index}---`
+    dom.button({
+      onClick() {
+        list.set(list.get().filter(v => v != getRow().item))
+      }
+    }).renderText`删除`
+    count()
+    hookAddDestroy(() => {
+      console.log("销毁了...")
     })
   })
 }

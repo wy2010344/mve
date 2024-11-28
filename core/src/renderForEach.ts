@@ -1,4 +1,4 @@
-import { alawaysTrue, EmptyFun, GetValue, memo, trackSignal, RMap, normalMapCreater } from "wy-helper"
+import { alawaysTrue, EmptyFun, GetValue, memo, trackSignal, RMap, normalMapCreater, memoKeep } from "wy-helper"
 import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
 import { StateHolder } from "./stateHolder"
 
@@ -89,12 +89,15 @@ export function renderForEach<T, K, O>(
       thisChildren.push(x)
       return x.getOut
     })
-  }, alawaysTrue)
-  stateHolder.addDestroy(trackSignal(createSignal, () => {
+
+    memoKeep(afterWork)
+    return newMap
+  })
+  function afterWork() {
     //清理、销毁事件
     oldMap.forEach(function (values) {
       values.forEach(value => {
-        stateHolder.removeChild(value.stateHolder)
+        stateHolder!.removeChild(value.stateHolder)
       })
     })
     //构造新的
@@ -110,7 +113,7 @@ export function renderForEach<T, K, O>(
     })
     //重新生成
     cacheMap = newMap
-  }))
+  }
   hookAddResult(() => {
     createSignal()
     return thisChildren.flatMap(child => child.children)
