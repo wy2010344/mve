@@ -1,8 +1,8 @@
-import { hookAddResult, hookAlterChildren } from "mve-core"
+import { hookAddResult } from "mve-core"
 import { getRenderChildren } from "mve-dom"
 import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export function hookRect(rect: CNodeConfigure) {
   const n = new CNode(rect)
