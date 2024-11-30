@@ -1,4 +1,4 @@
-import { emptyArray, EmptyFun, memo, quote, SetValue } from "wy-helper"
+import { emptyArray, emptyFun, EmptyFun, memo, quote, SetValue } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
 import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 
@@ -37,13 +37,15 @@ export function getRenderChildren<T, N>(fun: SetValue<N>, n: N) {
 export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
   hookTrackSignal(
     getRenderChildren<T, T>(fun, node),
-    diffChangeChildren(node, quote)
+    diffChangeChildren(node, quote, emptyFun)
   )
 }
 
 export function diffChangeChildren<T>(
   pNode: Node,
-  get: (v: T) => Node) {
+  get: (v: T) => Node,
+  operate: (v: T, i: number) => void
+) {
   let oldList: T[] = emptyArray as T[]
   return function (
     newList: T[]
@@ -51,7 +53,9 @@ export function diffChangeChildren<T>(
     let changed = false
     let beforeNode: Node | null = null
     for (let i = 0; i < newList.length; i++) {
-      const newChild = get(newList[i])
+      const nl = newList[i]
+      operate(nl, i)
+      const newChild = get(nl)
       if (changed) {
         if (newChild != beforeNode) {
           pNode.insertBefore(newChild, beforeNode)
