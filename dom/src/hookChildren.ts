@@ -1,9 +1,12 @@
-import { emptyArray, emptyFun, EmptyFun, memo, quote, SetValue } from "wy-helper"
+import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
 import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 
 
 
+export type OrFun<T extends {}> = {
+  [key in keyof T]: T[key] | GetValue<T[key]>
+}
 
 
 export type HookChild<T> = T | (() => HookChild<T>[])
@@ -63,7 +66,8 @@ export function diffChangeChildren<T>(
           beforeNode = beforeNode?.nextSibling
         }
       } else {
-        const lastChild = get(oldList[i])
+        const ol = oldList[i]
+        const lastChild = ol ? get(ol) : null
         if (newChild != lastChild) {
           changed = true
           pNode.insertBefore(newChild, lastChild)

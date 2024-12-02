@@ -1,9 +1,10 @@
 // import { createNodeTempOps, } from "./util"
 // import { addRender, getEnvModel, hookAddResult, hookBeginTempOps, hookEndTempOps } from "better-react"
-import { BDomAttribute, DomElement, DomElementType, React } from "wy-dom-helper"
+import { BDomAttribute, BDomEvent, DomElement, DomElementType, React } from "wy-dom-helper"
 import { emptyObject } from "wy-helper"
 import { domTagNames } from "wy-dom-helper"
-import { NodeCreater, OrFun, StyleGetProps, StyleProps } from "./node"
+import { NodeCreater, StyleGetProps, StyleProps } from "./node"
+import { OrFun } from "./hookChildren"
 
 const emptyKeys = ['href', 'className']
 export function updateDomProps(node: any, key: string, value?: any) {
@@ -21,14 +22,18 @@ export function updateDomProps(node: any, key: string, value?: any) {
 function create(type: string) {
   return document.createElement(type)
 }
+
+type DomAttribute<T extends DomElementType> = BDomAttribute<T> & React.AriaAttributes & {
+  [key in `data-${string}`]?: string | number | boolean
+}
 /**
  * 静态的
  * 动态的
  */
-type DomEffectAttr<T extends DomElementType> = (OrFun<BDomAttribute<T>>
+type DomEffectAttr<T extends DomElementType> = (OrFun<DomAttribute<T>>
   & StyleProps
-  & React.DOMAttributes<DomElement<T>>)
-  | (() => (BDomAttribute<T> & StyleGetProps))
+  & BDomEvent<T>)
+  | (() => (DomAttribute<T> & StyleGetProps))
 type DomCreater<key extends DomElementType> = NodeCreater<key, DomElement<key>, DomEffectAttr<key>>
 let dom: {
   readonly [key in DomElementType]: {

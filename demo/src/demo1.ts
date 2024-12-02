@@ -1,5 +1,5 @@
 import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef } from "wy-helper"
-import { createRoot, dom } from 'mve-dom'
+import { createRoot, dom, renderDom, renderSvg, svg } from 'mve-dom'
 import { renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
 
@@ -77,6 +77,37 @@ export default () => {
       renderList(list)
     })
   })
+
+  svg.svg().render(() => {
+    svg.rect({
+      width: 400,
+      height: 300,
+    }).render()
+  })
+  renderSvg("svg", {
+    children() {
+      renderSvg("rect", {
+        a_width: 89,
+        a_height: 33,
+        s_fill: "red",
+        s_stroke: "blue",
+        s_strokeWidth: 9
+      })
+    }
+  })
+  renderDom("button", {
+    s_display: "flex",
+    children() {
+      renderDom("div", {
+        childrenType: "text",
+        children: "abc"
+      })
+      renderDom("div", {
+        childrenType: "text",
+        children: "bbb"
+      })
+    }
+  })
 }
 
 function renderList(list: StoreRef<number[]>) {
@@ -89,7 +120,7 @@ function renderList(list: StoreRef<number[]>) {
       }
     }).renderText`删除`
     count()
-    hookAddDestroy(() => {
+    hookAddDestroy()(() => {
       console.log("销毁了...")
     })
   })
