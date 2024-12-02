@@ -8,6 +8,7 @@ export class StateHolder {
     public readonly parentContextIndex: number = 0
   ) {
     this.parent?.children.add(this)
+    this.addDestroy = this.addDestroy.bind(this)
   }
   private destroyList: EmptyFun[] = []
   addDestroy(destroy: EmptyFun) {

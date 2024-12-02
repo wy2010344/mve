@@ -7,6 +7,6 @@ export function animateSignal(
   config: GetDeltaXAnimationConfig = defaultSpringBaseAnimationConfig
 ) {
   const [ret, destroy] = createAnimateSignal(animateFrame, get, config)
-  hookAddDestroy(destroy)
+  hookAddDestroy()(destroy)
   return ret
 }
