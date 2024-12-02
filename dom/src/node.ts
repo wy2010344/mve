@@ -3,11 +3,8 @@ import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, v
 import { hookTrackSignalMemo } from "mve-helper"
 import { CSSProperties, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
-import { renderPortal } from "./hookChildren"
+import { OrFun, renderPortal } from "./hookChildren"
 
-export type OrFun<T extends {}> = {
-  [key in keyof T]: T[key] | GetValue<T[key]>
-}
 
 export type StyleProps = {
   style?: string | GetValue<string> | GetValue<CSSProperties> | OrFun<CSSProperties>
@@ -185,7 +182,7 @@ function mergeEvent(node: any, key: string, value: any) {
   node.addEventListener(eventType, value, capture)
 }
 
-const Capture = "capture"
+const Capture = "Capture"
 export function mergeEvents(events: any, node: any) {
   for (const key in events) {
     const value = events[key]

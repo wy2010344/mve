@@ -7,6 +7,7 @@ import canvas from './canvas'
 import changePortal from './changePortal'
 import clipDemo from './clipDemo'
 import tree from './tree'
+import absoluteDemo from './absoluteDemo'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
@@ -14,8 +15,9 @@ const destroy = createRoot(app, () => {
   // canvas()
   // konvaDemo()
   // observer()
-  // demo1()
-  tree()
+  demo1()
+  // tree()
+  // absoluteDemo(app)
   // clipDemo()
   // magnifiedDock()
 })

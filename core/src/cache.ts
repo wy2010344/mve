@@ -26,14 +26,23 @@ export function hookAddResult(node: any) {
 }
 
 
-export function hookAddDestroy(fun: EmptyFun) {
+export function hookAddDestroy() {
   const stateHolder = mveGlobal.stateHolder
   if (stateHolder) {
-    stateHolder.addDestroy(fun)
+    return stateHolder.addDestroy
   } else {
-    throw '不在render执行添加到Destroy'
+    throw '不在render中获得Destroy'
   }
 }
+
+// export function hookDestroy(fun: EmptyFun) {
+//   const stateHolder = mveGlobal.stateHolder
+//   if (stateHolder) {
+//     return stateHolder.addDestroy(fun)
+//   } else {
+//     throw '不在render执行添加到Destroy'
+//   }
+// }
 
 export function hookAlterStateHolder(stateHolder?: StateHolder) {
   const before = mveGlobal.stateHolder
