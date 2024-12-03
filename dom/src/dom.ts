@@ -1,6 +1,6 @@
 // import { createNodeTempOps, } from "./util"
 // import { addRender, getEnvModel, hookAddResult, hookBeginTempOps, hookEndTempOps } from "better-react"
-import { BDomAttribute, BDomEvent, DomElement, DomElementType, React } from "wy-dom-helper"
+import { BDomAttribute, BDomEvent, DataAttr, DomElement, DomElementType, React } from "wy-dom-helper"
 import { emptyObject } from "wy-helper"
 import { domTagNames } from "wy-dom-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
@@ -23,9 +23,7 @@ function create(type: string) {
   return document.createElement(type)
 }
 
-type DomAttribute<T extends DomElementType> = BDomAttribute<T> & React.AriaAttributes & {
-  [key in `data-${string}`]?: string | number | boolean
-}
+type DomAttribute<T extends DomElementType> = BDomAttribute<T> & React.AriaAttributes & DataAttr
 /**
  * 静态的
  * 动态的

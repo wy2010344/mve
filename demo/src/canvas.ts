@@ -116,7 +116,7 @@ export default function () {
               },
               draw: colorRectPath('red'),
               onClick(e) {
-                console.log("a", getRow())
+                console.log("a", e, getRow())
                 return true
               },
             })
