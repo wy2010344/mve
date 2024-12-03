@@ -1,10 +1,8 @@
-import { hookAddDestroy, hookAddResult, hookAlterChildren } from "mve-core"
-import { diffChangeChildren, getRenderChildren, OrFun } from "mve-dom"
-import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
-import { config } from "process"
-import { BDomAttribute, BDomEvent, BSvgAttribute, BSvgEvent, CSSProperties, DomElement, DomElementType, isSVG, React, SvgElement, SvgElementType } from "wy-dom-helper"
-import { addEffect, asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import * as CSS from 'csstype';
+import { hookAddDestroy, hookAddResult } from "mve-core"
+import { ChildAttr, diffChangeChildren, DomAttribute, getRenderChildren, OrFun, renderNodeAttr, SvgAttribute } from "mve-dom"
+import { hookTrackSignal } from "mve-helper"
+import { BDomEvent, BSvgEvent, DomElement, DomElementType, isSVG, SvgElement, SvgElementType } from "wy-dom-helper"
+import { addEffect, asLazy, emptyArray, EmptyFun, GetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
 
@@ -23,56 +21,41 @@ interface AbsoluteConfigure {
   y: ValueOrGet<number>
   width: ValueOrGet<number>
   height: ValueOrGet<number>
-  children?(): void
 }
 
-type ACssProperties = Omit<CSS.Properties<string | number>,
-  'position' | 'display' | 'left' | 'right' | 'top' | 'bottom' | 'width' | 'height'>
-type BCssProperties = {
-  [key in keyof ACssProperties as `s_${key}`]: ACssProperties[key]
+type DomConfigure<T extends DomElementType> = OrFun<
+  Omit<DomAttribute<T>, 's_width'
+    | 's_height'
+    | 's_position'
+    | 's_display'
+    | 's_left'
+    | 's_right'
+    | 's_top'
+    | 's_bottom'>
+> & BDomEvent<T> & ChildAttr<DomElement<T>>
+
+type SvgConfigure<T extends SvgElementType> = OrFun<
+  Omit<SvgAttribute<T>, 's_width'
+    | 's_height'
+    | 's_position'
+    | 's_display'
+    | 's_left'
+    | 's_right'
+    | 's_top'
+    | 's_bottom'>
+> & BSvgEvent<T> & ChildAttr<SvgElement<T>>
+
+export function renderADom<T extends DomElementType>(type: T, arg: DomConfigure<T> & AbsoluteConfigure): MAbsoluteNode {
+  const target = document.createElement(type)
+  return renderAbsolute(target, arg, false)
 }
-
-type BDomAttributeC<T extends DomElementType> = Omit<BDomAttribute<T>, 'className'>
-
-type BDomAttributeCS<T extends DomElementType> = {
-  [key in keyof BDomAttributeC<T> as (key extends string ? `a_${key}` : key)]: BDomAttributeC<T>[key]
+export function renderASvg<T extends SvgElementType>(type: T, arg: SvgConfigure<T> & AbsoluteConfigure): MAbsoluteNode {
+  const target = document.createElementNS("http://www.w3.org/2000/svg", type)
+  return renderAbsolute(target, arg, true)
 }
+function renderAbsolute(target: any, c: any, svg: boolean) {
 
-
-type BSvgAttributeC<T extends SvgElementType> = Omit<BSvgAttribute<T>, 'className'>
-type BSvgAttributeCS<T extends SvgElementType> = {
-  [key in keyof BSvgAttributeC<T> as (key extends string ? `a_${key}` : key)]: BSvgAttributeC<T>[key]
-}
-
-type ReplaceDashWithUnderscore<Key> = Key extends string
-  ? Key extends `${infer Prefix}-${infer Suffix}`
-  ? `${ReplaceDashWithUnderscore<Prefix>}_${ReplaceDashWithUnderscore<Suffix>}`
-  : Key
-  : Key;
-
-
-type AriaAttribute = {
-  [key in keyof React.AriaAttributes as ReplaceDashWithUnderscore<key>]: React.AriaAttributes[key]
-}
-
-type DomConfigure<T extends DomElementType> = {
-  type: T
-  className?: ValueOrGet<string>
-} & OrFun<BDomAttributeCS<T>> & BDomEvent<T> & OrFun<BCssProperties> & OrFun<AriaAttribute> & OrFun<DataAttribute> & OrFun<CssVaribute>
-type SvgConfigure<T extends SvgElementType> = {
-  type: T
-  className?: ValueOrGet<string>
-} & OrFun<BSvgAttributeCS<T>> & BSvgEvent<T> & OrFun<BCssProperties> & OrFun<AriaAttribute> & OrFun<DataAttribute> & OrFun<CssVaribute>
-
-type DataAttribute = {
-  [key in `data_${string}`]?: string | number | boolean
-}
-type CssVaribute = {
-  [key in `css_${string}`]?: string | number | boolean
-}
-type AllConfigure = AbsoluteConfigure & (DomConfigure<DomElementType> | SvgConfigure<SvgElementType>)
-export function hookAbsolute(c: AllConfigure) {
-  const n = new MAbsoluteNode(c)
+  const n = new MAbsoluteNode(target, svg, c)
   hookAddResult(n)
   hookTrackSignal(
     n.children as GetValue<MAbsoluteNode[]>,
@@ -88,22 +71,7 @@ export function hookAbsolute(c: AllConfigure) {
     addDestroy(trackSignal(n.height, x => n.target.style.height = x + 'px'))
   }, -1)
   addEffect(() => {
-    const c = n.configure as any
-    for (const key in c) {
-      if (key.startsWith("s_")) {
-        //style
-      } else if (key.startsWith("a_")) {
-        //attribute
-      } else if (key.startsWith("aria_")) {
-        //aria
-      } else if (key.startsWith("data_")) {
-        //data-attribute
-      } else if (key.startsWith("css_")) {
-        //css-variable
-      } else if (key == 'className') {
-        //className
-      }
-    }
+    renderNodeAttr(n.target, n.configure, svg ? 'svg' : 'dom')
   })
   return n
 }
@@ -113,31 +81,20 @@ function getTarget(n: MAbsoluteNode): Node {
 }
 class MAbsoluteNode implements AbsoluteNode<any> {
   constructor(
-    public readonly configure: AllConfigure
+    public readonly target: any,
+    public readonly isSVG: boolean,
+    public readonly configure: any
   ) {
-    this.target = isSVG(configure.type)
-      ? document.createElementNS("http://www.w3.org/2000/svg", configure.type)
-      : document.createElement(configure.type)
 
     this.x = valueOrGetToGet(configure.x, true)
     this.y = valueOrGetToGet(configure.y, true)
     this.width = valueOrGetToGet(configure.width, true)
     this.height = valueOrGetToGet(configure.height, true)
 
-    if (configure.children) {
-      this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(configure.children, this)
+    if (!configure.childrenType && configure.children) {
+      this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(() => configure.children!(this.target), this)
     } else {
       this.children = asLazy(emptyArray as any[])
-    }
-    const c = configure as any
-    for (let key in c) {
-      if (key.startsWith("on")) {
-        if (key.endsWith("Capture")) {
-
-        } else {
-
-        }
-      }
     }
   }
   x: GetValue<number>
@@ -172,9 +129,6 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     this.parentGetChildren()
     return this._index
   }
-
-
-  target: any
 }
 
 /**

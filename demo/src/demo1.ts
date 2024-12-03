@@ -31,7 +31,7 @@ export default () => {
 
           position: 'absolute'
         },
-        onClick() {
+        onClick(e) {
           console.log("click")
         }
       }).renderText`abc`
@@ -71,7 +71,14 @@ export default () => {
     dom.hr().render()
 
 
-    dom.div().render(() => {
+    dom.div({
+      "data-abc": "999",
+      "aria-hidden": true,
+      style: {
+        "--abc": 99,
+        left: '30px'
+      }
+    }).render(() => {
       renderList(list1)
       dom.hr().render()
       renderList(list)
@@ -105,6 +112,15 @@ export default () => {
       renderDom("div", {
         childrenType: "text",
         children: "bbb"
+      })
+      renderSvg("svg", {
+        children() {
+          renderSvg("rect", {
+            a_x: 9,
+            a_y: 8,
+            css_abc: 98
+          })
+        }
       })
     }
   })
