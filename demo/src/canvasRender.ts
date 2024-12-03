@@ -1,4 +1,5 @@
-import { hookAddResult, hookAlterChildren } from "mve-core"
+import { hookAddResult } from "mve-core"
+import { getRenderChildren } from "mve-dom"
 import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
 import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
@@ -33,12 +34,12 @@ class CNode implements CMNode {
     this.x = toCall(configure, 'x')
     this.y = toCall(configure, 'y')
     if (configure.beforeChildren) {
-      this.beforeChildren = canvasChildren(configure.beforeChildren)
+      this.beforeChildren = getRenderChildren(configure.beforeChildren, undefined)
     } else {
       this.beforeChildren = asLazy(emptyArray as any[])
     }
     if (configure.children) {
-      this.children = canvasChildren(configure.children)
+      this.children = getRenderChildren(configure.children, undefined)
     } else {
       this.children = asLazy(emptyArray as any[])
     }
@@ -87,8 +88,28 @@ interface CNodeConfigure {
   //这里可能有children()
   children?(): void
 
-  onClick?(e: MouseEvent): any
-  onClickCapture?(e: MouseEvent): any
+  onClick?(e: CanvasMouseEvent<MouseEvent>): any
+  onMouseDown?(e: CanvasMouseEvent<MouseEvent>): any
+  onMouseUp?(e: CanvasMouseEvent<MouseEvent>): any
+  onPointerDown?(e: CanvasMouseEvent<PointerEvent>): any
+  onPointerUp?(e: CanvasMouseEvent<PointerEvent>): any
+
+
+  onClickCapture?(e: CanvasMouseEvent<MouseEvent>): any
+  onMouseDownCapture?(e: CanvasMouseEvent<MouseEvent>): any
+  onMouseUpCapture?(e: CanvasMouseEvent<MouseEvent>): any
+  onPointerDownCapture?(e: CanvasMouseEvent<PointerEvent>): any
+  onPointerUpCapture?(e: CanvasMouseEvent<PointerEvent>): any
+}
+
+
+type CanvasMouseEvent<T> = {
+  x: number
+  y: number
+  inPath: boolean
+  inStroke: boolean
+  original: T
+  node: CNode
 }
 
 export type PathResult = {
@@ -96,101 +117,103 @@ export type PathResult = {
   operates?: Path2DOperate[]
 }
 
-type CanvasChild = CNode | (() => CanvasChild[])
-
-
-function purifyList(children: CanvasChild[], list: CNode[]) {
-  for (let i = 0; i < children.length; i++) {
+function doToEvent(
+  _ctx: CanvasRenderingContext2D,
+  children: CNode[],
+  x: number,
+  y: number,
+  cs: CanvasMouseEvent<undefined>[],
+  callback: (child: CanvasMouseEvent<undefined>) => any
+): boolean {
+  let will = true
+  let i = 0
+  while (will && i < children.length) {
     const child = children[i]
-    if (typeof child == 'function') {
-      purifyList(child(), list)
-    } else {
-      list.push(child)
-    }
-  }
-}
+    const nx = x - child.x()
+    const ny = y - child.y()
 
+    will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
 
-
-
-function canvasChildren(fun: EmptyFun) {
-  const list: CanvasChild[] = []
-  const beforeList = hookAlterChildren(list)
-  fun()
-  hookAlterChildren(beforeList)
-  return memo(() => {
-    const newList: CNode[] = []
-    purifyList(list, newList)
-    return newList
-  })
-}
-
-export function renderCanvas(
-  canvas: HTMLCanvasElement,
-  children: EmptyFun
-) {
-  const getChildren = canvasChildren(children)
-  let _ctx: CanvasRenderingContext2D
-  let _children: CNode[]
-
-  function doToEvent(
-    children: CNode[],
-    x: number,
-    y: number,
-    cs: CNode[],
-    callback: (child: CNode) => any
-  ): boolean {
-    let will = true
-    let i = 0
-    while (will && i < children.length) {
-      const child = children[i]
-      const nx = x - child.x()
-      const ny = y - child.y()
-
-      will = doToEvent(child.beforeChildren(), nx, ny, cs, callback)
-
-      if (will && child.path && (_ctx.isPointInPath(child.path, nx, ny) || _ctx.isPointInStroke(child.path, nx, ny))) {
-        cs.unshift(child)
-        if (callback(child)) {
+    if (will && child.path) {
+      const inPath = _ctx.isPointInPath(child.path, nx, ny)
+      const inStroke = _ctx.isPointInStroke(child.path, nx, ny)
+      if (inPath || inStroke) {
+        const e = {
+          node: child,
+          x: nx,
+          y: ny,
+          inPath,
+          inStroke,
+          original: undefined
+        }
+        cs.unshift(e)
+        if (callback(e)) {
           will = false
           cs.length = 0
         }
       }
-      if (will) {
-        will = doToEvent(child.children(), nx, ny, cs, callback)
-        i++
-      }
     }
-    return will
+    if (will) {
+      will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
+      i++
+    }
   }
+  return will
+}
 
-  function doEvent(
-    children: CNode[],
-    x: number,
-    y: number,
-    capture: (child: CNode) => any,
-    back: (child: CNode) => any
-  ) {
-    const cs: CNode[] = []
-    doToEvent(children, x, y, cs, capture)
-    for (let i = 0; i < cs.length; i++) {
-      if (back(cs[i])) {
-        return
-      }
+function doEvent(_ctx: CanvasRenderingContext2D,
+  children: CNode[],
+  x: number,
+  y: number,
+  capture: (child: CanvasMouseEvent<undefined>) => any,
+  back: (child: CanvasMouseEvent<undefined>) => any
+) {
+  const cs: CanvasMouseEvent<undefined>[] = []
+  doToEvent(_ctx, children, x, y, cs, capture)
+  for (let i = 0; i < cs.length; i++) {
+    if (back(cs[i])) {
+      return
     }
   }
-  canvas.addEventListener("click", e => {
-    doEvent(
-      _children,
-      e.offsetX,
-      e.offsetY,
-      child => {
-        return child.configure.onClickCapture?.(e)
-      },
-      child => {
-        return child.configure.onClick?.(e)
-      }
-    )
+}
+
+
+
+const mouseEvents = (['onClick', 'onMouseDown', 'onMouseUp', 'onPointerDown', 'onPointerUp'] as const).map(name => {
+  return {
+    name: name.slice(2).toLowerCase(),
+    onEvent: name,
+    onCaptureEvent: name + 'Capture'
+  }
+})
+export function renderCanvas(
+  canvas: HTMLCanvasElement,
+  children: EmptyFun
+) {
+  const getChildren = getRenderChildren<CNode, undefined>(children, undefined)
+  let _ctx: CanvasRenderingContext2D
+  let _children: CNode[]
+
+
+  mouseEvents.forEach(me => {
+    canvas.addEventListener(me.name as 'click', e => {
+      doEvent(
+        _ctx,
+        _children,
+        e.offsetX,
+        e.offsetY,
+        child => {
+          const c = child as unknown as CanvasMouseEvent<MouseEvent>
+          c.original = e
+          return child.node.configure[me.onCaptureEvent as 'onClickCapture']?.(c)
+        },
+        child => {
+          const c = child as unknown as CanvasMouseEvent<MouseEvent>
+          c.original = e
+          return child.node.configure[me.onEvent as 'onClick']?.(c)
+        }
+      )
+    })
   })
   hookTrackSignalMemo(() => {
     const ctx = canvas.getContext("2d")!

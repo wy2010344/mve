@@ -19,7 +19,9 @@
     "strict": true,
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "incremental": true, // 启用增量编译
+    "tsBuildInfoFile": "./.tsbuildinfo" // 缓存编译信息
   },
   "include": [
     "src"
