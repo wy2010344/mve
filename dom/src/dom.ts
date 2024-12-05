@@ -1,7 +1,7 @@
 // import { createNodeTempOps, } from "./util"
 // import { addRender, getEnvModel, hookAddResult, hookBeginTempOps, hookEndTempOps } from "better-react"
 import { BDomAttribute, BDomEvent, DataAttr, DomElement, DomElementType, React } from "wy-dom-helper"
-import { emptyObject } from "wy-helper"
+import { createOrProxy, emptyObject } from "wy-helper"
 import { domTagNames } from "wy-dom-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
 import { OrFun } from "./hookChildren"
@@ -33,48 +33,18 @@ type DomEffectAttr<T extends DomElementType> = (OrFun<DomAttribute<T>>
   & BDomEvent<T>)
   | (() => (DomAttribute<T> & StyleGetProps))
 type DomCreater<key extends DomElementType> = NodeCreater<key, DomElement<key>, DomEffectAttr<key>>
-let dom: {
+export const dom: {
   readonly [key in DomElementType]: {
     (props?: DomEffectAttr<key>): DomCreater<key>
   }
-}
-if ('Proxy' in globalThis) {
-  const cacheDomMap = new Map<string, any>()
-  dom = new Proxy(emptyObject as any, {
-    get(_target, p, _receiver) {
-      const oldV = cacheDomMap.get(p as any)
-      if (oldV) {
-        return oldV
-      }
-      const newV = function (args: any) {
-        const creater = NodeCreater.instance
-        creater.type = p as any
-        creater.create = create
-        creater.updateProps = updateDomProps
+} = createOrProxy(domTagNames, tag => {
+  return function (args: any) {
+    const creater = NodeCreater.instance
+    creater.type = tag as any
+    creater.create = create
+    creater.updateProps = updateDomProps
 
-        creater.attrsEffect = args
-        return creater
-      }
-      cacheDomMap.set(p as any, newV)
-      return newV
-    }
-  })
-} else {
-  const cacheDom = {} as any
-  dom = cacheDom
-  domTagNames.forEach(function (tag) {
-    cacheDom[tag] = function (args: any) {
-      const creater = NodeCreater.instance
-      creater.type = tag as any
-      creater.create = create
-      creater.updateProps = updateDomProps
-
-      creater.attrsEffect = args
-      return creater
-    }
-  })
-}
-
-export {
-  dom
-}
+    creater.attrsEffect = args
+    return creater
+  } as any
+})

@@ -1,7 +1,7 @@
 
 import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, vTypeisGetValue, GetValue, emptyObject, emptyFun } from "wy-helper"
 import { hookTrackSignalMemo } from "mve-helper"
-import { CSSProperties, React } from "wy-dom-helper"
+import { addEvent, CSSProperties, isEvent, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
 import { OrFun, renderPortal } from "./hookChildren"
 
@@ -101,8 +101,8 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
   } else {
     for (const key in attrsEffect) {
       const value = attrsEffect[key]
-      if (key.startsWith("on")) {
-        mergeEvent(node, key, value)
+      if (isEvent(key)) {
+        addEvent(node, key, value)
       } else {
         if (key == 'style') {
           const tp = typeof value
@@ -172,21 +172,10 @@ function setStyle(v: string | number | undefined, node: any, key: string) {
   node.style[key] = v
 }
 
-function mergeEvent(node: any, key: string, value: any) {
-  let eventType = key.toLowerCase().substring(2)
-  let capture = false
-  if (eventType.endsWith(Capture)) {
-    eventType = eventType.slice(0, eventType.length - Capture.length)
-    capture = true
-  }
-  node.addEventListener(eventType, value, capture)
-}
-
-const Capture = "Capture"
 export function mergeEvents(events: any, node: any) {
   for (const key in events) {
     const value = events[key]
-    mergeEvent(node, key, value)
+    addEvent(node, key, value)
   }
 }
 

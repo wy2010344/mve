@@ -1,5 +1,5 @@
 import { BSvgAttribute, BSvgEvent, DataAttr, getAttributeAlias, React, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
-import { emptyObject } from "wy-helper"
+import { createOrProxy, emptyObject } from "wy-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
 import { updateDomProps } from "./dom"
 import { OrFun } from "./hookChildren"
@@ -37,48 +37,18 @@ function create(type: string) {
 
 type SvgCreater<key extends SvgElementType> = NodeCreater<key, SvgElement<key>, SvgEffectAttr<key>>
 
-let svg: {
+export const svg: {
   readonly [key in SvgElementType]: {
     (props?: SvgEffectAttr<key>): SvgCreater<key>
   }
-}
-if ('Proxy' in globalThis) {
-  const cacheSvgMap = new Map<string, any>()
-  svg = new Proxy(emptyObject as any, {
-    get(_target, p, _receiver) {
-      const oldV = cacheSvgMap.get(p as any)
-      if (oldV) {
-        return oldV
-      }
-      const newV = function (args: any) {
-        const creater = NodeCreater.instance
-        creater.type = p as any
-        creater.create = create
-        creater.updateProps = updateSVGProps
+} = createOrProxy(svgTagNames, tag => {
+  return function (args: any) {
+    const creater = NodeCreater.instance
+    creater.type = tag as any
+    creater.create = create
+    creater.updateProps = updateSVGProps
 
-        creater.attrsEffect = args
-        return creater
-      }
-      cacheSvgMap.set(p as any, newV)
-      return newV
-    }
-  })
-} else {
-  const cacheSvg = {} as any
-  svg = cacheSvg
-  svgTagNames.forEach(function (tag) {
-    cacheSvg[tag] = function (args: any) {
-      const creater = NodeCreater.instance
-      creater.type = tag as any
-      creater.create = create
-      creater.updateProps = updateSVGProps
-
-      creater.attrsEffect = args
-      return creater
-    }
-  })
-}
-
-export {
-  svg
-}
+    creater.attrsEffect = args
+    return creater
+  } as any
+})
