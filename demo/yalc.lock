@@ -2,11 +2,11 @@
   "version": "v1",
   "packages": {
     "wy-helper": {
-      "signature": "25037061a8f347f47779614c3a1dd85b",
+      "signature": "b109de72981fc311ad023ce0e2e5d2e9",
       "file": true
     },
     "wy-dom-helper": {
-      "signature": "8a7db6b4dfbbc0cc3dbb0de8a77fdf75",
+      "signature": "adfe3ed647031b262fa09d9751d7c30b",
       "file": true
     },
     "mve-core": {
@@ -18,7 +18,7 @@
       "file": true
     },
     "mve-dom": {
-      "signature": "ec58e8ebbe68a4523c5f8e25b9ce9dc9",
+      "signature": "fe2a91e618567dd626bfd8e36044cdeb",
       "file": true
     },
     "mve-dom-helper": {
