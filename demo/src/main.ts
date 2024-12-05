@@ -8,11 +8,13 @@ import changePortal from './changePortal'
 import clipDemo from './clipDemo'
 import tree from './tree'
 import absoluteDemo from './absoluteDemo'
+import canvas2 from './canvas2'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
   // changePortal()
-  canvas()
+  // canvas()
+  canvas2()
   // konvaDemo()
   // observer()
   // demo1()

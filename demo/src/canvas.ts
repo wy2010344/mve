@@ -44,16 +44,14 @@ export default function () {
               type: "fill",
               style: "green"
             }
-          ]
+          ],
+          afterClipOperates: []
         }
         if (clip) {
-          rs.operates?.push({
+          rs.afterClipOperates?.push({
             type: "stroke",
             width: 30,
             style: "black"
-          })
-          rs.operates?.push({
-            type: "clip"
           })
         }
         return rs

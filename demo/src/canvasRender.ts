@@ -1,8 +1,8 @@
-import { hookAddResult } from "mve-core"
+import { hookAddDestroy, hookAddResult } from "mve-core"
 import { getRenderChildren } from "mve-dom"
 import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
 export function hookRect(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -115,6 +115,8 @@ type CanvasMouseEvent<T> = {
 export type PathResult = {
   path: Path2D
   operates?: Path2DOperate[]
+  clipFillRule?: CanvasFillRule
+  afterClipOperates?: Path2DOperate[]
 }
 
 function doToEvent(
@@ -135,7 +137,9 @@ function doToEvent(
     will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
 
     if (will && child.path) {
+      //inPath,就是点在边界内
       const inPath = _ctx.isPointInPath(child.path, nx, ny)
+      //inStroke,就是点恰好在边界中间,因为stroke在边界两边
       const inStroke = _ctx.isPointInStroke(child.path, nx, ny)
       if (inPath || inStroke) {
         const e = {
@@ -215,6 +219,17 @@ export function renderCanvas(
       )
     })
   })
+
+  const w = createSignal(canvas.width)
+  const h = createSignal(canvas.height)
+  const ob = new ResizeObserver(() => {
+    w.set(canvas.width)
+    h.set(canvas.height)
+  })
+  ob.observe(canvas)
+  hookAddDestroy()(() => {
+    ob.disconnect()
+  })
   hookTrackSignalMemo(() => {
     const ctx = canvas.getContext("2d")!
     function prepare(getChildren: GetValue<CNode[]>, parent?: CNode) {
@@ -241,6 +256,10 @@ export function renderCanvas(
         if (path) {
           child.path = path.path
           path2DOperate(ctx, path.path, path.operates || emptyArray)
+          if (path.clipFillRule || path.afterClipOperates?.length) {
+            ctx.clip(path.path, path.clipFillRule)
+            path2DOperate(ctx, path.path, path.afterClipOperates || emptyArray)
+          }
         }
         draw(child.children())
         // ctx.translate(-x, -y)
@@ -252,4 +271,12 @@ export function renderCanvas(
     _children = getChildren()
     _ctx = ctx
   }, emptyFun)
+}
+
+
+export function measureText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  config: CanvasTextDrawingStyles) {
+
 }
