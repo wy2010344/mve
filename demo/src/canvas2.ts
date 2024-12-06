@@ -1,6 +1,6 @@
 import { hookAddDestroy } from "mve-core";
 import { renderDom } from "mve-dom";
-import { hookRect, renderCanvas } from "./canvasRender";
+import { drawText, hookRect, renderCanvas } from "./canvasRender";
 import { createSignal } from "wy-helper";
 
 export default function () {
@@ -59,6 +59,17 @@ export default function () {
               width: 10,
               style: "red"
             },
+            {
+              type: "draw", callback(ctx) {
+                drawText(ctx, "abc", "green", {
+                  x: 90,
+                  y: 90,
+                  config: {
+                    font: "30px serif"
+                  }
+                })
+              },
+            }
             // {
             //   type: "fill",
             //   style: "green"
