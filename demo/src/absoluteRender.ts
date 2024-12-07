@@ -2,7 +2,7 @@ import { hookAddDestroy, hookAddResult } from "mve-core"
 import { diffChangeChildren, getRenderChildren, } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
-import { addEffect, asLazy, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignal, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { addEffect, asLazy, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
 
@@ -74,7 +74,7 @@ type DomConfigure<T extends DomElementType> =
 export function renderADom<T extends DomElementType>(
   type: T,
   arg: DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
-    m_display?: MDisplay
+    m_display?: MGetDisplay
   }
 ): MAbsoluteNode {
   const target = document.createElement(type)
@@ -118,7 +118,10 @@ type InOrFun<T extends {}> = {
 };
 
 
-type MDisplay = (n: AbsoluteNode) => {
+type MGetDisplay = GetValue<Mdisplay>
+
+type Mdisplay = (n: AbsoluteNode) => MDisplayOut
+type MDisplayOut = {
   getInfo(x: Info): number
   /**
    * 有可能影响子节点的尺寸
@@ -135,7 +138,6 @@ function superCreateGet(x: Info) {
       try {
         //优先选择自己的,
         const ix = ins.getInfo(x)
-        console.log("x", x, ix)
         return ix
       } catch (err) {
         //其次选择来自父元素的约束
@@ -190,6 +192,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
       addDestroy(() => {
         ob.disconnect()
       })
+      // console.log("eff-2")
     }, -2)
   }
 
@@ -208,14 +211,15 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
     })
   )
   addEffect(() => {
-    addDestroy(trackSignal(n.x, x => n.target.style.left = x + 'px'))
-    addDestroy(trackSignal(n.y, x => n.target.style.top = x + 'px'))
+    addDestroy(trackSignalMemo(n.x, x => n.target.style.left = x + 'px'))
+    addDestroy(trackSignalMemo(n.y, x => n.target.style.top = x + 'px'))
     if (!wSet) {
-      addDestroy(trackSignal(n.width, x => n.target.style.width = x + 'px'))
+      addDestroy(trackSignalMemo(n.width, x => n.target.style.width = x + 'px'))
     }
     if (!hSet) {
-      addDestroy(trackSignal(n.height, x => n.target.style.height = x + 'px'))
+      addDestroy(trackSignalMemo(n.height, x => n.target.style.height = x + 'px'))
     }
+    // console.log("eff-1")
   }, -1)
   addEffect(() => {
     function mergeValue(
@@ -229,6 +233,8 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
       }
     }
     renderFNodeAttr(target, c, svg ? 'svg' : 'dom', mergeValue, emptyFun)
+
+    // console.log("eff-0")
   })
   return n
 }
@@ -237,7 +243,12 @@ function getTarget(n: MAbsoluteNode): Node {
   return n.target
 }
 
+/**
+ * 动态返回某一种布局,比如flex或absolute
+ * 真实布局与节点结合
+ */
 class MAbsoluteNode implements AbsoluteNode<any> {
+  private display: GetValue<MDisplayOut>
   constructor(
     public readonly target: any,
     public readonly x: GetValue<number>,
@@ -247,10 +258,12 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     public readonly isSVG: boolean,
     public readonly configure: any
   ) {
-    const display = configure.m_display || absoluteDisplay
-    const xx = display(this)
-    this.getChildInfo = xx.getChildInfo
-    this.getInfo = xx.getInfo
+    const MDisplay = memo(configure.m_display || absoluteDisplay) as any
+
+    this.display = memo(() => {
+      // console.log("getDisplay")
+      return MDisplay()(this)
+    })
     if (!configure.childrenType && configure.children) {
       this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(() => configure.children!(this.target), this)
     } else {
@@ -277,8 +290,12 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     this.parent.children()
     return this._index
   }
-  getChildInfo: (x: Info, i: number) => number
-  getInfo: (x: Info) => number
+  getChildInfo(x: Info, i: number) {
+    return this.display().getChildInfo(x, i)
+  }
+  getInfo(x: Info) {
+    return this.display().getInfo(x)
+  }
 }
 
 type SizeKey = "width" | "height"
@@ -309,62 +326,58 @@ export function renderAbsoulte(node: Node, children: EmptyFun) {
 }
 
 
-const absoluteDisplay: MDisplay = (n) => {
-  return {
-    getChildInfo(x, i) {
-      //不定义子元素的坐标
-      throw ''
-    },
-    getInfo(x) {
-      if (x == 'x' || x == 'y') {
-        //不定义自身的坐标
+export const absoluteDisplay: MGetDisplay = () => {
+  return (n) => {
+    return {
+      getChildInfo(x, i) {
+        //不定义子元素的坐标
         throw ''
-      }
-      //自身的宽高默认是0
-      return 0
-    },
+      },
+      getInfo(x) {
+        if (x == 'x' || x == 'y') {
+          //不定义自身的坐标
+          throw ''
+        }
+        //自身的宽高默认是0
+        return 0
+      },
+    }
+
   }
 }
 
 
-export function flexDisplay({
-  direction = 'y'
-}: {
+type DisplayProps = {
   direction?: ValueOrGet<PointKey>
-}): MDisplay {
+}
+export function flexDisplay(
+  {
+    direction = 'y'
+  }: DisplayProps
+): Mdisplay {
   const getDirection = valueOrGetToGet(direction)
-
-
   return function (n) {
-
-    const cInfos = memo(() => {
-      let length = 0
-      let width = 0
-      const list: number[] = [0]
-      const d = getDirection()
-      const s = directionToSize(d)
-      const od = oppositeDirection(d)
-      const os = directionToSize(od)
-      n.children().forEach(child => {
-        length = length + child[s]()
-        list.push(
-          length
-        )
-        width = Math.max(child[os](), width)
-      })
-      return {
-        list,
-        length,
-        width
-      }
+    let length = 0
+    let width = 0
+    const list: number[] = [0]
+    const d = getDirection()
+    const s = directionToSize(d)
+    const od = oppositeDirection(d)
+    const os = directionToSize(od)
+    n.children().forEach(child => {
+      length = length + child[s]()
+      list.push(
+        length
+      )
+      width = Math.max(child[os](), width)
     })
-
+    //render两次,是伸缩长度在捣鬼,任何一处auto都有可能
+    // console.log("执行一次", list, d, n.children().length, n.index())
     return {
       getChildInfo(x, i) {
-        const d = getDirection()
-        const od = oppositeDirection(d)
+        // console.log("get", x, i)
         if (x == d) {
-          const row = cInfos().list[i]
+          const row = list[i]
           return row
         }
         if (x == od) {
@@ -373,17 +386,14 @@ export function flexDisplay({
         throw ''
       },
       getInfo(x) {
-        const d = getDirection()
-        const s = directionToSize(d)
-        const od = oppositeDirection(d)
-        const os = directionToSize(od)
+        // console.log("gext", x)
         if (x == s) {
-          return cInfos().length
+          return length
         } else if (x == os) {
-          return cInfos().width
+          return width
         }
         throw ''
-      },
+      }
     }
   }
 }

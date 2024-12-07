@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
-import { AbsoluteNode, renderAbsoulte, renderADom, flexDisplay } from "./absoluteRender";
+import { absoluteDisplay, AbsoluteNode, flexDisplay, renderAbsoulte, renderADom } from "./absoluteRender";
 import { createSignal, emptyArray, quote } from "wy-helper";
 import { renderArray } from "mve-helper";
-import { renderSvg, svg } from "mve-dom";
+import { renderSvg } from "mve-dom";
 
 
 /**
@@ -15,14 +15,6 @@ import { renderSvg, svg } from "mve-dom";
  * @param n 
  * @returns 
  */
-function next(n: AbsoluteNode) {
-  if (n.index()) {
-    const before = n.parent.children()[n.index() - 1]
-    return before.y() + before.height()
-  }
-  return 0
-}
-
 export default function (app: HTMLElement) {
   renderSvg("svg", {
     a_width: 500,
@@ -38,10 +30,21 @@ export default function (app: HTMLElement) {
     }
   })
   renderAbsoulte(app, () => {
-    const a: AbsoluteNode = renderADom("div", {
-      m_display: flexDisplay({
-        direction: "y"
-      }),
+
+    const list = createSignal<readonly number[]>(emptyArray as any[])
+    renderADom("div", {
+      m_display() {
+        console.log("render", list.get().length)
+        if (list.get().length % 3) {
+          return flexDisplay({
+            direction: "y"
+          })
+        } else {
+          return flexDisplay({
+            direction: "x"
+          })
+        }
+      },
       css_dddd: 89,
       data_abc: "abc",
       aria_hidden: true,
@@ -58,12 +61,12 @@ export default function (app: HTMLElement) {
           s_background: faker.color.rgb()
         })
 
-        const list = createSignal<readonly number[]>(emptyArray as any[])
-
         renderArray(list.get, quote, get => {
           renderADom("div", {
-            width: 'auto',
-            height: 'auto',
+            width: 40,
+            height: 50,
+            // width: 'auto',
+            // height: 'auto',
             s_whiteSpace: "nowrap",
             s_background: faker.color.rgb(),
             childrenType: "text",
@@ -74,8 +77,10 @@ export default function (app: HTMLElement) {
           })
         })
         renderADom("button", {
-          width: 'auto',
-          height: 'auto',
+          width: 40,//'auto',
+          height: 50,
+          // width: 'auto',
+          // height: 'auto',
           s_whiteSpace: "nowrap",
           // s_background: faker.color.rgb(),
           childrenType: "text",
