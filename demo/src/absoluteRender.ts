@@ -258,7 +258,7 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     public readonly isSVG: boolean,
     public readonly configure: any
   ) {
-    const MDisplay = memo(configure.m_display || absoluteDisplay) as any
+    const MDisplay = configure.m_display || absoluteDisplay
 
     this.display = memo(() => {
       // console.log("getDisplay")
