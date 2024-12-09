@@ -1,6 +1,6 @@
 import { hookAddDestroy } from "mve-core";
 import { renderDom } from "mve-dom";
-import { drawText, hookRect, renderCanvas } from "./canvasRender";
+import { drawText, hookRect, renderCanvas } from "mve-dom-helper";
 import { createSignal } from "wy-helper";
 
 export default function () {
