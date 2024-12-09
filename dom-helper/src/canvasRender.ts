@@ -2,7 +2,7 @@ import { hookAddDestroy, hookAddResult } from "mve-core"
 import { getRenderChildren } from "mve-dom"
 import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, createSignal, emptyArray, emptyFun, EmptyFun, emptyObject, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
 export function hookRect(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -88,6 +88,8 @@ interface CNodeConfigure {
   //这里可能有children()
   children?(): void
 
+  mouseContainStroke?: boolean
+
   onClick?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseDown?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseUp?(e: CanvasMouseEvent<MouseEvent>): any
@@ -140,7 +142,7 @@ function doToEvent(
       //inPath,就是点在边界内
       const inPath = _ctx.isPointInPath(child.path, nx, ny)
       //inStroke,就是点恰好在边界中间,因为stroke在边界两边
-      const inStroke = _ctx.isPointInStroke(child.path, nx, ny)
+      const inStroke = child.configure.mouseContainStroke ? _ctx.isPointInStroke(child.path, nx, ny) : false
       if (inPath || inStroke) {
         const e = {
           node: child,
@@ -220,17 +222,19 @@ export function renderCanvas(
     })
   })
 
-  const w = createSignal(canvas.width)
-  const h = createSignal(canvas.height)
+  const width = createSignal(canvas.width)
+  const height = createSignal(canvas.height)
   const ob = new ResizeObserver(() => {
-    w.set(canvas.width)
-    h.set(canvas.height)
+    width.set(canvas.width)
+    height.set(canvas.height)
   })
   ob.observe(canvas)
   hookAddDestroy()(() => {
     ob.disconnect()
   })
   hookTrackSignalMemo(() => {
+    width.get()
+    height.get()
     const ctx = canvas.getContext("2d")!
     function prepare(getChildren: GetValue<CNode[]>, parent?: CNode) {
       getChildren().forEach((child, i) => {
@@ -271,4 +275,63 @@ export function renderCanvas(
     _children = getChildren()
     _ctx = ctx
   }, emptyFun)
+  return { width, height }
+}
+
+
+export type OCanvasTextDrawingStyles = Partial<CanvasTextDrawingStyles>
+
+function setDrawingStyle(
+  ctx: CanvasTextDrawingStyles,
+  n: OCanvasTextDrawingStyles = emptyObject as any) {
+  ctx.direction = n.direction || 'inherit'
+  ctx.font = n.font || ''
+  ctx.fontKerning = n.fontKerning || 'auto'
+  ctx.fontStretch = n.fontStretch || 'normal'
+  ctx.fontVariantCaps = n.fontVariantCaps || 'normal'
+  ctx.letterSpacing = n.letterSpacing || '0px'
+  ctx.textAlign = n.textAlign || 'start'
+  ctx.textBaseline = n.textBaseline || 'alphabetic'
+  ctx.textRendering = n.textRendering || 'auto'
+  ctx.wordSpacing = n.wordSpacing || '0px'
+}
+export function measureText(
+  ctx: CanvasTextDrawingStyles & {
+    measureText(text: string): TextMetrics
+  },
+  text: string,
+  config?: OCanvasTextDrawingStyles) {
+  setDrawingStyle(ctx, config)
+  return ctx.measureText(text)
+}
+
+export function drawText(
+  ctx: CanvasTextDrawingStyles & {
+    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/fillStyle) */
+    fillStyle: string | CanvasGradient | CanvasPattern;
+    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/strokeStyle) */
+    strokeStyle: string | CanvasGradient | CanvasPattern;
+    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/fillText) */
+    fillText(text: string, x: number, y: number, maxWidth?: number): void;
+    /** [MDN Reference](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/strokeText) */
+    strokeText(text: string, x: number, y: number, maxWidth?: number): void;
+  },
+  text: string,
+  style: string | CanvasGradient | CanvasPattern,
+  arg?: {
+    config?: OCanvasTextDrawingStyles,
+    x?: number
+    y?: number
+    maxWidth?: number
+    stroke?: boolean
+  }
+) {
+  setDrawingStyle(ctx, arg?.config)
+  if (arg?.stroke) {
+    ctx.strokeStyle = style
+    ctx.strokeText(text, arg.x || 0, arg.y || 0, arg.maxWidth)
+  } else {
+    ctx.fillStyle = style
+    ctx.fillText(text, arg?.x || 0, arg?.y || 0, arg?.maxWidth)
+  }
 }

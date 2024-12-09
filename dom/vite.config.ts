@@ -16,7 +16,8 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: [
-        "wy-helper",
+        /^wy-helper\//,
+        /^wy-dom-helper\//,
         "mve-core",
         "mve-helper"
       ]
