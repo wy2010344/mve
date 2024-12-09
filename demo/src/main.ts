@@ -9,6 +9,7 @@ import clipDemo from './clipDemo'
 import tree from './tree'
 import absoluteDemo from './absoluteDemo'
 import canvas2 from './canvas2'
+import typeContain from './typeContain'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
@@ -18,8 +19,9 @@ const destroy = createRoot(app, () => {
   // konvaDemo()
   // observer()
   // demo1()
+  typeContain()
   // tree()
-  absoluteDemo(app)
+  // absoluteDemo(app)
   // clipDemo()
   // magnifiedDock()
 })

@@ -1,7 +1,9 @@
-import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef } from "wy-helper"
+import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef, emptyFun } from "wy-helper"
 import { createRoot, dom, renderDom, renderSvg, svg } from 'mve-dom'
-import { renderArray } from 'mve-helper'
+import { hookTrackSignalMemo, renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
+import { renderContentEditable, renderInput, renderInputBool } from "mve-dom-helper"
+import { contentEditableText } from "wy-dom-helper/contentEditable"
 
 export default () => {
 
@@ -122,6 +124,47 @@ export default () => {
           })
         }
       })
+      renderDom("button", {
+        childrenType: "text",
+        onClick() {
+          console.log("点击")
+        },
+        children: "abc"
+      })
+    }
+  })
+
+  const value = createSignal('')
+  renderInput("input", {
+    className: "border-solid border-[black] border-spacing-1 border-[1px]",
+    value: value.get,
+    onValueChange(v) {
+      if (isNaN(Number(v))) {
+        return
+      }
+      value.set(v)
+    },
+  })
+
+  const text = createSignal('1')
+  renderContentEditable("pre", {
+    value: text.get,
+    className: "min-w-1",
+    a_contentEditable: contentEditableText,
+    onValueChange(v) {
+      if (isNaN(Number(v))) {
+        return
+      }
+      // text.set(v)
+    },
+  })
+
+  const checked = createSignal(false)
+  renderInputBool({
+    a_type: "checkbox",
+    checked: checked.get,
+    onInput(e) {
+      checked.set(e.currentTarget.checked)
     }
   })
 }

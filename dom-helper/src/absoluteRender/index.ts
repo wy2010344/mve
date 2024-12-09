@@ -2,10 +2,8 @@ import { hookAddDestroy, hookAddResult } from "mve-core"
 import { diffChangeChildren, getRenderChildren, } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
-import { addEffect, asLazy, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
-
-
-
+import { addEffect, asLazy, batchSignalEnd, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignalMemo } from "wy-helper"
+export * from './flexDisplay'
 
 type InstanceCallbackOrValue<T> = T | ((n: AbsoluteNode) => T)
 
@@ -79,6 +77,7 @@ export function renderADom<T extends DomElementType>(
 ): MAbsoluteNode {
   const target = document.createElement(type)
   target.style.position = 'absolute'
+  target.style.minWidth = '0px'
   return renderAbsolute(target, arg, false)
 }
 // type SvgConfigure<T extends SvgElementType> = InOrFun<
@@ -120,7 +119,7 @@ type InOrFun<T extends {}> = {
 
 type MGetDisplay = GetValue<Mdisplay>
 
-type Mdisplay = (n: AbsoluteNode) => MDisplayOut
+export type Mdisplay = (n: AbsoluteNode) => MDisplayOut
 type MDisplayOut = {
   getInfo(x: Info): number
   /**
@@ -185,6 +184,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
       const cb = () => {
         wSet?.(target.clientWidth)
         hSet?.(target.clientHeight)
+        batchSignalEnd()
       }
       cb()
       const ob = new ResizeObserver(cb)
@@ -297,10 +297,9 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     return this.display().getInfo(x)
   }
 }
+export type SizeKey = "width" | "height"
 
-type SizeKey = "width" | "height"
-
-type Info = SizeKey | PointKey
+export type Info = SizeKey | PointKey
 /**
  * 可以预计算子节点:在初始化时就可以做
  * 再顺序根踪x/y/width/height:统一做第一步
@@ -342,72 +341,6 @@ export const absoluteDisplay: MGetDisplay = () => {
         return 0
       },
     }
-
   }
 }
 
-
-type DisplayProps = {
-  direction?: ValueOrGet<PointKey>
-}
-export function flexDisplay(
-  {
-    direction = 'y'
-  }: DisplayProps
-): Mdisplay {
-  const getDirection = valueOrGetToGet(direction)
-  return function (n) {
-    let length = 0
-    let width = 0
-    const list: number[] = [0]
-    const d = getDirection()
-    const s = directionToSize(d)
-    const od = oppositeDirection(d)
-    const os = directionToSize(od)
-    n.children().forEach(child => {
-      length = length + child[s]()
-      list.push(
-        length
-      )
-      width = Math.max(child[os](), width)
-    })
-    //render两次,是伸缩长度在捣鬼,任何一处auto都有可能
-    // console.log("执行一次", list, d, n.children().length, n.index())
-    return {
-      getChildInfo(x, i) {
-        // console.log("get", x, i)
-        if (x == d) {
-          const row = list[i]
-          return row
-        }
-        if (x == od) {
-          return 0
-        }
-        throw ''
-      },
-      getInfo(x) {
-        // console.log("gext", x)
-        if (x == s) {
-          return length
-        } else if (x == os) {
-          return width
-        }
-        throw ''
-      }
-    }
-  }
-}
-function directionToSize(x: PointKey): SizeKey {
-  if (x == 'x') {
-    return "width"
-  } else {
-    return "height"
-  }
-}
-function oppositeDirection(x: PointKey): PointKey {
-  if (x == 'x') {
-    return 'y'
-  } else {
-    return 'x'
-  }
-}

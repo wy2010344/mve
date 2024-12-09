@@ -1,4 +1,4 @@
-import { emptyFun, EmptyFun, GetValue } from "wy-helper";
+import { emptyFun, EmptyFun, GetValue, quote } from "wy-helper";
 import { renderArray } from "./renderMap";
 
 
@@ -17,5 +17,16 @@ export function renderIf(
     } else {
       whenFalse()
     }
+  })
+}
+
+
+
+export function renderOne<K>(
+  get: GetValue<K>,
+  render: (v: K) => void
+) {
+  renderArray(() => [get()], quote, (d, key) => {
+    render(key)
   })
 }
