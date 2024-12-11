@@ -1,28 +1,36 @@
 import { hookTrackSignalMemo, renderOne } from "mve-helper";
 import { ContentEditableModel, EditRecord, fixScroll } from "wy-dom-helper/contentEditable";
-import { emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { addEffect, emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
 export function redo(model: ContentEditableModel) {
   const ndx = model.currentIndex + 1
   if (ndx < model.history.length) {
-    model.currentIndex = ndx
+    return {
+      ...model,
+      currentIndex: ndx
+    }
   }
   return model
 }
 
 export function undo(model: ContentEditableModel) {
   if (model.currentIndex) {
-    model.currentIndex--
+    return {
+      ...model,
+      currentIndex: model.currentIndex - 1
+    }
   }
   return model
 }
 
 export function reset(model: ContentEditableModel, record: EditRecord) {
-  model.currentIndex = 0
-  model.history.length = 0
-  model.history.push(record)
-  return model
+  return {
+    currentIndex: 0,
+    history: [
+      record
+    ]
+  }
 }
 
 
@@ -47,7 +55,9 @@ export function useContentEditable(getValue: GetValue<ContentEditableModel>) {
           if (nF()) {
             return
           }
-          fixScroll(div, current())
+          addEffect(() => {
+            fixScroll(div, current())
+          })
         }, emptyFun)
       })
     }
