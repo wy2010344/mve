@@ -1,4 +1,4 @@
-import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef, emptyFun } from "wy-helper"
+import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef, emptyFun, addEffect } from "wy-helper"
 import { createRoot, dom, renderDom, renderSvg, svg } from 'mve-dom'
 import { hookTrackSignalMemo, renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
@@ -144,6 +144,9 @@ export default () => {
       }
       value.set(v)
     },
+    onInput(e) {
+      console.log("dd", e)
+    }
   })
 
   const text = createSignal('1')
@@ -175,12 +178,18 @@ function renderList(list: StoreRef<number[]>) {
     dom.div().renderText`---${() => getRow().item}--- ${() => getRow().index}---`
     dom.button({
       onClick() {
+        addEffect(() => {
+          console.log("destroy", getRow().index, getRow().item, list.get().length)
+        })
         list.set(list.get().filter(v => v != getRow().item))
       }
     }).renderText`删除`
     count()
     hookAddDestroy()(() => {
       console.log("销毁了...")
+    })
+    addEffect(() => {
+      console.log("getRow", getRow().index, getRow().item)
     })
   })
 }

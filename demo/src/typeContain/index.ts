@@ -1,14 +1,13 @@
+import { hookAddDestroy } from "mve-core";
 import { renderDom } from "mve-dom";
 import { renderCode, renderContentEditable } from "mve-dom-helper";
-import { hookTrackSignalMemo } from "mve-helper";
+import { hookTrackSignalMemo, renderOne } from "mve-helper";
 import { contentEditableText, initContentEditableModel } from "wy-dom-helper/contentEditable";
-import { createSignal, emptyFun, memo } from "wy-helper";
+import { addEffect, batchSignalEnd, createSignal, emptyFun, memo } from "wy-helper";
 import { parseSentence } from "wy-helper/infixLang";
 import { getCurrentQue, runParse, success } from "wy-helper/tokenParser";
 
 export default function () {
-
-
   renderDom("div", {
     className: "flex",
     children() {
@@ -23,26 +22,36 @@ function renderInputArea(saveKey: string) {
   const model = createSignal(
     initContentEditableModel(localStorage.getItem(saveKey) || '')
   )
+  // const oldSet = model.set
+  // model.set = function (v: any) {
+  //   oldSet(v)
+  //   batchSignalEnd()
+  // }
   const { current, renderContentEditable } = renderCode(model)
 
+
   hookTrackSignalMemo(() => {
-    console.log("d", model.get())
+    localStorage.setItem(saveKey, current().value)
   }, emptyFun)
   renderContentEditable({
     render(value, a) {
-      console.log("render", value)
-      return renderDom("pre", {
+      // console.log("创建", value)
+      // hookAddDestroy()(() => {
+      //   console.log("销毁", value)
+      // })
+      const div = renderDom("pre", {
         className: "flex-1 min-h-4 whitespace-pre",
         a_contentEditable: contentEditableText,
         ...a,
+        a_spellcheck: false,
         children() {
-          console.log("v", value, model.get())
           renderDom("span", {
             childrenType: "text",
             children: value
           })
         }
       })
+      return div
     },
   })
   // const pout=memo(()=>{
