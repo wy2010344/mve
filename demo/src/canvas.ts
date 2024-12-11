@@ -1,5 +1,5 @@
 import { dom } from "mve-dom";
-import { hookRect, PathResult, renderCanvas } from "./canvasRender";
+import { hookRect, PathResult, renderCanvas } from "mve-dom-helper";
 import { renderArray } from "mve-helper";
 import { createSignal, PointKey, quote } from "wy-helper";
 /**
