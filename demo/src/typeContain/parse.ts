@@ -1,4 +1,4 @@
-import { buildInfix, EndNode, InfixConfig, matchBetween, matchCommonExt, matchSymbolOrSpecial, ruleGetNumber, ruleGetString, skipWhiteOrComment, specialMatch } from "wy-helper/infixLang"
+import { buildInfix, InfixConfig, InfixToken, matchBetween, matchCommonExt, matchSymbolOrSpecial, ruleGetNumber, ruleGetString, skipWhiteOrComment, specialMatch } from "wy-helper/infixLang"
 import { andMatch, isChinese, isLowerEnglish, isUpperEnglish, or, orMatch, parseGet, Que } from "wy-helper/tokenParser"
 export interface Token {
   begin: number;
@@ -23,6 +23,8 @@ export interface NumberToken extends Token {
   value: number;
   originalValue: string;
 }
+
+export type NNode = StringToken | SymbolToken | NumberToken;
 export const symbolRule = andMatch(
   orMatch(
     isLowerEnglish.matchCharBetween(),
@@ -55,11 +57,21 @@ function rGetStr() {
   return n
 }
 export const infixLibArray: InfixConfig[] = [
-  ['in'],
+  ['in', 'where'],
   [','],
-  ['='],
+  ['='],//绑定引用,这里只是泛型的实例化
   [matchBetween, specialMatch, matchSymbolOrSpecial]
 ]
+export type InfixNode<T> = {
+  type: "infix";
+  infix: InfixToken;
+  left: InfixEndNode<T>;
+  right: InfixEndNode<T>;
+  messages: Message[]
+}
+
+export type InfixEndNode<T> = T | InfixNode<T>;
+export type EndNode = NNode | InfixNode<NNode>
 export const { parseSentence, getInfixOrder } = buildInfix<EndNode>(infixLibArray,
   skipWhiteOrComment,
   () => {
@@ -76,6 +88,31 @@ export const { parseSentence, getInfixOrder } = buildInfix<EndNode>(infixLibArra
       left,
       right,
       messages: []
-    }
+    } as const
   }
 )
+
+
+/*
+in子句
+xxx=aaa,
+bbb=ddd,
+xss=ccc
+in bbb
+
+
+声明一个类型,属于A类型,但又是一个变量
+x<A
+声明一个类型,是A的上界类型
+x>A
+
+
+构造object
+x:99,
+y:ass,
+dvd:ddd 
+
+
+xcvd->dss
+vdss->ss
+*/

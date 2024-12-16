@@ -1,18 +1,18 @@
-import { hookAddDestroy } from "mve-core";
 import { renderDom } from "mve-dom";
-import { renderCode, renderContentEditable } from "mve-dom-helper";
-import { hookTrackSignalMemo, renderOne } from "mve-helper";
+import { renderCode } from "mve-dom-helper";
+import { hookTrackSignalMemo } from "mve-helper";
 import { contentEditableText, initContentEditableModel } from "wy-dom-helper/contentEditable";
-import { addEffect, batchSignalEnd, createSignal, emptyFun, memo } from "wy-helper";
-import { parseSentence } from "wy-helper/infixLang";
-import { getCurrentQue, runParse, success } from "wy-helper/tokenParser";
+import { createSignal, emptyFun } from "wy-helper";
+import { parseSentence } from "./parse";
+import { runParse } from "wy-helper/tokenParser";
+import { evalTree } from "./evalTree";
 
 export default function () {
   renderDom("div", {
     className: "flex",
     children() {
       renderInputArea("A1")
-      renderInputArea("A2")
+      // renderInputArea("A2")
     }
   })
 }
@@ -54,29 +54,12 @@ function renderInputArea(saveKey: string) {
       return div
     },
   })
-  // const pout=memo(()=>{
-  //   try {
-  //     const out = runParse(current().value, parseSentence)
-  //     const vx = checkEval(out, topScope)
-  //     // console.log("dd", debugLog(out), vx)
-  //     const v = success(out, getCurrentQue() as Que)
-  //     const list = toTree(out, text)
-  //     return {
-  //       value: list,
-  //       out: v,
-  //     } as any
-  //   } catch (err) {
-  //     console.log("dd", err)
-  //     return {
-  //       value: [
-  //         {
-  //           type: "white",
-  //           messages: [],
-  //           value: text
-  //         }
-  //       ],
-  //       out: err
-  //     }
-  //   } 
-  // })
+  hookTrackSignalMemo(() => {
+    try {
+      const out = runParse(current().value, parseSentence)
+      console.log("out", evalTree(out,))
+    } catch (err) {
+      console.log("dd", err)
+    }
+  }, emptyFun)
 }
