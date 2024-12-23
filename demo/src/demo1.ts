@@ -170,6 +170,8 @@ export default () => {
       checked.set(e.currentTarget.checked)
     }
   })
+
+  getOnClick()
 }
 
 function renderList(list: StoreRef<number[]>) {
@@ -203,4 +205,33 @@ function count() {
       s.set(s.get() + 1)
     }
   }).renderText`增加数字${s.get}`
+}
+
+
+function getOnClick() {
+
+  const a = createSignal(0)
+  const b = createSignal(0)
+  const m = createSignal(0)
+
+  const c = memo(() => {
+
+    console.log("render...")
+    return [a.get(), b.get(), m.get()]
+  })
+
+  renderDom("button", {
+    onClick() {
+      a.set(a.get() + 1)
+      b.set(b.get() + 1)
+
+      console.log("新", a.get(), b.get(), c())
+
+      // m.set(m.get() + 1)
+    },
+    childrenType: "text",
+    children() {
+      return `${a.get()}--${b.get()}---${c()}`
+    }
+  })
 }
