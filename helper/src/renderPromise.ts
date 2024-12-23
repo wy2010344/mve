@@ -1,50 +1,36 @@
-import { createAbortController, createSignal, emptyFun, FalseType, GetValue, hookSetAbortSignal, PromiseResult } from "wy-helper";
+import { createSignal, FalseType, GetValue, hookAbortSignalPromise, PromiseResult } from "wy-helper";
 import { hookTrackSignalMemo } from "./hookTrackSignal";
 
+/**
+ * promise的过程可能是async的多个promise,所以条件是这个过程,以及依赖的数据要提前准备好
+ * 如果在async语句中去条件结果,最后的结果可能是promise<void>不符合预期
+ * @param getPromise 
+ * @param onFinally 
+ */
 export function hookPromiseCall<T>(
-  getPromise: GetValue<Promise<T> | FalseType>,
+  getPromise: GetValue<GetValue<Promise<T>> | FalseType>,
   onFinally: (o?: PromiseResult<T>) => void
 ): void
 export function hookPromiseCall<T>(
-  getPromise: GetValue<Promise<T>>,
+  getPromise: GetValue<GetValue<Promise<T>>>,
   onFinally: (o: PromiseResult<T>) => void
 ): void
 export function hookPromiseCall(getPromise: any, onFinally: any) {
-  let lastPromise: any
-  let lastCancel = emptyFun
-  hookTrackSignalMemo(() => {
-    lastCancel()
-    const control = createAbortController()
-    hookSetAbortSignal(control.signal)
-    lastCancel = control.cancel
-    return getPromise()
-  }, function (promise) {
-    hookSetAbortSignal()
-    lastPromise = promise
-    if (promise instanceof Promise) {
-      promise.then(value => {
-        if (promise == lastPromise) {
-          onFinally({
-            type: "success",
-            value
-          })
-        }
-      }).catch(err => {
-        if (promise == lastPromise) {
-          onFinally({
-            type: "error",
-            value: err
-          })
-        }
-      })
+  let lastControl: AbortController | undefined = undefined
+  hookTrackSignalMemo(getPromise, function (gPromise: any) {
+    lastControl?.abort()
+    if (gPromise) {
+      lastControl = new AbortController()
+      hookAbortSignalPromise(lastControl.signal, gPromise, onFinally)
     } else {
+      lastControl = undefined
       onFinally()
     }
   })
 }
 
 export function hookPromiseSignal<T>(
-  getPromise: GetValue<Promise<T> | undefined>
+  getPromise: GetValue<GetValue<Promise<T>> | FalseType>
 ) {
   const signal = createSignal<PromiseResult<T> | undefined>(undefined)
   hookPromiseCall(getPromise, signal.set)
