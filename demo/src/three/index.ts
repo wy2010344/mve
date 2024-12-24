@@ -42,7 +42,6 @@ export default function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-
   /**旋转等查看 */
   const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -75,7 +74,8 @@ export default function () {
 
   const gui = new GUI()
   GlobalContext.provide({
-    gui
+    gui,
+    renderer
   })
 
   const terrain = renderTerrain()
