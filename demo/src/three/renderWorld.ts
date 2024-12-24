@@ -140,6 +140,17 @@ function createTree() {
       coords.y + 0.5,
     )
   }
+
+  const { gui, renderer } = GlobalContext.consume()
+  gui.add({
+    click() {
+      console.log("dispose", JSON.stringify(renderer.info))
+      treeMaterial.dispose()
+      treeGeometry.dispose()
+      //会自动恢复
+      console.log(JSON.stringify(renderer.info), renderer.info)
+    }
+  }, 'click')
 }
 
 
