@@ -62,7 +62,10 @@ export default function (app: HTMLElement) {
       children() {
         renderADom("div", {
           width: 30,
-          height: 40,
+          height(n) {
+            console.log("dd", n)
+            return 40
+          },
           s_background: faker.color.rgb()
         })
 

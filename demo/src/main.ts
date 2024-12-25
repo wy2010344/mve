@@ -8,7 +8,7 @@ import changePortal from './changePortal'
 import clipDemo from './clipDemo'
 import tree from './tree'
 import absoluteDemo from './absoluteDemo'
-import canvas2 from './canvas2'
+import canvas2 from './canvasDemo'
 import typeContain from './typeContain'
 import three from './three'
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -16,13 +16,13 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 const destroy = createRoot(app, () => {
   // changePortal()
   // canvas()
-  canvas2()
+  // canvas2()
   // konvaDemo()
   // observer()
   // demo1()
   // typeContain()
   // tree()
-  // absoluteDemo(app)
+  absoluteDemo(app)
   // three()
   // clipDemo()
   // magnifiedDock()

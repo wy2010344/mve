@@ -5,7 +5,7 @@ import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, re
 import { addEffect, asLazy, batchSignalEnd, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignalMemo } from "wy-helper"
 export * from './flexDisplay'
 
-type InstanceCallbackOrValue<T> = T | ((n: AbsoluteNode) => T)
+type InstanceCallbackOrValue<T> = number | ((n: T) => number)
 
 interface AbsoluteParent {
   children: GetValue<AbsoluteNode[]>
@@ -22,10 +22,6 @@ export interface AbsoluteNode<T = any> extends AbsoluteParent {
   getInfo(x: Info): number
 }
 
-interface LocationConfigure {
-  x?: InstanceCallbackOrValue<number>
-  y?: InstanceCallbackOrValue<number>
-}
 
 type AliasAttr<T extends DomElementType> = InOrFun<
   Omit<FDomAttribute<T>
@@ -35,7 +31,7 @@ type AliasAttr<T extends DomElementType> = InOrFun<
     | 's_right'
     | 's_top'
     | 's_bottom'>
-> & LocationConfigure
+>
 /**
  * 应该可以细分
  */
@@ -47,21 +43,21 @@ type DomConfigure<T extends DomElementType> =
     | 's_height'
     | 's_maxHeight'
     | 's_minHeight'> & {
-      width?: InstanceCallbackOrValue<number>
-      height?: InstanceCallbackOrValue<number>
+      width?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
+      height?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
     })
   | (Omit<AliasAttr<T>
     , 's_width'
     | 's_maxWidth'
     | 's_minWidth'> & {
       width: 'auto'
-      height?: InstanceCallbackOrValue<number>
+      height?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
     })
   | (Omit<AliasAttr<T>
     , 's_height'
     | 's_maxHeight'
     | 's_minHeight'> & {
-      width?: InstanceCallbackOrValue<number>
+      width?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
       height: 'auto'
     })
   | AliasAttr<T> & {
@@ -73,6 +69,9 @@ export function renderADom<T extends DomElementType>(
   type: T,
   arg: DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
     m_display?: MGetDisplay
+  } & {
+    x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
+    y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
   }
 ): MAbsoluteNode {
   const target = document.createElement(type)

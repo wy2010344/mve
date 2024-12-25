@@ -5,6 +5,7 @@ export * from './canvasRender'
 export * from './absoluteRender'
 export * from './renderInput'
 export * from './renderCode'
+export * from './canvasRender/measureText'
 export * from './useContentEditable'
 export function animateSignal(
   get: GetValue<number>,
