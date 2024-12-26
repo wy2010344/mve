@@ -45,6 +45,7 @@ class CNode implements CMNode {
     }
   }
 
+  public hasClip = false
   private parent?: CNode
   private _index!: number
   private parentGetChildren!: GetValue<CNode[]>
@@ -138,6 +139,7 @@ function doToEvent(
 
     will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
 
+    let tryChildren = true
     if (will && child.path) {
       //inPath,就是点在边界内
       const inPath = _ctx.isPointInPath(child.path, nx, ny)
@@ -157,12 +159,14 @@ function doToEvent(
           will = false
           cs.length = 0
         }
+      } else if (child.hasClip) {
+        tryChildren = false
       }
     }
-    if (will) {
+    if (will && tryChildren) {
       will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
-      i++
     }
+    i++
   }
   return will
 }
@@ -261,10 +265,13 @@ export function renderCanvas(
         if (path) {
           child.path = path.path
           path2DOperate(ctx, path.path, path.operates || emptyArray)
+          let hasClip = false
           if (path.clipFillRule || path.afterClipOperates?.length) {
+            hasClip = true
             ctx.clip(path.path, path.clipFillRule)
             path2DOperate(ctx, path.path, path.afterClipOperates || emptyArray)
           }
+          (child as any).hasClip = hasClip
         }
         draw(child.children())
         // ctx.translate(-x, -y)
