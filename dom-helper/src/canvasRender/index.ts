@@ -4,13 +4,13 @@ import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
 import { asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, emptyObject, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
-export function hookRect(rect: CNodeConfigure) {
+export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
   hookAddResult(n)
   return n
 }
 
-type MyCtx = Omit<CanvasRenderingContext2D, 'translate' | 'reset' | 'save' | 'restore'>
+export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'translate' | 'reset' | 'save' | 'restore'>
 function toCall(rect: CNodeConfigure, key: PointKey) {
   const x = rect[key]
   if (typeof x == 'function') {
@@ -20,57 +20,64 @@ function toCall(rect: CNodeConfigure, key: PointKey) {
   }
 }
 
-export interface CMNode {
+interface NodeParent {
+  readonly ext: Record<string, any>
+  beforeChildren?: GetValue<CNode[]>
+  children: GetValue<CNode[]>
+}
+export interface CMNode extends NodeParent {
   x: GetValue<number>
   y: GetValue<number>
-  children: GetValue<CNode[]>
   index(): number
-  ctx: MyCtx
+  ctx: CanvaRenderCtx
+  hasClip: boolean
+  isBefore?: boolean
+  parent: NodeParent
 }
+
+
 class CNode implements CMNode {
+  readonly ext: Record<string, any>
   constructor(
     public readonly configure: CNodeConfigure
   ) {
+    this.ext = configure.ext || emptyObject
     this.x = toCall(configure, 'x')
     this.y = toCall(configure, 'y')
     if (configure.beforeChildren) {
-      this.beforeChildren = getRenderChildren(configure.beforeChildren, undefined)
+      this.beforeChildren = getRenderChildren(configure.beforeChildren, this)
     } else {
       this.beforeChildren = asLazy(emptyArray as any[])
     }
     if (configure.children) {
-      this.children = getRenderChildren(configure.children, undefined)
+      this.children = getRenderChildren(configure.children, this)
     } else {
       this.children = asLazy(emptyArray as any[])
     }
   }
 
   public hasClip = false
-  private parent?: CNode
+  parent!: NodeParent
   private _index!: number
-  private parentGetChildren!: GetValue<CNode[]>
-
-  ctx!: MyCtx
+  ctx!: CanvaRenderCtx
+  public isBefore: boolean | undefined
   setParentAndIndex(
-    getChildren: () => CNode[],
     index: number,
-    parent?: CNode
+    parent: NodeParent
   ) {
-    if (!!this.parentGetChildren) {
-      if (this.parent != parent) {
-        throw 'parent发生改变'
-      }
-      if (this.parentGetChildren != getChildren) {
-        throw 'parent的children发生改变'
-      }
+    if (this.parent && this.parent != parent) {
+      throw 'parent发生改变'
     }
     this._index = index
     this.parent = parent
-    this.parentGetChildren = getChildren
   }
 
   index() {
-    this.parentGetChildren()
+    if (this.isBefore) {
+      this.parent.beforeChildren!()
+    } else {
+      this.parent.children()
+    }
     return this._index
   }
 
@@ -81,11 +88,11 @@ class CNode implements CMNode {
 
   path?: Path2D
 }
-interface CNodeConfigure {
+export interface CNodeConfigure {
   x: ValueOrGet<number>
   y: ValueOrGet<number>
   beforeChildren?(): void
-  draw?(ctx: MyCtx): PathResult | void
+  draw?(ctx: CanvaRenderCtx): PathResult | void
   //这里可能有children()
   children?(): void
 
@@ -103,6 +110,7 @@ interface CNodeConfigure {
   onMouseUpCapture?(e: CanvasMouseEvent<MouseEvent>): any
   onPointerDownCapture?(e: CanvasMouseEvent<PointerEvent>): any
   onPointerUpCapture?(e: CanvasMouseEvent<PointerEvent>): any
+  ext?: Record<string, any>
 }
 
 
@@ -196,9 +204,12 @@ const mouseEvents = (['onClick', 'onMouseDown', 'onMouseUp', 'onPointerDown', 'o
     onCaptureEvent: name + 'Capture'
   }
 })
+
+
 export function renderCanvas(
   canvas: HTMLCanvasElement,
-  children: EmptyFun
+  children: EmptyFun,
+  ext: Record<string, any> = emptyObject
 ) {
   const getChildren = getRenderChildren<CNode, undefined>(children, undefined)
   let _ctx: CanvasRenderingContext2D
@@ -237,19 +248,24 @@ export function renderCanvas(
   hookAddDestroy()(() => {
     ob.disconnect()
   })
+  const rootParent = {
+    ext: ext,
+    children: getChildren
+  }
   hookTrackSignalMemo(() => {
     width.get()
     height.get()
     const ctx = canvas.getContext("2d")!
-    function prepare(getChildren: GetValue<CNode[]>, parent?: CNode) {
+    function prepare(getChildren: GetValue<CNode[]>, parent: NodeParent, before?: boolean) {
       getChildren().forEach((child, i) => {
         child.ctx = ctx
-        child.setParentAndIndex(getChildren, i, parent)
-        prepare(child.beforeChildren, child)
+        child.isBefore = before
+        child.setParentAndIndex(i, parent)
+        prepare(child.beforeChildren, child, true)
         prepare(child.children, child)
       })
     }
-    prepare(getChildren)
+    prepare(getChildren, rootParent)
     function draw(
       children: CNode[]
     ) {

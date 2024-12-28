@@ -1,9 +1,9 @@
-import { hookRect } from "mve-dom-helper"
+import { hookDraw } from "mve-dom-helper"
 
 export default function () {
 
 
-  hookRect({
+  hookDraw({
     x: 100,
     y: 100,
     draw(ctx) {
@@ -20,7 +20,7 @@ export default function () {
       }
     },
     beforeChildren() {
-      hookRect({
+      hookDraw({
         x: -30,
         y: -30,
         onPointerDown(e) {
@@ -41,7 +41,7 @@ export default function () {
       })
     },
     children() {
-      hookRect({
+      hookDraw({
         x: -30,
         y: -30,
         onPointerDown(e) {
@@ -62,14 +62,4 @@ export default function () {
       })
     },
   })
-}
-
-
-type InstanceCallbackOrValue<T> = T | ((n: AbsoluteNode) => T)
-
-interface AbsoluteNode {
-  x?: InstanceCallbackOrValue<number>
-  y?: InstanceCallbackOrValue<number>
-  width?: InstanceCallbackOrValue<number>
-  height?: InstanceCallbackOrValue<number>
 }

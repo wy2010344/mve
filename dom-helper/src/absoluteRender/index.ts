@@ -2,24 +2,19 @@ import { hookAddDestroy, hookAddResult } from "mve-core"
 import { diffChangeChildren, getRenderChildren, } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
-import { addEffect, asLazy, batchSignalEnd, Compare, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, memo, PointKey, SetValue, trackSignalMemo } from "wy-helper"
-export * from './flexDisplay'
+import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet } from "wy-helper"
 
-type InstanceCallbackOrValue<T> = number | ((n: T) => number)
 
 interface AbsoluteParent {
   children: GetValue<AbsoluteNode[]>
-  getChildInfo(x: Info, i: number): number
+  getChildInfo(x: LayoutKey, i: number): number
 }
-export interface AbsoluteNode<T = any> extends AbsoluteParent {
-  x: GetValue<number>
-  y: GetValue<number>
-  width: GetValue<number>
-  height: GetValue<number>
+export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel {
   target: T
   parent: AbsoluteParent
   index(): number
-  getInfo(x: Info): number
+  getInfo(x: LayoutKey): number
 }
 
 
@@ -68,7 +63,7 @@ type DomConfigure<T extends DomElementType> =
 export function renderADom<T extends DomElementType>(
   type: T,
   arg: DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
-    m_display?: MGetDisplay
+    m_display?: ValueOrGet<MDisplayOut>
   } & {
     x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
     y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
@@ -93,43 +88,12 @@ export function renderADom<T extends DomElementType>(
 //   const target = document.createElementNS("http://www.w3.org/2000/svg", type)
 //   return renderAbsolute(target, arg, true)
 // }
-function valueInstOrGetToGet<T>(
-  o: InstanceCallbackOrValue<T> | undefined,
-  getIns: GetValue<MAbsoluteNode>,
-  create: (getIns: GetValue<MAbsoluteNode>) => GetValue<T>,
-  shouldChange?: Compare<T>
-): GetValue<T> {
-  const tp = typeof o
-  if (tp == 'function') {
-    return memo(() => {
-      return (o as any)(getIns())
-    }, shouldChange)
-  } else if (tp == 'undefined') {
-    return create(getIns)
-  } else {
-    return asLazy(o as T)
-  }
-}
 
 type InOrFun<T extends {}> = {
   [key in keyof T]: T[key] | ((n: AbsoluteNode) => T[key])
 };
 
-
-type MGetDisplay = GetValue<Mdisplay>
-
-export type Mdisplay = (n: AbsoluteNode) => MDisplayOut
-type MDisplayOut = {
-  getInfo(x: Info): number
-  /**
-   * 有可能影响子节点的尺寸
-   * @param x 
-   * @param i 
-   */
-  getChildInfo(x: Info, i: number): number
-}
-
-function superCreateGet(x: Info) {
+function superCreateGet(x: LayoutKey) {
   return function (getIns: GetValue<MAbsoluteNode>) {
     return function () {
       const ins = getIns()
@@ -153,9 +117,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
   let hSet: SetValue<number> | undefined = undefined
   let width: GetValue<number>
   let height: GetValue<number>
-
-
-  function getIns() {
+  function getIns(): MAbsoluteNode {
     return n
   }
   const x = valueInstOrGetToGet(c.x, getIns, createGetX)
@@ -257,11 +219,9 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     public readonly isSVG: boolean,
     public readonly configure: any
   ) {
-    const MDisplay = configure.m_display || absoluteDisplay
-
+    const MDisplay = valueOrGetToGet(configure.m_display || absoluteDisplay)
     this.display = memo(() => {
-      // console.log("getDisplay")
-      return MDisplay()(this)
+      return hookLayout(this.children, MDisplay)
     })
     if (!configure.childrenType && configure.children) {
       this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(() => configure.children!(this.target), this)
@@ -276,10 +236,8 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     index: number,
     parent: AbsoluteParent
   ) {
-    if (!!this.parent) {
-      if (this.parent != parent) {
-        throw 'parent发生改变'
-      }
+    if (this.parent && this.parent != parent) {
+      throw 'parent发生改变'
     }
     this._index = index
     this.parent = parent
@@ -289,16 +247,13 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     this.parent.children()
     return this._index
   }
-  getChildInfo(x: Info, i: number) {
+  getChildInfo(x: LayoutKey, i: number) {
     return this.display().getChildInfo(x, i)
   }
-  getInfo(x: Info) {
+  getInfo(x: LayoutKey) {
     return this.display().getInfo(x)
   }
 }
-export type SizeKey = "width" | "height"
-
-export type Info = SizeKey | PointKey
 /**
  * 可以预计算子节点:在初始化时就可以做
  * 再顺序根踪x/y/width/height:统一做第一步
@@ -324,22 +279,18 @@ export function renderAbsoulte(node: Node, children: EmptyFun) {
 }
 
 
-export const absoluteDisplay: MGetDisplay = () => {
-  return (n) => {
-    return {
-      getChildInfo(x, i) {
-        //不定义子元素的坐标
-        throw ''
-      },
-      getInfo(x) {
-        if (x == 'x' || x == 'y') {
-          //不定义自身的坐标
-          throw ''
-        }
-        //自身的宽高默认是0
-        return 0
-      },
+export const absoluteDisplay: MDisplayOut = {
+  getChildInfo(x, i) {
+    //不定义子元素的坐标
+    throw ''
+  },
+  getInfo(x) {
+    if (x == 'x' || x == 'y') {
+      //不定义自身的坐标
+      throw ''
     }
-  }
+    //自身的宽高默认是0
+    return 0
+  },
 }
 
