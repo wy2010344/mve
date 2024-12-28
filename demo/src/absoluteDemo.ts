@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
-import { absoluteDisplay, AbsoluteNode, flexDisplay, renderAbsoulte, renderADom } from "mve-dom-helper";
-import { createSignal, emptyArray, quote } from "wy-helper";
+import { absoluteDisplay, AbsoluteNode, renderAbsoulte, renderADom } from "mve-dom-helper";
+import { createSignal, emptyArray, flexDisplayUtil, quote } from "wy-helper";
 import { renderArray } from "mve-helper";
 import { renderSvg } from "mve-dom";
 
@@ -34,7 +34,7 @@ export default function (app: HTMLElement) {
     const list = createSignal<readonly number[]>(emptyArray as any[])
     renderADom("div", {
       m_display() {
-        return flexDisplay({
+        return flexDisplayUtil({
           direction: "y",
           alignItems: 'end',
           gap: 10

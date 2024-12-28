@@ -54,7 +54,7 @@ export default function () {
   }).renderText`列表数量${() => list.get().length}`
   const getChildren = hookCanvasChildren(() => {
     renderArray(list.get, quote, row => {
-      hookRect({
+      hookDraw({
         width: 20,
         height: 30,
         x() {
@@ -122,7 +122,7 @@ export default function () {
 }
 
 
-function hookRect(rect: Rect) {
+function hookDraw(rect: Rect) {
   hookAddResult(rect)
 }
 type MyCtx = Omit<CanvasRenderingContext2D, 'translate'>

@@ -1,9 +1,9 @@
 import { hookAddDestroy } from "mve-core";
 import { renderDom } from "mve-dom";
-import { drawText, drawTextWrap, hookRect, measureTextWrap, renderCanvas } from "mve-dom-helper";
+import { renderCanvas } from "mve-dom-helper";
 import { createSignal } from "wy-helper";
-import demo1 from "./demo1";
-import demo2 from "./demo2";
+import demo3 from "./demo3";
+import { hookDestroy } from "mve-helper";
 
 export default function () {
 
@@ -14,7 +14,7 @@ export default function () {
     h.set(window.innerHeight)
   }
   window.addEventListener("resize", resize)
-  hookAddDestroy()(() => {
+  hookDestroy(() => {
     window.removeEventListener("resize", resize)
   })
   const canvas = renderDom("canvas", {
@@ -22,7 +22,10 @@ export default function () {
     a_height: h.get
   })
 
+  console.log("dddd")
   renderCanvas(canvas, () => {
-    demo2()
+    // demo2()
+    // demo1()
+    demo3()
   })
 }

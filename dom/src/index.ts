@@ -4,7 +4,7 @@ import { renderPortal } from "./hookChildren"
 export { dom } from './dom'
 export { svg } from './svg'
 export type { HookChild } from './hookChildren'
-export { renderPortal, getRenderChildren, diffChangeChildren } from './hookChildren'
+export { renderPortal, getRenderChildren, diffChangeChildren, hookCurrentParent } from './hookChildren'
 export type { OrFun } from './hookChildren'
 export type { StyleProps } from './node'
 export * from './renderNode'
