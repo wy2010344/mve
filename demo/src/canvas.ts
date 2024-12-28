@@ -1,10 +1,10 @@
 import { dom } from "mve-dom";
-import { hookRect, PathResult, renderCanvas } from "mve-dom-helper";
+import { hookDraw, PathResult, renderCanvas } from "mve-dom-helper";
 import { renderArray } from "mve-helper";
 import { createSignal, PointKey, quote } from "wy-helper";
 /**
  * 
- * 绘制flex,在内部的hookRect,需要使用context来封装
+ * 绘制flex,在内部的hookDraw,需要使用context来封装
  * 
  */
 export default function () {
@@ -59,7 +59,7 @@ export default function () {
     }
     renderCanvas(canvas, () => {
 
-      hookRect({
+      hookDraw({
         x: 100,
         y: 100,
         draw: colorRectPath(),
@@ -80,24 +80,24 @@ export default function () {
         //   ctx.stroke(p)
         // },
         children() {
-          hookRect({
+          hookDraw({
             x: 10,
             y: 10,
             draw: colorRectPath(),
           })
-          hookRect({
+          hookDraw({
             x: 40,
             y: 40,
             draw: colorRectPath("yellow", true),
             children() {
-              hookRect({
+              hookDraw({
                 x: 0,
                 y: 10,
                 draw: colorRectPath('orange'),
               })
 
 
-              hookRect({
+              hookDraw({
                 x: 0,
                 y: 30,
                 draw: colorRectPath('yellow'),
@@ -105,7 +105,7 @@ export default function () {
             }
           })
           renderArray(list.get, quote, getRow => {
-            hookRect({
+            hookDraw({
               x() {
                 return getRow().index * 20 + 100
               },

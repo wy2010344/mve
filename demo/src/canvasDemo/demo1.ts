@@ -1,10 +1,7 @@
-import { hookAddDestroy } from "mve-core";
-import { renderDom } from "mve-dom";
-import { drawText, drawTextWrap, hookRect, measureTextWrap, renderCanvas } from "mve-dom-helper";
-import { createSignal } from "wy-helper";
-
+import { hookDraw } from "mve-dom-helper";
+import { drawText, drawTextWrap, measureTextWrap } from 'wy-dom-helper'
 export default function () {
-  hookRect({
+  hookDraw({
     x: 150,
     y: 500,
     draw(ctx) {
@@ -39,7 +36,7 @@ export default function () {
       }
     },
   })
-  hookRect({
+  hookDraw({
     x: 500,
     y: 500,
     onPointerDown(e) {

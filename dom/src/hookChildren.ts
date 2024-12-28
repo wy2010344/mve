@@ -32,11 +32,20 @@ export function getRenderChildren<T, N>(fun: SetValue<N>, n: N) {
   hookAlterChildren(beforeList)
   return memo(function () {
     const newList: T[] = []
+    const before = g._mve_current_parent_
+    g._mve_current_parent_ = n
     purifyList(list, newList)
+    g._mve_current_parent_ = before
     return newList
   })
 }
 
+const g = globalThis as unknown as {
+  _mve_current_parent_: any
+}
+export function hookCurrentParent<T = any>() {
+  return g._mve_current_parent_ as T
+}
 export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
   hookTrackSignal(
     getRenderChildren<T, T>(fun, node),

@@ -47,7 +47,7 @@ export default function () {
     }
   }).renderText`列表数量${() => list.get().length}`
   const getChildren = canvasChildren(() => {
-    hookRect({
+    hookDraw({
       attr() {
         const n: Attr = {
           x: 105,
@@ -68,7 +68,7 @@ export default function () {
       draw(c, w) {
       },
       children() {
-        hookRect({
+        hookDraw({
           attr: {
             x: 10,
             y: 10,
@@ -79,7 +79,7 @@ export default function () {
           }
         })
 
-        hookRect({
+        hookDraw({
           attr: {
             x: 40,
             y: 40,
@@ -89,7 +89,7 @@ export default function () {
             borderStyle: 'blue'
           },
           children() {
-            hookRect({
+            hookDraw({
               attr: {
                 width: 40,
                 height: 40,
@@ -99,7 +99,7 @@ export default function () {
             })
 
 
-            hookRect({
+            hookDraw({
               attr: {
                 width: 40,
                 height: 40,
@@ -110,7 +110,7 @@ export default function () {
           }
         })
         renderArray(list.get, quote, getRow => {
-          hookRect({
+          hookDraw({
             attr() {
               const n: Attr = {}
               n.width = 50
@@ -157,7 +157,7 @@ export default function () {
 }
 
 
-function hookRect(rect: Rect) {
+function hookDraw(rect: Rect) {
   hookAddResult(new CNode(rect))
 }
 
