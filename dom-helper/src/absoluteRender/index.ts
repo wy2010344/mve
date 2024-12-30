@@ -221,13 +221,16 @@ class MAbsoluteNode implements AbsoluteNode<any> {
   ) {
     const MDisplay = valueOrGetToGet(configure.m_display || absoluteDisplay)
     this.display = memo(() => {
-      return hookLayout(this.children, MDisplay)
+      return hookLayout(this, MDisplay)
     })
     if (!configure.childrenType && configure.children) {
       this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(() => configure.children!(this.target), this)
     } else {
       this.children = asLazy(emptyArray as any[])
     }
+  }
+  getExt(): Record<string, any> {
+    return this.configure
   }
   children: GetValue<AbsoluteNode[]>
   parent!: AbsoluteParent

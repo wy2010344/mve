@@ -24,11 +24,12 @@
     "konva": "^9.3.16",
     "linebreak": "^1.1.0",
     "motion": "^10.18.0",
-    "three": "^0.171.0",
     "mve-core": "file:.yalc/mve-core",
     "mve-dom": "file:.yalc/mve-dom",
     "mve-dom-helper": "file:.yalc/mve-dom-helper",
     "mve-helper": "file:.yalc/mve-helper",
+    "scroller": "https://github.com/mjohnston/scroller",
+    "three": "^0.171.0",
     "wy-dom-helper": "file:.yalc/wy-dom-helper",
     "wy-helper": "file:.yalc/wy-helper"
   }
