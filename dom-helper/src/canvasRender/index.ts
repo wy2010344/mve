@@ -103,13 +103,16 @@ export interface CNodeConfigure {
   onMouseUp?(e: CanvasMouseEvent<MouseEvent>): any
   onPointerDown?(e: CanvasMouseEvent<PointerEvent>): any
   onPointerUp?(e: CanvasMouseEvent<PointerEvent>): any
-
+  // onTouchDown?(e: CanvasMouseEvent<TouchEvent>): any
+  // onTouchUp?(e: CanvasMouseEvent<TouchEvent>): any
 
   onClickCapture?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseDownCapture?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseUpCapture?(e: CanvasMouseEvent<MouseEvent>): any
   onPointerDownCapture?(e: CanvasMouseEvent<PointerEvent>): any
   onPointerUpCapture?(e: CanvasMouseEvent<PointerEvent>): any
+  // onTouchDownCapture?(e: CanvasMouseEvent<TouchEvent>): any
+  // onTouchUpCapture?(e: CanvasMouseEvent<TouchEvent>): any
   ext?: Record<string, any>
 }
 
@@ -197,7 +200,12 @@ function doEvent(_ctx: CanvasRenderingContext2D,
 
 
 
-const mouseEvents = (['onClick', 'onMouseDown', 'onMouseUp', 'onPointerDown', 'onPointerUp'] as const).map(name => {
+const mouseEvents = ([
+  'onClick',
+  // 'onTouchDown', 'onTouchUp',
+  'onMouseDown', 'onMouseUp',
+  'onPointerDown', 'onPointerUp'
+] as const).map(name => {
   return {
     name: name.slice(2).toLowerCase(),
     onEvent: name,

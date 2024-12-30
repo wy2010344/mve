@@ -1031,6 +1031,10 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
+"scroller@https://github.com/mjohnston/scroller":
+  version "0.0.1"
+  resolved "https://github.com/mjohnston/scroller#054c3349d5ff7474589eb7fbbb36708e5c48e435"
+
 shebang-command@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz"
