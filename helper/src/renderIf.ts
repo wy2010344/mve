@@ -11,8 +11,8 @@ export function renderIf(
     return [
       get()
     ]
-  }, v => !!v, (d, key) => {
-    if (key) {
+  }, Boolean, (d) => {
+    if (d) {
       whenTrue()
     } else {
       whenFalse()
@@ -26,7 +26,7 @@ export function renderOne<K>(
   get: GetValue<K>,
   render: (v: K) => void
 ) {
-  renderArray(() => [get()], quote, (d, key) => {
+  renderArray(() => [get()], quote, (key) => {
     render(key)
   })
 }

@@ -10,11 +10,11 @@
       "file": true
     },
     "mve-core": {
-      "signature": "3ae3645a6a72d536f27ddfdadeb42e7b",
+      "signature": "7528412cfa2251fff631305474de06b1",
       "file": true
     },
     "mve-helper": {
-      "signature": "c04575c6b27ece3424858a6b96b74949",
+      "signature": "7319bd6d7eedf74c88476ad2874c1e29",
       "file": true
     },
     "mve-dom": {

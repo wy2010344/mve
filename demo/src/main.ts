@@ -11,12 +11,14 @@ import absoluteDemo from './absoluteDemo'
 import canvas2 from './canvasDemo'
 import typeContain from './typeContain'
 import three from './three'
+import scrollDemo1 from './scroller-demo/demo1'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
   // changePortal()
   // canvas()
-  canvas2()
+  // canvas2()
+  scrollDemo1()
   // konvaDemo()
   // observer()
   // demo1()
