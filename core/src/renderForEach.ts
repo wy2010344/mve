@@ -17,6 +17,7 @@ export function cloneMap<T>(
 }
 
 type EachValue<T, O> = {
+  index: number
   stateHolder: StateHolder
   value: T
   children: any[],
@@ -27,10 +28,11 @@ export function renderForEach<T, K, O>(
   forEach: (
     callback: (
       key: K,
-      creater: (get: GetValue<T>, key: K) => O,
+      creater: (value: T, getIndex: GetValue<number>) => O,
       value: T
     ) => GetValue<O>) => void,
-  createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater
+  createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater,
+  outRelay: EmptyFun
 ) {
   let cacheMap = createMap()
 
@@ -39,7 +41,7 @@ export function renderForEach<T, K, O>(
   const thisTimeAdd: {
     x: EachValue<T, O>,
     key: K,
-    build: (get: GetValue<T>, key: K) => O
+    build: (value: T, getIndex: GetValue<number>) => O
   }[] = []
   const thisChildren: EachValue<T, O>[] = []
 
@@ -53,6 +55,7 @@ export function renderForEach<T, K, O>(
     newMap = createMap()
     thisTimeAdd.length = 0
     thisChildren.length = 0
+    let index = 0
     forEach((key, build, value) => {
       let holders = oldMap.get(key)
       let x: EachValue<T, O>
@@ -60,12 +63,13 @@ export function renderForEach<T, K, O>(
         x = holders.shift()!
       } else {
         x = {
+          index,
+          value,
           children: [],
           stateHolder: new StateHolder(
             stateHolder,
             contextIndex
           ),
-          value: undefined!,
           out: undefined!,
           getOut() {
             return x.out
@@ -77,7 +81,10 @@ export function renderForEach<T, K, O>(
           build
         })
       }
-      x.value = value
+      if (x.value != value) {
+        console.warn(`同key下字段发生变化`, x.value, value)
+      }
+      x.index = index++
       let newEnvs = newMap.get(key)
       if (newEnvs) {
         newEnvs.push(x)
@@ -104,10 +111,10 @@ export function renderForEach<T, K, O>(
     thisTimeAdd.forEach(add => {
       const before = hookAlterStateHolder(add.x.stateHolder)
       const beforeChildren = hookAlterChildren(add.x.children)
-      add.x.out = add.build(() => {
-        createSignal()
-        return add.x.value
-      }, add.key)
+      add.x.out = add.build(add.x.value, () => {
+        outRelay()
+        return add.x.index
+      })
       hookAlterChildren(beforeChildren)
       hookAlterStateHolder(before)
     })

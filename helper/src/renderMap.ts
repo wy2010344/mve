@@ -2,50 +2,41 @@ import { renderForEach } from "mve-core"
 import { GetValue, normalMapCreater, ReadArray, RMap, run } from "wy-helper"
 
 
-export type ItemWithIndex<T> = {
-  item: T
-  index: number
-}
+
 export function renderArray<T, K>(
   getVs: GetValue<ReadArray<T>>,
   getKey: (v: T, i: number) => K,
-  render: (get: GetValue<Readonly<ItemWithIndex<T>>>, key: K) => void,
+  render: (value: T, getIndex: GetValue<number>) => void,
   createMap?: <V>() => RMap<K, V>
 ) {
-  renderForEach<Readonly<ItemWithIndex<T>>, K, void>(
+  renderForEach<Readonly<T>, K, void>(
     function (callback) {
       const vs = getVs()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
         const key = getKey(v, i)
-        callback(key, render, {
-          index: i,
-          item: v
-        })
+        callback(key, render, v)
       }
-    }, createMap)
+    }, createMap, getVs)
 }
 export function renderArrayToMap<T, K, O>(
   getVs: GetValue<ReadArray<T>>,
   getKey: (v: T, i: number) => K,
-  render: (get: GetValue<Readonly<ItemWithIndex<T>>>) => O,
+  render: (get: T, getIndex: GetValue<number>) => O,
   createMap: <V>() => RMap<K, V> = normalMapCreater
 ): GetValue<RMap<K, GetValue<O>>> {
   let gets: RMap<K, GetValue<O>>
-  const getSignal = renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
+  const getSignal = renderForEach<T, K, O>(
     function (callback) {
       const vs = getVs()
       gets = createMap<GetValue<O>>()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
         const key = getKey(v, i)
-        const get = callback(key, render, {
-          index: i,
-          item: v
-        })
+        const get = callback(key, render, v)
         gets.set(key, get)
       }
-    }, createMap)
+    }, createMap, getVs)
   return function () {
     getSignal()
     return gets
@@ -54,24 +45,21 @@ export function renderArrayToMap<T, K, O>(
 export function renderArrayToArray<T, K, O>(
   getVs: GetValue<ReadArray<T>>,
   getKey: (v: T, i: number) => K,
-  render: (get: GetValue<Readonly<ItemWithIndex<T>>>) => O,
+  render: (get: T, getIndex: GetValue<number>) => O,
   createMap?: <V>() => RMap<K, V>
 ): GetValue<O[]> {
   let gets: GetValue<O>[]
-  const getSignal = renderForEach<Readonly<ItemWithIndex<T>>, K, O>(
+  const getSignal = renderForEach<T, K, O>(
     function (callback) {
       const vs = getVs()
       gets = []
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
         const key = getKey(v, i)
-        const get = callback(key, render, {
-          index: i,
-          item: v
-        })
+        const get = callback(key, render, v)
         gets.push(get)
       }
-    }, createMap)
+    }, createMap, getVs)
   return function () {
     getSignal()
     return gets.flatMap(run)
