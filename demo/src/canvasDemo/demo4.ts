@@ -1,4 +1,4 @@
-import { addEffect, createSignal, flexDisplayUtil } from "wy-helper";
+import { addEffect, createSignal, flexDisplayUtil, memo } from "wy-helper";
 import data from "./data";
 import { hookDrawRect, simpleFlex } from "./hookDrawRect";
 import { hookDrawText } from "./hookDrawText";
@@ -104,7 +104,7 @@ export default function () {
               children() {
                 hookDrawUrlImage({
                   ext: {
-                    grow: 1
+                    grow: 9
                   },
                   relay: "width",
                   src: row.imageUrl,
