@@ -154,7 +154,7 @@ export default () => {
     value: text.get,
     className: "min-w-1",
     a_contentEditable: contentEditableText,
-    onValueChange(v) {
+    onValueChange(v: string) {
       if (isNaN(Number(v))) {
         return
       }
@@ -176,14 +176,14 @@ export default () => {
 
 function renderList(list: StoreRef<number[]>) {
 
-  renderArray(list.get, quote, getRow => {
-    dom.div().renderText`---${() => getRow().item}--- ${() => getRow().index}---`
+  renderArray(list.get, (row, getIndex) => {
+    dom.div().renderText`---${row}--- ${getIndex}---`
     dom.button({
       onClick() {
         addEffect(() => {
-          console.log("destroy", getRow().index, getRow().item, list.get().length)
+          console.log("destroy", getIndex, row, list.get().length)
         })
-        list.set(list.get().filter(v => v != getRow().item))
+        list.set(list.get().filter(v => v != row))
       }
     }).renderText`删除`
     count()
@@ -191,7 +191,7 @@ function renderList(list: StoreRef<number[]>) {
       console.log("销毁了...")
     })
     addEffect(() => {
-      console.log("getRow", getRow().index, getRow().item)
+      console.log("getRow", getIndex, row)
     })
   })
 }
