@@ -1,4 +1,4 @@
-import { alawaysTrue, EmptyFun, GetValue, memo, trackSignal, RMap, normalMapCreater, memoKeep } from "wy-helper"
+import { GetValue, RMap, normalMapCreater, memoKeep, memoAfter } from "wy-helper"
 import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
 import { StateHolder } from "./stateHolder"
 
@@ -24,23 +24,20 @@ type EachValue<T, O> = {
   out: O,
   getOut(): O
 }
-export function renderForEach<T, K, O>(
+export function renderForEach<T, O>(
   forEach: (
     callback: (
-      key: K,
+      value: T,
       creater: (value: T, getIndex: GetValue<number>) => O,
-      value: T
     ) => GetValue<O>) => void,
-  createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater,
-  outRelay: EmptyFun
+  createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater
 ) {
   let cacheMap = createMap()
 
-  let oldMap!: RMap<any, EachValue<T, O>[]>
-  let newMap!: RMap<any, EachValue<T, O>[]>
+  let oldMap!: RMap<T, EachValue<T, O>[]>
+  let newMap!: RMap<T, EachValue<T, O>[]>
   const thisTimeAdd: {
     x: EachValue<T, O>,
-    key: K,
     build: (value: T, getIndex: GetValue<number>) => O
   }[] = []
   const thisChildren: EachValue<T, O>[] = []
@@ -50,14 +47,14 @@ export function renderForEach<T, K, O>(
     throw '需要在stateHolder里面'
   }
   const contextIndex = stateHolder.contexts.length
-  const createSignal = memo(() => {
+  const createSignal = memoAfter(() => {
     oldMap = cloneMap(cacheMap, createMap)
     newMap = createMap()
     thisTimeAdd.length = 0
     thisChildren.length = 0
     let index = 0
-    forEach((key, build, value) => {
-      let holders = oldMap.get(key)
+    forEach((value, build) => {
+      let holders = oldMap.get(value)
       let x: EachValue<T, O>
       if (holders?.length) {
         x = holders.shift()!
@@ -77,7 +74,6 @@ export function renderForEach<T, K, O>(
         }
         thisTimeAdd.push({
           x,
-          key,
           build
         })
       }
@@ -85,20 +81,20 @@ export function renderForEach<T, K, O>(
         console.warn(`同key下字段发生变化`, x.value, value)
       }
       x.index = index++
-      let newEnvs = newMap.get(key)
+      let newEnvs = newMap.get(value)
       if (newEnvs) {
         newEnvs.push(x)
-        console.warn(`重复的key[${key}]出现第${newEnvs.length}次`)
+        console.warn(`重复的value`, value, `出现第${newEnvs.length}次`)
       } else {
         newEnvs = [x]
       }
-      newMap.set(key, newEnvs)
+      newMap.set(value, newEnvs)
       thisChildren.push(x)
       return x.getOut
     })
-
-    memoKeep(afterWork)
     return newMap
+  }, newMap => {
+    memoKeep(afterWork)
   })
   function afterWork() {
     //清理、销毁事件
@@ -112,7 +108,7 @@ export function renderForEach<T, K, O>(
       const before = hookAlterStateHolder(add.x.stateHolder)
       const beforeChildren = hookAlterChildren(add.x.children)
       add.x.out = add.build(add.x.value, () => {
-        outRelay()
+        createSignal()
         return add.x.index
       })
       hookAlterChildren(beforeChildren)

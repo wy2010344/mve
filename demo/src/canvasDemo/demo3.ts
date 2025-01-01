@@ -25,6 +25,7 @@ export default function () {
       return simpleFlex({
         gap: 10,
         direction: 'x',
+        reverse: true,
         alignItems: 'start',
         alignFix: true
       })
