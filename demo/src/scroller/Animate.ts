@@ -13,15 +13,13 @@
  */
 
 /**
- * Generic animation class with support for dropped frames both optional easing and duration.
- *
- * Optional duration is useful when the lifetime is defined by another condition than time
- * e.g. speed of an animating object, etc.
- *
- * Dropped frame logic allows to keep using the same updater logic independent from the actual
- * rendering. This eases a lot of cases where it might be pretty complex to break down a state
- * based on the pure time difference.
- */
+* 通用动画类，支持丢帧、可选缓动和持续时间。
+*
+* 当生命周期由时间以外的其他条件定义时，可选持续时间很有用
+* 例如动画对象的速度等。
+*
+* 丢帧逻辑允许继续使用与实际渲染无关的相同更新程序逻辑。这简化了许多可能非常复杂的基于纯时间差异分解状态的情况。
+*/
 var time = Date.now || function () {
   return +new Date();
 };
@@ -29,73 +27,6 @@ var desiredFrames = 60;
 var millisecondsPerSecond = 1000;
 var running: Record<number, boolean | null> = {};
 var counter = 1;
-
-/**
- * A requestAnimationFrame wrapper / polyfill.
- * @ts-ignore
- * @param callback {Function} The callback to be invoked before the next repaint.
- * @param root {HTMLElement} The root element for the repaint
- */
-const requestAnimation = (function () {
-  // Check for request animation Frame support
-  var requestFrame = global.requestAnimationFrame || global.webkitRequestAnimationFrame || global.mozRequestAnimationFrame || global.oRequestAnimationFrame;
-  var isNative = !!requestFrame;
-
-  if (requestFrame && !/requestAnimationFrame\(\)\s*\{\s*\[native code\]\s*\}/i.test(requestFrame.toString())) {
-    isNative = false;
-  }
-
-  if (isNative) {
-    return function (callback, root) {
-      requestFrame(callback, root)
-    };
-  }
-
-  var TARGET_FPS = 60;
-  var requests = {};
-  var requestCount = 0;
-  var rafHandle = 1;
-  var intervalHandle: NodeJS.Timeout | null = null;
-  var lastActive = +new Date();
-
-  return function (callback, root) {
-    var callbackHandle = rafHandle++;
-
-    // Store callback
-    requests[callbackHandle] = callback;
-    requestCount++;
-
-    // Create timeout at first request
-    if (intervalHandle === null) {
-
-      intervalHandle = setInterval(function () {
-
-        var time = +new Date();
-        var currentRequests = requests;
-
-        // Reset data structure before executing callbacks
-        requests = {};
-        requestCount = 0;
-
-        for (var key in currentRequests) {
-          if (currentRequests.hasOwnProperty(key)) {
-            currentRequests[key](time);
-            lastActive = time;
-          }
-        }
-
-        // Disable the timeout when nothing happens for a certain
-        // period of time
-        if (time - lastActive > 2500) {
-          clearInterval(intervalHandle);
-          intervalHandle = null;
-        }
-
-      }, 1000 / TARGET_FPS);
-    }
-    return callbackHandle;
-  };
-})()
 /**
    * Stops the given animation.
    *
@@ -140,53 +71,37 @@ export function start(
   verifyCallback: (id: number) => boolean,
   completedCallback: (droppedFrames: number, id: number, finished: boolean) => void,
   duration?: number,
-  easingMethod?: (percent: number) => number,
-  root: HTMLElement = document.body
+  easingMethod?: (percent: number) => number
 ): number {
-
-  var start = time();
+  const start = time();
   var lastFrame = start;
   var percent = 0;
   var dropCounter = 0;
-  var id = counter++;
-  // 每隔几个新动画自动压缩运行数据库
-  if (id % 20 === 0) {
-    var newRunning: Record<number, boolean | null> = {};
-    for (var usedId in running) {
-      newRunning[usedId] = true;
-    }
-    running = newRunning;
-  }
+  const id = counter++;
   // 这是每隔几毫秒调用一次的内部步骤方法
-  var step = function (virtual?: boolean) {
-
+  const step = function (virtual?: boolean | number) {
     // Normalize virtual value
-    var render = virtual !== true;
-
+    const render = virtual !== true;
     // Get current time
-    var now = time();
-
-    // Verification is executed before next animation step
+    const now = time();
+    // 在下一个动画步骤之前执行验证
     if (!running[id] || (verifyCallback && !verifyCallback(id))) {
-
       running[id] = null;
-      completedCallback && completedCallback(desiredFrames - (dropCounter / ((now - start) / millisecondsPerSecond)), id, false);
+      completedCallback?.(
+        desiredFrames - (dropCounter / ((now - start) / millisecondsPerSecond)),
+        id,
+        false);
       return;
-
     }
-
-    // For the current rendering to apply let's update omitted steps in memory.
-    // This is important to bring internal state variables up-to-date with progress in time.
+    // 为了应用当前的渲染，让我们更新内存中省略的步骤。
+    // 这对于及时更新内部状态变量非常重要。
     if (render) {
-
-      var droppedFrames = Math.round((now - lastFrame) / (millisecondsPerSecond / desiredFrames)) - 1;
+      const droppedFrames = Math.round((now - lastFrame) / (millisecondsPerSecond / desiredFrames)) - 1;
       for (var j = 0; j < Math.min(droppedFrames, 4); j++) {
         step(true);
         dropCounter++;
       }
-
     }
-
     // Compute percent value
     if (duration) {
       percent = (now - start) / duration;
@@ -194,15 +109,17 @@ export function start(
         percent = 1;
       }
     }
-
     // Execute step callback, then...
     var value = easingMethod ? easingMethod(percent) : percent;
     if ((stepCallback(value, now, render) === false || percent === 1) && render) {
       running[id] = null;
-      completedCallback && completedCallback(desiredFrames - (dropCounter / ((now - start) / millisecondsPerSecond)), id, percent === 1 || duration == null);
+      completedCallback?.(
+        desiredFrames - (dropCounter / ((now - start) / millisecondsPerSecond)),
+        id,
+        percent === 1 || duration == null);
     } else if (render) {
       lastFrame = now;
-      requestAnimation(step, root);
+      requestAnimationFrame(step);
     }
   };
 
@@ -210,7 +127,7 @@ export function start(
   running[id] = true;
 
   // Init first step
-  requestAnimation(step, root);
+  requestAnimationFrame(step);
 
   // Return unique animation ID
   return id;
