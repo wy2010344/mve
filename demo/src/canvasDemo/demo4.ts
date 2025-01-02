@@ -1,8 +1,7 @@
 import { addEffect, createSignal, flexDisplayUtil, memo } from "wy-helper";
 import data from "./data";
-import { hookDrawRect, simpleFlex } from "./hookDrawRect";
-import { hookDrawText } from "./hookDrawText";
-import { hookDrawUrlImage } from "./hookDrawImage";
+import { AbsoluteNode, hookDrawRect, simpleFlex, hookDrawText } from "mve-dom-helper";
+
 import Scroller from 'scroller';
 import { hookTrackSignalMemo } from "mve-helper";
 export default function () {

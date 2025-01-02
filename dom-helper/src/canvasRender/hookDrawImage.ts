@@ -59,6 +59,11 @@ export function hookDrawImage(n: DrawRectConfig & {
     draw(ctx, n) {
       const image = getImage()
       ctx.drawImage(image, 0, 0, n.width(), n.height())
+      const path = new Path2D()
+      path.rect(0, 0, n.width(), n.height())
+      return {
+        path
+      }
     },
   })
 }

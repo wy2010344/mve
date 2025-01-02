@@ -1,8 +1,8 @@
 import { hookAddDestroy, hookAddResult } from "mve-core"
-import { getRenderChildren } from "mve-dom"
-import { hookTrackSignalMemo } from "mve-helper"
+import { getRenderChildren, hookCurrentParent } from "mve-dom"
+import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, emptyObject, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, emptyObject, GetValue, memo, memoAfter, PointKey, ValueOrGet } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -57,29 +57,45 @@ class CNode implements CMNode {
   }
 
   public hasClip = false
-  parent!: NodeParent
-  private _index!: number
+  parent!: NodeParent// = hookCurrentParent() as NodeParent
   ctx!: CanvaRenderCtx
   public isBefore: boolean | undefined
-  setParentAndIndex(
-    index: number,
-    parent: NodeParent
+  setParent(
+    parent: NodeParent,
+    index: number
   ) {
     if (this.parent && this.parent != parent) {
       throw 'parent发生改变'
     }
-    this._index = index
     this.parent = parent
+    this._index = index
   }
+  private _index: number = 0
 
   index() {
+    /**
+     * 使用这个可能就够了,children变化必然触发重绘
+     * 因为所有操作都必须有实时性延迟,此时绘制已经完成了
+     * 即如果更新到dom上,需要addEffect里面去操作
+     */
     if (this.isBefore) {
-      this.parent.beforeChildren!()
+      this.parent.beforeChildren?.()
     } else {
       this.parent.children()
     }
     return this._index
   }
+
+  /**
+   * 这个每次至少遍历一遍,多计算一步
+   */
+  // index = memo(() => {
+  //   if (this.isBefore) {
+  //     return this.parent.beforeChildren!().indexOf(this)
+  //   } else {
+  //     return this.parent.children().indexOf(this)
+  //   }
+  // })
 
   x: GetValue<number>
   y: GetValue<number>
@@ -219,7 +235,12 @@ export function renderCanvas(
   children: EmptyFun,
   ext: Record<string, any> = emptyObject
 ) {
-  const getChildren = getRenderChildren<CNode, undefined>(children, undefined)
+  const rootParent: NodeParent = {
+    ext: ext,
+    children: undefined as any
+  }
+  const getChildren = getRenderChildren<CNode, NodeParent>(children, rootParent)
+  rootParent.children = getChildren
   let _ctx: CanvasRenderingContext2D
   let _children: CNode[]
 
@@ -256,10 +277,6 @@ export function renderCanvas(
   hookAddDestroy()(() => {
     ob.disconnect()
   })
-  const rootParent = {
-    ext: ext,
-    children: getChildren
-  }
   hookTrackSignalMemo(() => {
     width.get()
     height.get()
@@ -268,7 +285,7 @@ export function renderCanvas(
       getChildren().forEach((child, i) => {
         child.ctx = ctx
         child.isBefore = before
-        child.setParentAndIndex(i, parent)
+        child.setParent(parent, i)
         prepare(child.beforeChildren, child, true)
         prepare(child.children, child)
       })
@@ -306,6 +323,6 @@ export function renderCanvas(
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx
-  }, emptyFun)
+  })
   return { width, height }
 }
