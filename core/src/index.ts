@@ -5,7 +5,9 @@ import { StateHolder } from './stateHolder'
 export * from './renderForEach'
 export {
   hookAddResult, hookAddDestroy,
-  hookAlterChildren
+  hookAlterChildren,
+  hookAlterStateHolder,
+  hookCurrentStateHolder
 } from './cache'
 export { createContext } from './context'
 

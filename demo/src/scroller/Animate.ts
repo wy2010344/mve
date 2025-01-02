@@ -13,13 +13,15 @@
  */
 
 /**
-* 通用动画类，支持丢帧、可选缓动和持续时间。
-*
-* 当生命周期由时间以外的其他条件定义时，可选持续时间很有用
-* 例如动画对象的速度等。
-*
-* 丢帧逻辑允许继续使用与实际渲染无关的相同更新程序逻辑。这简化了许多可能非常复杂的基于纯时间差异分解状态的情况。
-*/
+ * Generic animation class with support for dropped frames both optional easing and duration.
+ *
+ * Optional duration is useful when the lifetime is defined by another condition than time
+ * e.g. speed of an animating object, etc.
+ *
+ * Dropped frame logic allows to keep using the same updater logic independent from the actual
+ * rendering. This eases a lot of cases where it might be pretty complex to break down a state
+ * based on the pure time difference.
+ */
 var time = Date.now || function () {
   return +new Date();
 };

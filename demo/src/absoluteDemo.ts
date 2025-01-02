@@ -31,6 +31,7 @@ export default function (app: HTMLElement) {
   })
   renderAbsoulte(app, () => {
 
+    const a = createSignal(0)
     const list = createSignal<readonly number[]>(emptyArray as any[])
     const alist = createSignal<readonly number[]>(emptyArray as any[])
     renderADom("div", {
@@ -69,8 +70,8 @@ export default function (app: HTMLElement) {
           },
           s_background: faker.color.rgb()
         })
-        renderList(list)
-        renderList(alist)
+        renderList(list, a)
+        renderList(alist, a)
         renderADom("button", {
           // width: 40,//'auto',
           // height: 50,
@@ -80,6 +81,7 @@ export default function (app: HTMLElement) {
           // s_background: faker.color.rgb(),
           childrenType: "text",
           onClick() {
+            a.set(a.get() + 1)
             list.set(list.get().concat(Date.now()))
             alist.set(alist.get().concat(Date.now()))
           },
@@ -92,7 +94,7 @@ export default function (app: HTMLElement) {
   })
 }
 
-function renderList(list: StoreRef<readonly number[]>) {
+function renderList(list: StoreRef<readonly number[]>, a: StoreRef<number>) {
 
   renderArray(list.get, (row, getIndex) => {
     const n: AbsoluteNode = renderADom("div", {
@@ -107,7 +109,7 @@ function renderList(list: StoreRef<readonly number[]>) {
         list.set(list.get().filter(v => v != row))
       },
       children() {
-        return `${n.index()}====${row}---${getIndex()}`
+        return `${a.get()}:${n.index()}====${row}---${getIndex()}`
       }
     })
   })
