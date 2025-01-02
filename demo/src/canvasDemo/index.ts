@@ -5,6 +5,7 @@ import { createSignal } from "wy-helper";
 import demo3 from "./demo3";
 import { hookDestroy } from "mve-helper";
 import demo4 from "./demo4";
+import demo5 from "./demo5";
 
 export default function () {
 
@@ -27,7 +28,8 @@ export default function () {
   renderCanvas(canvas, () => {
     // demo2()
     // demo1()
-    demo3()
+    // demo3()
     // demo4()
+    demo5()
   })
 }

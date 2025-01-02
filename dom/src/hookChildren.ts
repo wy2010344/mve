@@ -1,6 +1,6 @@
-import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue } from "wy-helper"
+import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
-import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
+import { hookDestroy, hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 
 
 
@@ -47,6 +47,19 @@ export function hookCurrentParent<T = any>() {
   return g._mve_current_parent_ as T
 }
 export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
+  const list = storeRef<T[]>(emptyArray as T[])
+  hookTrackSignal(
+    getRenderChildren<T, T>(fun, node),
+    diffChangeChildren(node, quote, emptyFun, list)
+  )
+  hookDestroy(() => {
+    list.get().forEach(node => {
+      node.parentNode?.removeChild(node)
+    })
+  })
+}
+
+export function renderChildren<T extends Node>(node: T, fun: SetValue<T>) {
   hookTrackSignal(
     getRenderChildren<T, T>(fun, node),
     diffChangeChildren(node, quote, emptyFun)
@@ -56,12 +69,14 @@ export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
 export function diffChangeChildren<T>(
   pNode: Node,
   get: (v: T) => Node,
-  operate: (v: T, i: number) => void
+  operate: (v: T, i: number) => void,
+  listRef = storeRef<T[]>(emptyArray as T[])
 ) {
-  let oldList: T[] = emptyArray as T[]
+
   return function (
     newList: T[]
   ) {
+    const oldList = listRef.get()
     let changed = false
     let beforeNode: Node | null = null
     for (let i = 0; i < newList.length; i++) {
@@ -90,6 +105,6 @@ export function diffChangeChildren<T>(
         lastChild.parentNode?.removeChild(lastChild)
       }
     })
-    oldList = newList
+    listRef.set(newList)
   }
 }

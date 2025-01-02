@@ -26,10 +26,7 @@ export default function () {
                   font: "20px serif"
                 }
               })
-              drawTextWrap(ctx, o, 'red', {
-                direction: 'rtl',
-                textAlign: 'end'
-              })
+              drawTextWrap(ctx, o)
             }
           }
         ]
@@ -77,10 +74,7 @@ export default function () {
 
 
 
-              drawTextWrap(ctx, o, 'red', {
-                direction: 'rtl',
-                textAlign: 'start'
-              })
+              drawTextWrap(ctx, o)
             },
           }
           // {

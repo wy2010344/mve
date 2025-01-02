@@ -1,4 +1,4 @@
-import { CanvaRenderCtx, CMNode, CNodeConfigure, hookDraw, PathResult, } from "mve-dom-helper"
+import { CanvaRenderCtx, CMNode, CNodeConfigure, hookDraw, PathResult, } from "./index"
 import { DisplayProps, flexDisplayUtil, GetValue, hookLayout, InstanceCallbackOrValue, LayoutKey, LayoutModel, MDisplayOut, memo, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
@@ -8,7 +8,7 @@ interface CDisplay extends MDisplayOut {
 }
 
 
-class AbsoluteNode implements CDisplay {
+export class CanvasRectNode implements CDisplay {
   target!: CMNode
   getExt() {
     return this.target.ext
@@ -54,19 +54,19 @@ class AbsoluteNode implements CDisplay {
 }
 
 interface AbsoluteNodeConfigure {
-  layout?: ((v: AbsoluteNode) => CDisplay) | CDisplay
-  x?: InstanceCallbackOrValue<AbsoluteNode>
-  y?: InstanceCallbackOrValue<AbsoluteNode>
-  width?: InstanceCallbackOrValue<AbsoluteNode>
-  height?: InstanceCallbackOrValue<AbsoluteNode>
+  layout?: ((v: CanvasRectNode) => CDisplay) | CDisplay
+  x?: InstanceCallbackOrValue<CanvasRectNode>
+  y?: InstanceCallbackOrValue<CanvasRectNode>
+  width?: InstanceCallbackOrValue<CanvasRectNode>
+  height?: InstanceCallbackOrValue<CanvasRectNode>
   paddingLeft?: ValueOrGet<number>
   paddingRight?: ValueOrGet<number>
   paddingTop?: ValueOrGet<number>
   paddingBottom?: ValueOrGet<number>
-  draw?(ctx: CanvaRenderCtx, n: AbsoluteNode): PathResult | void;
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode): PathResult | void;
 }
 function superCreateGet(x: LayoutKey) {
-  return function (getIns: GetValue<AbsoluteNode>) {
+  return function (getIns: GetValue<CanvasRectNode>) {
     return function () {
       const ins = getIns()
       try {
@@ -80,9 +80,9 @@ function superCreateGet(x: LayoutKey) {
   }
 }
 
-function getFromParent(ins: AbsoluteNode, x: LayoutKey, err: any) {
+function getFromParent(ins: CanvasRectNode, x: LayoutKey, err: any) {
   const parent = ins.target.parent.ext.rect
-  if (parent && parent instanceof AbsoluteNode) {
+  if (parent && parent instanceof CanvasRectNode) {
     if (ins.target.isBefore) {
       return parent.getBeforeChildInfo(x, ins.target.index())
     }
@@ -102,8 +102,8 @@ function emptyThrow(): number {
 }
 
 function getInnerSize(
-  o: InstanceCallbackOrValue<AbsoluteNode> | undefined,
-  getIns: GetValue<AbsoluteNode>,
+  o: InstanceCallbackOrValue<CanvasRectNode> | undefined,
+  getIns: GetValue<CanvasRectNode>,
   key: LayoutKey,
   left: GetValue<number>,
   right: GetValue<number>
@@ -124,7 +124,7 @@ function getInnerSize(
 export type DrawRectConfig = AbsoluteNodeConfigure & Omit<CNodeConfigure, 'x' | 'y' | 'draw'>
 export function hookDrawRect(
   n: DrawRectConfig) {
-  function getIns(): AbsoluteNode {
+  function getIns(): CanvasRectNode {
     return node
   }
   const _layout = valueOrGetToGet(n.layout || absoluteDisplay)
@@ -147,7 +147,7 @@ export function hookDrawRect(
       const list: LayoutModel[] = []
       tnode.children().forEach(child => {
         const rect = child.ext.rect
-        if (rect instanceof AbsoluteNode) {
+        if (rect instanceof CanvasRectNode) {
           list.push(rect)
         }
       })
@@ -157,7 +157,7 @@ export function hookDrawRect(
   const layout: GetValue<CDisplay> = memo(() => {
     return hookLayout(info, _layout)
   })
-  const node = new AbsoluteNode(
+  const node = new CanvasRectNode(
     x, y, width, height, layout,
     paddingLeft,
     paddingRight,

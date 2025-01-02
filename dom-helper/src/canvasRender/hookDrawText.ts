@@ -1,6 +1,6 @@
 import { memo, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { DrawRectConfig, hookDrawRect, simpleFlex } from "./hookDrawRect"
-import { CanvasStyle, drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig } from "wy-dom-helper"
+import { DrawRectConfig, hookDrawRect } from "./hookDrawRect"
+import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig } from "wy-dom-helper"
 
 type TextConfig = {
   text: string
@@ -10,7 +10,7 @@ type TextConfig = {
 }
 export function hookDrawText(n: {
   config: ValueOrGet<TextConfig>
-  drawInfo: ValueOrGet<DrawTextWrapExt>
+  drawInfo?: ValueOrGet<DrawTextWrapExt>
 } & Omit<DrawRectConfig, 'height'>) {
   const getConfig = valueOrGetToGet(n.config)
 
@@ -23,6 +23,11 @@ export function hookDrawText(n: {
     draw(ctx, n) {
       const info = getDrawInfo()
       drawTextWrap(ctx, mout(), info)
+      const path = new Path2D()
+      path.rect(0, 0, n.width(), n.height())
+      return {
+        path
+      }
     },
   })
   const mout = memo(function () {

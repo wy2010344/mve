@@ -3,7 +3,7 @@ import { diffChangeChildren, getRenderChildren, } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
 import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet } from "wy-helper"
+import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, memoAfter } from "wy-helper"
 
 
 interface AbsoluteParent {
@@ -165,12 +165,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
     svg,
     c)
   hookAddResult(n)
-  hookTrackSignal(
-    n.children as GetValue<MAbsoluteNode[]>,
-    diffChangeChildren(n.target, getTarget, (child, i) => {
-      child.setParentAndIndex(i, n)
-    })
-  )
+  makeIndex(n.children as GetValue<MAbsoluteNode[]>, n.target, n)
   addEffect(() => {
     addDestroy(trackSignalMemo(n.x, x => n.target.style.left = x + 'px'))
     addDestroy(trackSignalMemo(n.y, x => n.target.style.top = x + 'px'))
@@ -235,19 +230,22 @@ class MAbsoluteNode implements AbsoluteNode<any> {
   children: GetValue<AbsoluteNode[]>
   parent!: AbsoluteParent
   private _index!: number
+  private relaySet: EmptyFun = emptyFun
   setParentAndIndex(
     index: number,
-    parent: AbsoluteParent
+    parent: AbsoluteParent,
+    set: EmptyFun
   ) {
     if (this.parent && this.parent != parent) {
       throw 'parent发生改变'
     }
+    this.relaySet = set
     this._index = index
     this.parent = parent
   }
 
   index() {
-    this.parent.children()
+    this.relaySet()
     return this._index
   }
   getChildInfo(x: LayoutKey, i: number) {
@@ -273,12 +271,17 @@ export function renderAbsoulte(node: Node, children: EmptyFun) {
       return 0
     },
   }
-  hookTrackSignal(
-    getChildren as GetValue<MAbsoluteNode[]>,
+  makeIndex(getChildren, node, parent)
+}
+
+
+function makeIndex(getChildren: GetValue<MAbsoluteNode[]>, node: Node, parent: AbsoluteParent) {
+  const set = memoAfter(getChildren, children => {
     diffChangeChildren(node, getTarget, (child, i) => {
-      child.setParentAndIndex(i, parent)
-    })
-  )
+      child.setParentAndIndex(i, parent, set)
+    })(children)
+  })
+  hookTrackSignal(set)
 }
 
 

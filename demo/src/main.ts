@@ -12,6 +12,7 @@ import canvas2 from './canvasDemo'
 import typeContain from './typeContain'
 import three from './three'
 import scrollDemo1 from './scroller-demo/demo1'
+import scrollDemo1p from './scroller-demo/demo1p'
 import pagingx from './scroller-demo/pagingx'
 import snapDemo from './scroller-demo/snapDemo'
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -19,8 +20,9 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 const destroy = createRoot(app, () => {
   // changePortal()
   // canvas()
-  canvas2()
+  // canvas2()
   // scrollDemo1()
+  scrollDemo1p()
   // pagingx()
   // snapDemo()
   // konvaDemo()

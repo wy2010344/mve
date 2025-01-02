@@ -3,7 +3,7 @@ import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, v
 import { hookTrackSignalMemo } from "mve-helper"
 import { addEvent, CSSProperties, isEvent, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
-import { OrFun, renderPortal } from "./hookChildren"
+import { OrFun, renderChildren, renderPortal } from "./hookChildren"
 
 
 export type StyleProps = {
@@ -228,7 +228,7 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   }
   render(fun: (node: N) => void = emptyFun): N {
     const node = this.useHelper()
-    renderPortal(node, fun)
+    renderChildren(node, fun)
     return node
   }
 }
