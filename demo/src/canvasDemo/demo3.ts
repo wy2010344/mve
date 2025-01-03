@@ -89,6 +89,21 @@ export default function () {
           text: "abwefw aef aew awe awe awe awefewf aefawe ",
           lineHeight: 20
         },
+        draw(ctx, n, draw) {
+          return {
+            operates: [
+              {
+                type: "stroke",
+                width: 4,
+                style: "green"
+              },
+              {
+                type: "draw",
+                callback: draw
+              }
+            ]
+          }
+        },
         drawInfo: {
           style: 'red'
         }
@@ -96,7 +111,22 @@ export default function () {
       hookDrawUrlImage({
         width: 100,
         relay: "width",
-        src: "https://picsum.photos/363/423"
+        src: "https://picsum.photos/363/423",
+        draw(ctx, n, draw) {
+          return {
+            operates: [
+              {
+                type: "stroke",
+                width: 6,
+                style: "blue"
+              },
+              {
+                type: "draw",
+                callback: draw
+              }
+            ]
+          }
+        }
       })
     },
   })

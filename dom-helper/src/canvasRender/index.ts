@@ -1,8 +1,8 @@
 import { hookAddDestroy, hookAddResult } from "mve-core"
-import { getRenderChildren, hookCurrentParent } from "mve-dom"
-import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
+import { getRenderChildren } from "mve-dom"
+import { hookTrackSignalMemo } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, emptyObject, GetValue, memo, memoAfter, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -29,7 +29,6 @@ export interface CMNode extends NodeParent {
   x: GetValue<number>
   y: GetValue<number>
   index(): number
-  ctx: CanvaRenderCtx
   hasClip: boolean
   isBefore?: boolean
   parent: NodeParent
@@ -45,12 +44,12 @@ class CNode implements CMNode {
     this.x = toCall(configure, 'x')
     this.y = toCall(configure, 'y')
     if (configure.beforeChildren) {
-      this.beforeChildren = getRenderChildren(configure.beforeChildren, this)
+      this.beforeChildren = makeParentAndIndex(configure.beforeChildren, this, true)
     } else {
       this.beforeChildren = asLazy(emptyArray as any[])
     }
     if (configure.children) {
-      this.children = getRenderChildren(configure.children, this)
+      this.children = makeParentAndIndex(configure.children, this)
     } else {
       this.children = asLazy(emptyArray as any[])
     }
@@ -58,17 +57,19 @@ class CNode implements CMNode {
 
   public hasClip = false
   parent!: NodeParent// = hookCurrentParent() as NodeParent
-  ctx!: CanvaRenderCtx
+  // ctx!: CanvaRenderCtx
   public isBefore: boolean | undefined
   setParent(
     parent: NodeParent,
-    index: number
+    index: number,
+    isBefore: boolean
   ) {
     if (this.parent && this.parent != parent) {
       throw 'parent发生改变'
     }
     this.parent = parent
     this._index = index
+    this.isBefore = isBefore
   }
   private _index: number = 0
 
@@ -239,12 +240,10 @@ export function renderCanvas(
     ext: ext,
     children: undefined as any
   }
-  const getChildren = getRenderChildren<CNode, NodeParent>(children, rootParent)
+  const getChildren = makeParentAndIndex(children, rootParent)
   rootParent.children = getChildren
   let _ctx: CanvasRenderingContext2D
   let _children: CNode[]
-
-
   mouseEvents.forEach(me => {
     canvas.addEventListener(me.name as 'click', e => {
       doEvent(
@@ -281,16 +280,8 @@ export function renderCanvas(
     width.get()
     height.get()
     const ctx = canvas.getContext("2d")!
-    function prepare(getChildren: GetValue<CNode[]>, parent: NodeParent, before?: boolean) {
-      getChildren().forEach((child, i) => {
-        child.ctx = ctx
-        child.isBefore = before
-        child.setParent(parent, i)
-        prepare(child.beforeChildren, child, true)
-        prepare(child.children, child)
-      })
-    }
-    prepare(getChildren, rootParent)
+    const beforeCtx = m._mve_canvas_render_ctx
+    m._mve_canvas_render_ctx = ctx
     function draw(
       children: CNode[]
     ) {
@@ -323,6 +314,29 @@ export function renderCanvas(
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx
+    m._mve_canvas_render_ctx = beforeCtx
   })
   return { width, height }
+}
+
+
+const m = globalThis as {
+  _mve_canvas_render_ctx?: CanvaRenderCtx
+}
+
+export function hookCurrentCtx() {
+  return m._mve_canvas_render_ctx!
+}
+
+
+function makeParentAndIndex(
+  children: EmptyFun,
+  parent: NodeParent,
+  before = false
+) {
+  return getRenderChildren<CNode, NodeParent>(children, parent, list => {
+    list.forEach((row, index) => {
+      row.setParent(parent, index, before)
+    })
+  })
 }

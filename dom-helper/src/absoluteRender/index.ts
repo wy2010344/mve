@@ -1,9 +1,9 @@
-import { hookAddDestroy, hookAddResult } from "mve-core"
-import { diffChangeChildren, getRenderChildren, } from "mve-dom"
-import { hookTrackSignal } from "mve-helper"
-import { BDomEvent, DomElement, DomElementType, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
+import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from "mve-core"
+import { diffChangeChildren, getRenderChildren } from "mve-dom"
+import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
+import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
 import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, memoAfter } from "wy-helper"
+import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy } from "wy-helper"
 
 
 interface AbsoluteParent {
@@ -60,20 +60,33 @@ type DomConfigure<T extends DomElementType> =
     height: 'auto'
   }
 
+export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
+  m_display?: ValueOrGet<MDisplayOut>
+} & {
+  x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
+  y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
+}
 export function renderADom<T extends DomElementType>(
   type: T,
-  arg: DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
-    m_display?: ValueOrGet<MDisplayOut>
-  } & {
-    x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-    y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-  }
+  arg: ADomAttributes<T>
 ): MAbsoluteNode {
   const target = document.createElement(type)
   target.style.position = 'absolute'
   target.style.minWidth = '0px'
   return renderAbsolute(target, arg, false)
 }
+
+export const adom: {
+  readonly [key in DomElementType]: {
+    (props?: ADomAttributes<key>): DomElement<key>
+  }
+} = createOrProxy(domTagNames, tag => {
+  return function (args: any) {
+    return renderADom(tag, args)
+  } as any
+})
+
+
 // type SvgConfigure<T extends SvgElementType> = InOrFun<
 //   Omit<FSvgAttribute<T>, 's_width'
 //     | 's_height'
@@ -161,11 +174,16 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
   const n = new MAbsoluteNode(
     target,
     x, y,
-    width, height,
+    width,
+    height,
     svg,
     c)
   hookAddResult(n)
-  makeIndex(n.children as GetValue<MAbsoluteNode[]>, n.target, n)
+  if (!c.childrenType && c.children) {
+    n.children = makeIndex(c.children, n.target, n)
+  } else {
+    n.children = asLazy(emptyArray as any[])
+  }
   addEffect(() => {
     addDestroy(trackSignalMemo(n.x, x => n.target.style.left = x + 'px'))
     addDestroy(trackSignalMemo(n.y, x => n.target.style.top = x + 'px'))
@@ -218,35 +236,16 @@ class MAbsoluteNode implements AbsoluteNode<any> {
     this.display = memo(() => {
       return hookLayout(this, MDisplay)
     })
-    if (!configure.childrenType && configure.children) {
-      this.children = getRenderChildren<MAbsoluteNode, MAbsoluteNode>(() => configure.children!(this.target), this)
-    } else {
-      this.children = asLazy(emptyArray as any[])
-    }
   }
   getExt(): Record<string, any> {
     return this.configure
   }
-  children: GetValue<AbsoluteNode[]>
+  children!: GetValue<AbsoluteNode[]>
   parent!: AbsoluteParent
-  private _index!: number
-  private relaySet: EmptyFun = emptyFun
-  setParentAndIndex(
-    index: number,
-    parent: AbsoluteParent,
-    set: EmptyFun
-  ) {
-    if (this.parent && this.parent != parent) {
-      throw 'parent发生改变'
-    }
-    this.relaySet = set
-    this._index = index
-    this.parent = parent
-  }
-
+  __index!: number
   index() {
-    this.relaySet()
-    return this._index
+    this.parent.children()
+    return this.__index
   }
   getChildInfo(x: LayoutKey, i: number) {
     return this.display().getChildInfo(x, i)
@@ -263,28 +262,25 @@ class MAbsoluteNode implements AbsoluteNode<any> {
  * @param children 
  */
 export function renderAbsoulte(node: Node, children: EmptyFun) {
-  const getChildren = getRenderChildren<MAbsoluteNode, undefined>(children, undefined)
-
-  const parent: AbsoluteParent = {
-    children: getChildren,
-    getChildInfo(x, i) {
-      return 0
-    },
+  const parent: AbsoluteNode = {} as any
+  parent.getChildInfo = () => {
+    return 0
   }
-  makeIndex(getChildren, node, parent)
+  parent.children = makeIndex(children, node, parent)
 }
-
-
-function makeIndex(getChildren: GetValue<MAbsoluteNode[]>, node: Node, parent: AbsoluteParent) {
-  const set = memoAfter(getChildren, children => {
-    diffChangeChildren(node, getTarget, (child, i) => {
-      child.setParentAndIndex(i, parent, set)
-    })(children)
+function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
+  const getChildren = getRenderChildren<MAbsoluteNode, AbsoluteParent>(children, parent, list => {
+    list.forEach((row, i) => {
+      row.__index = i
+      if (row.parent && row.parent != parent) {
+        console.log("parent发生改变", row.parent, parent)
+      }
+      row.parent = parent
+    })
   })
-  hookTrackSignal(set)
+  hookTrackSignalMemo(getChildren, diffChangeChildren(node, getTarget))
+  return getChildren
 }
-
-
 export const absoluteDisplay: MDisplayOut = {
   getChildInfo(x, i) {
     //不定义子元素的坐标

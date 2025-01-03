@@ -1,6 +1,7 @@
-import { memo, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { DrawRectConfig, hookDrawRect } from "./hookDrawRect"
+import { EmptyFun, memo, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect"
 import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig } from "wy-dom-helper"
+import { CanvaRenderCtx, hookCurrentCtx, PathResult } from "."
 
 type TextConfig = {
   text: string
@@ -8,31 +9,40 @@ type TextConfig = {
   config?: TextWrapTextConfig,
   maxLines?: number
 }
-export function hookDrawText(n: {
+export function hookDrawText(arg: {
   config: ValueOrGet<TextConfig>
   drawInfo?: ValueOrGet<DrawTextWrapExt>
-} & Omit<DrawRectConfig, 'height'>) {
-  const getConfig = valueOrGetToGet(n.config)
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+} & Omit<DrawRectConfig, 'height' | 'draw'>) {
+  const getConfig = valueOrGetToGet(arg.config)
 
-  const getDrawInfo = valueOrGetToGet(n.drawInfo)
+  const getDrawInfo = valueOrGetToGet(arg.drawInfo)
   const d = hookDrawRect({
-    ...n,
+    ...arg,
     height() {
       return mout().height
     },
     draw(ctx, n) {
       const info = getDrawInfo()
-      drawTextWrap(ctx, mout(), info)
-      const path = new Path2D()
-      path.rect(0, 0, n.width(), n.height())
-      return {
-        path
+      function draw() {
+        drawTextWrap(ctx, mout(), info)
       }
+      if (!arg.draw) {
+        draw()
+      }
+      const out = arg.draw?.(ctx, n, draw) || {}
+      if (!out.path) {
+        const path = new Path2D()
+        path.rect(0, 0, n.width(), n.height())
+        out.path = path
+      }
+      return out as PathResult
     },
   })
   const mout = memo(function () {
     const c = getConfig()
-    return measureTextWrap(d.target.ctx, c.text, {
+    const ctx = hookCurrentCtx()
+    return measureTextWrap(ctx, c.text, {
       ...c,
       width: d.drawWidth()
     })
