@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { absoluteDisplay, AbsoluteNode, renderAbsoulte, renderADom } from "mve-dom-helper";
 import { createSignal, emptyArray, flexDisplayUtil, quote, StoreRef } from "wy-helper";
 import { renderArray } from "mve-helper";
-import { renderSvg } from "mve-dom";
+import { renderSvg, fsvg } from "mve-dom";
 
 
 /**
@@ -16,7 +16,7 @@ import { renderSvg } from "mve-dom";
  * @returns 
  */
 export default function (app: HTMLElement) {
-  renderSvg("svg", {
+  fsvg.svg({
     a_width: 500,
     a_height: 500,
     children() {
@@ -30,7 +30,6 @@ export default function (app: HTMLElement) {
     }
   })
   renderAbsoulte(app, () => {
-
     const a = createSignal(0)
     const list = createSignal<readonly number[]>(emptyArray as any[])
     const alist = createSignal<readonly number[]>(emptyArray as any[])

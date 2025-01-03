@@ -1,17 +1,19 @@
 import { hookPromiseSignal, promiseSignal, renderOne } from "mve-helper";
-import { DrawRectConfig, hookDrawRect } from "./hookDrawRect";
+import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect";
 import { loadImage } from "wy-dom-helper";
 import { EmptyFun, SetValue, SizeKey, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { CanvaRenderCtx, PathResult } from ".";
 
 
 
 
-export function hookDrawUrlImage(n: DrawRectConfig & {
+export function hookDrawUrlImage(n: {
   src: ValueOrGet<string>
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
   relay?: SizeKey
   onLoading?: EmptyFun,
   onError?: SetValue<any>
-}) {
+} & Omit<DrawRectConfig, 'draw'>) {
   const getSrc = valueOrGetToGet(n.src)
   const signal = hookPromiseSignal(() => () => loadImage(getSrc()))
   renderOne(() => signal.get(), function (v) {
@@ -29,41 +31,49 @@ export function hookDrawUrlImage(n: DrawRectConfig & {
 }
 
 
-export function hookDrawImage(n: DrawRectConfig & {
+export function hookDrawImage(arg: {
   image: ValueOrGet<HTMLImageElement>
   relay?: SizeKey | undefined
-}) {
-  const getImage = valueOrGetToGet(n.image)
-  if (n.relay == 'width') {
-    n.height = (n) => {
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+} & Omit<DrawRectConfig, 'draw'>) {
+  const getImage = valueOrGetToGet(arg.image)
+  if (arg.relay == 'width') {
+    arg.height = (n) => {
       const image = getImage()
       return image.naturalHeight * n.width() / image.naturalWidth
     }
-  } else if (n.relay == 'height') {
-    n.width = n => {
+  } else if (arg.relay == 'height') {
+    arg.width = n => {
       const image = getImage()
       return image.naturalWidth * n.height() / image.naturalHeight
     }
   } else {
-    n.width = n => {
+    arg.width = n => {
       const image = getImage()
       return image.naturalWidth
     }
-    n.height = n => {
+    arg.height = n => {
       const image = getImage()
       return image.naturalHeight
     }
   }
   return hookDrawRect({
-    ...n,
+    ...arg,
     draw(ctx, n) {
       const image = getImage()
-      ctx.drawImage(image, 0, 0, n.width(), n.height())
-      const path = new Path2D()
-      path.rect(0, 0, n.width(), n.height())
-      return {
-        path
+      function draw() {
+        ctx.drawImage(image, 0, 0, n.width(), n.height())
       }
+      if (!arg.draw) {
+        draw()
+      }
+      const out = arg.draw?.(ctx, n, draw) || {}
+      if (!out.path) {
+        const path = new Path2D()
+        path.rect(0, 0, n.width(), n.height())
+        out.path = path
+      }
+      return out as PathResult
     },
   })
 }
