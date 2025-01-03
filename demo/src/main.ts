@@ -15,12 +15,14 @@ import scrollDemo1 from './scroller-demo/demo1'
 import scrollDemo1p from './scroller-demo/demo1p'
 import pagingx from './scroller-demo/pagingx'
 import snapDemo from './scroller-demo/snapDemo'
+import scrollerDemo1 from './demos/scrollerDemo1'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
+  scrollerDemo1()
   // changePortal()
   // canvas()
-  canvas2()
+  // canvas2()
   // scrollDemo1()
   // scrollDemo1p()
   // pagingx()
