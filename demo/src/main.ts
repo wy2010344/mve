@@ -20,9 +20,9 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 const destroy = createRoot(app, () => {
   // changePortal()
   // canvas()
-  // canvas2()
+  canvas2()
   // scrollDemo1()
-  scrollDemo1p()
+  // scrollDemo1p()
   // pagingx()
   // snapDemo()
   // konvaDemo()

@@ -28,8 +28,8 @@ export default function () {
   renderCanvas(canvas, () => {
     // demo2()
     // demo1()
-    // demo3()
+    demo3()
     // demo4()
-    demo5()
+    // demo5()
   })
 }

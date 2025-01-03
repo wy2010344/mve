@@ -1,4 +1,4 @@
-import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
+import { emptyArray, emptyFun, EmptyFun, GetValue, memo, memoAfter, quote, SetValue, storeRef } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
 import { hookDestroy, hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
 
@@ -25,32 +25,24 @@ function purifyList<T>(children: HookChild<T>[], list: T[]) {
   }
 }
 
-export function getRenderChildren<T, N>(fun: SetValue<N>, n: N) {
+export function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<T[]> = emptyFun) {
   const list: HookChild<T>[] = []
   const beforeList = hookAlterChildren(list)
   fun(n)
   hookAlterChildren(beforeList)
-  return memo(function () {
+  const set = memoAfter(function () {
     const newList: T[] = []
-    const before = g._mve_current_parent_
-    g._mve_current_parent_ = n
     purifyList(list, newList)
-    g._mve_current_parent_ = before
     return newList
-  })
+  }, after)
+  return set
 }
 
-const g = globalThis as unknown as {
-  _mve_current_parent_: any
-}
-export function hookCurrentParent<T = any>() {
-  return g._mve_current_parent_ as T
-}
 export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
   const list = storeRef<T[]>(emptyArray as T[])
   hookTrackSignal(
     getRenderChildren<T, T>(fun, node),
-    diffChangeChildren(node, quote, emptyFun, list)
+    diffChangeChildren(node, quote, list)
   )
   hookDestroy(() => {
     list.get().forEach(node => {
@@ -62,17 +54,15 @@ export function renderPortal<T extends Node>(node: T, fun: SetValue<T>) {
 export function renderChildren<T extends Node>(node: T, fun: SetValue<T>) {
   hookTrackSignal(
     getRenderChildren<T, T>(fun, node),
-    diffChangeChildren(node, quote, emptyFun)
+    diffChangeChildren(node, quote)
   )
 }
 
 export function diffChangeChildren<T>(
   pNode: Node,
   get: (v: T) => Node,
-  operate: (v: T, i: number) => void,
   listRef = storeRef<T[]>(emptyArray as T[])
 ) {
-
   return function (
     newList: T[]
   ) {
@@ -81,7 +71,6 @@ export function diffChangeChildren<T>(
     let beforeNode: Node | null = null
     for (let i = 0; i < newList.length; i++) {
       const nl = newList[i]
-      operate(nl, i)
       const newChild = get(nl)
       if (changed) {
         if (newChild != beforeNode) {
