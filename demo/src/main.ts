@@ -16,10 +16,12 @@ import scrollDemo1p from './scroller-demo/demo1p'
 import pagingx from './scroller-demo/pagingx'
 import snapDemo from './scroller-demo/snapDemo'
 import scrollerDemo1 from './demos/scrollerDemo1'
+import reorderDemo from './demos/reorderDemo'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
-  scrollerDemo1()
+  // scrollerDemo1()
+  // reorderDemo()
   // changePortal()
   // canvas()
   // canvas2()
@@ -35,7 +37,7 @@ const destroy = createRoot(app, () => {
   // absoluteDemo(app)
   // three()
   // clipDemo()
-  // magnifiedDock()
+  magnifiedDock()
 })
 
 

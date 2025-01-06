@@ -1,7 +1,7 @@
 import { dom } from "mve-dom"
 import { animateSignal } from "mve-dom-helper";
 import { animateFrame, requestBatchAnimationFrame } from "wy-dom-helper";
-import { createSignal, cubicBezier, extrapolationClamp, getInterpolate, getSpringBaseAnimationConfig, getTweenAnimationConfig, getZtaAndOmega0From, memo } from "wy-helper";
+import { batchSignalEnd, createSignal, cubicBezier, extrapolationClamp, getInterpolate, getSpringBaseAnimationConfig, getTweenAnimationConfig, getZtaAndOmega0From, memo } from "wy-helper";
 const APPS = [
   'Safari',
   'Mail',
@@ -61,10 +61,12 @@ export default () => {
         const offsetRight = right - e.clientX;
         mouseLeft.set(offsetLeft);
         mouseRight.set(offsetRight);
+        batchSignalEnd()
       },
       onMouseLeave(e) {
         mouseLeft.set(-Infinity);
         mouseRight.set(-Infinity);
+        batchSignalEnd()
       }
     }).render(() => {
       dom.div({
