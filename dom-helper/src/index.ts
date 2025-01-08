@@ -1,6 +1,6 @@
 import { hookAddDestroy } from "mve-core"
 import { signalAnimateFrame } from "wy-dom-helper"
-import { createAnimateSignal, defaultSpringBaseAnimationConfig, GetDeltaXAnimationConfig, GetValue } from "wy-helper"
+import { AnimateFrameSignalConfig, createAnimateSignal, defaultSpringBaseAnimationConfig, GetDeltaXAnimationConfig, GetValue } from "wy-helper"
 export * from './canvasRender'
 export * from './absoluteRender'
 export * from './renderInput'
@@ -11,7 +11,7 @@ export * from './canvasRender/hookDrawRect'
 export * from './canvasRender/hookDrawText'
 export function animateSignal(
   get: GetValue<number>,
-  config: GetDeltaXAnimationConfig = defaultSpringBaseAnimationConfig
+  config?: AnimateFrameSignalConfig
 ) {
   const [ret, destroy] = createAnimateSignal(signalAnimateFrame, get, config)
   hookAddDestroy()(destroy)

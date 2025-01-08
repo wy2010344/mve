@@ -1,6 +1,6 @@
 import { dom } from "mve-dom"
 import { animateSignal } from "mve-dom-helper";
-import { animateFrame, requestBatchAnimationFrame } from "wy-dom-helper";
+import { animateFrame, requestBatchAnimationFrame, signalAnimateFrame } from "wy-dom-helper";
 import { batchSignalEnd, createSignal, cubicBezier, extrapolationClamp, getInterpolate, getSpringBaseAnimationConfig, getTweenAnimationConfig, getZtaAndOmega0From, memo } from "wy-helper";
 const APPS = [
   'Safari',
@@ -104,9 +104,11 @@ export default () => {
           } else {
             return (-d / DISTANCE) * NUDGE * scaleBase();
           }
+        }, {
+          config: sp
         })
 
-        const y = animateFrame(0, requestBatchAnimationFrame)
+        const y = signalAnimateFrame(0, requestBatchAnimationFrame)
         const btn = dom.button({
           className: "aspect-square block w-10 rounded-full bg-white shadow origin-bottom",
           style: {

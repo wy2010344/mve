@@ -17,6 +17,8 @@ import pagingx from './scroller-demo/pagingx'
 import snapDemo from './scroller-demo/snapDemo'
 import scrollerDemo1 from './demos/scrollerDemo1'
 import reorderDemo from './demos/reorderDemo'
+import forceDemo from './d3/force/demo1'
+import forceDemo2 from './d3/force/demo2'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
@@ -37,7 +39,9 @@ const destroy = createRoot(app, () => {
   // absoluteDemo(app)
   // three()
   // clipDemo()
-  magnifiedDock()
+  // magnifiedDock()
+  forceDemo()
+  // forceDemo2()
 })
 
 
