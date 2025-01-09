@@ -10,7 +10,7 @@ export function hookDraw(rect: CNodeConfigure) {
   return n
 }
 
-export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'translate' | 'reset' | 'save' | 'restore'>
+export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'reset' | 'save' | 'restore'>
 function toCall(rect: CNodeConfigure, key: PointKey) {
   const x = rect[key]
   if (typeof x == 'function') {
@@ -134,7 +134,7 @@ export interface CNodeConfigure {
 }
 
 
-type CanvasMouseEvent<T> = {
+export type CanvasMouseEvent<T> = {
   x: number
   y: number
   inPath: boolean
@@ -311,6 +311,7 @@ export function renderCanvas(
       })
     }
     ctx.reset()
+    ext.beforeDraw?.(ctx)
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx

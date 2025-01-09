@@ -6,6 +6,7 @@ import demo3 from "./demo3";
 import { hookDestroy } from "mve-helper";
 import demo4 from "./demo4";
 import demo5 from "./demo5";
+import demo6 from "./demo6";
 
 export default function () {
 
@@ -28,8 +29,15 @@ export default function () {
   renderCanvas(canvas, () => {
     // demo2()
     // demo1()
-    demo3()
+    // demo3()
+    demo6()
     // demo4()
     // demo5()
+  }, {
+
+    beforeDraw(ctx: CanvasRenderingContext2D) {
+      //这里竟然不会影响点击坐标??
+      ctx.translate(200, 200)
+    }
   })
 }

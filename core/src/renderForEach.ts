@@ -32,24 +32,23 @@ export function renderForEach<T, O>(
     ) => GetValue<O>) => void,
   createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater
 ) {
-  let cacheMap = createMap()
+  // let cacheMap = createMap()
 
   let oldMap!: RMap<T, EachValue<T, O>[]>
-  let newMap!: RMap<T, EachValue<T, O>[]>
+  // let newMap!: RMap<T, EachValue<T, O>[]>
   const thisTimeAdd: {
     x: EachValue<T, O>,
     build: (value: T, getIndex: GetValue<number>) => O
   }[] = []
   const thisChildren: EachValue<T, O>[] = []
-
   const stateHolder = hookCurrentStateHolder()
   if (!stateHolder) {
     throw '需要在stateHolder里面'
   }
   const contextIndex = stateHolder.contexts.length
-  const createSignal = memoAfter(() => {
-    oldMap = cloneMap(cacheMap, createMap)
-    newMap = createMap()
+  const createSignal = memoAfter((cacheMap) => {
+    const oldMap = cloneMap(cacheMap || createMap(), createMap)
+    const newMap = createMap()
     thisTimeAdd.length = 0
     thisChildren.length = 0
     let index = 0
@@ -114,8 +113,6 @@ export function renderForEach<T, O>(
       hookAlterChildren(beforeChildren)
       hookAlterStateHolder(before)
     })
-    //重新生成
-    cacheMap = newMap
   }
   hookAddResult(() => {
     createSignal()
