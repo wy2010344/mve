@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { fsvg } from "mve-dom";
 import { hookDestroy, hookTrackSignal, renderArray } from "mve-helper";
 import { dragInit, subscribeDragMove, subscribeEventListener } from "wy-dom-helper";
-import { batchSignalEnd, createSignal, emptyArray, memo } from "wy-helper";
+import { batchSignalEnd, createSignal, emptyArray, memo, toProxySignal } from "wy-helper";
 import { createSignalForceDir, emptySignalForceDir, ForceConfig, forceDir, forceLink, ForceLink, forceManybody, ForceNode, initForceConfig, mergeNodesAndLinks, SignalForceDir, tickForce } from "wy-helper/forceLayout";
 
 
@@ -37,9 +37,7 @@ export default function () {
         selected.set(undefined)
         nodes.set(nodes.get().filter(v => v.value != s.value))
         links.set(links.get().filter(x => x.source != s.value && x.target != s.value))
-        didTick({
-          ...config.get(),
-        })
+        didTick()
       }
     }
   }))
@@ -80,23 +78,22 @@ export default function () {
       },
     })
   })
-  const config = createSignal(initForceConfig())
+  const config = toProxySignal(initForceConfig())
   const stoped = () => {
-    return config.get().alpha < alphaMin
+    return config.alpha < alphaMin
   }
   const renderLink = forceLink()
   const renderManyBody = forceManybody()
   const renderDirX = forceDir('x')
   const renderDirY = forceDir('y')
-  function didTick(c: ForceConfig) {
+  function didTick() {
     const gl = getNodesAndLinks()
-    tickForce(c, gl.nodes, (alpha) => {
-      renderLink(gl.links, c.nDim, alpha)
-      renderManyBody(gl.nodes, c.nDim, alpha)
+    tickForce(config, gl.nodes, (alpha) => {
+      renderLink(gl.links, config.nDim, alpha)
+      renderManyBody(gl.nodes, config.nDim, alpha)
       renderDirX(gl.nodes, alpha)
       renderDirY(gl.nodes, alpha)
     })
-    config.set(c)
   }
   const svg = fsvg.svg({
     a_width: width,
@@ -119,9 +116,7 @@ export default function () {
         node
       ])
       selected.set(node)
-      didTick({
-        ...config.get()
-      })
+      didTick()
       batchSignalEnd()
     },
     children() {
@@ -130,9 +125,7 @@ export default function () {
           return
         }
         requestAnimationFrame(() => {
-          didTick({
-            ...config.get()
-          })
+          didTick()
           batchSignalEnd()
         })
       })
@@ -175,9 +168,7 @@ export default function () {
                     const l = links.get().slice()
                     links.set(l)
                   }
-                  didTick({
-                    ...config.get(),
-                  })
+                  didTick()
                 }
               }
             } else {
@@ -194,10 +185,8 @@ export default function () {
             const halfY = rec.top + rec.height / 2
             node.x.f = e.pageX - halfX
             node.y.f = e.pageY - halfY
-            didTick({
-              ...config.get(),
-              alphaTarget: 0.3
-            })
+            config.alphaTarget = 0.3
+            didTick()
             const destroy = subscribeDragMove(e => {
               if (e) {
                 node.x.f = e.pageX - halfX
@@ -205,10 +194,7 @@ export default function () {
               } else {
                 node.x.f = undefined
                 node.y.f = undefined
-                config.set({
-                  ...config.get(),
-                  alphaTarget: 0
-                })
+                config.alphaTarget = 0
                 destroy()
               }
             })
