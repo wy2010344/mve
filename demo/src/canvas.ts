@@ -104,17 +104,17 @@ export default function () {
               })
             }
           })
-          renderArray(list.get, quote, getRow => {
+          renderArray(list.get, (row, getIndex) => {
             hookDraw({
               x() {
-                return getRow().index * 20 + 100
+                return getIndex() * 20 + 100
               },
               y() {
-                return getRow().index * 20 + 100
+                return getIndex() * 20 + 100
               },
               draw: colorRectPath('red'),
               onClick(e) {
-                console.log("a", e, getRow())
+                console.log("a", e, row)
                 return true
               },
             })

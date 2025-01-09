@@ -2,7 +2,7 @@ import { fsvg } from 'mve-dom'
 import data from './graph.json'
 import * as d3 from "d3";
 import { dragInit, subscribeDragMove } from 'wy-dom-helper';
-import { batchSignalEnd, createSignal, emptyArray, memo } from 'wy-helper';
+import { batchSignalEnd, createSignal, emptyArray, emptyObject, memo, StoreRef, toProxySignal } from 'wy-helper';
 import { hookTrackSignal, renderArray } from 'mve-helper';
 import { mergeNodesAndLinks, initToNode, createSignalForceDir, emptySignalForceDir, SignalForceDir, ForceNode, ForceLink, tickForce, forceLink, forceManybody, forceDir, initForceConfig, ForceConfig } from 'wy-helper/forceLayout';
 const width = 800
@@ -50,23 +50,22 @@ export default function () {
           },
         })
       })
-      const config = createSignal(initForceConfig())
+      const config = toProxySignal(initForceConfig())
       const stoped = () => {
-        return config.get().alpha < alphaMin
+        return config.alpha < alphaMin
       }
       const renderLink = forceLink()
       const renderManyBody = forceManybody()
       const renderDirX = forceDir('x')
       const renderDirY = forceDir('y')
-      function didTick(c: ForceConfig) {
+      function didTick() {
         const gl = getNodesAndLinks()
-        tickForce(c, gl.nodes, (alpha) => {
-          renderLink(gl.links, c.nDim, alpha)
-          renderManyBody(gl.nodes, c.nDim, alpha)
+        tickForce(config, gl.nodes, (alpha) => {
+          renderLink(gl.links, config.nDim, alpha)
+          renderManyBody(gl.nodes, config.nDim, alpha)
           renderDirX(gl.nodes, alpha)
           renderDirY(gl.nodes, alpha)
         })
-        config.set(c)
       }
 
       hookTrackSignal(stoped, stoped => {
@@ -74,9 +73,7 @@ export default function () {
           return
         }
         requestAnimationFrame(() => {
-          didTick({
-            ...config.get()
-          })
+          didTick()
           batchSignalEnd()
         })
       })
@@ -113,10 +110,8 @@ export default function () {
                 const halfY = rec.top + rec.height / 2
                 node.x.f = e.pageX - halfX
                 node.y.f = e.pageY - halfY
-                didTick({
-                  ...config.get(),
-                  alphaTarget: 0.3
-                })
+                config.alphaTarget = 0.3
+                didTick()
                 const destroy = subscribeDragMove(e => {
                   if (e) {
                     node.x.f = e.pageX - halfX
@@ -124,10 +119,7 @@ export default function () {
                   } else {
                     node.x.f = undefined
                     node.y.f = undefined
-                    config.set({
-                      ...config.get(),
-                      alphaTarget: 0
-                    })
+                    config.alphaTarget = 0
                     destroy()
                   }
                 })
@@ -139,3 +131,4 @@ export default function () {
     }
   })
 }
+
