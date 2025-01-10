@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker"
 import { fdom } from "mve-dom"
 import { renderArrayToArray } from "mve-helper"
 import { moveEdgeScroll, signalAnimateFrame, subscribeEventListener, subscribeScroller } from "wy-dom-helper"
-import { AbsAnimateFrameValue, arrayMove, batchSignalEnd, createSignal, easeFns, getTweenAnimationConfig, PointKey, reorderCheckTarget, SignalAnimateFrameValue, StoreRef } from "wy-helper"
+import { AbsAnimateFrameValue, arrayMove, batchSignalEnd, beforeMoveOperate, createSignal, easeFns, getTweenAnimationConfig, PointKey, reorderCheckTarget, SignalAnimateFrameValue, StoreRef } from "wy-helper"
 
 export const dataList = Array(30).fill(1).map((_, i) => {
   return {
@@ -126,6 +126,14 @@ export default function () {
 
 }
 
+function getOffset(v: {
+  div: {
+    offsetHeight: number
+  };
+  transY: AbsAnimateFrameValue;
+}) {
+  return v.div.offsetHeight
+}
 
 function didMove<T>(
   orderList: StoreRef<T[]>,
@@ -146,50 +154,24 @@ function didMove<T>(
   const n = reorderCheckTarget(
     outList,
     index,
-    v => v.div.offsetHeight,
+    getOffset,
     transY.get(),
-    {
-      gap,
-      // meetDiff(startHeight, endHeight, gap) {
-      //   return startHeight / 2 + endHeight / 2
-      // },
-    }
+    gap
   )
   if (n) {
-    const [index, toIndex] = n
-    if (toIndex < index) {
-      //向前移动
-      let diff = 0
-      for (let i = toIndex; i < index; i++) {
-        const row = outList[i]
-        diff = diff + outList[i].div.offsetHeight + gap
-        row.transY.changeTo(-div.offsetHeight - gap)
-        row.transY.changeTo(0, ease1, {
-          /**
-           * 如果依margin,则元素应该有margin?
-           * 如果元素在位置1,则无margin与gap
-           * 如果不在位置1,则有margin与gap
-           */
-          from: -div.offsetHeight - gap
-        })
-      }
-      orderList.set(arrayMove(orderList.get(), index, toIndex, true))
-      transY.slientDiff(diff)
-    } else {
-      //向后移动
-
-      let diff = 0
-      for (let i = index + 1; i < toIndex + 1; i++) {
-        //受影响的表演一次animation动画
-        const row = outList[i]
-        diff = diff + outList[i].div.offsetHeight + gap
-        row.transY.changeTo(0, ease1, {
-          from: div.offsetHeight + gap
-        })
-      }
-      orderList.set(arrayMove(orderList.get(), index, toIndex, true))
-      transY.slientDiff(-diff)
-    }
+    const [fromIndex, toIndex] = n
+    const diff = beforeMoveOperate(fromIndex, toIndex, outList, getOffset, gap, (row, from) => {
+      row.transY.changeTo(0, ease1, {
+        /**
+         * 如果依margin,则元素应该有margin?
+         * 如果元素在位置1,则无margin与gap
+         * 如果不在位置1,则有margin与gap
+         */
+        from
+      })
+    })
+    orderList.set(arrayMove(orderList.get(), fromIndex, toIndex, true))
+    transY.slientDiff(diff)
   }
 }
 
