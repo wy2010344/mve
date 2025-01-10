@@ -1,8 +1,7 @@
 import { dom, renderDom } from "mve-dom";
 import { hookTrackSignal, renderArray } from "mve-helper";
-import { cns, cssMap, SvgElement } from "wy-dom-helper";
+import { cns, cssMap } from "wy-dom-helper";
 import { arrayCountCreateWith, batchSignalEnd, createSignal, quote, scrollerSignal } from "wy-helper";
-import { Scroller } from "../scroller";
 // import Scroller from 'scroller'
 export default function () {
   const list = createSignal(arrayCountCreateWith(150, quote))

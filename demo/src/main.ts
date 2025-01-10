@@ -26,11 +26,11 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
   // scrollerDemo1()
-  // reorderDemo()
+  reorderDemo()
   // changePortal()
   // canvas()
   // canvas2()
-  exitAnimate()
+  // exitAnimate()
   // scrollDemo1()
   // scrollDemo1p()
   // pagingx()
