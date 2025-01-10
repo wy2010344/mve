@@ -2,15 +2,15 @@ import { faker } from "@faker-js/faker"
 import { fdom } from "mve-dom"
 import { renderArrayToArray } from "mve-helper"
 import { moveEdgeScroll, signalAnimateFrame, subscribeEventListener, subscribeScroller } from "wy-dom-helper"
-import { AbsAnimateFrameValue, arrayMove, batchSignalEnd, createSignal, easeFns, getTweenAnimationConfig, PointKey, SignalAnimateFrameValue, StoreRef } from "wy-helper"
+import { AbsAnimateFrameValue, arrayMove, batchSignalEnd, createSignal, easeFns, getTweenAnimationConfig, PointKey, reorderCheckTarget, SignalAnimateFrameValue, StoreRef } from "wy-helper"
 
 export const dataList = Array(30).fill(1).map((_, i) => {
   return {
     index: i,
     name: faker.person.fullName(),
     avatar: faker.image.urlLoremFlickr({
-      width: 100,
-      height: 100,
+      width: 50,
+      height: 50,
       category: 'orchid'
     })
   }
@@ -39,15 +39,17 @@ export default function () {
         },
         children() {
           const outArray = renderArrayToArray(orderList.get, (v, getIndex) => {
-            const h = Math.floor(Math.random() * 50 + 100)
+            const h = Math.floor(Math.random() * 100 + 50)
             const transY = signalAnimateFrame(0)
-            const marginTop = Math.floor(Math.random() * 10 + 5)
+            const marginTop = 10//Math.floor(Math.random() * 10 + 5)
             const div = fdom.div({
               s_display: 'flex',
               s_alignItems: 'center',
-              s_marginTop: marginTop + 'px',
+              s_marginTop() {
+                return getIndex() ? marginTop + 'px' : '0px'
+              },
               s_border: '1px solid black',
-              s_background: 'yellow',
+              s_background: '#ffff003d',
               s_position: 'relative',
               s_height: h + 'px',
               s_zIndex() {
@@ -80,6 +82,7 @@ export default function () {
                   lastPageY = e.pageY
                   const outList = outArray()
                   didMove(orderList, transY, div, getIndex(), outList, marginTop)
+                  // didMoveMarginTop(orderList, transY, div, getIndex(), outList, marginTop)
                   batchSignalEnd()
                 })
                 const endUp = subscribeEventListener(document, 'pointerup', e => {
@@ -128,6 +131,72 @@ function didMove<T>(
   orderList: StoreRef<T[]>,
   transY: SignalAnimateFrameValue,
   div: {
+    offsetHeight: number
+  },
+  index: number,
+  outList: {
+    div: {
+      offsetHeight: number
+    };
+    transY: AbsAnimateFrameValue;
+  }[],
+  gap: number = 0
+) {
+
+  const n = reorderCheckTarget(
+    outList,
+    index,
+    v => v.div.offsetHeight,
+    transY.get(),
+    {
+      gap,
+      // meetDiff(startHeight, endHeight, gap) {
+      //   return startHeight / 2 + endHeight / 2
+      // },
+    }
+  )
+  if (n) {
+    const [index, toIndex] = n
+    if (toIndex < index) {
+      //向前移动
+      let diff = 0
+      for (let i = toIndex; i < index; i++) {
+        const row = outList[i]
+        diff = diff + outList[i].div.offsetHeight + gap
+        row.transY.changeTo(-div.offsetHeight - gap)
+        row.transY.changeTo(0, ease1, {
+          /**
+           * 如果依margin,则元素应该有margin?
+           * 如果元素在位置1,则无margin与gap
+           * 如果不在位置1,则有margin与gap
+           */
+          from: -div.offsetHeight - gap
+        })
+      }
+      orderList.set(arrayMove(orderList.get(), index, toIndex, true))
+      transY.slientDiff(diff)
+    } else {
+      //向后移动
+
+      let diff = 0
+      for (let i = index + 1; i < toIndex + 1; i++) {
+        //受影响的表演一次animation动画
+        const row = outList[i]
+        diff = diff + outList[i].div.offsetHeight + gap
+        row.transY.changeTo(0, ease1, {
+          from: div.offsetHeight + gap
+        })
+      }
+      orderList.set(arrayMove(orderList.get(), index, toIndex, true))
+      transY.slientDiff(-diff)
+    }
+  }
+}
+
+function didMoveMarginTop<T>(
+  orderList: StoreRef<T[]>,
+  transY: SignalAnimateFrameValue,
+  div: {
     offsetTop: number
     offsetHeight: number
   },
@@ -141,7 +210,9 @@ function didMove<T>(
   }[],
   marginTop: number = 0
 ) {
+
   const didCenterOffsetTop = div.offsetTop + transY.get() + (div.offsetHeight / 2)
+  // console.log("dd", transY.get())
   if (transY.get() < 0) {
     //向上
     let justIndex = -1
@@ -167,6 +238,7 @@ function didMove<T>(
           from: -div.offsetHeight - marginTop
         })
       }
+      console.log("aa", index, justIndex, diff, transY.get(), diff + transY.get())
       orderList.set(arrayMove(orderList.get(), index, justIndex, true))
       transY.slientDiff(diff)
     }
@@ -192,6 +264,7 @@ function didMove<T>(
           from: div.offsetHeight + marginTop
         })
       }
+      console.log("bb", index, justIndex)
       orderList.set(arrayMove(orderList.get(), index, justIndex, true))
       transY.slientDiff(diff)
     }
