@@ -1,6 +1,6 @@
 import { renderDom } from "mve-dom";
 import { renderCode } from "mve-dom-helper";
-import { hookTrackSignalMemo } from "mve-helper";
+import { hookTrackSignal, hookTrackSignal } from "mve-helper";
 import { contentEditableText, initContentEditableModel } from "wy-dom-helper/contentEditable";
 import { createSignal, emptyFun } from "wy-helper";
 import { parseSentence } from "./parse";
@@ -30,9 +30,11 @@ function renderInputArea(saveKey: string) {
   const { current, renderContentEditable } = renderCode(model)
 
 
-  hookTrackSignalMemo(() => {
-    localStorage.setItem(saveKey, current().value)
-  }, emptyFun)
+  hookTrackSignal(() => {
+    return current().value
+  }, value => {
+    localStorage.setItem(saveKey, value)
+  })
   renderContentEditable({
     render(value, a) {
       // console.log("创建", value)
@@ -54,7 +56,7 @@ function renderInputArea(saveKey: string) {
       return div
     },
   })
-  hookTrackSignalMemo(() => {
+  hookTrackSignal(() => {
     try {
       const out = runParse(current().value, parseSentence)
       console.log("out", evalTree(out,))

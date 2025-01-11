@@ -1,6 +1,6 @@
-import { emptyArray, emptyFun, EmptyFun, GetValue, memo, memoAfter, quote, SetValue, storeRef } from "wy-helper"
+import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
-import { hookDestroy, hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
+import { hookDestroy, hookTrackSignal } from "mve-helper"
 
 
 
@@ -30,7 +30,7 @@ export function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<
   const beforeList = hookAlterChildren(list)
   fun(n)
   hookAlterChildren(beforeList)
-  const set = memoAfter(function () {
+  const set = memo(function () {
     const newList: T[] = []
     purifyList(list, newList)
     return newList

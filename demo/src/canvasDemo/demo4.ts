@@ -3,7 +3,7 @@ import data from "./data";
 import { AbsoluteNode, hookDrawRect, simpleFlex, hookDrawText, hookDrawUrlImage } from "mve-dom-helper";
 
 import Scroller from 'scroller';
-import { hookTrackSignalMemo } from "mve-helper";
+import { hookTrackSignal } from "mve-helper";
 export default function () {
 
 
@@ -36,7 +36,7 @@ export default function () {
   window.addEventListener("pointerup", end)
   window.addEventListener("pointercancel", end)
 
-  hookTrackSignalMemo(() => {
+  hookTrackSignal(() => {
     addEffect(() => {
       scroller.setDimensions(420, 700, 420, (80 + 30) * data.length - 30);
     })

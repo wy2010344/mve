@@ -1,4 +1,4 @@
-import { hookTrackSignalMemo, renderOne } from "mve-helper";
+import { hookTrackSignal, renderOne } from "mve-helper";
 import { ContentEditableModel, EditRecord, fixScroll } from "wy-dom-helper/contentEditable";
 import { addEffect, emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
@@ -51,7 +51,7 @@ export function useContentEditable(getValue: GetValue<ContentEditableModel>) {
       const nF = valueOrGetToGet(noFocus)
       renderOne(() => current().value, function (value) {
         const div = children(value)
-        hookTrackSignalMemo(() => {
+        hookTrackSignal(() => {
           if (nF()) {
             return
           }

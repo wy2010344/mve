@@ -7,6 +7,8 @@ import { hookDestroy } from "mve-helper";
 import demo4 from "./demo4";
 import demo5 from "./demo5";
 import demo6 from "./demo6";
+import demo1 from "./demo1";
+import demo2 from "./demo2";
 
 export default function () {
 
@@ -27,10 +29,10 @@ export default function () {
 
   console.log("dddd")
   renderCanvas(canvas, () => {
-    // demo2()
+    demo2()
     // demo1()
     // demo3()
-    demo6()
+    // demo6()
     // demo4()
     // demo5()
   }, {
