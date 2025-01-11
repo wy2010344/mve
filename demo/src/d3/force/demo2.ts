@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { fsvg } from "mve-dom";
 import { hookDestroy, hookTrackSignal, renderArray } from "mve-helper";
-import { dragInit, subscribeDragMove, subscribeEventListener } from "wy-dom-helper";
-import { batchSignalEnd, createSignal, emptyArray, memo, toProxySignal } from "wy-helper";
+import { dragInit, subscribeDragMove, subscribeEventListener, subscribeRequestAnimationFrame } from "wy-dom-helper";
+import { batchSignalEnd, createSignal, emptyArray, emptyFun, memo, toProxySignal } from "wy-helper";
 import { createSignalForceDir, emptySignalForceDir, ForceConfig, forceDir, forceLink, ForceLink, forceManybody, ForceNode, initForceConfig, mergeNodesAndLinks, SignalForceDir, tickForce } from "wy-helper/forceLayout";
 
 
@@ -120,11 +120,13 @@ export default function () {
       batchSignalEnd()
     },
     children() {
+      let closeFrame = emptyFun
       hookTrackSignal(stoped, stoped => {
         if (stoped) {
+          closeFrame()
           return
         }
-        requestAnimationFrame(() => {
+        closeFrame = subscribeRequestAnimationFrame(() => {
           didTick()
           batchSignalEnd()
         })

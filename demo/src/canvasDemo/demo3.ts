@@ -24,9 +24,9 @@ export default function () {
         gap: 10,
         direction: 'x',
         reverse: true,
-        alignItems: 'start',
+        alignItems: 'center',
         alignFix: true,
-        // directionFix: "around"
+        directionFix: "around"
       })
     },
     draw(ctx, n) {

@@ -1,5 +1,5 @@
 import { OrFun, renderDom } from "mve-dom";
-import { hookTrackSignalMemo, useVersion } from "mve-helper";
+import { hookTrackSignal, useVersion } from "mve-helper";
 import { BDomEvent, DomElementType, FDomAttribute } from "wy-dom-helper";
 import { batchSignalEnd, createSignal, EmptyFun, emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
@@ -35,7 +35,7 @@ function useUpdateValue<K extends string, V>(
   getDep: EmptyFun
 ) {
   const getValue = valueOrGetToGet(_getValue)
-  hookTrackSignalMemo(() => {
+  hookTrackSignal(() => {
     getDep()
     const value = getValue()
     if (value != input[key]) {
