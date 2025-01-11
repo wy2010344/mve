@@ -27,8 +27,6 @@ export function getExitAnimateArray<T>(
 
   const thisAddList: ExitModelInner<T>[] = []
   const thisRemoveList: ExitModelInner<T>[] = []
-  const newCreateList: ExitModelInner<T>[] = []
-
   let lastGenerateList: readonly ExitModelInner<T>[] = emptyArray as any[]
   const getList = memo<readonly ExitModel<T>[]>((lastReturn) => {
     version.get()
@@ -36,7 +34,6 @@ export function getExitAnimateArray<T>(
     const newCacheList = new ArrayHelper(oldList)
     thisAddList.length = 0
     thisRemoveList.length = 0
-    newCreateList.length = 0
     newCacheList.forEachRight(function (old, i) {
       if (!old.exiting && !list.some(v => v == old.value)) {
         if (exitIgnore(old.value)) {
@@ -74,7 +71,11 @@ export function getExitAnimateArray<T>(
           value: v,
           target: {
             value: v,
-            exiting: undefined as any,
+            exiting() {
+              //不像renderForEach在内部访问,所以没有循环访问
+              getList()
+              return cache.exiting
+            },
             resolve(v) {
               cache.resolve?.(v)
             },
@@ -86,7 +87,7 @@ export function getExitAnimateArray<T>(
           enterIgnore: enterIgnore(v),
           hide: addHide
         }
-        newCreateList.push(cache)
+        objectFreezeThrow(cache.target)
         if (!cache.enterIgnore) {
           const [promise, resolve] = getOutResolvePromise()
           cache.promise = promise
@@ -154,14 +155,6 @@ export function getExitAnimateArray<T>(
     }
     lastGenerateList = newCacheGenerateList
     return newCacheGenerateList.map(getExitModel)
-  }, function () {
-    newCreateList.forEach(row => {
-      (row.target as any).exiting = () => {
-        getList()
-        return row.exiting
-      }
-      objectFreezeThrow(row.target)
-    })
   })
   return getList
 }
