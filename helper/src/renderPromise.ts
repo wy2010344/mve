@@ -1,5 +1,5 @@
 import { createSignal, FalseType, GetValue, hookAbortSignalPromise, PromiseResult } from "wy-helper";
-import { hookTrackSignalMemo } from "./hookTrackSignal";
+import { hookTrackSignal } from "./hookTrackSignal";
 
 /**
  * promise的过程可能是async的多个promise,所以条件是这个过程,以及依赖的数据要提前准备好
@@ -17,7 +17,7 @@ export function hookPromiseCall<T>(
 ): void
 export function hookPromiseCall(getPromise: any, onFinally: any) {
   let lastControl: AbortController | undefined = undefined
-  hookTrackSignalMemo(getPromise, function (gPromise: any) {
+  hookTrackSignal(getPromise, function (gPromise: any) {
     lastControl?.abort()
     if (gPromise) {
       lastControl = new AbortController()

@@ -1,4 +1,4 @@
-import { GetValue, RMap, normalMapCreater, memoKeep, memoAfter } from "wy-helper"
+import { GetValue, RMap, normalMapCreater, memoKeep, memo } from "wy-helper"
 import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
 import { StateHolder } from "./stateHolder"
 
@@ -47,7 +47,7 @@ export function renderForEach<T, O>(
     throw '需要在stateHolder里面'
   }
   const contextIndex = stateHolder.contexts.length
-  const createSignal = memoAfter(() => {
+  const createSignal = memo(() => {
     oldMap = cloneMap(cacheMap, createMap)
     newMap = createMap()
     thisTimeAdd.length = 0

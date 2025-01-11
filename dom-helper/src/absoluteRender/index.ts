@@ -1,8 +1,8 @@
 import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from "mve-core"
 import { diffChangeChildren, getRenderChildren } from "mve-dom"
-import { hookTrackSignal, hookTrackSignalMemo } from "mve-helper"
+import { hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
-import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignalMemo, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy } from "wy-helper"
 
 
@@ -185,13 +185,13 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
     n.children = asLazy(emptyArray as any[])
   }
   addEffect(() => {
-    addDestroy(trackSignalMemo(n.x, x => n.target.style.left = x + 'px'))
-    addDestroy(trackSignalMemo(n.y, x => n.target.style.top = x + 'px'))
+    addDestroy(trackSignal(n.x, x => n.target.style.left = x + 'px'))
+    addDestroy(trackSignal(n.y, x => n.target.style.top = x + 'px'))
     if (!wSet) {
-      addDestroy(trackSignalMemo(n.width, x => n.target.style.width = x + 'px'))
+      addDestroy(trackSignal(n.width, x => n.target.style.width = x + 'px'))
     }
     if (!hSet) {
-      addDestroy(trackSignalMemo(n.height, x => n.target.style.height = x + 'px'))
+      addDestroy(trackSignal(n.height, x => n.target.style.height = x + 'px'))
     }
     // console.log("eff-1")
   }, -1)
@@ -201,7 +201,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
     ) {
       const ext = arguments[3]
       if (typeof value == 'function') {
-        addDestroy(trackSignalMemo(() => value(n), setValue, node, ext))
+        addDestroy(trackSignal(() => value(n), setValue, node, ext))
       } else {
         setValue(value, node, ext)
       }
@@ -278,7 +278,7 @@ function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
       row.parent = parent
     })
   })
-  hookTrackSignalMemo(getChildren, diffChangeChildren(node, getTarget))
+  hookTrackSignal(getChildren, diffChangeChildren(node, getTarget))
   return getChildren
 }
 export const absoluteDisplay: MDisplayOut = {

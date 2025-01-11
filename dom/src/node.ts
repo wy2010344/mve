@@ -1,9 +1,9 @@
 
 import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, vTypeisGetValue, GetValue, emptyObject, emptyFun } from "wy-helper"
-import { hookTrackSignalMemo } from "mve-helper"
 import { addEvent, CSSProperties, isEvent, React } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
 import { OrFun, renderChildren, renderPortal } from "./hookChildren"
+import { hookTrackSignal } from "mve-helper"
 
 
 export type StyleProps = {
@@ -15,11 +15,8 @@ export type StyleGetProps = {
 }
 export function mergeToContent(ts: TemplateStringsArray, vs: VType[], node: any, key: string) {
   if (vs.some(vTypeisGetValue)) {
-    let oldContent = ''
-    hookTrackSignalMemo(() => genTemplateStringS2(ts, vs), content => {
-      if (content != oldContent) {
-        node[key] = content
-      }
+    hookTrackSignal(() => genTemplateStringS2(ts, vs), content => {
+      node[key] = content
     })
   } else {
     node[key] = genTemplateStringS1(ts, vs as string[])
@@ -28,11 +25,8 @@ export function mergeToContent(ts: TemplateStringsArray, vs: VType[], node: any,
 
 export function mergeToContent1(v: VType, node: any, key: string) {
   if (vTypeisGetValue(v)) {
-    let oldContent = ''
-    hookTrackSignalMemo(v, content => {
-      if (content != oldContent) {
-        node[key] = content
-      }
+    hookTrackSignal(v, content => {
+      node[key] = content
     })
   } else {
     node[key] = v
@@ -84,7 +78,7 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
     }
 
     let oldStyle = ''
-    hookTrackSignalMemo(attrsEffect, (attrs: any) => {
+    hookTrackSignal(attrsEffect, (attrs: any) => {
       objectDiffDeleteKey(oldAttrs, attrs, deleteKey)
       for (const key in attrs) {
         const value = attrs[key]
@@ -108,7 +102,7 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
           const tp = typeof value
           if (tp == 'function') {
             let oldStyle = ''
-            hookTrackSignalMemo(value, v => {
+            hookTrackSignal(value, v => {
               oldStyle = mergeStyle(v, node, oldStyle)
             })
           } else if (tp == 'string') {
@@ -127,12 +121,9 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
           }
         } else {
           if (typeof value == 'function') {
-            hookTrackSignalMemo(value, v => {
-              const oldV = oldAttrs[key]
-              if (oldV != v) {
-                updateProps(node, key, v)
-                oldAttrs[key] = v
-              }
+            hookTrackSignal(value, v => {
+              updateProps(node, key, v)
+              oldAttrs[key] = v
             })
           } else {
             updateProps(node, key, value)
@@ -150,11 +141,9 @@ function mergeStyle1(
   node: any,
   setStyle: (value: string, node: any, key: string) => void) {
   if (typeof value == 'function') {
-    hookTrackSignalMemo<string>(value, value => {
-      if (oldStyle[key] != value) {
-        setStyle(value, node, key)
-        oldStyle[key] = value
-      }
+    hookTrackSignal<string>(value, value => {
+      setStyle(value, node, key)
+      oldStyle[key] = value
     })
   } else {
     setStyle(value, node, key)

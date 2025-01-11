@@ -1,8 +1,8 @@
 import { fsvg } from 'mve-dom'
 import data from './graph.json'
 import * as d3 from "d3";
-import { dragInit, subscribeDragMove } from 'wy-dom-helper';
-import { batchSignalEnd, createSignal, emptyArray, emptyObject, memo, StoreRef, toProxySignal } from 'wy-helper';
+import { dragInit, subscribeDragMove, subscribeRequestAnimationFrame } from 'wy-dom-helper';
+import { batchSignalEnd, createSignal, emptyArray, emptyFun, emptyObject, memo, StoreRef, toProxySignal } from 'wy-helper';
 import { hookTrackSignal, renderArray } from 'mve-helper';
 import { mergeNodesAndLinks, initToNode, createSignalForceDir, emptySignalForceDir, SignalForceDir, ForceNode, ForceLink, tickForce, forceLink, forceManybody, forceDir, initForceConfig, ForceConfig } from 'wy-helper/forceLayout';
 const width = 800
@@ -68,11 +68,13 @@ export default function () {
         })
       }
 
+      let closeFrame = emptyFun
       hookTrackSignal(stoped, stoped => {
         if (stoped) {
+          closeFrame()
           return
         }
-        requestAnimationFrame(() => {
+        closeFrame = subscribeRequestAnimationFrame(() => {
           didTick()
           batchSignalEnd()
         })

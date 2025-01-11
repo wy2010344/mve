@@ -1,6 +1,5 @@
-import { hookAddDestroy } from "mve-core";
 import { dom } from "mve-dom";
-import { hookTrackSignalMemo, renderArray, renderIf } from "mve-helper";
+import { hookDestroy, hookTrackSignal, renderArray, renderIf } from "mve-helper";
 import { createSignal, emptyArray, emptyFun, StoreRef } from "wy-helper";
 
 export default function () {
@@ -14,7 +13,7 @@ type TreeModel = {
   text: string
 }
 
-function treeItem(item: StoreRef<TreeModel>, onDelete: () => void) {
+function treeItem(item: TreeModel, onDelete: () => void) {
   const edit = createSignal(false)
   dom.div({
     style: `
@@ -26,10 +25,10 @@ function treeItem(item: StoreRef<TreeModel>, onDelete: () => void) {
       renderIf(edit.get, () => {
         input = dom.input({
         }).render()
-        hookAddDestroy(() => {
+        hookDestroy(() => {
           console.log("销毁...", item.get().text)
         })
-        hookTrackSignalMemo(() => {
+        hookTrackSignal(() => {
           input.value = item.get().text
         }, emptyFun)
       }, () => {
@@ -67,7 +66,7 @@ function treeItem(item: StoreRef<TreeModel>, onDelete: () => void) {
 
 function renderList() {
   const list = createSignal<TreeModel[]>(emptyArray as any[])
-  renderArray(list.get, v => v.id, (get) => {
+  renderArray(list.get, (get) => {
     treeItem({
       get() {
         return get().item

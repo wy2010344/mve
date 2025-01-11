@@ -1,8 +1,8 @@
 import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderFNodeAttr, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
 import { OrFun, renderChildren } from "./hookChildren"
 import { createOrProxy, emptyObject } from "wy-helper"
-import { hookTrackSignalMemo } from "mve-helper"
 import { hookAddResult } from "mve-core"
+import { hookTrackSignal } from "mve-helper"
 
 
 
@@ -11,7 +11,7 @@ function mergeValue(
 ) {
   const ext = arguments[3]
   if (typeof value == 'function') {
-    hookTrackSignalMemo(value, setValue, node, ext)
+    hookTrackSignal(value, setValue, node, ext)
   } else {
     setValue(value, node, ext)
   }

@@ -1,6 +1,6 @@
 import { emptyArray, quote, createSignal, trackSignal, memo, StoreRef, emptyFun, addEffect } from "wy-helper"
 import { createRoot, dom, renderDom, renderSvg, svg } from 'mve-dom'
-import { hookTrackSignalMemo, renderArray } from 'mve-helper'
+import { hookTrackSignal, renderArray } from 'mve-helper'
 import { hookAddDestroy } from "mve-core"
 import { renderContentEditable, renderInput, renderInputBool } from "mve-dom-helper"
 import { contentEditableText } from "wy-dom-helper/contentEditable"

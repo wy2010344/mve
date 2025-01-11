@@ -1,4 +1,4 @@
-import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memoAfter, NoInsertArrayHelper, objectFreezeThrow, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memo, NoInsertArrayHelper, objectFreezeThrow, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
 export function getExitAnimateArray<T>(
@@ -30,7 +30,7 @@ export function getExitAnimateArray<T>(
   const newCreateList: ExitModelInner<T>[] = []
 
   let lastGenerateList: readonly ExitModelInner<T>[] = emptyArray as any[]
-  const getList = memoAfter<readonly ExitModel<T>[]>((lastReturn) => {
+  const getList = memo<readonly ExitModel<T>[]>((lastReturn) => {
     version.get()
     const list = get()
     const newCacheList = new ArrayHelper(oldList)
