@@ -2,7 +2,7 @@ import { hookAddDestroy, hookAddResult } from "mve-core"
 import { getRenderChildren } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, memo, PointKey, ValueOrGet } from "wy-helper"
+import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, PointKey, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -11,14 +11,6 @@ export function hookDraw(rect: CNodeConfigure) {
 }
 
 export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'reset' | 'save' | 'restore'>
-function toCall(rect: CNodeConfigure, key: PointKey) {
-  const x = rect[key]
-  if (typeof x == 'function') {
-    return memo(x)
-  } else {
-    return asLazy(x)
-  }
-}
 
 interface NodeParent {
   readonly ext: Record<string, any>
@@ -41,8 +33,8 @@ class CNode implements CMNode {
     public readonly configure: CNodeConfigure
   ) {
     this.ext = configure.ext || emptyObject
-    this.x = toCall(configure, 'x')
-    this.y = toCall(configure, 'y')
+    this.x = valueOrGetToGet(configure.x)
+    this.y = valueOrGetToGet(configure.y)
     if (configure.beforeChildren) {
       this.beforeChildren = makeParentAndIndex(configure.beforeChildren, this, true)
     } else {

@@ -29,17 +29,17 @@ export default function () {
 
   console.log("dddd")
   renderCanvas(canvas, () => {
-    demo2()
+    // demo2()
     // demo1()
     // demo3()
     // demo6()
     // demo4()
-    // demo5()
+    demo5()
   }, {
 
     beforeDraw(ctx: CanvasRenderingContext2D) {
       //这里竟然不会影响点击坐标??
-      ctx.translate(200, 200)
+      // ctx.translate(200, 200)
     }
   })
 }
