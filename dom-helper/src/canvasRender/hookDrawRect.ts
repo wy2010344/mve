@@ -144,6 +144,7 @@ export function hookDrawRect(
     width: drawWidth,
     height: drawHeight,
     children: memo(() => {
+      //生成复合结构,所以用memo
       const list: LayoutModel[] = []
       tnode.children().forEach(child => {
         const rect = child.ext.rect
@@ -155,6 +156,7 @@ export function hookDrawRect(
     })
   }
   const layout: GetValue<CDisplay> = memo(() => {
+    //生成复全结构,所以用memo
     return hookLayout(info, _layout)
   })
   const node = new CanvasRectNode(

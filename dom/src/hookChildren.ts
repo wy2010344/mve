@@ -1,4 +1,4 @@
-import { emptyArray, emptyFun, EmptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
+import { emptyArray, emptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
 import { hookDestroy, hookTrackSignal } from "mve-helper"
 
