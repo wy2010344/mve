@@ -28,6 +28,21 @@ export function getExitAnimateArray<T>(
   const thisAddList: ExitModelInner<T>[] = []
   const thisRemoveList: ExitModelInner<T>[] = []
   let lastGenerateList: readonly ExitModelInner<T>[] = emptyArray as any[]
+
+  function buildRemove(old: ExitModelInner<T>) {
+    const [promise, resolve] = getOutResolvePromise()
+    old.promise = promise
+    old.resolve = resolve
+    old.exiting = true
+    promise.then(function () {
+      const cacheList = new ArrayHelper(oldList)
+      cacheList.removeWhere(v => v == old)
+      if (cacheList.isDirty()) {
+        oldList = cacheList.get()
+        updateVersion()
+      }
+    })
+  }
   const getList = memo<readonly ExitModel<T>[]>((lastReturn) => {
     version.get()
     const list = get()
@@ -35,23 +50,12 @@ export function getExitAnimateArray<T>(
     thisAddList.length = 0
     thisRemoveList.length = 0
     newCacheList.forEachRight(function (old, i) {
-      if (!old.exiting && !list.some(v => v == old.value)) {
+      if (!(old.exiting || old.willExiting) && !list.some(v => v == old.value)) {
         if (exitIgnore(old.value)) {
           newCacheList.removeAt(i)
         } else {
-          const [promise, resolve] = getOutResolvePromise()
-          old.promise = (promise)
-          old.resolve = (resolve)
-          old.exiting = true
+          old.willExiting = true
           thisRemoveList.push(old)
-          promise.then(function () {
-            const cacheList = new ArrayHelper(oldList)
-            cacheList.removeWhere(v => v == old)
-            if (cacheList.isDirty()) {
-              oldList = cacheList.get()
-              updateVersion()
-            }
-          })
         }
       }
     })
@@ -60,10 +64,11 @@ export function getExitAnimateArray<T>(
     let nextIndex = 0
     for (let i = 0, len = list.length; i < len; i++) {
       const v = list[i]
-      const oldIndex = newCacheList.get().findIndex(old => !old.exiting && old.value == v)
+      const oldIndex = newCacheList.get().findIndex(old => !(old.exiting || old.willExiting) && old.value == v)
       if (oldIndex < 0) {
         if (mode() == 'shift') {
-          while (newCacheList.get()[nextIndex]?.exiting) {
+          let item: ExitModelInner<T>
+          while ((item = newCacheList.get()[nextIndex]) && (item.exiting || item.willExiting)) {
             nextIndex++
           }
         }
@@ -100,10 +105,9 @@ export function getExitAnimateArray<T>(
       }
     }
 
-    const removeHide = wait() == 'in-out' && thisAddList.length != 0
-    thisRemoveList.forEach(row => {
-      row.hide = removeHide
-    })
+    if (!(thisAddList.length && wait() == 'in-out')) {
+      thisRemoveList.forEach(buildRemove)
+    }
 
     const removePromiseList = thisRemoveList.map(v => v.promise)
     if (removePromiseList.length) {
@@ -131,11 +135,8 @@ export function getExitAnimateArray<T>(
       const onEnterWait = wait() == 'in-out' && thisRemoveList.length != 0
       if (onEnterWait) {
         allAddPromise.then(function () {
-          const cacheList = new ArrayHelper(oldList)
-          if (opHelperHide(cacheList, thisRemoveList)) {
-            oldList = cacheList.get()
-            updateVersion()
-          }
+          thisRemoveList.forEach(buildRemove)
+          updateVersion()
         })
       }
     }
@@ -178,8 +179,10 @@ interface ExitModelInner<V> {
   /** */
   promise?: Promise<any>
   resolve?(v?: any): void
-  /**选排位置,但隐藏 */
+  /**先增的要占位置,但隐藏 */
   hide?: boolean
+  /**如果是in-out,则有willExiting */
+  willExiting?: boolean
 }
 
 function hideAsShowAndRemoteHide<T>(v: ExitModelInner<T>, i: number, array: ArrayHelper<ExitModelInner<T>>) {
