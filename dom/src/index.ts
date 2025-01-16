@@ -1,7 +1,6 @@
 import { hookAddResult, render } from "mve-core"
 import { EmptyFun, genTemplateStringS1, genTemplateStringS2, ValueOrGet, VType, vTypeisGetValue } from "wy-helper"
-import { renderPortal } from "./hookChildren"
-import { hookTrackSignal } from "mve-helper"
+import { hookTrackAttr, renderPortal } from "./hookChildren"
 export { dom } from './dom'
 export { svg } from './svg'
 export type { HookChild } from './hookChildren'
@@ -20,7 +19,7 @@ export function renderTextContent(value: ValueOrGet<string | number>) {
   const node = document.createTextNode('')
   hookAddResult(node)
   if (typeof value == 'function') {
-    hookTrackSignal(value, c => {
+    hookTrackAttr(value, c => {
       node.textContent = c + ''
     })
   } else {
@@ -33,7 +32,7 @@ export function renderTextContent(value: ValueOrGet<string | number>) {
 export function renderText(ts: TemplateStringsArray, ...vs: VType[]) {
   const node = document.createTextNode('')
   if (vs.some(vTypeisGetValue)) {
-    hookTrackSignal(() => {
+    hookTrackAttr(() => {
       return genTemplateStringS2(ts, vs)
     }, c => {
       node.textContent = c

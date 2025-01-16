@@ -9,6 +9,7 @@ export * from './useContentEditable'
 export * from './canvasRender/hookDrawImage'
 export * from './canvasRender/hookDrawRect'
 export * from './canvasRender/hookDrawText'
+export * from './renderExitArray'
 export function animateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig

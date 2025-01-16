@@ -1,8 +1,18 @@
-import { emptyArray, emptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
+import { addEffect, emptyArray, emptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
 import { hookAlterChildren } from "mve-core"
 import { hookDestroy, hookTrackSignal } from "mve-helper"
 
 
+
+
+export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
+  hookTrackSignal(get, (v) => {
+    //在-1阶段更新属性
+    addEffect(() => {
+      set(v, b, f)
+    }, -1)
+  })
+}
 
 export type OrFun<T extends {}> = {
   [key in keyof T]: T[key] | GetValue<T[key]>
@@ -66,34 +76,37 @@ export function diffChangeChildren<T>(
   return function (
     newList: T[]
   ) {
-    const oldList = listRef.get()
-    let changed = false
-    let beforeNode: Node | null = null
-    for (let i = 0; i < newList.length; i++) {
-      const nl = newList[i]
-      const newChild = get(nl)
-      if (changed) {
-        if (newChild != beforeNode) {
-          pNode.insertBefore(newChild, beforeNode)
+    addEffect(() => {
+      //在-2时进行布局的重新整理
+      const oldList = listRef.get()
+      let changed = false
+      let beforeNode: Node | null = null
+      for (let i = 0; i < newList.length; i++) {
+        const nl = newList[i]
+        const newChild = get(nl)
+        if (changed) {
+          if (newChild != beforeNode) {
+            pNode.insertBefore(newChild, beforeNode)
+          } else {
+            beforeNode = beforeNode?.nextSibling
+          }
         } else {
-          beforeNode = beforeNode?.nextSibling
-        }
-      } else {
-        const ol = oldList[i]
-        const lastChild = ol ? get(ol) : null
-        if (newChild != lastChild) {
-          changed = true
-          pNode.insertBefore(newChild, lastChild)
-          beforeNode = lastChild
+          const ol = oldList[i]
+          const lastChild = ol ? get(ol) : null
+          if (newChild != lastChild) {
+            changed = true
+            pNode.insertBefore(newChild, lastChild)
+            beforeNode = lastChild
+          }
         }
       }
-    }
-    oldList.forEach(last => {
-      const lastChild = get(last)
-      if (!newList.includes(last) && lastChild.parentNode == pNode) {
-        lastChild.parentNode?.removeChild(lastChild)
-      }
-    })
-    listRef.set(newList)
+      oldList.forEach(last => {
+        const lastChild = get(last)
+        if (!newList.includes(last) && lastChild.parentNode == pNode) {
+          lastChild.parentNode?.removeChild(lastChild)
+        }
+      })
+      listRef.set(newList)
+    }, -2)
   }
 }
