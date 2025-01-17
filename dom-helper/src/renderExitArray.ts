@@ -1,5 +1,5 @@
 import { hookAddResult } from "mve-core"
-import { ExitModel, renderArray, renderIf } from "mve-helper"
+import { ExitModel, hookTrackSignal, renderArray, renderIf, renderOne } from "mve-helper"
 import { GetValue } from "wy-helper"
 export type ExitArrayCloneOut<T extends Node> = {
   node: T,
@@ -15,21 +15,32 @@ export function renderExitArrayClone<T>(
 ) {
   renderArray(get, (row, getIndex) => {
     let out!: ExitArrayCloneOutList
-    renderIf(row.exiting, () => {
+    renderIf(() => {
+      const state = row.step()
+      return state == 'exiting' || state == 'will-exiting'
+    }, () => {
       if ('node' in out) {
-        const cloneNode = out.node.cloneNode(true)
-        hookAddResult(cloneNode)
-        out.applyAnimate(cloneNode)
+        applyOne(out, row)
       } else {
         out.call?.()
-        out.list.forEach(row => {
-          const cloneNode = row.node.cloneNode(true)
-          hookAddResult(cloneNode)
-          row.applyAnimate(cloneNode)
+        out.list.forEach(item => {
+          applyOne(item, row)
         })
       }
     }, () => {
       out = render(row, getIndex)
     })
+  })
+}
+
+function applyOne(out: ExitArrayCloneOut<any>, row: ExitModel<any>) {
+  const cloneNode = out.node.cloneNode(true)
+  hookAddResult(cloneNode)
+  const applyAnimate = out.applyAnimate
+  hookTrackSignal(row.step, step => {
+    if (step == 'exiting') {
+      //exiting时,promise才更新成最新的Promise
+      applyAnimate(cloneNode)
+    }
   })
 }
