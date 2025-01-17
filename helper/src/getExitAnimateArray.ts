@@ -33,7 +33,7 @@ export function getExitAnimateArray<T>(
     const [promise, resolve] = getOutResolvePromise()
     old.promise = promise
     old.resolve = resolve
-    old.exiting = true
+    old.step = "exiting"
     promise.then(function () {
       const cacheList = new ArrayHelper(oldList)
       cacheList.removeWhere(v => v == old)
@@ -50,25 +50,26 @@ export function getExitAnimateArray<T>(
     thisAddList.length = 0
     thisRemoveList.length = 0
     newCacheList.forEachRight(function (old, i) {
-      if (!(old.exiting || old.willExiting) && !list.some(v => v == old.value)) {
+      if (!isExitingItem(old) && !list.some(v => v == old.value)) {
+        //old不是将删除元素,且新列表里已经找不到old
         if (exitIgnore(old.value)) {
           newCacheList.removeAt(i)
         } else {
-          old.willExiting = true
+          old.step = "will-exiting"
           thisRemoveList.push(old)
         }
       }
     })
 
-    const addHide = wait() == 'out-in' && thisRemoveList.length != 0
+    const addStep = wait() == 'out-in' && thisRemoveList.length ? 'will-enter' : 'enter'
     let nextIndex = 0
     for (let i = 0, len = list.length; i < len; i++) {
       const v = list[i]
-      const oldIndex = newCacheList.get().findIndex(old => !(old.exiting || old.willExiting) && old.value == v)
+      const oldIndex = newCacheList.get().findIndex(old => !isExitingItem(old) && old.value == v)
       if (oldIndex < 0) {
         if (mode() == 'shift') {
           let item: ExitModelInner<T>
-          while ((item = newCacheList.get()[nextIndex]) && (item.exiting || item.willExiting)) {
+          while ((item = newCacheList.get()[nextIndex]) && isExitingItem(item)) {
             nextIndex++
           }
         }
@@ -76,10 +77,10 @@ export function getExitAnimateArray<T>(
           value: v,
           target: {
             value: v,
-            exiting() {
+            step() {
               //不像renderForEach在内部访问,所以没有循环访问
               getList()
-              return cache.exiting
+              return cache.step as any
             },
             resolve(v) {
               cache.resolve?.(v)
@@ -88,9 +89,8 @@ export function getExitAnimateArray<T>(
               return cache.promise
             }
           },
-          exiting: false,
           enterIgnore: enterIgnore(v),
-          hide: addHide
+          step: addStep
         }
         objectFreezeThrow(cache.target)
         if (!cache.enterIgnore) {
@@ -119,7 +119,17 @@ export function getExitAnimateArray<T>(
       if (onExitWait) {
         allDestroyPromise.then(function () {
           const cacheList = new ArrayHelper(oldList)
-          if (opHelperHide(cacheList, thisAddList)) {
+          let i = 0
+          cacheList.forEach(cache => {
+            if (cache.step == 'will-enter') {
+              const row = thisAddList.find(v => v == cache)
+              if (row) {
+                i++
+                row.step = 'enter'
+              }
+            }
+          })
+          if (i) {
             oldList = cacheList.get()
             updateVersion()
           }
@@ -162,7 +172,8 @@ export function getExitAnimateArray<T>(
 
 export type ExitModel<V> = {
   readonly value: V
-  readonly exiting: GetValue<boolean>
+  //因为will-exiting时原节点就删除了,需要在此时clone节点
+  readonly step: GetValue<"exiting" | "will-exiting" | "enter">
   readonly resolve: SetValue<any>
   readonly promise: GetValue<Promise<any> | undefined>
 }
@@ -173,34 +184,20 @@ function getExitModel<V>(v: ExitModelInner<V>) {
 
 interface ExitModelInner<V> {
   value: V
-  exiting: boolean
   target: ExitModel<V>
   readonly enterIgnore?: false
   /** */
   promise?: Promise<any>
   resolve?(v?: any): void
-  /**先增的要占位置,但隐藏 */
-  hide?: boolean
-  /**如果是in-out,则有willExiting */
-  willExiting?: boolean
+  step: "exiting" | "will-exiting" | "will-enter" | "enter"
+}
+
+function isExitingItem(v: ExitModelInner<any>) {
+  return v.step == 'exiting' || v.step == 'will-exiting'
 }
 
 function hideAsShowAndRemoteHide<T>(v: ExitModelInner<T>, i: number, array: ArrayHelper<ExitModelInner<T>>) {
-  if (v.hide) {
+  if (v.step == 'will-enter') {
     array.removeAt(i)
   }
-}
-
-function opHelperHide<V>(eCacheList: NoInsertArrayHelper<ExitModelInner<V>>, thisRemoveList: ExitModelInner<V>[]) {
-  let n = 0
-  eCacheList.forEach(function (cache) {
-    if (cache.hide) {
-      const row = thisRemoveList.find(v => v == cache)
-      if (row) {
-        row.hide = false
-        n++
-      }
-    }
-  })
-  return n
 }
