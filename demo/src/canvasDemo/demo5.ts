@@ -12,8 +12,6 @@ export default function () {
 
 
   hookDrawRect({
-    x: 0,
-    y: 0,
     layout(v) {
       return simpleFlex({
         direction: "y"

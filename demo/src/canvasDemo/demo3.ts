@@ -5,8 +5,6 @@ import { AbsoluteNode, hookDrawRect, simpleFlex, hookDrawText, hookDrawUrlImage 
 export default function () {
 
   hookDrawRect({
-    x: 20,
-    y: 20,
     height: 500,
     width: 400,
     // paddingLeft: 10,

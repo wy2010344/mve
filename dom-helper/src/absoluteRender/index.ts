@@ -14,7 +14,7 @@ export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel {
   target: T
   parent: AbsoluteParent
   index(): number
-  getInfo(x: LayoutKey): number
+  getInfo(x: LayoutKey, def?: boolean): number
 }
 
 
@@ -115,8 +115,12 @@ function superCreateGet(x: LayoutKey) {
         const ix = ins.getInfo(x)
         return ix
       } catch (err) {
-        //其次选择来自父元素的约束
-        return ins.parent.getChildInfo(x, ins.index())
+        try {
+          //其次选择来自父元素的约束
+          return ins.parent.getChildInfo(x, ins.index())
+        } catch (err) {
+          return ins.getInfo(x, true)
+        }
       }
     }
   }
@@ -250,8 +254,8 @@ class MAbsoluteNode implements AbsoluteNode<any> {
   getChildInfo(x: LayoutKey, i: number) {
     return this.display().getChildInfo(x, i)
   }
-  getInfo(x: LayoutKey) {
-    return this.display().getInfo(x)
+  getInfo(x: LayoutKey, def?: boolean) {
+    return this.display().getInfo(x, def)
   }
 }
 /**
@@ -286,7 +290,10 @@ export const absoluteDisplay: MDisplayOut = {
     //不定义子元素的坐标
     throw ''
   },
-  getInfo(x) {
+  getInfo(x, def) {
+    if (def) {
+      return 0
+    }
     if (x == 'x' || x == 'y') {
       //不定义自身的坐标
       throw ''
