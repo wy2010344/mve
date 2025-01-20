@@ -42,8 +42,6 @@ export default function () {
     })
   })
   hookDrawRect({
-    x: 0,
-    y: 0,
     width: 420,
     height: 700,
     paddingTop() {

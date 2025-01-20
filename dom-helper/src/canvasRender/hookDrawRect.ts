@@ -27,9 +27,9 @@ export class CanvasRectNode implements CDisplay {
     public readonly drawHeight: GetValue<number>,
   ) { }
 
-  getInfo(x: LayoutKey): number {
+  getInfo(x: LayoutKey, def?: boolean): number {
     /**布局,从子节点汇总而来 */
-    const v = this.getDisplay().getInfo(x)
+    const v = this.getDisplay().getInfo(x, def)
     if (x == 'width') {
       return v + this.paddingLeft() + this.paddingRight()
     }
@@ -74,7 +74,11 @@ function superCreateGet(x: LayoutKey) {
         const ix = ins.getInfo(x)
         return ix
       } catch (err) {
-        return getFromParent(ins, x, err)
+        try {
+          return getFromParent(ins, x, err)
+        } catch (err) {
+          return ins.getInfo(x, true)
+        }
       }
     }
   }
