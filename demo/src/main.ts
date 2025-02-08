@@ -22,9 +22,13 @@ import forceDemo2 from './d3/force/demo2'
 import forceDemo3 from './d3/force/demo3'
 import forceDemo4 from './d3/force/demo4'
 import exitAnimate from './exitAnimate'
+import demo2 from './demos/demo2'
+import calendar from './demos/calendar'
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 const destroy = createRoot(app, () => {
+  calendar()
+  // demo2()
   // scrollerDemo1()
   // reorderDemo()
   // changePortal()
@@ -40,7 +44,7 @@ const destroy = createRoot(app, () => {
   // demo1()
   // typeContain()
   // tree()
-  absoluteDemo(app)
+  // absoluteDemo(app)
   // three()
   // clipDemo()
   // magnifiedDock()
