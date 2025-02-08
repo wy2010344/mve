@@ -94,19 +94,21 @@ export default function () {
     })
     container.addEventListener("pointerdown", e => {
       const m = doTouchStart([e], e.timeStamp, {
-        refreshHeight: 50,
-        refreshActivate() {
-          placeState.set("active")
-        },
-        refreshDeactivate() {
-          placeState.set(undefined)
-        },
-        refreshStart() {
-          placeState.set("running")
-          setTimeout(function () {
-            list.set([Date.now()].concat(list.get()))
-            finishPullToRefresh();
-          }, 2000);
+        refresh: {
+          height: 50,
+          start() {
+            placeState.set("running")
+            setTimeout(function () {
+              list.set([Date.now()].concat(list.get()))
+              finishPullToRefresh();
+            }, 2000);
+          },
+          activate() {
+            placeState.set("active")
+          },
+          deactivate() {
+            placeState.set(undefined)
+          }
         }
       })
 
