@@ -1,6 +1,6 @@
 import { hookAddDestroy } from "mve-core"
 import { signalAnimateFrame } from "wy-dom-helper"
-import { AnimateFrameSignalConfig, createAnimateSignal, defaultSpringBaseAnimationConfig, GetDeltaXAnimationConfig, GetValue } from "wy-helper"
+import { AnimateFrameSignalConfig, createAnimateSignal, defaultSpringBaseAnimationConfig, GetDeltaXAnimationConfig, GetValue, SignalAnimateFrameValue } from "wy-helper"
 export * from './canvasRender'
 export * from './absoluteRender'
 export * from './renderInput'

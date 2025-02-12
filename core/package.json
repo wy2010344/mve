@@ -1,10 +1,15 @@
 {
   "name": "mve-core",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "license": "MIT",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wy2010344/mve.git",
+    "directory": "mve"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -27,9 +32,9 @@
     "vite-plugin-dts": "^3.9.1"
   },
   "peerDependencies": {
-    "wy-helper": "file:.yalc/wy-helper"
+    "wy-helper": "^0.1.11"
   },
   "dependencies": {
-    "wy-helper": "file:.yalc/wy-helper"
+    "wy-helper": "^0.1.11"
   }
 }
