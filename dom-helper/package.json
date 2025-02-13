@@ -1,6 +1,6 @@
 {
   "name": "mve-dom-helper",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -14,11 +14,17 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./canvasRender": {
+      "types": "./dist/canvasRender/index.d.ts",
+      "import": "./dist/canvasRender.mjs",
+      "require": "./dist/cacanvasRendernvas.js"
     }
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "canvasRender"
   ],
   "scripts": {
     "build": "tsc && vite build",
@@ -31,19 +37,17 @@
     "vite-plugin-dts": "^3.9.1"
   },
   "peerDependencies": {
-    "linebreak": "^1.1.0",
     "mve-core": "^2.0.0",
     "mve-dom": "^2.0.0",
     "mve-helper": "^2.0.0",
-    "wy-dom-helper": "^0.1.9",
-    "wy-helper": "^0.1.11"
+    "wy-dom-helper": "^0.1.10",
+    "wy-helper": "^0.1.12"
   },
   "dependencies": {
-    "linebreak": "^1.1.0",
     "mve-core": "^2.0.0",
     "mve-dom": "^2.0.0",
     "mve-helper": "^2.0.0",
-    "wy-dom-helper": "^0.1.9",
-    "wy-helper": "^0.1.11"
+    "wy-dom-helper": "^0.1.10",
+    "wy-helper": "^0.1.12"
   }
 }
