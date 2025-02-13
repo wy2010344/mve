@@ -9,7 +9,8 @@ export default defineConfig({
     lib: {
       // Could also be a dictionary or array of multiple entry points
       entry: {
-        index: resolve(__dirname, 'src/index.ts')
+        index: resolve(__dirname, 'src/index.ts'),
+        canvasRender: resolve(__dirname, 'src/canvasRender/index.ts')
       },
       formats: ["es", "cjs"]
     },

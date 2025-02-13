@@ -3,23 +3,28 @@
   "packages": {
     "mve-core": {
       "signature": "90b559acca9a63595b1cd9c63da05115",
-      "file": true
+      "file": true,
+      "replaced": "^2.0.0"
     },
     "mve-helper": {
       "signature": "1ba3341ce8a732332744f71b60d5d8ac",
-      "file": true
+      "file": true,
+      "replaced": "^2.0.0"
     },
     "wy-helper": {
-      "signature": "784ce38fa926cb8181dcb869dec78552",
-      "file": true
+      "signature": "749638e0056fdc2c4ea9d034373fccc9",
+      "file": true,
+      "replaced": "^0.1.11"
     },
     "wy-dom-helper": {
-      "signature": "135c479d2b26a1d1880de9efb875bd28",
-      "file": true
+      "signature": "14f8838af2b3cd039aa54826ed62ed87",
+      "file": true,
+      "replaced": "^0.1.9"
     },
     "mve-dom": {
       "signature": "3ad8e4e988dd27fd1d1e2872e35c5e6d",
-      "file": true
+      "file": true,
+      "replaced": "^2.0.0"
     }
   }
 }
