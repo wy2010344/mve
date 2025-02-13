@@ -1,6 +1,6 @@
 import { OrFun, renderDom } from "mve-dom";
 import { hookTrackSignal, useVersion } from "mve-helper";
-import { BDomEvent, DomElementType, FDomAttribute } from "wy-dom-helper";
+import { BDomEvent, DomElement, DomElementType, FDomAttribute } from "wy-dom-helper";
 import { batchSignalEnd, createSignal, EmptyFun, emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
@@ -120,7 +120,7 @@ export type ContentEditableProps<T extends DomElementType> = OrFun<FDomAttribute
 export function renderContentEditable<T extends DomElementType>(
   type: T,
   arg: ContentEditableProps<T>
-) {
+): DomElement<T> {
   const {
     value,
     onValueChange,
