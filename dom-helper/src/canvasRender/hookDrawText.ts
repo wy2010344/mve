@@ -1,6 +1,6 @@
 import { EmptyFun, memo, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect"
-import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig } from "wy-dom-helper"
+import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig } from "wy-dom-helper/canvas"
 import { CanvaRenderCtx, hookCurrentCtx, PathResult } from "."
 
 type TextConfig = {

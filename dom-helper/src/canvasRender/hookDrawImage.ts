@@ -1,7 +1,7 @@
 import { hookPromiseSignal, promiseSignal, renderOne } from "mve-helper";
 import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect";
 import { loadImage } from "wy-dom-helper";
-import { EmptyFun, SetValue, SizeKey, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { EmptyFun, PromiseResult, SetValue, SizeKey, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper";
 import { CanvaRenderCtx, PathResult } from ".";
 
 
@@ -78,6 +78,6 @@ export function hookDrawImage(arg: {
   })
 }
 
-export function imageLoadSignal(src: string) {
+export function imageLoadSignal(src: string): StoreRef<PromiseResult<HTMLImageElement> | undefined> {
   return promiseSignal(loadImage(src))
 }
