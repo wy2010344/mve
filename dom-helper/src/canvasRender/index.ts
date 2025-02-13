@@ -1,9 +1,12 @@
 import { hookAddDestroy, hookAddResult } from "mve-core"
 import { getRenderChildren } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
-import { path2DOperate, Path2DOperate } from "wy-dom-helper"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, PointKey, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
+import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
+export * from './hookDrawImage'
+export * from './hookDrawRect'
+export * from './hookDrawText'
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
   hookAddResult(n)
