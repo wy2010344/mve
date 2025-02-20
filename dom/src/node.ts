@@ -1,8 +1,8 @@
 
 import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, vTypeisGetValue, GetValue, emptyObject, emptyFun } from "wy-helper"
-import { addEvent, CSSProperties, isEvent, React } from "wy-dom-helper"
+import { addEvent, CSSProperties, isEvent, React, UpdateProp } from "wy-dom-helper"
 import { hookAddResult } from "mve-core"
-import { hookTrackAttr, OrFun, renderChildren, renderPortal } from "./hookChildren"
+import { hookTrackAttr, OrFun, renderChildren } from "./hookChildren"
 
 
 export type StyleProps = {
@@ -68,11 +68,11 @@ function mergeStyle(style: any, node: any, oldStyle: any) {
   return style
 }
 
-export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any, key: string, value?: any) => void) {
+export function mergeAttrs(attrsEffect: any, node: any, updateProps: UpdateProp) {
   const oldAttrs: Record<string, any> = {}
   if (typeof attrsEffect == 'function') {
     const deleteKey = (key: string) => {
-      updateProps(node, key)
+      updateProps(undefined, node, key)
       delete oldAttrs[key]
     }
 
@@ -85,7 +85,7 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
           if (key == 'style') {
             oldStyle = mergeStyle(value, node, oldStyle)
           } else {
-            updateProps(node, key, value)
+            updateProps(value, node, key)
             oldAttrs[key] = value
           }
         }
@@ -121,11 +121,11 @@ export function mergeAttrs(attrsEffect: any, node: any, updateProps: (node: any,
         } else {
           if (typeof value == 'function') {
             hookTrackAttr(value, v => {
-              updateProps(node, key, v)
+              updateProps(v, node, key)
               oldAttrs[key] = v
             })
           } else {
-            updateProps(node, key, value)
+            updateProps(value, node, key)
           }
         }
       }
@@ -172,7 +172,7 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   static instance = new NodeCreater()
   public type!: T
   public create!: (n: T) => N
-  public updateProps!: (node: N, key: string, value?: any) => void
+  public updateProps!: (value: any, node: N, key: string) => void
 
   public attrsEffect: Attr = emptyObject as any
   attrs(v: Attr) {
