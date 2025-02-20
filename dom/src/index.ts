@@ -4,10 +4,11 @@ import { hookTrackAttr, renderPortal } from "./hookChildren"
 export { dom } from './dom'
 export { svg } from './svg'
 export type { HookChild } from './hookChildren'
-export { renderPortal, getRenderChildren, diffChangeChildren } from './hookChildren'
+export { renderPortal, getRenderChildren, diffChangeChildren, renderChildren } from './hookChildren'
 export type { OrFun } from './hookChildren'
 export type { StyleProps } from './node'
 export * from './renderNode'
+export * from './attrInOne'
 export function createRoot(node: Node, create: EmptyFun) {
   return render(() => {
     renderPortal(node, create)

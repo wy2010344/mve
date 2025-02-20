@@ -2,22 +2,10 @@
 // import { addRender, getEnvModel, hookAddResult, hookBeginTempOps, hookEndTempOps } from "better-react"
 import { BDomAttribute, BDomEvent, DataAttr, DomElement, DomElementType, React } from "wy-dom-helper"
 import { createOrProxy, emptyObject } from "wy-helper"
-import { domTagNames } from "wy-dom-helper"
+import { domTagNames, updateDomProps } from "wy-dom-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
 import { OrFun } from "./hookChildren"
 
-const emptyKeys = ['href', 'className']
-export function updateDomProps(node: any, key: string, value?: any) {
-  if (key.includes('-')) {
-    node.setAttribute(key, value)
-  } else {
-    if (emptyKeys.includes(key) && !value) {
-      node[key] = ''
-    } else {
-      node[key] = value
-    }
-  }
-}
 
 function create(type: string) {
   return document.createElement(type)
