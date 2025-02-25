@@ -35,7 +35,7 @@
     "wy-helper": "^0.1.11"
   },
   "dependencies": {
-    "mve-core": "^2.0.0",
-    "wy-helper": "^0.1.11"
+    "mve-core": "file:.yalc/mve-core",
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }
