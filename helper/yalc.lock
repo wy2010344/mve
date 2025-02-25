@@ -3,11 +3,13 @@
   "packages": {
     "mve-core": {
       "signature": "90b559acca9a63595b1cd9c63da05115",
-      "file": true
+      "file": true,
+      "replaced": "^2.0.0"
     },
     "wy-helper": {
-      "signature": "784ce38fa926cb8181dcb869dec78552",
-      "file": true
+      "signature": "87725a551401b5aaae8c4ca9dd46d0e6",
+      "file": true,
+      "replaced": "^0.1.11"
     }
   }
 }
