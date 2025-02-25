@@ -1,6 +1,6 @@
-import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderMDomAttr, renderMSvgAttr, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper";
+import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderMDomAttr, renderMSvgAttr, SvgElement, SvgElementType, svgTagNames, GDomAttribute, renderGDomAttr } from "wy-dom-helper";
 import { SetValue, createOrProxy } from "wy-helper";
-import { hookTrackAttr, renderChildren } from "./hookChildren";
+import { renderChildren } from "./hookChildren";
 import { hookAddResult } from "mve-core";
 import { mergeValue } from "./renderNode";
 
@@ -9,7 +9,8 @@ import { mergeValue } from "./renderNode";
 
 
 export type MDomAttributes<T extends DomElementType> = {
-  attrs?: FDomAttribute<T> | SetValue<FDomAttribute<T>>
+  attrsNoObserver?: boolean
+  attrs?: SetValue<FDomAttribute<T>>
 } & BDomEvent<T>
   & FGetChildAttr<DomElement<T>>
 export function renderMDom<T extends DomElementType>(
@@ -22,10 +23,26 @@ export function renderMDom<T extends DomElementType>(
   return node
 }
 
+export type GDomAttributes<T extends DomElementType> = {
+  attrsNoObserver?: boolean
+  attrs?: SetValue<GDomAttribute<T>>
+} & BDomEvent<T>
+  & FGetChildAttr<DomElement<T>>
+export function renderGDom<T extends DomElementType>(
+  type: T,
+  arg: MDomAttributes<T>
+) {
+  const node = document.createElement(type)
+  renderGDomAttr(node, arg, mergeValue, renderChildren)
+  hookAddResult(node)
+  return node
+}
+
 
 
 export type MSvgAttributes<T extends SvgElementType> = {
-  attrs?: FSvgAttribute<T> | SetValue<FSvgAttribute<T>>
+  attrsNoObserver?: boolean
+  attrs?: SetValue<FSvgAttribute<T>>
 } & BSvgEvent<T>
   & FGetChildAttr<SvgElement<T>>
 export function renderMSvg<T extends SvgElementType>(
@@ -47,6 +64,16 @@ export const mdom: {
 } = createOrProxy(domTagNames, tag => {
   return function (args: any) {
     return renderMDom(tag, args)
+  } as any
+})
+
+export const gdom: {
+  readonly [key in DomElementType]: {
+    (props?: MDomAttributes<key>): DomElement<key>
+  }
+} = createOrProxy(domTagNames, tag => {
+  return function (args: any) {
+    return renderGDom(tag, args)
   } as any
 })
 
