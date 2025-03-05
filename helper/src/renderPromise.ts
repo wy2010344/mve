@@ -14,10 +14,12 @@ export function promiseSignal<T>(promise: Promise<T>) {
   const signal = createSignal<PromiseResult<T> | undefined>(undefined)
   promise.then(value => signal.set({
     type: "success",
+    promise,
     value
   })).catch(err => {
     signal.set({
       type: "error",
+      promise,
       value: err
     })
   })
