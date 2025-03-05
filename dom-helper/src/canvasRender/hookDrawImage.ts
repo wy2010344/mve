@@ -78,6 +78,6 @@ export function hookDrawImage(arg: {
   })
 }
 
-export function imageLoadSignal(src: string): StoreRef<PromiseResult<HTMLImageElement> | undefined> {
+export function imageLoadSignal(src: string) {
   return promiseSignal(loadImage(src))
 }

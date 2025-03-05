@@ -41,5 +41,6 @@ export function renderText(ts: TemplateStringsArray, ...vs: VType[]) {
   } else {
     node.textContent = genTemplateStringS1(ts, vs as any)
   }
+  hookAddResult(node)
   return node
 }

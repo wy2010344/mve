@@ -44,10 +44,10 @@
     "wy-helper": "^0.1.12"
   },
   "dependencies": {
-    "mve-core": "^2.0.0",
-    "mve-dom": "^2.0.0",
-    "mve-helper": "^2.0.0",
-    "wy-dom-helper": "^0.1.10",
-    "wy-helper": "^0.1.12"
+    "mve-core": "file:.yalc/mve-core",
+    "mve-dom": "file:.yalc/mve-dom",
+    "mve-helper": "file:.yalc/mve-helper",
+    "wy-dom-helper": "file:.yalc/wy-dom-helper",
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }

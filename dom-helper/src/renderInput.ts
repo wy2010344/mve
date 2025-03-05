@@ -1,7 +1,7 @@
-import { OrFun, renderDom } from "mve-dom";
+import { OrFun, renderFDom } from "mve-dom";
 import { hookTrackSignal, useVersion } from "mve-helper";
 import { BDomEvent, DomElement, DomElementType, FDomAttribute } from "wy-dom-helper";
-import { batchSignalEnd, createSignal, EmptyFun, emptyFun, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { batchSignalEnd, EmptyFun, emptyFun, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
 export type TriggerTime = "onInput" | "onBlur"
@@ -16,7 +16,7 @@ export type InputProps = Omit<InputTypeProps<"input">, 'type'> & {
   /**
    * 不支持那几项
    */
-  a_type?: ValueOrGet<Exclude<FDomAttribute<'input'>['a_type'],
+  type?: ValueOrGet<Exclude<FDomAttribute<'input'>['type'],
     'checkbox'
     | 'button'
     | 'hidden'
@@ -42,7 +42,7 @@ function useUpdateValue<K extends string, V>(
       //必须用实时值去改!!!
       input[key] = value
     }
-  }, emptyFun)
+  })
 }
 
 function useTrigger<
@@ -106,7 +106,7 @@ export function renderInput(
   }: any
 ) {
   return useTrigger(triggerTime, props, value, onValueChange, props => {
-    return renderDom(type, props)
+    return renderFDom(type, props)
   }, 'value') as any
 }
 
@@ -128,7 +128,7 @@ export function renderContentEditable<T extends DomElementType>(
     ...props
   } = arg as any
   return useTrigger(triggerTime, props, value, onValueChange, props => {
-    return renderDom(type, props as any)
+    return renderFDom(type, props as any)
   }, 'textContent')
 }
 
@@ -136,8 +136,8 @@ export function renderContentEditable<T extends DomElementType>(
 
 
 
-export type InputBoolProps = OrFun<Omit<FDomAttribute<'input'>, 'a_type'> & {
-  a_type: "checkbox" | "radio"
+export type InputBoolProps = OrFun<Omit<FDomAttribute<'input'>, 'type'> & {
+  type: "checkbox" | "radio"
   checked: boolean
 }> & BDomEvent<"input">
 export function renderInputBool({
@@ -148,7 +148,7 @@ export function renderInputBool({
   const checked = valueOrGetToGet(_checked)
   //只是为了强制这个模块更新
   const [version, updateVersion] = useVersion()
-  const input = renderDom("input", {
+  const input = renderFDom("input", {
 
     /**
      * 使用onInput实时事件,而不是使用onKeyUp与onCompositionEnd

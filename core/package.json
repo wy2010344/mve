@@ -32,9 +32,9 @@
     "vite-plugin-dts": "^3.9.1"
   },
   "peerDependencies": {
-    "wy-helper": "^0.1.11"
+    "wy-helper": "^0.1.13"
   },
   "dependencies": {
-    "wy-helper": "^0.1.11"
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }
