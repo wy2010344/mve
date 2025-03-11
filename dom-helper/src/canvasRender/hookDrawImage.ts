@@ -34,7 +34,7 @@ export function hookDrawUrlImage(n: {
 export function hookDrawImage(arg: {
   image: ValueOrGet<HTMLImageElement>
   relay?: SizeKey | undefined
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun, path: Path2D): Partial<PathResult>
 } & Omit<DrawRectConfig, 'draw'>) {
   const getImage = valueOrGetToGet(arg.image)
   if (arg.relay == 'width') {
@@ -59,7 +59,7 @@ export function hookDrawImage(arg: {
   }
   return hookDrawRect({
     ...arg,
-    draw(ctx, n) {
+    draw(ctx, n, p) {
       const image = getImage()
       function draw() {
         ctx.drawImage(image, 0, 0, n.width(), n.height())
@@ -67,12 +67,8 @@ export function hookDrawImage(arg: {
       if (!arg.draw) {
         draw()
       }
-      const out = arg.draw?.(ctx, n, draw) || {}
-      if (!out.path) {
-        const path = new Path2D()
-        path.rect(0, 0, n.width(), n.height())
-        out.path = path
-      }
+      const out = arg.draw?.(ctx, n, draw, p) || {}
+      p.rect(0, 0, n.width(), n.height())
       return out as PathResult
     },
   })
