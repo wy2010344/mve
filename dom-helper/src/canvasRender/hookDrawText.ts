@@ -12,7 +12,7 @@ type TextConfig = {
 export function hookDrawText(arg: {
   config: ValueOrGet<TextConfig>
   drawInfo?: ValueOrGet<DrawTextWrapExt>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun, p: Path2D): Partial<PathResult>
 } & Omit<DrawRectConfig, 'height' | 'draw'>) {
   const getConfig = valueOrGetToGet(arg.config)
 
@@ -22,7 +22,7 @@ export function hookDrawText(arg: {
     height() {
       return mout().height
     },
-    draw(ctx, n) {
+    draw(ctx, n, p) {
       const info = getDrawInfo()
       function draw() {
         drawTextWrap(ctx, mout(), info)
@@ -30,12 +30,8 @@ export function hookDrawText(arg: {
       if (!arg.draw) {
         draw()
       }
-      const out = arg.draw?.(ctx, n, draw) || {}
-      if (!out.path) {
-        const path = new Path2D()
-        path.rect(0, 0, n.width(), n.height())
-        out.path = path
-      }
+      const out = arg.draw?.(ctx, n, draw, p) || {}
+      p.rect(0, 0, n.width(), n.height())
       return out as PathResult
     },
   })

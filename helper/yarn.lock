@@ -442,6 +442,21 @@ concat-map@0.0.1:
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==
 
+d3-binarytree@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/d3-binarytree/-/d3-binarytree-1.0.2.tgz#ed43ebc13c70fbabfdd62df17480bc5a425753cc"
+  integrity sha512-cElUNH+sHu95L04m92pG73t2MEJXKu+GeKUN1TJkFsu93E5W8E9Sc3kHEGJKgenGvj19m6upSn2EunvMgMD2Yw==
+
+d3-octree@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/d3-octree/-/d3-octree-1.1.0.tgz#f07e353b76df872644e7130ab1a74c5ef2f4287e"
+  integrity sha512-F8gPlqpP+HwRPMO/8uOu5wjH110+6q4cgJvgJT6vlpy3BEaDIKlTZrgHKZSp/i1InRpVfh4puY/kvL6MxK930A==
+
+d3-quadtree@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/d3-quadtree/-/d3-quadtree-3.0.1.tgz#6dca3e8be2b393c9a9d514dabbd80a92deef1a4f"
+  integrity sha512-04xDrxQTDTCFwP5H6hRhsRcb9xxv2RzkcsygFzmkSIOJy3PeRJP7sNk3VRIbKXcog561P9oU0/rVH6vDROAgUw==
+
 de-indent@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/de-indent/-/de-indent-1.0.2.tgz#b2038e846dc33baa5796128d0804b455b8c1e21d"
@@ -631,12 +646,12 @@ muggle-string@^0.3.1:
   resolved "https://registry.yarnpkg.com/muggle-string/-/muggle-string-0.3.1.tgz#e524312eb1728c63dd0b2ac49e3282e6ed85963a"
   integrity sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==
 
-mve-core@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/mve-core/-/mve-core-2.0.0.tgz#13e6f925cb5db1417404bcb294d3ff8b0de39a3c"
-  integrity sha512-BnXJ5f4F7KAWyw3LIi5OfMSDM8uLde+92WBDh6BDT05g5UueUbwdkrk/+l1rAZPLHaBP6udTmOBm+Vda8wtl1w==
+mve-core@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/mve-core/-/mve-core-2.0.1.tgz#73657b7c8fdac4f1cec46dbd64086b6bd3ee44c0"
+  integrity sha512-HjsADKpewTJ3t96SZ+BW5uWlm1eTTOq014mQKGR7r6a/R/4tQZ0niG5PN15gXxJD4VQbHhDWN7RECgy450CIXA==
   dependencies:
-    wy-helper "^0.1.11"
+    wy-helper "^0.1.14"
 
 nanoid@^3.3.7:
   version "3.3.7"
@@ -850,10 +865,14 @@ vue-tsc@^1.8.27:
     "@vue/language-core" "1.8.27"
     semver "^7.5.4"
 
-wy-helper@^0.1.11:
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.11.tgz#372412cb01cbbcfba8d6ab04a4519622b9d037d6"
-  integrity sha512-ITLRW81I+FRvtMDQQVU7aM9KxYso9G8ptVlGMnGiICo+ffRWswmzLL5ktlrXMPzVpSqDm0eRRfS114BNe64QQQ==
+wy-helper@^0.1.14:
+  version "0.1.14"
+  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.14.tgz#1b8482e3306629d58085a510a97975e63dfad52c"
+  integrity sha512-uox/nREC+wC1MkE26zKNbo/NM/xN8iDwL0nj02Q2CI43JZBKR9iKavwFfEqZmxRIruenSspAA6qBheVWOeKbdA==
+  dependencies:
+    d3-binarytree "^1.0.2"
+    d3-octree "^1.1.0"
+    d3-quadtree "^3.0.1"
 
 yallist@^4.0.0:
   version "4.0.0"

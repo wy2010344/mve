@@ -1,4 +1,4 @@
-import { CanvaRenderCtx, CMNode, CNodeConfigure, hookDraw, PathResult, } from "./index"
+import { CanvaRenderCtx, CMNode, CNodeConfigure, CNodePathConfigure, hookDraw, PathResult, } from "./index"
 import { DisplayProps, flexDisplayUtil, GetValue, hookLayout, InstanceCallbackOrValue, LayoutKey, LayoutModel, MDisplayOut, memo, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
@@ -63,7 +63,7 @@ interface AbsoluteNodeConfigure {
   paddingRight?: ValueOrGet<number>
   paddingTop?: ValueOrGet<number>
   paddingBottom?: ValueOrGet<number>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode): PathResult | void;
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, p: Path2D): PathResult | void;
 }
 function superCreateGet(x: LayoutKey) {
   return function (getIns: GetValue<CanvasRectNode>) {
@@ -125,7 +125,7 @@ function getInnerSize(
     return emptyThrow
   }
 }
-export type DrawRectConfig = AbsoluteNodeConfigure & Omit<CNodeConfigure, 'x' | 'y' | 'draw'>
+export type DrawRectConfig = AbsoluteNodeConfigure & Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath'>
 export function hookDrawRect(
   n: DrawRectConfig) {
   function getIns(): CanvasRectNode {
@@ -176,8 +176,9 @@ export function hookDrawRect(
     ...n,
     x,
     y,
-    draw(ctx) {
-      return n.draw?.(ctx, node)
+    withPath: true,
+    draw(ctx, path) {
+      return n.draw?.(ctx, node, path)
     },
     ext: {
       ...n.ext,
@@ -198,7 +199,6 @@ const absoluteDisplay: CDisplay = {
   getInfo(x) {
     throw 'vvv'
   },
-
 }
 
 export function simpleFlex(props: DisplayProps): CDisplay {

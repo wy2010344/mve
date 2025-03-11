@@ -83,9 +83,9 @@ fdom.button({
 
 ## 核心方法
 
-- createSignal (wy-helper) 因为也可以用于其它框架,故提升到这一层
-- memo (wy-helper) 核心的依赖缓存,在需要求值时比较依赖变化,有变化才执行
-- addLevelEffect (wy-helper) 与信号一起,在信号完成后执行
+- [createSignal](https://github.com/wy2010344/wy-helper/blob/main/wy-helper/src/signal.ts) (wy-helper) 因为也可以用于其它框架,故提升到这一层
+- [memo](https://github.com/wy2010344/wy-helper/blob/main/wy-helper/src/signal.ts) (wy-helper) 核心的依赖缓存,在需要求值时比较依赖变化,有变化才执行.[memo 原理](https://github.com/wy2010344/wy-helper/blob/main/wy-helper/docs/memo的原理.md)
+- [addLevelEffect](https://github.com/wy2010344/wy-helper/blob/main/wy-helper/src/signal.ts) (wy-helper) 与信号一起,在信号完成后执行
 
 - renderForEach (mve-core)
 

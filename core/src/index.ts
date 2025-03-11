@@ -10,7 +10,7 @@ export {
   hookCurrentStateHolder
 } from './cache'
 export { createContext } from './context'
-
+export type { Context } from './context'
 export function render(create: EmptyFun) {
   const stateHolder = new StateHolder()
   hookAlterStateHolder(stateHolder)

@@ -100,15 +100,21 @@ class CNode implements CMNode {
 
   path?: Path2D
 }
-export interface CNodeConfigure {
+
+interface CBaseNodeConfigure {
   x: ValueOrGet<number>
   y: ValueOrGet<number>
   beforeChildren?(): void
-  draw?(ctx: CanvaRenderCtx): PathResult | void
   //这里可能有children()
   children?(): void
-
   mouseContainStroke?: boolean
+
+  ext?: Record<string, any>
+}
+
+export type CNodePathConfigure = (CBaseNodeConfigure & {
+  withPath: true
+  draw?(ctx: CanvaRenderCtx, path: Path2D): PathResult | void
 
   onClick?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseDown?(e: CanvasMouseEvent<MouseEvent>): any
@@ -125,8 +131,11 @@ export interface CNodeConfigure {
   onPointerUpCapture?(e: CanvasMouseEvent<PointerEvent>): any
   // onTouchDownCapture?(e: CanvasMouseEvent<TouchEvent>): any
   // onTouchUpCapture?(e: CanvasMouseEvent<TouchEvent>): any
-  ext?: Record<string, any>
-}
+})
+export type CNodeConfigure = CNodePathConfigure | (CBaseNodeConfigure & {
+  withPath?: never
+  draw?(ctx: CanvaRenderCtx): void
+})
 
 
 export type CanvasMouseEvent<T> = {
@@ -139,7 +148,6 @@ export type CanvasMouseEvent<T> = {
 }
 
 export type PathResult = {
-  path: Path2D
   operates?: Path2DOperate[]
   clipFillRule?: CanvasFillRule
   afterClipOperates?: Path2DOperate[]
@@ -249,12 +257,19 @@ export function renderCanvas(
         child => {
           const c = child as unknown as CanvasMouseEvent<MouseEvent>
           c.original = e
-          return child.node.configure[me.onCaptureEvent as 'onClickCapture']?.(c)
+          const configure = child.node.configure
+          if (configure.withPath) {
+            return configure[me.onCaptureEvent as 'onClickCapture']?.(c)
+          }
         },
         child => {
           const c = child as unknown as CanvasMouseEvent<MouseEvent>
           c.original = e
-          return child.node.configure[me.onEvent as 'onClick']?.(c)
+
+          const configure = child.node.configure
+          if (configure.withPath) {
+            return configure[me.onEvent as 'onClick']?.(c)
+          }
         }
       )
     })
@@ -288,17 +303,22 @@ export function renderCanvas(
         ctx.translate(x, y)
         child.path = undefined
         draw(child.beforeChildren())
-        const path = child.configure.draw?.(ctx)
-        if (path) {
-          child.path = path.path
-          path2DOperate(ctx, path.path, path.operates || emptyArray)
-          let hasClip = false
-          if (path.clipFillRule || path.afterClipOperates?.length) {
-            hasClip = true
-            ctx.clip(path.path, path.clipFillRule)
-            path2DOperate(ctx, path.path, path.afterClipOperates || emptyArray)
+        if (child.configure.withPath) {
+          const path = new Path2D()
+          const out = child.configure.draw?.(ctx, path)
+          if (out) {
+            child.path = path
+            path2DOperate(ctx, path, out.operates || emptyArray)
+            let hasClip = false
+            if (out.clipFillRule || out.afterClipOperates?.length) {
+              hasClip = true
+              ctx.clip(path, out.clipFillRule)
+              path2DOperate(ctx, path, out.afterClipOperates || emptyArray)
+            }
+            (child as any).hasClip = hasClip
           }
-          (child as any).hasClip = hasClip
+        } else {
+          child.configure.draw?.(ctx)
         }
         draw(child.children())
         // ctx.translate(-x, -y)

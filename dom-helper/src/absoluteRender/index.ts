@@ -1,7 +1,7 @@
 import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from "mve-core"
 import { diffChangeChildren, getRenderChildren } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
-import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFNodeAttr } from "wy-dom-helper"
+import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFDomAttr, renderFSvgAttr } from "wy-dom-helper"
 import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy } from "wy-helper"
 
@@ -210,7 +210,11 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
         setValue(value, node, ext)
       }
     }
-    renderFNodeAttr(target, c, svg ? 'svg' : 'dom', mergeValue, emptyFun)
+    if (svg) {
+      renderFSvgAttr(target, c, mergeValue, emptyFun, emptyArray)
+    } else {
+      renderFDomAttr(target, c, mergeValue, emptyFun, emptyArray)
+    }
 
     // console.log("eff-0")
   })
