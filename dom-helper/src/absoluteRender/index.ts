@@ -292,7 +292,7 @@ function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
 export const absoluteDisplay: MDisplayOut = {
   getChildInfo(x, i) {
     //不定义子元素的坐标
-    throw ''
+    throw 'no child location ' + x
   },
   getInfo(x, def) {
     if (def) {
@@ -300,7 +300,7 @@ export const absoluteDisplay: MDisplayOut = {
     }
     if (x == 'x' || x == 'y') {
       //不定义自身的坐标
-      throw ''
+      throw 'no self location'
     }
     //自身的宽高默认是0
     return 0
