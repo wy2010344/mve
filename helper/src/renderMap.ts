@@ -1,5 +1,5 @@
 import { renderForEach } from "mve-core"
-import { GetValue, normalMapCreater, quote, ReadArray, RMap, run } from "wy-helper"
+import { Compare, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, simpleEqual } from "wy-helper"
 
 
 
@@ -17,6 +17,32 @@ export function renderArray<T>(
       }
     }, createMap)
 }
+
+
+/**
+ * 对数组里面的列表进行缓存
+ * @param getVs 
+ * @param equal 
+ * @returns 
+ */
+export function memoArray<T>(getVs: GetValue<ReadArray<T>>, equal: Compare<T> = simpleEqual) {
+  return memo<ReadArray<T>>(function (olds) {
+    if (olds) {
+      return Array.prototype.map.call(getVs(), function (value) {
+        const oldIndex = Array.prototype.findIndex.call(olds, function (old) {
+          return equal(old, value)
+        })
+        if (oldIndex < 0) {
+          return value
+        }
+        return olds[oldIndex]
+      }) as T[]
+    } else {
+      return getVs()
+    }
+  })
+}
+
 export function renderArrayToMap<T, O, K = T>(
   getVs: GetValue<ReadArray<T>>,
   render: (get: T, getIndex: GetValue<number>) => O,

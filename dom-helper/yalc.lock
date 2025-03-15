@@ -7,9 +7,9 @@
       "replaced": "^0.1.12"
     },
     "wy-dom-helper": {
-      "signature": "cab117f7ac915190dade6554a39b69bd",
+      "signature": "68b28378f7ad1576f7764d32f8c0dac6",
       "file": true,
-      "replaced": "^0.1.10"
+      "replaced": "^0.1.12"
     },
     "mve-core": {
       "signature": "0330e6166d5eed709a43e15a8dfe8729",
