@@ -5,12 +5,22 @@ import { hookDestroy, hookTrackSignal } from "mve-helper"
 
 
 
+
 export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
+  const effect: {
+    (): void
+    v: any,
+    b: any,
+    f: any
+  } = function () {
+    set(effect.v, effect.b, effect.f)
+  } as any
   hookTrackSignal(get, (v) => {
     //在-1阶段更新属性
-    addEffect(() => {
-      set(v, b, f)
-    }, -1)
+    effect.v = v
+    effect.b = b
+    effect.f = f
+    addEffect(effect, -1)
   })
 }
 
@@ -68,45 +78,67 @@ export function renderChildren<T extends Node>(node: T, fun: SetValue<T>) {
   )
 }
 
+function insertBefore(parent: Node, newChild: Node, beforeNode: Node | null) {
+  parent.insertBefore(newChild, beforeNode)
+}
+function moveBefore(parent: any, newChild: Node, beforeNode: Node | null) {
+  if (newChild.parentNode != parent) {
+    return insertBefore(parent, newChild, beforeNode)
+  }
+  if (beforeNode && beforeNode.parentNode != parent) {
+    return insertBefore(parent, newChild, beforeNode)
+  }
+  parent.moveBefore(newChild, beforeNode)
+}
+
 export function diffChangeChildren<T>(
   pNode: Node,
   get: (v: T) => Node,
   listRef = storeRef<T[]>(emptyArray as T[])
 ) {
+  //兼容最新的move-api
+  const move = 'moveBefore' in pNode ? moveBefore : insertBefore
+
+  const effect: {
+    (): void
+    newList: T[]
+  } = function () {
+    const newList = effect.newList
+    //在-2时进行布局的重新整理
+    const oldList = listRef.get()
+    let changed = false
+    let beforeNode: Node | null = null
+    for (let i = 0; i < newList.length; i++) {
+      const nl = newList[i]
+      const newChild = get(nl)
+      if (changed) {
+        if (newChild != beforeNode) {
+          move(pNode, newChild, beforeNode)
+        } else {
+          beforeNode = beforeNode?.nextSibling
+        }
+      } else {
+        const ol = oldList[i]
+        const lastChild = ol ? get(ol) : null
+        if (newChild != lastChild) {
+          changed = true
+          move(pNode, newChild, lastChild)
+          beforeNode = lastChild
+        }
+      }
+    }
+    oldList.forEach(last => {
+      const lastChild = get(last)
+      if (!newList.includes(last) && lastChild.parentNode == pNode) {
+        lastChild.parentNode?.removeChild(lastChild)
+      }
+    })
+    listRef.set(newList)
+  } as any
   return function (
     newList: T[]
   ) {
-    addEffect(() => {
-      //在-2时进行布局的重新整理
-      const oldList = listRef.get()
-      let changed = false
-      let beforeNode: Node | null = null
-      for (let i = 0; i < newList.length; i++) {
-        const nl = newList[i]
-        const newChild = get(nl)
-        if (changed) {
-          if (newChild != beforeNode) {
-            pNode.insertBefore(newChild, beforeNode)
-          } else {
-            beforeNode = beforeNode?.nextSibling
-          }
-        } else {
-          const ol = oldList[i]
-          const lastChild = ol ? get(ol) : null
-          if (newChild != lastChild) {
-            changed = true
-            pNode.insertBefore(newChild, lastChild)
-            beforeNode = lastChild
-          }
-        }
-      }
-      oldList.forEach(last => {
-        const lastChild = get(last)
-        if (!newList.includes(last) && lastChild.parentNode == pNode) {
-          lastChild.parentNode?.removeChild(lastChild)
-        }
-      })
-      listRef.set(newList)
-    }, -2)
+    effect.newList = newList
+    addEffect(effect, -2)
   }
 }

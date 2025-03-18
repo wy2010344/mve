@@ -7,9 +7,9 @@
       "replaced": "^2.0.0"
     },
     "wy-helper": {
-      "signature": "c454e80f01da81fbf72734793478682b",
+      "signature": "4583658c98fc56dd4c102803c8123269",
       "file": true,
-      "replaced": "^0.1.11"
+      "replaced": "^0.1.14"
     }
   }
 }
