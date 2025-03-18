@@ -2,7 +2,7 @@ import { OrFun, renderFDom } from "mve-dom";
 import { hookTrackSignal, useVersion } from "mve-helper";
 import { BDomEvent, DomElement, DomElementType, FDomAttribute } from "wy-dom-helper";
 import { HTMLContentEditableFixCache, InputEditCache, TextContentEditableFixCache } from 'wy-dom-helper/contentEditable'
-import { batchSignalEnd, EmptyFun, emptyFun, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { addEffect, batchSignalEnd, EmptyFun, emptyFun, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
 export type TriggerTime = "onInput" | "onBlur"
@@ -73,12 +73,19 @@ function useUpdateValue<V>(
   getDep: EmptyFun,
 ) {
   const getValue = valueOrGetToGet(_getValue)
+  const effect: {
+    value: V
+    (): void
+  } = function () {
+    cache.setValue(effect.value)
+  } as any
   hookTrackSignal(() => {
     getDep()
     const value = getValue()
     if (value !== cache.getValue()) {
       //必须用实时值去改!!!
-      cache.setValue(value)
+      effect.value = value
+      addEffect(effect)
     }
   })
 }

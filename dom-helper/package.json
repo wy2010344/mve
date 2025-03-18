@@ -48,6 +48,6 @@
     "mve-dom": "^2.0.1",
     "mve-helper": "^2.0.1",
     "wy-dom-helper": "file:.yalc/wy-dom-helper",
-    "wy-helper": "^0.1.14"
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }
