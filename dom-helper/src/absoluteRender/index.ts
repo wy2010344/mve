@@ -300,10 +300,9 @@ export const absoluteDisplay: MDisplayOut = {
     }
     if (x == 'x' || x == 'y') {
       //不定义自身的坐标
-      throw 'no self location'
+      throw 'no self location ' + x
     }
-    //自身的宽高默认是0
-    return 0
+    throw 'no default value for' + x
   },
 }
 
