@@ -121,6 +121,10 @@ function getInnerSize(
     return function () {
       return (o as number) - left() - right()
     }
+  } else if (tp == 'function') {
+    return function () {
+      return (o as any)(getIns()) - left() - right()
+    }
   } else {
     return emptyThrow
   }
@@ -191,13 +195,20 @@ export function hookDrawRect(
 
 const absoluteDisplay: CDisplay = {
   getBeforeChildInfo(x, i) {
-    throw 'x'
+    throw 'no before child location ' + x
   },
   getChildInfo(x, i) {
-    throw 'xx'
+    throw 'no child location ' + x
   },
-  getInfo(x) {
-    throw 'vvv'
+  getInfo(x, def) {
+    if (def) {
+      return 0
+    }
+    if (x == 'x' || x == 'y') {
+      //不定义自身的坐标
+      throw 'no self location ' + x
+    }
+    throw 'no default value for' + x
   },
 }
 
