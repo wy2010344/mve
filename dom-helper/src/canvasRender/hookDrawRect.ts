@@ -115,7 +115,7 @@ function getInnerSize(
   const tp = typeof o
   if (tp == 'undefined') {
     return function () {
-      return getFromParent(getIns(), key, '')
+      return getFromParent(getIns(), key, '') - left() - right()
     }
   } else if (tp == 'number') {
     return function () {
@@ -182,6 +182,10 @@ export function hookDrawRect(
     y,
     withPath: true,
     draw(ctx, path) {
+      /**
+       * @todo 加上圆角
+       */
+      path.rect(0, 0, node.width(), node.height())
       return n.draw?.(ctx, node, path)
     },
     ext: {

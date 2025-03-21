@@ -68,7 +68,6 @@ export function hookDrawImage(arg: {
         draw()
       }
       const out = arg.draw?.(ctx, n, draw, p) || {}
-      p.rect(0, 0, n.width(), n.height())
       return out as PathResult
     },
   })

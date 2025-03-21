@@ -28,7 +28,9 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
-    "prepare": "yarn build"
+    "prepare": "yarn build",
+    "ts": "tsc --noEmit --incremental --skipLibCheck",
+    "ts:watch": "yarn ts --watch"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
