@@ -1,8 +1,8 @@
 import { hookAddDestroy, hookAddResult } from "mve-core"
-import { getRenderChildren } from "mve-dom"
+import { fdom, FDomAttributes, getRenderChildren } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export * from './hookDrawImage'
 export * from './hookDrawRect'
@@ -233,13 +233,46 @@ const mouseEvents = ([
   }
 })
 
-
+const devicePixelRatio = createSignal(window.devicePixelRatio || 1)
+matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener("change", e => {
+  devicePixelRatio.set(window.devicePixelRatio)
+  batchSignalEnd()
+});
 export function renderCanvas(
-  canvas: HTMLCanvasElement,
-  children: EmptyFun,
+  {
+    width,
+    height,
+    ...args
+  }: Omit<FDomAttributes<"canvas">, 'width' | 'height' | 's_width' | 's_height'> & {
+    width: ValueOrGet<number>
+    height: ValueOrGet<number>
+  },
+  children: SetValue<NodeParent & {
+    canvas: HTMLCanvasElement
+  }>,
   ext: Record<string, any> = emptyObject
 ) {
-  const rootParent: NodeParent = {
+  const getWidth = valueOrGetToGet(width)
+  const getHeight = valueOrGetToGet(height)
+  const canvas = fdom.canvas({
+    width() {
+      return Math.floor(devicePixelRatio.get() * getWidth())
+    },
+    height() {
+      return Math.floor(devicePixelRatio.get() * getHeight())
+    },
+    s_width() {
+      return getWidth() + 'px'
+    },
+    s_height() {
+      return getHeight() + 'px'
+    },
+    ...args as any,
+  })
+  const rootParent: NodeParent & {
+    canvas: HTMLCanvasElement
+  } = {
+    canvas,
     ext: ext,
     children: undefined as any
   }
@@ -275,20 +308,21 @@ export function renderCanvas(
     })
   })
 
-  const width = createSignal(canvas.width)
-  const height = createSignal(canvas.height)
+  const mWidth = createSignal(canvas.width)
+  const mHeight = createSignal(canvas.height)
   const ob = new ResizeObserver(() => {
-    width.set(canvas.width)
-    height.set(canvas.height)
+    mWidth.set(canvas.width)
+    mHeight.set(canvas.height)
     batchSignalEnd()
   })
   ob.observe(canvas)
   hookAddDestroy()(() => {
     ob.disconnect()
   })
+
   hookTrackSignal(() => {
-    width.get()
-    height.get()
+    mHeight.get()
+    mHeight.get()
     const ctx = canvas.getContext("2d")!
     const beforeCtx = m._mve_canvas_render_ctx
     m._mve_canvas_render_ctx = ctx
@@ -326,13 +360,15 @@ export function renderCanvas(
       })
     }
     ctx.reset()
+    const scale = devicePixelRatio.get(); // Change to 1 on retina screens to see blurry canvas.
+    ctx.scale(scale, scale);
     ext.beforeDraw?.(ctx)
     draw(getChildren())
     _children = getChildren()
     _ctx = ctx
     m._mve_canvas_render_ctx = beforeCtx
   })
-  return { width, height }
+  return canvas
 }
 
 

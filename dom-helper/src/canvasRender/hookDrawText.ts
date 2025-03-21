@@ -13,6 +13,17 @@ export type DrawTextConfig = Omit<OCanvasTextDrawingStyles, 'textBaseline' | 'te
   text: string
 }
 
+let currentDefaultFont: CSSStyleDeclaration = undefined as any
+function makeCurrentDefaultFont(out: any) {
+  if (!currentDefaultFont) {
+    currentDefaultFont = getComputedStyle(document.body)
+  }
+  const def = currentDefaultFont
+  out.fontFamily = out.fontFamily || def.fontFamily
+  out.fontSize = out.fontSize || def.fontSize
+  out.fontStyle = out.fontStyle || def.fontStyle
+  out.fontWeight = out.fontWeight || def.fontWeight
+}
 type DrawTextOut = Omit<DrawTextExt, 'y' | 'x'>
 export function hookDrawText(arg: {
   config: ValueOrGet<DrawTextConfig>
@@ -45,7 +56,6 @@ export function hookDrawText(arg: {
         draw()
       }
       const out = arg.draw?.(ctx, n, draw, p) || {}
-      p.rect(0, 0, n.width(), n.height())
       return out as PathResult
     },
   })
@@ -57,6 +67,7 @@ export function hookDrawText(arg: {
       height: number
       lineDiffStart: number
     }
+    makeCurrentDefaultFont(out)
     out.textBaseline = 'top'
     const m = measureText(hookCurrentCtx(), c.text, out)
     out.measure = m
@@ -99,17 +110,15 @@ export function hookDrawTextWrap(arg: {
         draw()
       }
       const out = arg.draw?.(ctx, n, draw, p) || {}
-      p.rect(0, 0, n.width(), n.height())
       return out as PathResult
     },
   })
   const mout = memo(function () {
-    const c = getConfig()
+    const c = { ...getConfig() } as any
+    makeCurrentDefaultFont(c)
     const ctx = hookCurrentCtx()
-    return measureTextWrap(ctx, c.text, {
-      ...c,
-      width: d.drawWidth()
-    })
+    c.width = d.drawWidth()
+    return measureTextWrap(ctx, c.text, c)
   })
   return d
 }
