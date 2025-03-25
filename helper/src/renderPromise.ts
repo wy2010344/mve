@@ -1,10 +1,19 @@
-import { createSignal, FalseType, GetValue, PromiseResult, signalSerialAbortPromise } from "wy-helper";
+import { AutoLoadMoreCore, Compare, createSignal, FalseType, GetValue, PromiseResult, signalSerialAbortPromise, signalSerialAbortPromiseLoadMore } from "wy-helper";
 import { hookDestroy } from "./hookTrackSignal";
 
 export function hookPromiseSignal<T>(
   getPromise: GetValue<GetValue<Promise<T>> | FalseType>
 ) {
   const { destroy, ...args } = signalSerialAbortPromise(getPromise)
+  hookDestroy(destroy)
+  return args
+}
+
+export function hookPromiseSignalLoadMore<T, K>(getPromise: GetValue<{
+  getAfter(k: K): Promise<AutoLoadMoreCore<T, K>>;
+  first: K;
+} | FalseType>, equals?: Compare<T>) {
+  const { destroy, ...args } = signalSerialAbortPromiseLoadMore(getPromise, equals)
   hookDestroy(destroy)
   return args
 }
