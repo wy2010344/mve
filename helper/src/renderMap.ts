@@ -1,5 +1,5 @@
-import { renderForEach } from "mve-core"
-import { Compare, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, simpleEqual } from "wy-helper"
+import { EachTime, renderForEach, RenderForEachArg } from "mve-core"
+import { Compare, emptyObject, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, SetValue, simpleEqual } from "wy-helper"
 
 
 
@@ -8,16 +8,65 @@ export function renderArray<T>(
   render: (value: T, getIndex: GetValue<number>) => void,
   createMap?: <V>() => RMap<any, V>
 ) {
-  renderForEach<T, void>(
+  renderForEach<T, T, void>(
     function (callback) {
       const vs = getVs()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
-        callback(v, render)
+        callback(v, v, function (key, et) {
+          render(key, et.getIndex)
+        })
       }
-    }, createMap)
+    },
+    {
+      createMap,
+      bindIndex: true
+    })
 }
 
+
+export function renderSet<T>(
+  getSet: GetValue<{
+    forEach(callback: SetValue<T>): void
+  }>,
+  render: (item: T, getIndex: GetValue<number>) => void
+) {
+  renderForEach<T, T, void>(
+    function (callback) {
+      const set = getSet()
+      set.forEach(function (item) {
+        callback(item, item, function (key, et) {
+          render(key, et.getIndex)
+        })
+      })
+    },
+    {
+      bindIndex: true
+    }
+  )
+}
+
+export function renderMap<K, V>(
+  getMap: GetValue<{
+    forEach(callback: (a: V, b: K) => void): void
+  }>,
+  render: (key: K, item: GetValue<V>, getIndex: GetValue<number>) => void
+) {
+  renderForEach<V, K, void>(
+    function (callback) {
+      const set = getMap()
+      set.forEach(function (value, key) {
+        callback(key, value, function (key, et) {
+          render(key, et.getValue, et.getIndex)
+        })
+      })
+    },
+    {
+      bindIndex: true,
+      bindValue: true
+    }
+  )
+}
 
 /**
  * 对数组里面的列表进行缓存
@@ -45,43 +94,77 @@ export function memoArray<T>(getVs: GetValue<ReadArray<T>>, equal: Compare<T> = 
 
 export function renderArrayToMap<T, O, K = T>(
   getVs: GetValue<ReadArray<T>>,
-  render: (get: T, getIndex: GetValue<number>) => O,
+  render: (key: K, et: EachTime<T>) => O,
   getKey: ((v: T, i: number) => K) = quote as any,
-  createMap: <V>() => RMap<any, V> = normalMapCreater
+  arg: RenderForEachArg = emptyObject
 ): GetValue<RMap<K, GetValue<O>>> {
+  const createMap = arg.createMap || normalMapCreater
   let gets: RMap<K, GetValue<O>>
-  const getSignal = renderForEach<T, O>(
+  const getSignal = renderForEach<T, K, O>(
     function (callback) {
       const vs = getVs()
-      gets = createMap<GetValue<O>>()
+      gets = createMap<K, GetValue<O>>()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
         const key = getKey(v, i)
-        const get = callback(v, render)
+        const get = callback(key, v, render)
         gets.set(key, get)
       }
-    }, createMap)
+    }, arg)
   return function () {
     getSignal()
     return gets
   }
 }
+
+
+export function renderArrayKey<T, K>(
+  getVs: GetValue<ReadArray<T>>,
+  getKey: ((v: T, i: number) => K),
+  render: (getValue: GetValue<T>, getIndex: GetValue<number>, key: K) => void,
+  createMap?: <K, V>() => RMap<K, V>
+) {
+  renderForEach<T, K, void>(function (callback) {
+    const vs = getVs()
+    for (let i = 0; i < vs.length; i++) {
+      const v = vs[i]
+      const key = getKey(v, i)
+      callback(key, v, function (key, et) {
+        render(et.getValue, et.getIndex, key)
+      })
+    }
+  }, {
+    createMap,
+    bindOut: true,
+    bindIndex: true,
+    bindValue: true
+  })
+}
+
+
 export function renderArrayToArray<T, O>(
   getVs: GetValue<ReadArray<T>>,
   render: (get: T, getIndex: GetValue<number>) => O,
-  createMap?: <V>() => RMap<any, V>
+  createMap?: <K, V>() => RMap<K, V>
 ): GetValue<O[]> {
   let gets: GetValue<O>[]
-  const getSignal = renderForEach<T, O>(
+  const getSignal = renderForEach<T, T, O>(
     function (callback) {
       const vs = getVs()
       gets = []
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
-        const get = callback(v, render)
+        const get = callback(v, v, function (key, et) {
+          return render(key, et.getIndex)
+        })
         gets.push(get)
       }
-    }, createMap)
+    },
+    {
+      bindOut: true,
+      bindIndex: true,
+      createMap
+    })
   return function () {
     getSignal()
     return gets.flatMap(run)
