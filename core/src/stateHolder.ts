@@ -29,6 +29,10 @@ export class StateHolder {
     value: any
   }[] = []
   private children = new Set<StateHolder>
+
+  removeFromParent() {
+    this.parent!.removeChild(this)
+  }
 }
 
 function destroyHolder(stateHolder: StateHolder) {
