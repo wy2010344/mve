@@ -1,6 +1,6 @@
 import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from "mve-core"
 import { diffChangeChildren, getRenderChildren } from "mve-dom"
-import { hookTrackSignal } from "mve-helper"
+import { hookDestroy, hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFDomAttr, renderFSvgAttr } from "wy-dom-helper"
 import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy } from "wy-helper"
@@ -69,7 +69,7 @@ export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & BDomEve
 export function renderADom<T extends DomElementType>(
   type: T,
   arg: ADomAttributes<T>
-): MAbsoluteNode {
+): MAbsoluteNode<DomElement<T>> {
   const target = document.createElement(type)
   target.style.position = 'absolute'
   target.style.minWidth = '0px'
@@ -78,7 +78,7 @@ export function renderADom<T extends DomElementType>(
 
 export const adom: {
   readonly [key in DomElementType]: {
-    (props?: ADomAttributes<key>): DomElement<key>
+    (props?: ADomAttributes<key>): MAbsoluteNode<DomElement<key>>
   }
 } = createOrProxy(domTagNames, tag => {
   return function (args: any) {
@@ -107,7 +107,7 @@ type InOrFun<T extends {}> = {
 };
 
 function superCreateGet(x: LayoutKey) {
-  return function (getIns: GetValue<MAbsoluteNode>) {
+  return function (getIns: GetValue<MAbsoluteNode<any>>) {
     return function () {
       const ins = getIns()
       try {
@@ -134,7 +134,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
   let hSet: SetValue<number> | undefined = undefined
   let width: GetValue<number>
   let height: GetValue<number>
-  function getIns(): MAbsoluteNode {
+  function getIns(): MAbsoluteNode<any> {
     return n
   }
   const x = valueInstOrGetToGet(c.x, getIns, createGetX)
@@ -221,7 +221,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
   return n
 }
 
-function getTarget(n: MAbsoluteNode): Node {
+function getTarget<T>(n: MAbsoluteNode<T>): Node {
   return n.target
 }
 
@@ -229,7 +229,7 @@ function getTarget(n: MAbsoluteNode): Node {
  * 动态返回某一种布局,比如flex或absolute
  * 真实布局与节点结合
  */
-class MAbsoluteNode implements AbsoluteNode<any> {
+class MAbsoluteNode<T> implements AbsoluteNode<T> {
   private display: GetValue<MDisplayOut>
   constructor(
     public readonly target: any,
@@ -275,9 +275,14 @@ export function renderAbsoulte(node: Node, children: EmptyFun) {
     return 0
   }
   parent.children = makeIndex(children, node, parent)
+  hookDestroy(() => {
+    parent.children().forEach(child => {
+      node.removeChild(child.target)
+    })
+  })
 }
 function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
-  const getChildren = getRenderChildren<MAbsoluteNode, AbsoluteParent>(children, parent, list => {
+  const getChildren = getRenderChildren<MAbsoluteNode<any>, AbsoluteParent>(children, parent, list => {
     list.forEach((row, i) => {
       row.__index = i
       if (row.parent && row.parent != parent) {
