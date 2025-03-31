@@ -7,6 +7,9 @@ export * from './renderInput'
 export * from './renderCode'
 export * from './useContentEditable'
 export * from './renderExitArray'
+export * from './centerPicker'
+export * from './movePage'
+export * from './pop'
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig

@@ -25,6 +25,7 @@ export class CanvasRectNode implements CDisplay {
     public readonly paddingBottom: GetValue<number>,
     public readonly drawWidth: GetValue<number>,
     public readonly drawHeight: GetValue<number>,
+    readonly children: GetValue<readonly CanvasRectNode[]>
   ) { }
 
   getInfo(x: LayoutKey, def?: boolean): number {
@@ -153,7 +154,7 @@ export function hookDrawRect(
     height: drawHeight,
     children: memo(() => {
       //生成复合结构,所以用memo
-      const list: LayoutModel[] = []
+      const list: CanvasRectNode[] = []
       tnode.children().forEach(child => {
         const rect = child.ext.rect
         if (rect instanceof CanvasRectNode) {
@@ -168,13 +169,17 @@ export function hookDrawRect(
     return hookLayout(info, _layout)
   })
   const node = new CanvasRectNode(
-    x, y, width, height, layout,
+    x, y,
+    width,
+    height,
+    layout,
     paddingLeft,
     paddingRight,
     paddingTop,
     paddingBottom,
     drawWidth,
-    drawHeight
+    drawHeight,
+    info.children
   )
   const tnode = hookDraw({
     ...n,
