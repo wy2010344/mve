@@ -1,5 +1,5 @@
 import { emptyFun, EmptyFun, GetValue, quote } from "wy-helper";
-import { renderArray } from "./renderMap";
+import { renderArray, renderArrayKey } from "./renderMap";
 
 
 export function renderIf(
@@ -26,7 +26,13 @@ export function renderOne<K>(
   get: GetValue<K>,
   render: (v: K) => void
 ) {
-  renderArray(() => [get()], (key) => {
-    render(key)
-  })
+  renderArray(() => [get()], render)
+}
+
+export function renderOneKey<T, K>(
+  get: GetValue<T>,
+  getKey: (v: T) => K,
+  render: (key: K) => void
+) {
+  renderArrayKey(() => [get()], getKey, (_, _1, key) => render(key))
 }

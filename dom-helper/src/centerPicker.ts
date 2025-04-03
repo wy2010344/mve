@@ -103,7 +103,7 @@ export function centerPicker({
           return `translateY(${-scrollY.get()}px)`
         },
         children() {
-          renderForEach<number, number, void>(function (callback) {
+          renderForEach<number>(function (callback) {
             const v = realTimeValue.get()
             //需要是奇数
             const length = Math.ceil(height() / cellHeight)
@@ -115,9 +115,9 @@ export function centerPicker({
                 const circleDiff = circle.baseIndex || 0
                 key = circleFormat(i - circleDiff, circle.count) + circleDiff
               }
-              callback(key, key, renderCell)
+              callback(key, key,)
             }
-          })
+          }, renderCell)
         }
       })
     }

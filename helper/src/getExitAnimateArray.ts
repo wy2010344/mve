@@ -1,4 +1,4 @@
-import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memo, NoInsertArrayHelper, objectFreezeThrow, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, EmptyFun, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memo, NoInsertArrayHelper, objectFreezeThrow, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
 export function getExitAnimateArray<T>(
@@ -174,8 +174,8 @@ export type ExitModel<V> = {
   readonly value: V
   //因为will-exiting时原节点就删除了,需要在此时clone节点
   readonly step: GetValue<"exiting" | "will-exiting" | "enter">
-  readonly resolve: SetValue<any>
-  readonly promise: GetValue<Promise<any> | undefined>
+  readonly resolve: EmptyFun
+  readonly promise: GetValue<Promise<void> | undefined>
 }
 
 function getExitModel<V>(v: ExitModelInner<V>) {

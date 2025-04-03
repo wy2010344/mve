@@ -13,10 +13,11 @@ export function renderArray<T>(
       const vs = getVs()
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
-        callback(v, v, function (key, et) {
-          render(key, et.getIndex)
-        })
+        callback(v, v)
       }
+    },
+    function (key, et) {
+      render(key, et.getIndex)
     },
     {
       createMap,
@@ -35,10 +36,10 @@ export function renderSet<T>(
     function (callback) {
       const set = getSet()
       set.forEach(function (item) {
-        callback(item, item, function (key, et) {
-          render(key, et.getIndex)
-        })
+        callback(item, item)
       })
+    }, function (key, et) {
+      render(key, et.getIndex)
     },
     {
       bindIndex: true
@@ -56,10 +57,11 @@ export function renderMap<K, V>(
     function (callback) {
       const set = getMap()
       set.forEach(function (value, key) {
-        callback(key, value, function (key, et) {
-          render(key, et.getValue, et.getIndex)
-        })
+        callback(key, value)
       })
+    },
+    function (key, et) {
+      render(key, et.getValue, et.getIndex)
     },
     {
       bindIndex: true,
@@ -107,10 +109,10 @@ export function renderArrayToMap<T, O, K = T>(
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
         const key = getKey(v, i)
-        const get = callback(key, v, render)
+        const get = callback(key, v)
         gets.set(key, get)
       }
-    }, arg)
+    }, render, arg)
   return function () {
     getSignal()
     return gets
@@ -129,10 +131,10 @@ export function renderArrayKey<T, K>(
     for (let i = 0; i < vs.length; i++) {
       const v = vs[i]
       const key = getKey(v, i)
-      callback(key, v, function (key, et) {
-        render(et.getValue, et.getIndex, key)
-      })
+      callback(key, v)
     }
+  }, function (key, et) {
+    render(et.getValue, et.getIndex, key)
   }, {
     createMap,
     bindOut: true,
@@ -154,11 +156,11 @@ export function renderArrayToArray<T, O>(
       gets = []
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i]
-        const get = callback(v, v, function (key, et) {
-          return render(key, et.getIndex)
-        })
+        const get = callback(v, v)
         gets.push(get)
       }
+    }, function (key, et) {
+      return render(key, et.getIndex)
     },
     {
       bindOut: true,

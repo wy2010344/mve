@@ -45,6 +45,7 @@ export function hookExitAnimate<T extends HTMLElement>(
     const copy = div//div.cloneNode(true) as T
     addEffect(() => {
       createPop((close) => {
+        //可能会出现更多自定义样式
         fdom.div({
           className: 'fixed z-10',
           s_left: rect.left + 'px',

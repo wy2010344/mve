@@ -77,13 +77,14 @@ export type RenderForEachArg = {
   bindOut?: any
   createMap?: <K, V>() => RMap<K, V>
 }
-export function renderForEach<T, K, O>(
+export function renderForEach<T, K = T, O = void>(
   forEach: (
     callback: (
       key: K,
-      value: T,
-      creater: Creater<T, K, O>,
-    ) => GetValue<O>) => void,
+      value: T
+    ) => GetValue<O>
+  ) => void,
+  creater: Creater<T, K, O>,
   arg: RenderForEachArg = emptyObject
 ) {
   const createMap: <K, V>() => RMap<K, V> = arg.createMap || normalMapCreater
@@ -92,7 +93,6 @@ export function renderForEach<T, K, O>(
   let newMap!: RMap<K, EachValue<T, K, O>[]>
   const thisTimeAdd: EachValue<T, K, O>[] = []
   const thisChildren: EachValue<T, K, O>[] = []
-
   const stateHolder = hookCurrentStateHolder()
   if (!stateHolder) {
     throw '需要在stateHolder里面'
@@ -104,7 +104,7 @@ export function renderForEach<T, K, O>(
     thisTimeAdd.length = 0
     thisChildren.length = 0
     let index = 0
-    forEach((key, value, creater) => {
+    forEach((key, value) => {
       let holders = oldMap.get(key)
       let x: EachValue<T, K, O>
       if (holders?.length) {
