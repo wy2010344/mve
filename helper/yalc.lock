@@ -2,7 +2,7 @@
   "version": "v1",
   "packages": {
     "mve-core": {
-      "signature": "7feecd245c71a727d9a5b98aa67ef0ac",
+      "signature": "ba3720a0918d28f4a068cf2bb6181674",
       "file": true,
       "replaced": "^2.0.1"
     },
