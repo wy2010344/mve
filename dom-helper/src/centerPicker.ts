@@ -51,7 +51,6 @@ export function centerPicker({
     if (needAdd) {
       scrollY.silentDiff(-needAdd * cellHeight)
       addValue(needAdd)
-      batchSignalEnd()
     }
   }
   hookTrackSignal(value.get, function (v) {
@@ -72,29 +71,34 @@ export function centerPicker({
     }
   })
   return {
-    onPointerDown: pointerMoveDir(function (e, dir) {
-      if (dir == 'y') {
-        return ScrollFromPage.from(e, {
-          getPage: eventGetPageY,
-          scrollDelta(delta, velocity) {
-            scrollY.changeDiff(delta)
-            didChange()
-          },
-          onFinish(velocity) {
-            const distance = getDistanceFromVelocity(velocity)
-            const targetDis = distance + scrollY.get()
-            addValue(Math.round(targetDis / cellHeight))
-            const snapTarget = Math.round(targetDis / cellHeight) * cellHeight
-            scrollY.animateTo(
-              snapTarget,
-              animationConfig,
-              didChange
-            ).then(() => {
-              didChange()
-              value.set(realTimeValue.get())
+    onPointerDown: pointerMoveDir(function () {
+      scrollY.stop()
+      return {
+        onMove(e, dir) {
+          if (dir == 'y') {
+            return ScrollFromPage.from(e, {
+              getPage: eventGetPageY,
+              scrollDelta(delta, velocity) {
+                scrollY.changeDiff(delta)
+                didChange()
+              },
+              onFinish(velocity) {
+                const distance = getDistanceFromVelocity(velocity)
+                const targetDis = distance + scrollY.get()
+                addValue(Math.round(targetDis / cellHeight))
+                const snapTarget = Math.round(targetDis / cellHeight) * cellHeight
+                scrollY.animateTo(
+                  snapTarget,
+                  animationConfig,
+                  didChange
+                ).then(() => {
+                  didChange()
+                  value.set(realTimeValue.get())
+                })
+              }
             })
           }
-        })
+        }
       }
     }),
     children() {
