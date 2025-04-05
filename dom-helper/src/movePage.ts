@@ -68,7 +68,6 @@ export function movePage(
         )
         globalDirectionVelocity = 0
         scroll.silentDiff(-diffSize)
-        batchSignalEnd()
       })
     }
   }
