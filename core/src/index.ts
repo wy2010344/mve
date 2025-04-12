@@ -1,13 +1,10 @@
-import { EmptyFun, GetValue, run } from 'wy-helper'
+import { EmptyFun, GetValue } from 'wy-helper'
 import { hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from './cache'
 import { StateHolder } from './stateHolder'
 
 export * from './renderForEach'
 export {
-  hookAddResult, hookAddDestroy,
-  hookAlterChildren,
-  hookAlterStateHolder,
-  hookCurrentStateHolder
+  hookAddResult, hookAddDestroy, hookAlterChildren
 } from './cache'
 export { createContext } from './context'
 export type { Context } from './context'
@@ -19,6 +16,10 @@ export function render(create: EmptyFun) {
   return () => {
     stateHolder.destroy()
   }
+}
+
+export function hookIsDestroyed() {
+  return hookCurrentStateHolder()!.destroyed
 }
 
 
