@@ -9,8 +9,8 @@ export function hookPromiseSignal<T>(
   return args
 }
 
-export function hookPromiseSignalLoadMore<T, K>(getPromise: GetValue<{
-  getAfter(k: K): Promise<AutoLoadMoreCore<T, K>>;
+export function hookPromiseSignalLoadMore<T, K, M = {}>(getPromise: GetValue<{
+  getAfter(k: K): Promise<AutoLoadMoreCore<T, K> & M>;
   first: K;
 } | FalseType>, equals?: Compare<T>) {
   const { destroy, ...args } = signalSerialAbortPromiseLoadMore(getPromise, equals)

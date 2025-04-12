@@ -1,5 +1,5 @@
 import { addEffect, emptyArray, emptyFun, GetValue, memo, quote, SetValue, storeRef } from "wy-helper"
-import { hookAlterChildren } from "mve-core"
+import { hookAlterChildren, hookIsDestroyed } from "mve-core"
 import { hookDestroy, hookTrackSignal } from "mve-helper"
 
 
@@ -7,12 +7,16 @@ import { hookDestroy, hookTrackSignal } from "mve-helper"
 
 
 export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
+  const isDestroyed = hookIsDestroyed()
   const effect: {
     (): void
     v: any,
     b: any,
     f: any
   } = function () {
+    if (isDestroyed()) {
+      return
+    }
     set(effect.v, effect.b, effect.f)
   } as any
   hookTrackSignal(get, (v) => {
@@ -96,6 +100,7 @@ export function diffChangeChildren<T>(
   get: (v: T) => Node,
   listRef = storeRef<T[]>(emptyArray as T[])
 ) {
+  const isDestroyed = hookIsDestroyed()
   //兼容最新的move-api
   const move = 'moveBefore' in pNode ? moveBefore : insertBefore
 
@@ -103,6 +108,9 @@ export function diffChangeChildren<T>(
     (): void
     newList: T[]
   } = function () {
+    if (isDestroyed()) {
+      return
+    }
     const newList = effect.newList
     //在-2时进行布局的重新整理
     const oldList = listRef.get()
