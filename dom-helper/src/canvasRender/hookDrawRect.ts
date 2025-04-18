@@ -1,5 +1,5 @@
 import { CanvaRenderCtx, CMNode, CNodeConfigure, CNodePathConfigure, hookDraw, PathResult, } from "./index"
-import { DisplayProps, flexDisplayUtil, GetValue, hookLayout, InstanceCallbackOrValue, LayoutKey, LayoutModel, MDisplayOut, memo, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { DisplayProps, emptyFun, EmptyFun, flexDisplayUtil, GetValue, hookLayout, InstanceCallbackOrValue, LayoutKey, LayoutModel, MDisplayOut, memo, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
 
@@ -12,6 +12,12 @@ export class CanvasRectNode implements CDisplay {
   target!: CMNode
   getExt() {
     return this.target.ext
+  }
+  _index: number = 0
+  _get: EmptyFun = emptyFun
+  index() {
+    this._get()
+    return this._index
   }
   constructor(
     public readonly x: GetValue<number>,
@@ -91,7 +97,7 @@ function getFromParent(ins: CanvasRectNode, x: LayoutKey, err: any) {
     if (ins.target.isBefore) {
       return parent.getBeforeChildInfo(x, ins.target.index())
     }
-    return parent.getChildInfo(x, ins.target.index())
+    return parent.getChildInfo(x, ins.index())
   }
   //其次选择来自父元素的约束
   throw err
@@ -149,20 +155,24 @@ export function hookDrawRect(
 
   const drawWidth = getInnerSize(n.width, getIns, 'width', paddingLeft, paddingRight)
   const drawHeight = getInnerSize(n.height, getIns, 'height', paddingTop, paddingBottom)
+
+  const children = memo(() => {
+    //生成复合结构,所以用memo
+    const list: CanvasRectNode[] = []
+    tnode.children().forEach((child, i) => {
+      const rect = child.ext.rect
+      if (rect instanceof CanvasRectNode && !rect.getExt().notFlex) {
+        rect._index = list.length
+        rect._get = children
+        list.push(rect)
+      }
+    })
+    return list
+  })
   const info = {
     width: drawWidth,
     height: drawHeight,
-    children: memo(() => {
-      //生成复合结构,所以用memo
-      const list: CanvasRectNode[] = []
-      tnode.children().forEach(child => {
-        const rect = child.ext.rect
-        if (rect instanceof CanvasRectNode) {
-          list.push(rect)
-        }
-      })
-      return list
-    })
+    children
   }
   const layout: GetValue<CDisplay> = memo(() => {
     //生成复全结构,所以用memo
