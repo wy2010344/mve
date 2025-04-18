@@ -2,15 +2,14 @@ import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from 
 import { diffChangeChildren, getRenderChildren } from "mve-dom"
 import { hookDestroy, hookTrackSignal } from "mve-helper"
 import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFDomAttr, renderFSvgAttr } from "wy-dom-helper"
-import { addEffect, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy } from "wy-helper"
+import { addEffect, AlignSelfFun, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, Point, PointKey, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy, absoluteDisplay } from "wy-helper"
 
 
-interface AbsoluteParent {
+type AbsoluteParent = {
   children: GetValue<AbsoluteNode[]>
-  getChildInfo(x: LayoutKey, i: number): number
-}
-export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel {
+} & MDisplayOut<PointKey>
+export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel<PointKey> {
   target: T
   parent: AbsoluteParent
   index(): number
@@ -61,7 +60,7 @@ type DomConfigure<T extends DomElementType> =
   }
 
 export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
-  m_display?: ValueOrGet<MDisplayOut>
+  m_display?: ValueOrGet<MDisplayOut<PointKey>>
 } & {
   x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
   y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
@@ -106,29 +105,38 @@ type InOrFun<T extends {}> = {
   [key in keyof T]: T[key] | ((n: AbsoluteNode) => T[key])
 };
 
-function superCreateGet(x: LayoutKey) {
+function superCreateGet(x: PointKey, size: boolean) {
   return function (getIns: GetValue<MAbsoluteNode<any>>) {
     return function () {
       const ins = getIns()
-      try {
-        //优先选择自己的,
-        const ix = ins.getInfo(x)
-        return ix
-      } catch (err) {
+      if (size) {
+
         try {
-          //其次选择来自父元素的约束
-          return ins.parent.getChildInfo(x, ins.index())
+          //优先选择自己的,
+          const ix = ins.getInfo(x)
+          return ix
         } catch (err) {
-          return ins.getInfo(x, true)
+          try {
+            //其次选择来自父元素的约束
+            return ins.parent.getChildInfo(x, size, ins.index())
+          } catch (err) {
+            return ins.getInfo(x, true)
+          }
+        }
+      } else {
+        try {
+          return ins.parent.getChildInfo(x, size, ins.index())
+        } catch (err) {
+          return 0
         }
       }
     }
   }
 }
-const createGetX = superCreateGet("x")
-const createGetY = superCreateGet("y")
-const createGetWidth = superCreateGet("width")
-const createGetHeight = superCreateGet("height")
+const createGetX = superCreateGet("x", false)
+const createGetY = superCreateGet("y", false)
+const createGetWidth = superCreateGet("x", true)
+const createGetHeight = superCreateGet("y", true)
 function renderAbsolute(target: any, c: any, svg: boolean) {
   let wSet: SetValue<number> | undefined = undefined
   let hSet: SetValue<number> | undefined = undefined
@@ -230,7 +238,7 @@ function getTarget<T>(n: MAbsoluteNode<T>): Node {
  * 真实布局与节点结合
  */
 class MAbsoluteNode<T> implements AbsoluteNode<T> {
-  private display: GetValue<MDisplayOut>
+  private display: GetValue<MDisplayOut<PointKey>>
   constructor(
     public readonly target: any,
     public readonly x: GetValue<number>,
@@ -255,11 +263,32 @@ class MAbsoluteNode<T> implements AbsoluteNode<T> {
     this.parent.children()
     return this.__index
   }
-  getChildInfo(x: LayoutKey, i: number) {
-    return this.display().getChildInfo(x, i)
+  getChildInfo(x: PointKey, size: boolean, i: number) {
+    return this.display().getChildInfo(x, size, i)
   }
-  getInfo(x: LayoutKey, def?: boolean) {
+  getInfo(x: PointKey, def?: boolean) {
     return this.display().getInfo(x, def)
+  }
+  getSize(key: keyof Point<number>): number {
+    if (key == 'x') {
+      return this.width()
+    } else {
+      return this.height()
+    }
+  }
+
+  getAlign(key: keyof Point<number>): AlignSelfFun | void {
+    return this.getExt().align
+  }
+  getGrow(): number | void {
+    return this.getExt().grow
+  }
+  getPosition(key: keyof Point<number>): number {
+    if (key == 'x') {
+      return this.x()
+    } else {
+      return this.y()
+    }
   }
 }
 /**
@@ -271,9 +300,6 @@ class MAbsoluteNode<T> implements AbsoluteNode<T> {
  */
 export function renderAbsoulte(node: Node, children: EmptyFun) {
   const parent: AbsoluteNode = {} as any
-  parent.getChildInfo = () => {
-    return 0
-  }
   parent.children = makeIndex(children, node, parent)
   hookDestroy(() => {
     parent.children().forEach(child => {
@@ -294,20 +320,3 @@ function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
   hookTrackSignal(getChildren, diffChangeChildren(node, getTarget))
   return getChildren
 }
-export const absoluteDisplay: MDisplayOut = {
-  getChildInfo(x, i) {
-    //不定义子元素的坐标
-    throw 'no child location ' + x
-  },
-  getInfo(x, def) {
-    if (def) {
-      return 0
-    }
-    if (x == 'x' || x == 'y') {
-      //不定义自身的坐标
-      throw 'no self location ' + x
-    }
-    throw 'no default value for' + x
-  },
-}
-

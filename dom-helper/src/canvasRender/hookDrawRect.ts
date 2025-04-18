@@ -1,14 +1,10 @@
-import { CanvaRenderCtx, CMNode, CNodeConfigure, CNodePathConfigure, hookDraw, PathResult, } from "./index"
-import { DisplayProps, emptyFun, EmptyFun, flexDisplayUtil, GetValue, hookLayout, InstanceCallbackOrValue, LayoutKey, LayoutModel, MDisplayOut, memo, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw, PathResult, } from "./index"
+import { AlignSelfFun, emptyFun, EmptyFun, GetValue, hookLayout, InstanceCallbackOrValue, LayoutModel, MDisplayOut, memo, Point, PointKey, valueInstOrGetToGet, ValueOrGet, valueOrGetToGet, absoluteDisplay } from "wy-helper"
+
+export { simpleFlex } from 'wy-helper'
 
 
-
-interface CDisplay extends MDisplayOut {
-  getBeforeChildInfo(x: LayoutKey, i: number): number
-}
-
-
-export class CanvasRectNode implements CDisplay {
+export class CanvasRectNode implements MDisplayOut<PointKey>, LayoutModel<PointKey> {
   target!: CMNode
   getExt() {
     return this.target.ext
@@ -24,7 +20,7 @@ export class CanvasRectNode implements CDisplay {
     public readonly y: GetValue<number>,
     public readonly width: GetValue<number>,
     public readonly height: GetValue<number>,
-    public readonly getDisplay: GetValue<CDisplay>,
+    public readonly getDisplay: GetValue<MDisplayOut<PointKey>>,
     public readonly paddingLeft: GetValue<number>,
     public readonly paddingRight: GetValue<number>,
     public readonly paddingTop: GetValue<number>,
@@ -34,19 +30,19 @@ export class CanvasRectNode implements CDisplay {
     readonly children: GetValue<readonly CanvasRectNode[]>
   ) { }
 
-  getInfo(x: LayoutKey, def?: boolean): number {
+  getInfo(x: PointKey, def?: boolean): number {
     /**布局,从子节点汇总而来 */
     const v = this.getDisplay().getInfo(x, def)
-    if (x == 'width') {
+    if (x == 'x') {
       return v + this.paddingLeft() + this.paddingRight()
     }
-    if (x == 'height') {
+    if (x == 'y') {
       return v + this.paddingTop() + this.paddingBottom()
     }
     return v
   }
-  getChildInfo(x: LayoutKey, i: number): number {
-    const v = this.getDisplay().getChildInfo(x, i)
+  getChildInfo(x: PointKey, size: boolean, i: number): number {
+    const v = this.getDisplay().getChildInfo(x, size, i)
     if (x == 'x') {
       return v + this.paddingLeft()
     }
@@ -55,13 +51,31 @@ export class CanvasRectNode implements CDisplay {
     }
     return v
   }
-  getBeforeChildInfo(x: LayoutKey, i: number): number {
-    return this.getDisplay().getBeforeChildInfo(x, i)
+
+  getSize(key: keyof Point<number>): number {
+    if (key == 'x') {
+      return this.width()
+    } else {
+      return this.height()
+    }
+  }
+  getAlign(key: keyof Point<number>): AlignSelfFun | void {
+    return this.getExt().align
+  }
+  getGrow(): number | void {
+    return this.getExt().grow
+  }
+  getPosition(key: keyof Point<number>): number {
+    if (key == 'x') {
+      return this.x()
+    } else {
+      return this.y()
+    }
   }
 }
 
 interface AbsoluteNodeConfigure {
-  layout?: ((v: CanvasRectNode) => CDisplay) | CDisplay
+  layout?: ((v: CanvasRectNode) => MDisplayOut<PointKey>) | MDisplayOut<PointKey>
   x?: InstanceCallbackOrValue<CanvasRectNode>
   y?: InstanceCallbackOrValue<CanvasRectNode>
   width?: InstanceCallbackOrValue<CanvasRectNode>
@@ -72,41 +86,53 @@ interface AbsoluteNodeConfigure {
   paddingBottom?: ValueOrGet<number>
   draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, p: Path2D): PathResult | void;
 }
-function superCreateGet(x: LayoutKey) {
+function superCreateGet(x: PointKey, size: boolean) {
   return function (getIns: GetValue<CanvasRectNode>) {
     return function () {
       const ins = getIns()
-      try {
-        //优先选择自己的,
-        const ix = ins.getInfo(x)
-        return ix
-      } catch (err) {
+      if (size) {
         try {
-          return getFromParent(ins, x, err)
+          //优先选择自己的,
+          const ix = ins.getInfo(x)
+          return ix
         } catch (err) {
-          return ins.getInfo(x, true)
+          try {
+            return getFromParent(ins, x, size, err)
+          } catch (err) {
+            return ins.getInfo(x, true)
+          }
+        }
+      } else {
+        try {
+          return getFromParent(ins, x, size, 'define')
+        } catch (err) {
+          return 0
         }
       }
     }
   }
 }
 
-function getFromParent(ins: CanvasRectNode, x: LayoutKey, err: any) {
+function getFromParent(
+  ins: CanvasRectNode,
+  x: PointKey,
+  size: boolean,
+  err: any) {
   const parent = ins.target.parent.ext.rect
   if (parent && parent instanceof CanvasRectNode) {
-    if (ins.target.isBefore) {
-      return parent.getBeforeChildInfo(x, ins.target.index())
-    }
-    return parent.getChildInfo(x, ins.index())
+    // if (ins.target.isBefore) {
+    //   return parent.getBeforeChildInfo(x, ins.target.index())
+    // }
+    return parent.getChildInfo(x, size, ins.index())
   }
   //其次选择来自父元素的约束
   throw err
 }
 
-const createGetX = superCreateGet("x")
-const createGetY = superCreateGet("y")
-const createGetWidth = superCreateGet("width")
-const createGetHeight = superCreateGet("height")
+const createGetX = superCreateGet("x", false)
+const createGetY = superCreateGet("y", false)
+const createGetWidth = superCreateGet("x", true)
+const createGetHeight = superCreateGet("y", true)
 
 function emptyThrow(): number {
   throw 'abc'
@@ -115,14 +141,14 @@ function emptyThrow(): number {
 function getInnerSize(
   o: InstanceCallbackOrValue<CanvasRectNode> | undefined,
   getIns: GetValue<CanvasRectNode>,
-  key: LayoutKey,
+  key: PointKey,
   left: GetValue<number>,
   right: GetValue<number>
 ): GetValue<number> {
   const tp = typeof o
   if (tp == 'undefined') {
     return function () {
-      return getFromParent(getIns(), key, '') - left() - right()
+      return getFromParent(getIns(), key, true, '') - left() - right()
     }
   } else if (tp == 'number') {
     return function () {
@@ -153,8 +179,10 @@ export function hookDrawRect(
   const paddingTop = valueOrGetToGet(n.paddingTop || 0)
   const paddingBottom = valueOrGetToGet(n.paddingBottom || 0)
 
-  const drawWidth = getInnerSize(n.width, getIns, 'width', paddingLeft, paddingRight)
-  const drawHeight = getInnerSize(n.height, getIns, 'height', paddingTop, paddingBottom)
+  const drawWidth = getInnerSize(
+    n.width, getIns, 'x', paddingLeft, paddingRight)
+  const drawHeight = getInnerSize(
+    n.height, getIns, 'y', paddingTop, paddingBottom)
 
   const children = memo(() => {
     //生成复合结构,所以用memo
@@ -170,11 +198,16 @@ export function hookDrawRect(
     return list
   })
   const info = {
-    width: drawWidth,
-    height: drawHeight,
+    getSize(n: PointKey) {
+      if (n == 'x') {
+        return drawWidth()
+      } else {
+        return drawHeight()
+      }
+    },
     children
   }
-  const layout: GetValue<CDisplay> = memo(() => {
+  const layout: GetValue<MDisplayOut<PointKey>> = memo(() => {
     //生成复全结构,所以用memo
     return hookLayout(info, _layout)
   })
@@ -210,34 +243,4 @@ export function hookDrawRect(
   })
   node.target = tnode
   return node
-}
-
-const absoluteDisplay: CDisplay = {
-  getBeforeChildInfo(x, i) {
-    throw 'no before child location ' + x
-  },
-  getChildInfo(x, i) {
-    throw 'no child location ' + x
-  },
-  getInfo(x, def) {
-    if (def) {
-      return 0
-    }
-    if (x == 'x' || x == 'y') {
-      //不定义自身的坐标
-      throw 'no self location ' + x
-    }
-    throw 'no default value for' + x
-  },
-}
-
-export function simpleFlex(props: DisplayProps): CDisplay {
-  const flex = flexDisplayUtil(props)
-  return {
-    getBeforeChildInfo(x, i) {
-      throw 'ddd'
-    },
-    getChildInfo: flex.getChildInfo,
-    getInfo: flex.getInfo,
-  }
 }

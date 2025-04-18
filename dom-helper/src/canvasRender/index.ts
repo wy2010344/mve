@@ -17,7 +17,7 @@ export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'reset' | 'save' | '
 
 interface NodeParent {
   readonly ext: Record<string, any>
-  beforeChildren?: GetValue<CNode[]>
+  // beforeChildren?: GetValue<CNode[]>
   children: GetValue<CNode[]>
 }
 export interface CMNode extends NodeParent {
@@ -38,11 +38,11 @@ class CNode implements CMNode {
     this.ext = configure.ext || emptyObject
     this.x = valueOrGetToGet(configure.x)
     this.y = valueOrGetToGet(configure.y)
-    if (configure.beforeChildren) {
-      this.beforeChildren = makeParentAndIndex(configure.beforeChildren, this, true)
-    } else {
-      this.beforeChildren = asLazy(emptyArray as any[])
-    }
+    // if (configure.beforeChildren) {
+    //   this.beforeChildren = makeParentAndIndex(configure.beforeChildren, this, true)
+    // } else {
+    //   this.beforeChildren = asLazy(emptyArray as any[])
+    // }
     if (configure.children) {
       this.children = makeParentAndIndex(configure.children, this)
     } else {
@@ -74,11 +74,7 @@ class CNode implements CMNode {
      * 因为所有操作都必须有实时性延迟,此时绘制已经完成了
      * 即如果更新到dom上,需要addEffect里面去操作
      */
-    if (this.isBefore) {
-      this.parent.beforeChildren?.()
-    } else {
-      this.parent.children()
-    }
+    this.parent.children()
     return this._index
   }
 
@@ -95,7 +91,7 @@ class CNode implements CMNode {
 
   x: GetValue<number>
   y: GetValue<number>
-  beforeChildren: GetValue<CNode[]>
+  // beforeChildren: GetValue<CNode[]>
   children: GetValue<CNode[]>
 
   path?: Path2D
@@ -168,7 +164,7 @@ function doToEvent(
     const nx = x - child.x()
     const ny = y - child.y()
 
-    will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
+    // will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
 
     let tryChildren = true
     if (will && child.path) {
@@ -336,7 +332,7 @@ export function renderCanvas(
         //因为是累加的,所以返回
         ctx.translate(x, y)
         child.path = undefined
-        draw(child.beforeChildren())
+        // draw(child.beforeChildren())
         if (child.configure.withPath) {
           const path = new Path2D()
           const out = child.configure.draw?.(ctx, path)
