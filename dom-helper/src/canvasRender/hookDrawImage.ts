@@ -1,15 +1,16 @@
 import { hookPromiseSignal, promiseSignal, renderOne } from "mve-helper";
-import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect";
+import { DrawRectConfig, hookDrawRect } from "./hookDrawRect";
 import { loadImage } from "wy-dom-helper";
-import { EmptyFun, PromiseResult, SetValue, SizeKey, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper";
-import { CanvaRenderCtx, PathResult } from ".";
+import { EmptyFun, PointKey, PromiseResult, SetValue, SizeKey, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { CanvaRenderCtx, CMNode, PathResult } from "./hookDraw";
+import { CanvasRectNode } from "../createLayout/2D";
 
 
 
 
 export function hookDrawUrlImage(n: {
   src: ValueOrGet<string>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode>, draw: EmptyFun): Partial<PathResult>
   relay?: SizeKey
   onLoading?: EmptyFun,
   onError?: SetValue<any>
@@ -34,7 +35,7 @@ export function hookDrawUrlImage(n: {
 export function hookDrawImage(arg: {
   image: ValueOrGet<HTMLImageElement>
   relay?: SizeKey | undefined
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun, path: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode, PointKey>, draw: EmptyFun, path: Path2D): Partial<PathResult>
 } & Omit<DrawRectConfig, 'draw'>) {
   const getImage = valueOrGetToGet(arg.image)
   if (arg.relay == 'width') {
