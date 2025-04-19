@@ -18,14 +18,14 @@ export type CanvaRenderCtx = Omit<CanvasRenderingContext2D, 'reset' | 'save' | '
 interface NodeParent {
   readonly ext: Record<string, any>
   // beforeChildren?: GetValue<CNode[]>
-  children: GetValue<CNode[]>
+  children: GetValue<readonly CNode[]>
 }
 export interface CMNode extends NodeParent {
   x: GetValue<number>
   y: GetValue<number>
   index(): number
   hasClip: boolean
-  isBefore?: boolean
+  // isBefore?: boolean
   parent: NodeParent
 }
 
