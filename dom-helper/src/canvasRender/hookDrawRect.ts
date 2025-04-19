@@ -30,9 +30,9 @@ export class CanvasRectNode implements MDisplayOut<PointKey>, LayoutModel<PointK
     readonly children: GetValue<readonly CanvasRectNode[]>
   ) { }
 
-  getInfo(x: PointKey, def?: boolean): number {
+  getSizeInfo(x: PointKey, def?: boolean): number {
     /**布局,从子节点汇总而来 */
-    const v = this.getDisplay().getInfo(x, def)
+    const v = this.getDisplay().getSizeInfo(x, def)
     if (x == 'x') {
       return v + this.paddingLeft() + this.paddingRight()
     }
@@ -93,13 +93,13 @@ function superCreateGet(x: PointKey, size: boolean) {
       if (size) {
         try {
           //优先选择自己的,
-          const ix = ins.getInfo(x)
+          const ix = ins.getSizeInfo(x)
           return ix
         } catch (err) {
           try {
             return getFromParent(ins, x, size, err)
           } catch (err) {
-            return ins.getInfo(x, true)
+            return ins.getSizeInfo(x, true)
           }
         }
       } else {

@@ -13,7 +13,6 @@ export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel<Point
   target: T
   parent: AbsoluteParent
   index(): number
-  getInfo(x: LayoutKey, def?: boolean): number
 }
 
 
@@ -113,14 +112,14 @@ function superCreateGet(x: PointKey, size: boolean) {
 
         try {
           //优先选择自己的,
-          const ix = ins.getInfo(x)
+          const ix = ins.getSizeInfo(x)
           return ix
         } catch (err) {
           try {
             //其次选择来自父元素的约束
             return ins.parent.getChildInfo(x, size, ins.index())
           } catch (err) {
-            return ins.getInfo(x, true)
+            return ins.getSizeInfo(x, true)
           }
         }
       } else {
@@ -266,8 +265,8 @@ class MAbsoluteNode<T> implements AbsoluteNode<T> {
   getChildInfo(x: PointKey, size: boolean, i: number) {
     return this.display().getChildInfo(x, size, i)
   }
-  getInfo(x: PointKey, def?: boolean) {
-    return this.display().getInfo(x, def)
+  getSizeInfo(x: PointKey, def?: boolean) {
+    return this.display().getSizeInfo(x, def)
   }
   getSize(key: keyof Point<number>): number {
     if (key == 'x') {
