@@ -1,89 +1,52 @@
-import { createContext, hookAddDestroy, hookAddResult, renderStateHolder } from "mve-core"
-import { diffChangeChildren, getRenderChildren } from "mve-dom"
-import { hookDestroy, hookTrackSignal } from "mve-helper"
-import { BDomEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, renderFDomAttr, renderFSvgAttr } from "wy-dom-helper"
-import { addEffect, AlignSelfFun, asLazy, batchSignalEnd, createSignal, emptyArray, emptyFun, EmptyFun, GetValue, hookLayout, memo, Point, PointKey, SetValue, trackSignal, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutKey, InstanceCallbackOrValue, MDisplayOut, LayoutModel, valueInstOrGetToGet, createOrProxy, absoluteDisplay } from "wy-helper"
+import { hookAddDestroy } from "mve-core"
+import { DomElement, DomElementType } from "wy-dom-helper"
+import { addEffect, batchSignalEnd, createSignal, GetValue, PointKey, SetValue, ValueOrGet } from "wy-helper"
+import { InstanceCallbackOrValue, MDisplayOut } from "wy-helper"
+import { createLayoutNode, LayoutNode } from "wy-helper"
 
 
-type AbsoluteParent = {
-  children: GetValue<AbsoluteNode[]>
-} & MDisplayOut<PointKey>
-export interface AbsoluteNode<T = any> extends AbsoluteParent, LayoutModel<PointKey> {
-  target: T
-  parent: AbsoluteParent
-  index(): number
-}
 
 
-type AliasAttr<T extends DomElementType> = InOrFun<
-  Omit<FDomAttribute<T>
-    , 's_position'
-    | 's_display'
-    | 's_left'
-    | 's_right'
-    | 's_top'
-    | 's_bottom'>
->
+
 /**
  * 应该可以细分
  */
 type DomConfigure<T extends DomElementType> =
-  (Omit<AliasAttr<T>
-    , 's_width'
-    | 's_maxWidth'
-    | 's_minWidth'
-    | 's_height'
-    | 's_maxHeight'
-    | 's_minHeight'> & {
-      width?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-      height?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-    })
-  | (Omit<AliasAttr<T>
-    , 's_width'
-    | 's_maxWidth'
-    | 's_minWidth'> & {
-      width: 'auto'
-      height?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-    })
-  | (Omit<AliasAttr<T>
-    , 's_height'
-    | 's_maxHeight'
-    | 's_minHeight'> & {
-      width?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-      height: 'auto'
-    })
-  | AliasAttr<T> & {
+  ({
+    width?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+    height?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+  })
+  | ({
+    width: 'auto'
+    height?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+  })
+  | ({
+    width?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+    height: 'auto'
+  })
+  | {
     width: 'auto'
     height: 'auto'
   }
 
-export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & BDomEvent<T> & FGetChildAttr<DomElement<T>> & {
+export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & {
   m_display?: ValueOrGet<MDisplayOut<PointKey>>
 } & {
-  x?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
-  y?: InstanceCallbackOrValue<AbsoluteNode<DomElement<T>>>
+  x?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+  y?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
+
+  paddingLeft?: ValueOrGet<number>
+  paddingRight?: ValueOrGet<number>
+
+  paddingTop?: ValueOrGet<number>
+  paddingBottom?: ValueOrGet<number>
+  render(style: any): DomElement<T>
 }
 export function renderADom<T extends DomElementType>(
-  type: T,
   arg: ADomAttributes<T>
-): MAbsoluteNode<DomElement<T>> {
-  const target = document.createElement(type)
-  target.style.position = 'absolute'
-  target.style.minWidth = '0px'
-  return renderAbsolute(target, arg, false)
+): LayoutNode<DomElement<T>, PointKey> {
+  return renderAbsolute(arg) as any
 }
-
-export const adom: {
-  readonly [key in DomElementType]: {
-    (props?: ADomAttributes<key>): MAbsoluteNode<DomElement<key>>
-  }
-} = createOrProxy(domTagNames, tag => {
-  return function (args: any) {
-    return renderADom(tag, args)
-  } as any
-})
-
 
 // type SvgConfigure<T extends SvgElementType> = InOrFun<
 //   Omit<FSvgAttribute<T>, 's_width'
@@ -99,59 +62,17 @@ export const adom: {
 //   const target = document.createElementNS("http://www.w3.org/2000/svg", type)
 //   return renderAbsolute(target, arg, true)
 // }
-
-type InOrFun<T extends {}> = {
-  [key in keyof T]: T[key] | ((n: AbsoluteNode) => T[key])
-};
-
-function superCreateGet(x: PointKey, size: boolean) {
-  return function (getIns: GetValue<MAbsoluteNode<any>>) {
-    return function () {
-      const ins = getIns()
-      if (size) {
-
-        try {
-          //优先选择自己的,
-          const ix = ins.getSizeInfo(x)
-          return ix
-        } catch (err) {
-          try {
-            //其次选择来自父元素的约束
-            return ins.parent.getChildInfo(x, size, ins.index())
-          } catch (err) {
-            return ins.getSizeInfo(x, true)
-          }
-        }
-      } else {
-        try {
-          return ins.parent.getChildInfo(x, size, ins.index())
-        } catch (err) {
-          return 0
-        }
-      }
-    }
-  }
-}
-const createGetX = superCreateGet("x", false)
-const createGetY = superCreateGet("y", false)
-const createGetWidth = superCreateGet("x", true)
-const createGetHeight = superCreateGet("y", true)
-function renderAbsolute(target: any, c: any, svg: boolean) {
+function renderAbsolute(c: any) {
   let wSet: SetValue<number> | undefined = undefined
   let hSet: SetValue<number> | undefined = undefined
   let width: GetValue<number>
   let height: GetValue<number>
-  function getIns(): MAbsoluteNode<any> {
-    return n
-  }
-  const x = valueInstOrGetToGet(c.x, getIns, createGetX)
-  const y = valueInstOrGetToGet(c.y, getIns, createGetY)
   if (c.width == 'auto') {
     const w = createSignal(0)
     width = w.get
     wSet = w.set
   } else {
-    width = valueInstOrGetToGet(c.width, getIns, createGetWidth)
+    width = c.width
   }
 
 
@@ -160,7 +81,7 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
     height = h.get
     hSet = h.set
   } else {
-    height = valueInstOrGetToGet(c.height, getIns, createGetHeight)
+    height = c.height
   }
 
   const addDestroy = hookAddDestroy()
@@ -177,145 +98,47 @@ function renderAbsolute(target: any, c: any, svg: boolean) {
       addDestroy(() => {
         ob.disconnect()
       })
-      // console.log("eff-2")
     }, -2)
   }
-
-
-  const n = new MAbsoluteNode(
-    target,
-    x, y,
-    width,
-    height,
-    svg,
-    c)
-  hookAddResult(n)
-  if (!c.childrenType && c.children) {
-    n.children = makeIndex(c.children, n.target, n)
-  } else {
-    n.children = asLazy(emptyArray as any[])
-  }
-  addEffect(() => {
-    addDestroy(trackSignal(n.x, x => n.target.style.left = x + 'px'))
-    addDestroy(trackSignal(n.y, x => n.target.style.top = x + 'px'))
-    if (!wSet) {
-      addDestroy(trackSignal(n.width, x => n.target.style.width = x + 'px'))
-    }
-    if (!hSet) {
-      addDestroy(trackSignal(n.height, x => n.target.style.height = x + 'px'))
-    }
-    // console.log("eff-1")
-  }, -1)
-  addEffect(() => {
-    function mergeValue(
-      node: any, value: any, setValue: any
-    ) {
-      const ext = arguments[3]
-      if (typeof value == 'function') {
-        addDestroy(trackSignal(() => value(n), setValue, node, ext))
-      } else {
-        setValue(value, node, ext)
+  const n = createLayoutNode({
+    ...c,
+    axis: {
+      x: {
+        position: c.x,
+        size: width,
+        paddingStart: c.paddingLeft,
+        paddingEnd: c.paddingRight
+      },
+      y: {
+        position: c.y,
+        size: height,
+        paddingStart: c.paddingTop,
+        paddingEnd: c.paddingBottom
       }
     }
-    if (svg) {
-      renderFSvgAttr(target, c, mergeValue, emptyFun, emptyArray)
-    } else {
-      renderFDomAttr(target, c, mergeValue, emptyFun, emptyArray)
-    }
-
-    // console.log("eff-0")
   })
+  const style: any = {
+    position: 'absolute',
+    minWidth: 0,
+    minHeight: 0,
+    left() {
+      return n.axis.x.position() + 'px'
+    },
+    top() {
+      return n.axis.y.position() + 'px'
+    }
+  }
+  if (!wSet) {
+    style.width = function () {
+      return n.axis.x.size() + 'px'
+    }
+  }
+  if (!hSet) {
+    style.heigh = function () {
+      return n.axis.y.size() + 'px'
+    }
+  }
+  const target = c.render(style)
+  n.target = target
   return n
-}
-
-function getTarget<T>(n: MAbsoluteNode<T>): Node {
-  return n.target
-}
-
-/**
- * 动态返回某一种布局,比如flex或absolute
- * 真实布局与节点结合
- */
-class MAbsoluteNode<T> implements AbsoluteNode<T> {
-  private display: GetValue<MDisplayOut<PointKey>>
-  constructor(
-    public readonly target: any,
-    public readonly x: GetValue<number>,
-    public readonly y: GetValue<number>,
-    public readonly width: GetValue<number>,
-    public readonly height: GetValue<number>,
-    public readonly isSVG: boolean,
-    public readonly configure: any
-  ) {
-    const MDisplay = valueOrGetToGet(configure.m_display || absoluteDisplay)
-    this.display = memo(() => {
-      return hookLayout(this, MDisplay)
-    })
-  }
-  getExt(): Record<string, any> {
-    return this.configure
-  }
-  children!: GetValue<AbsoluteNode[]>
-  parent!: AbsoluteParent
-  __index!: number
-  index() {
-    this.parent.children()
-    return this.__index
-  }
-  getChildInfo(x: PointKey, size: boolean, i: number) {
-    return this.display().getChildInfo(x, size, i)
-  }
-  getSizeInfo(x: PointKey, def?: boolean) {
-    return this.display().getSizeInfo(x, def)
-  }
-  getSize(key: keyof Point<number>): number {
-    if (key == 'x') {
-      return this.width()
-    } else {
-      return this.height()
-    }
-  }
-
-  getAlign(key: keyof Point<number>): AlignSelfFun | void {
-    return this.getExt().align
-  }
-  getGrow(): number | void {
-    return this.getExt().grow
-  }
-  getPosition(key: keyof Point<number>): number {
-    if (key == 'x') {
-      return this.x()
-    } else {
-      return this.y()
-    }
-  }
-}
-/**
- * 可以预计算子节点:在初始化时就可以做
- * 再顺序根踪x/y/width/height:统一做第一步
- * 再跟踪其它属性:统一做第二步
- * @param node 
- * @param children 
- */
-export function renderAbsoulte(node: Node, children: EmptyFun) {
-  const parent: AbsoluteNode = {} as any
-  parent.children = makeIndex(children, node, parent)
-  hookDestroy(() => {
-    parent.children().forEach(child => {
-      node.removeChild(child.target)
-    })
-  })
-}
-function makeIndex(children: EmptyFun, node: Node, parent: AbsoluteParent) {
-  const getChildren = getRenderChildren<MAbsoluteNode<any>, AbsoluteParent>(children, parent, list => {
-    list.forEach((row, i) => {
-      row.__index = i
-      if (row.parent && row.parent != parent) {
-        console.log("parent发生改变", row.parent, parent)
-      }
-      row.parent = parent
-    })
-  })
-  hookTrackSignal(getChildren, diffChangeChildren(node, getTarget))
-  return getChildren
 }

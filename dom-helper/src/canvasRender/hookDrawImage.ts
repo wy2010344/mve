@@ -3,14 +3,14 @@ import { DrawRectConfig, hookDrawRect } from "./hookDrawRect";
 import { loadImage } from "wy-dom-helper";
 import { EmptyFun, PointKey, PromiseResult, SetValue, SizeKey, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper";
 import { CanvaRenderCtx, CMNode, PathResult } from "./hookDraw";
-import { CanvasRectNode } from "../createLayout/2D";
+import { LayoutNode } from "wy-helper"
 
 
 
 
 export function hookDrawUrlImage(n: {
   src: ValueOrGet<string>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode>, draw: EmptyFun): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun): Partial<PathResult>
   relay?: SizeKey
   onLoading?: EmptyFun,
   onError?: SetValue<any>
@@ -35,18 +35,18 @@ export function hookDrawUrlImage(n: {
 export function hookDrawImage(arg: {
   image: ValueOrGet<HTMLImageElement>
   relay?: SizeKey | undefined
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode, PointKey>, draw: EmptyFun, path: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, path: Path2D): Partial<PathResult>
 } & Omit<DrawRectConfig, 'draw'>) {
   const getImage = valueOrGetToGet(arg.image)
   if (arg.relay == 'width') {
     arg.height = (n) => {
       const image = getImage()
-      return image.naturalHeight * n.width() / image.naturalWidth
+      return image.naturalHeight * n.axis.x.size() / image.naturalWidth
     }
   } else if (arg.relay == 'height') {
     arg.width = n => {
       const image = getImage()
-      return image.naturalWidth * n.height() / image.naturalHeight
+      return image.naturalWidth * n.axis.y.size() / image.naturalHeight
     }
   } else {
     arg.width = n => {
@@ -63,7 +63,7 @@ export function hookDrawImage(arg: {
     draw(ctx, n, p) {
       const image = getImage()
       function draw() {
-        ctx.drawImage(image, 0, 0, n.width(), n.height())
+        ctx.drawImage(image, 0, 0, n.axis.x.size(), n.axis.y.size())
       }
       if (!arg.draw) {
         draw()
