@@ -1,8 +1,8 @@
-import { EmptyFun, memo, quote, Quote, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { EmptyFun, memo, PointKey, quote, Quote, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { DrawRectConfig, hookDrawRect } from "./hookDrawRect"
 import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig, drawText, measureText, DrawTextExt, OCanvasTextDrawingStyles, MeasuredTextWrapOut } from "wy-dom-helper/canvas"
 import { CanvaRenderCtx, CMNode, hookCurrentCtx, PathResult } from "./hookDraw"
-import { CanvasRectNode } from "../createLayout/2D"
+import { LayoutNode } from "wy-helper"
 
 type TextWrapConfig = TextWrapTextConfig & {
   text: string
@@ -28,7 +28,7 @@ function makeCurrentDefaultFont(out: any) {
 type DrawTextOut = Omit<DrawTextExt, 'y' | 'x'>
 export function hookDrawText(arg: {
   config: ValueOrGet<DrawTextConfig>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode>, draw: EmptyFun, p: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): Partial<PathResult>
   drawInfo?: ((arg: DrawTextConfig & {
     measure: TextMetrics
   }) => DrawTextOut) | DrawTextOut,
@@ -91,7 +91,7 @@ export function hookDrawTextWrap(arg: {
   config: ValueOrGet<TextWrapConfig>
   /**只与绘制相关 */
   drawInfo?: ((arg: MeasuredTextWrapOut) => DrawTextWrapExt) | DrawTextWrapExt
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode>, draw: EmptyFun, p: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): Partial<PathResult>
   height?: Quote<number> | number
 } & Omit<DrawRectConfig, 'height' | 'draw'>) {
   const getConfig = valueOrGetToGet(arg.config)
@@ -118,7 +118,7 @@ export function hookDrawTextWrap(arg: {
     const c = { ...getConfig() } as any
     makeCurrentDefaultFont(c)
     const ctx = hookCurrentCtx()
-    c.width = d.drawWidth()
+    c.width = d.axis.x.drawSize()
     return measureTextWrap(ctx, c.text, c)
   })
   return d

@@ -1,33 +1,65 @@
-import { AbsoluteNodeConfigure, CanvasRectNode, createRect } from "../createLayout/2D"
+import { AlignSelfFun, InstanceCallbackOrValue, PointKey, ValueOrGet } from "wy-helper"
+import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from "wy-helper"
 import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw, PathResult } from "./hookDraw"
 export { simpleFlex } from 'wy-helper'
 
-export type DrawRectConfig = Omit<AbsoluteNodeConfigure<CMNode>, 'render'>
+export type DrawRectConfig =
+  Omit<LayoutNodeConfigure<CMNode, PointKey>, 'axis'>
   & Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath'>
   & {
-    draw?(ctx: CanvaRenderCtx, n: CanvasRectNode<CMNode>, path: Path2D): PathResult | void
+
+    x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    paddingLeft?: ValueOrGet<number>
+    paddingRight?: ValueOrGet<number>
+
+
+    y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    paddingTop?: ValueOrGet<number>
+    paddingBottom?: ValueOrGet<number>
+
+    alignSelf?: AlignSelfFun
+    alignSelfX?: AlignSelfFun
+    alignSelfY?: AlignSelfFun
+    draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, path: Path2D): PathResult | void
   }
 export function hookDrawRect(
   n: DrawRectConfig
 ) {
 
-  return createRect({
+  const x = createLayoutNode({
     ...n,
-    render(x) {
-      return hookDraw({
-        ...n,
-        x: x.x,
-        y: x.y,
-        withPath: true,
-        draw(ctx, path) {
-          path.rect(0, 0, x.width(), x.height())
-          return n.draw?.(ctx, x, path)
-        },
-        ext: {
-          ...n.ext,
-          rect: x
-        }
-      })
-    },
+    axis: {
+      x: {
+        position: n.x,
+        size: n.width,
+        paddingStart: n.paddingLeft,
+        paddingEnd: n.paddingRight,
+        alignSelf: n.alignSelfX || n.alignSelf
+      },
+      y: {
+        position: n.y,
+        size: n.height,
+        paddingStart: n.paddingTop,
+        paddingEnd: n.paddingBottom,
+        alignSelf: n.alignSelfY || n.alignSelf
+      }
+    }
   })
+  x.target = hookDraw({
+    ...n,
+    x: x.axis.x.position,
+    y: x.axis.y.position,
+    withPath: true,
+    draw(ctx, path) {
+      path.rect(0, 0, x.axis.x.size(), x.axis.y.size())
+      return n.draw?.(ctx, x, path)
+    },
+    ext: {
+      ...n.ext,
+      rect: x
+    }
+  })
+  return x
 }
