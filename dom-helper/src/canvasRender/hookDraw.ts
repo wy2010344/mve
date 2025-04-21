@@ -1,9 +1,9 @@
-import { hookAddDestroy, hookAddResult } from "mve-core"
-import { fdom, FDomAttributes, getRenderChildren } from "mve-dom"
+import { getRenderChildren, hookAddDestroy, hookAddResult } from "mve-core"
+import { fdom, FDomAttributes } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
 import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, PointKey, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutNode, LayoutTarget } from "wy-helper"
+import { LayoutNode } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -26,7 +26,7 @@ interface NodeParent {
   // beforeChildren?: GetValue<CNode[]>
   children: GetValue<readonly CNode[]>
 }
-export type CMNode = NodeParent & LayoutTarget<PointKey> & {
+export type CMNode = NodeParent & {
   x: GetValue<number>
   y: GetValue<number>
   index(): number
@@ -101,15 +101,6 @@ class CNode implements CMNode {
   children: GetValue<CNode[]>
 
   path?: Path2D
-
-
-  getLayout(): LayoutNode<LayoutTarget<PointKey>, PointKey> {
-    return this.ext.rect
-  }
-
-  getParentLayout(): LayoutNode<LayoutTarget<PointKey>, PointKey> | void {
-    return this.parent.ext.rect
-  }
 }
 
 interface CBaseNodeConfigure {
