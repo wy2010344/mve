@@ -1,4 +1,4 @@
-import { AlignSelfFun, InstanceCallbackOrValue, PointKey, ValueOrGet } from "wy-helper"
+import { AlignSelfFun, InstanceCallbackOrValue, LayoutConfig, Point, PointKey, ValueOrGet } from "wy-helper"
 import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from "wy-helper"
 import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw, PathResult } from "./hookDraw"
 export { simpleFlex } from 'wy-helper'
@@ -24,11 +24,23 @@ export type DrawRectConfig =
     alignSelfY?: AlignSelfFun
     draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, path: Path2D): PathResult | void
   }
+
+const config: LayoutConfig<CMNode, PointKey> = {
+  getLayout(m): void | LayoutNode<CMNode, keyof Point<number>> {
+    return m.ext.rect
+  },
+  getParentLayout(m: CMNode): void | LayoutNode<CMNode, keyof Point<number>> {
+    return m.parent.ext.rect
+  },
+  getChildren(m): readonly CMNode[] {
+    return m.children()
+  },
+}
 export function hookDrawRect(
   n: DrawRectConfig
 ) {
 
-  const x = createLayoutNode({
+  const x = createLayoutNode(config, {
     ...n,
     axis: {
       x: {
@@ -36,14 +48,14 @@ export function hookDrawRect(
         size: n.width,
         paddingStart: n.paddingLeft,
         paddingEnd: n.paddingRight,
-        alignSelf: n.alignSelfX || n.alignSelf
+        alignSelf: n.alignSelfX ?? n.alignSelf
       },
       y: {
         position: n.y,
         size: n.height,
         paddingStart: n.paddingTop,
         paddingEnd: n.paddingBottom,
-        alignSelf: n.alignSelfY || n.alignSelf
+        alignSelf: n.alignSelfY ?? n.alignSelf
       }
     }
   })

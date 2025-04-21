@@ -1,8 +1,8 @@
 import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderMDomAttr, renderMSvgAttr, SvgElement, SvgElementType, svgTagNames, GDomAttribute, renderGDomAttr } from "wy-dom-helper";
 import { SetValue, createOrProxy } from "wy-helper";
-import { renderChildren } from "./hookChildren";
 import { hookAddResult } from "mve-core";
 import { mergeValue } from "./renderNode";
+import { renderChildren } from "./hookChildren";
 
 
 

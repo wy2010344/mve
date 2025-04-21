@@ -8,6 +8,7 @@ export {
 } from './cache'
 export { createContext } from './context'
 export type { Context } from './context'
+export * from './hookChildren'
 export function render(create: EmptyFun) {
   const stateHolder = new StateHolder()
   hookAlterStateHolder(stateHolder)

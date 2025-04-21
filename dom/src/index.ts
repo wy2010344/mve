@@ -1,14 +1,14 @@
-import { hookAddResult, render } from "mve-core"
+import { hookAddResult, hookTrackAttr, render } from "mve-core"
 import { EmptyFun, genTemplateStringS1, genTemplateStringS2, ValueOrGet, VType, vTypeisGetValue } from "wy-helper"
-import { hookTrackAttr, renderPortal } from "./hookChildren"
+import { renderPortal } from "./hookChildren"
 export { dom } from './dom'
 export { svg } from './svg'
-export type { HookChild } from './hookChildren'
-export { renderPortal, getRenderChildren, diffChangeChildren, renderChildren } from './hookChildren'
-export type { OrFun } from './hookChildren'
 export type { StyleProps } from './node'
 export * from './renderNode'
 export * from './attrInOne'
+export * from './hookChildren'
+
+
 export function createRoot(node: Node, create: EmptyFun) {
   return render(() => {
     renderPortal(node, create)
