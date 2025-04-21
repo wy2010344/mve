@@ -1,8 +1,10 @@
-import { hookAddDestroy } from "mve-core"
+import { hookAddDestroy, addTrackEffect } from "mve-core"
+import { StyleProps } from "mve-dom"
+import { hookTrackSignal } from "mve-helper"
 import { DomElement, DomElementType } from "wy-dom-helper"
-import { addEffect, batchSignalEnd, createSignal, GetValue, PointKey, SetValue, ValueOrGet } from "wy-helper"
+import { addEffect, batchSignalEnd, createSignal, emptyArray, emptyFun, GetValue, LayoutConfig, LayoutNodeConfigure, PointKey, SetValue, ValueOrGet } from "wy-helper"
 import { InstanceCallbackOrValue, MDisplayOut } from "wy-helper"
-import { createLayoutNode, LayoutNode } from "wy-helper"
+import { createLayoutNode, LayoutNode, } from "wy-helper"
 
 
 
@@ -29,9 +31,7 @@ type DomConfigure<T extends DomElementType> =
     height: 'auto'
   }
 
-export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & {
-  m_display?: ValueOrGet<MDisplayOut<PointKey>>
-} & {
+export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & Omit<LayoutNodeConfigure<DomElement<T>, PointKey>, 'axis'> & {
   x?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
   y?: InstanceCallbackOrValue<LayoutNode<DomElement<T>, PointKey>>
 
@@ -40,13 +40,21 @@ export type ADomAttributes<T extends DomElementType> = DomConfigure<T> & {
 
   paddingTop?: ValueOrGet<number>
   paddingBottom?: ValueOrGet<number>
-  render(style: any): DomElement<T>
+  render(style: StyleProps, n: LayoutNode<DomElement<T>, PointKey>): DomElement<T>
 }
-export function renderADom<T extends DomElementType>(
-  arg: ADomAttributes<T>
-): LayoutNode<DomElement<T>, PointKey> {
-  return renderAbsolute(arg) as any
+
+const config: LayoutConfig<Node, PointKey> = {
+  getLayout(m: any) {
+    return m._rect
+  },
+  getParentLayout(m: any) {
+    return m.parentNode?._rect
+  },
+  getChildren(m) {
+    return (m as any)._mve_children_?.() || emptyArray
+  },
 }
+
 
 // type SvgConfigure<T extends SvgElementType> = InOrFun<
 //   Omit<FSvgAttribute<T>, 's_width'
@@ -62,11 +70,14 @@ export function renderADom<T extends DomElementType>(
 //   const target = document.createElementNS("http://www.w3.org/2000/svg", type)
 //   return renderAbsolute(target, arg, true)
 // }
-function renderAbsolute(c: any) {
+
+export function renderADom<T extends DomElementType>(
+  c: ADomAttributes<T>
+): LayoutNode<DomElement<T>, PointKey> {
   let wSet: SetValue<number> | undefined = undefined
   let hSet: SetValue<number> | undefined = undefined
-  let width: GetValue<number>
-  let height: GetValue<number>
+  let width: ValueOrGet<number> | undefined
+  let height: ValueOrGet<number> | undefined
   if (c.width == 'auto') {
     const w = createSignal(0)
     width = w.get
@@ -87,10 +98,12 @@ function renderAbsolute(c: any) {
   const addDestroy = hookAddDestroy()
   if (wSet || hSet) {
     addEffect(() => {
-      const cb = () => {
+      const cb = (e?: any) => {
         wSet?.(target.clientWidth)
         hSet?.(target.clientHeight)
-        batchSignalEnd()
+        if (e) {
+          batchSignalEnd()
+        }
       }
       cb()
       const ob = new ResizeObserver(cb)
@@ -100,7 +113,7 @@ function renderAbsolute(c: any) {
       })
     }, -2)
   }
-  const n = createLayoutNode({
+  const n = createLayoutNode(config as any, {
     ...c,
     axis: {
       x: {
@@ -134,11 +147,12 @@ function renderAbsolute(c: any) {
     }
   }
   if (!hSet) {
-    style.heigh = function () {
+    style.height = function () {
       return n.axis.y.size() + 'px'
     }
   }
-  const target = c.render(style)
-  n.target = target
+  const target = c.render(style, n)
+  n.target = target;
+  (target as any)._rect = n
   return n
 }

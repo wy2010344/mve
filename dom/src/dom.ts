@@ -4,7 +4,7 @@ import { BDomAttribute, BDomEvent, DataAttr, DomElement, DomElementType, React }
 import { createOrProxy, emptyObject } from "wy-helper"
 import { domTagNames, updateDomProps } from "wy-dom-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
-import { OrFun } from "./hookChildren"
+import { OrFun } from "mve-core"
 
 
 function create(type: string) {
