@@ -34,7 +34,8 @@ export function renderExitArrayClone<T>(
 }
 
 function applyOne(out: ExitArrayCloneOut<any>, row: ExitModel<any>) {
-  const cloneNode = out.node.cloneNode(true)
+  //可以不用clone,直接移动元素位置
+  const cloneNode = out.node//.cloneNode(true)
   hookAddResult(cloneNode)
   const applyAnimate = out.applyAnimate
   hookTrackSignal(row.step, step => {
