@@ -26,6 +26,9 @@ const a = createRenderChildren<Node>({
       parent.removeChild(child)
     }
   },
+  nextSibling(child) {
+    return child.nextSibling
+  },
 })
 
 export function renderChildren(n: Node, render: SetValue<Node>) {
