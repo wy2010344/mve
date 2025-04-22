@@ -27,8 +27,6 @@ export function getExitAnimateArray<T>(
 
   const thisAddList: ExitModelInner<T>[] = []
   const thisRemoveList: ExitModelInner<T>[] = []
-  let lastGenerateList: readonly ExitModelInner<T>[] = emptyArray as any[]
-
   function buildRemove(old: ExitModelInner<T>) {
     const [promise, resolve] = getOutResolvePromise()
     old.promise = promise
@@ -161,10 +159,6 @@ export function getExitAnimateArray<T>(
     const tempCacheList = new ArrayHelper(oldList)
     tempCacheList.forEachRight(hideAsShowAndRemoteHide)
     const newCacheGenerateList = tempCacheList.get()
-    if (newCacheGenerateList == lastGenerateList) {
-      return lastReturn || emptyArray
-    }
-    lastGenerateList = newCacheGenerateList
     return newCacheGenerateList.map(getExitModel)
   })
   return getList

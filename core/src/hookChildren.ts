@@ -81,6 +81,7 @@ export function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
   removeChild(parent: Node, child: Node): void
+  nextSibling(child: Node): Node | null
 }
 
 export function createRenderChildren<T>(
@@ -120,7 +121,8 @@ function hookChangeChildren<Node, T>(
   get: (v: T) => Node,
   {
     moveBefore,
-    removeChild
+    removeChild,
+    nextSibling
   }: RenderChildrenOperante<Node>,
   listRef = storeRef<readonly T[]>(emptyArray)
 ) {
@@ -137,17 +139,18 @@ function hookChangeChildren<Node, T>(
     const oldList = listRef.get()
     let changed = false
     let beforeNode: Node | null = null
-    let beforeIndex = -1
     for (let i = 0; i < newList.length; i++) {
       const nl = newList[i]
       const newChild = get(nl)
       if (changed) {
         if (newChild != beforeNode) {
           moveBefore(pNode, newChild, beforeNode)
-        } else {
-          beforeIndex = beforeIndex + 1
-          const ol = oldList[beforeIndex]
-          beforeNode = ol ? get(ol) : null
+        } else if (beforeNode) {
+          //beforeNode = beforeNode?.nextSibling
+          beforeNode = nextSibling(beforeNode)
+          // beforeIndex = beforeIndex + 1
+          // const ol = oldList[beforeIndex]
+          // beforeNode = ol ? get(ol) : null
         }
       } else {
         const ol = oldList[i]
@@ -156,7 +159,6 @@ function hookChangeChildren<Node, T>(
           changed = true
           moveBefore(pNode, newChild, lastChild)
           beforeNode = lastChild
-          beforeIndex = i
         }
       }
     }
