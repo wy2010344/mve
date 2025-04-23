@@ -22,9 +22,9 @@ export class StateHolder {
       console.warn('duplicate destroy', this)
       return
     }
+    this._destroyed = true
     this.children.forEach(destroyHolder)
     this.destroyList.forEach(run)
-    this._destroyed = true
   }
 
   private removeChild(child: StateHolder) {

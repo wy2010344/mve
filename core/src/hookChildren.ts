@@ -24,7 +24,6 @@ export function addTrackEffect<T>(get: GetValue<T>, toEffect: (v: T) => EmptyFun
 }
 
 export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
-
   const isDestroyed = hookIsDestroyed()
   const effect: {
     (): void
