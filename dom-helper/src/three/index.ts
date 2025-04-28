@@ -1,3 +1,4 @@
+import { addTrackEffect, hookTrackAttr } from "mve-core";
 import { AlignSelfFun, createLayoutNode, emptyArray, InstanceCallbackOrValue, LayoutConfig, LayoutNode, LayoutNodeConfigure, PointKey, ValueOrGet } from "wy-helper";
 
 
@@ -8,7 +9,7 @@ type XNode = {
   _children?(): XNode[]
 }
 
-type ThreeKey = PointKey | 'z'
+export type ThreeKey = PointKey | 'z'
 export type DrawThreeConfig<B extends XNode> =
   Omit<LayoutNodeConfigure<B, ThreeKey>, 'axis'>
   & {
@@ -66,8 +67,11 @@ export function hookDrawThree<B extends XNode>(
       y: {
         position: n.y,
         size: n.height,
-        paddingStart: n.paddingTop,
-        paddingEnd: n.paddingBottom,
+        // y 轴与dom相反
+        paddingStart: n.paddingBottom,
+        paddingEnd: n.paddingTop,
+        // paddingStart: n.paddingTop,
+        // paddingEnd: n.paddingBottom,
         alignSelf: n.alignSelfY ?? n.alignSelf
       },
       z: {
@@ -82,4 +86,45 @@ export function hookDrawThree<B extends XNode>(
   x.target = n.render(x)
   x.target._layout = x
   return x
+}
+
+export type ThreeNode = {
+  position: Position3
+}
+
+type Position3 = {
+  x: number
+  y: number
+  z: number
+}
+
+
+function setPosition(v: number, b: LayoutNode<ThreeNode, ThreeKey>, key: PointKey) {
+  b.target.position[key] = v
+}
+
+/**
+ * group可以用
+ * @param n 
+ */
+export function hookThreePosition(n: LayoutNode<ThreeNode, ThreeKey>) {
+  hookTrackAttr(n.axis.x.position, setPosition, n, 'x')
+  hookTrackAttr(n.axis.y.position, setPosition, n, 'y')
+  hookTrackAttr(n.axis.z.position, setPosition, n, 'z')
+}
+
+/**
+ * 一般立方体,球形可以用
+ * @param n 
+ */
+export function hookThreeCenterPosition(n: LayoutNode<ThreeNode, ThreeKey>) {
+  hookTrackAttr(() => {
+    return n.axis.x.position() + n.axis.x.size() / 2
+  }, setPosition, n, 'x')
+  hookTrackAttr(() => {
+    return n.axis.y.position() + n.axis.y.size() / 2
+  }, setPosition, n, 'y')
+  hookTrackAttr(() => {
+    return n.axis.z.position() + n.axis.z.size() / 2
+  }, setPosition, n, 'z')
 }
