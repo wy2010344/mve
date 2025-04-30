@@ -1,5 +1,5 @@
 import { EachTime, renderForEach, RenderForEachArg } from "mve-core"
-import { Compare, emptyObject, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, SetValue, simpleEqual } from "wy-helper"
+import { arrayEqual, arrayNotEqualOrOne, Compare, emptyObject, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, SetValue, simpleEqual } from "wy-helper"
 
 
 
@@ -70,27 +70,34 @@ export function renderMap<K, V>(
   )
 }
 
+export function memoEqual<T>(get: GetValue<T>, equal: Compare<T>) {
+  return memo<T>(function (old, init) {
+    const newValue = get()
+    if (init) {
+      if (equal(newValue, old!)) {
+        return old!
+      }
+      return newValue
+    }
+    return newValue
+  })
+}
+
+export function memoEqualDep<T>(get: GetValue<T>, toDeps: (v: T) => any) {
+  return memoEqual(get, function (a, b) {
+    return !arrayNotEqualOrOne(toDeps(a), toDeps(b))
+  })
+}
+
 /**
  * 对数组里面的列表进行缓存
  * @param getVs 
  * @param equal 
  * @returns 
  */
-export function memoArray<T>(getVs: GetValue<ReadArray<T>>, equal: Compare<T> = simpleEqual) {
-  return memo<ReadArray<T>>(function (olds) {
-    if (olds) {
-      return Array.prototype.map.call(getVs(), function (value) {
-        const oldIndex = Array.prototype.findIndex.call(olds, function (old) {
-          return equal(old, value)
-        })
-        if (oldIndex < 0) {
-          return value
-        }
-        return olds[oldIndex]
-      }) as T[]
-    } else {
-      return getVs()
-    }
+export function memoArray<T, VS extends ReadArray<T>>(getVs: GetValue<VS>, equal: Compare<T> = simpleEqual) {
+  return memoEqual(getVs, function (a, b) {
+    return arrayEqual(a, b, equal)
   })
 }
 
