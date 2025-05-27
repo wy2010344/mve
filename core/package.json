@@ -1,6 +1,6 @@
 {
   "name": "mve-core",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "license": "MIT",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
@@ -32,9 +32,9 @@
     "vite-plugin-dts": "^3.9.1"
   },
   "peerDependencies": {
-    "wy-helper": "^0.1.14"
+    "wy-helper": "^0.1.16"
   },
   "dependencies": {
-    "wy-helper": "^0.1.14"
+    "wy-helper": "^0.1.16"
   }
 }
