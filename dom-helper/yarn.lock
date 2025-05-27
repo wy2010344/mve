@@ -671,15 +671,22 @@ mve-core@^2.0.1:
   dependencies:
     wy-helper "^0.1.14"
 
-mve-dom@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/mve-dom/-/mve-dom-2.0.1.tgz#87e6b67fc622f6eecd1e1f260f90e7faaa50d4ab"
-  integrity sha512-Xi/W8CeC04Q9yhR1h+RT/OcyeYGumIYVWrUFuyu8egp9lR3eocCfyMjdKSB5uz22McaT3L2YnyWQ8IjlZpJdXw==
+mve-core@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/mve-core/-/mve-core-2.0.2.tgz#9dd0530021d21aab80037b0651fd13999f1a1dd9"
+  integrity sha512-Ku7GzfyeQIbqWCttt8o5z3+wLSugRG2XBgMgRQPs095T8NJx+bBfwYt158XwKSUmhVavNZEDbeowHW2K2eCKEQ==
   dependencies:
-    mve-core "^2.0.1"
+    wy-helper "^0.1.16"
+
+mve-dom@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/mve-dom/-/mve-dom-2.0.2.tgz#95baacea01d22354b89e644db63f7482c9cab3e8"
+  integrity sha512-JBq1KvTtFng4Op9OD+a77A+4zmBGwxjt2Y5A18PfaftrWA4LhytdNSoKp8xCUfrF0vuMbjdv9X9x4YlN7UTVqA==
+  dependencies:
+    mve-core "^2.0.2"
     mve-helper "^2.0.1"
-    wy-dom-helper "^0.1.12"
-    wy-helper "^0.1.14"
+    wy-dom-helper "^0.1.14"
+    wy-helper "^0.1.16"
 
 mve-helper@^2.0.1:
   version "2.0.1"
@@ -924,20 +931,29 @@ vue-tsc@^1.8.27:
     "@vue/language-core" "1.8.27"
     semver "^7.5.4"
 
-wy-dom-helper@^0.1.12:
-  version "0.1.12"
-  resolved "https://registry.yarnpkg.com/wy-dom-helper/-/wy-dom-helper-0.1.12.tgz#0429b8aef11b96b2e4271020673fb47e1e7b93c7"
-  integrity sha512-+CjDVbqEdqxMM3un3WVhaktt4lZBf0gEAxc/OQG8z5dRqZCb5mwaj/bIyHPmVuTInwizd9LnrltqKPBO2BNjZQ==
+wy-dom-helper@^0.1.14:
+  version "0.1.14"
+  resolved "https://registry.yarnpkg.com/wy-dom-helper/-/wy-dom-helper-0.1.14.tgz#4dc8f86ad6c2e9a1ed28f97ed98c6984a163da69"
+  integrity sha512-Ppm0dFJ2Iyn7VuD3GNAhL3+lqznDw87nmnyqaKecdaMKvP+0CbqSywAoMS29yTGaJ2WObdUiIEuTe7XOji4ZkA==
   dependencies:
     csstype "^3.1.3"
     linebreak "^1.1.0"
     stylis "^4.3.1"
-    wy-helper "^0.1.14"
+    wy-helper "^0.1.16"
 
 wy-helper@^0.1.14:
   version "0.1.14"
   resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.14.tgz#1b8482e3306629d58085a510a97975e63dfad52c"
   integrity sha512-uox/nREC+wC1MkE26zKNbo/NM/xN8iDwL0nj02Q2CI43JZBKR9iKavwFfEqZmxRIruenSspAA6qBheVWOeKbdA==
+  dependencies:
+    d3-binarytree "^1.0.2"
+    d3-octree "^1.1.0"
+    d3-quadtree "^3.0.1"
+
+wy-helper@^0.1.16:
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.16.tgz#13f4e78ac752567979f0486c69dd98bbf4c335a9"
+  integrity sha512-28lDTCYSW8LkUsKwuEBxGhI8/UdXcKr78OrPf/ZG1TWzFwjyrJEHWeSgbGIxY7zdnZREzSnHxtd5AdmnzhvyaQ==
   dependencies:
     d3-binarytree "^1.0.2"
     d3-octree "^1.1.0"
