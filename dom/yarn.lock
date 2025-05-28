@@ -664,13 +664,6 @@ muggle-string@^0.3.1:
   resolved "https://registry.yarnpkg.com/muggle-string/-/muggle-string-0.3.1.tgz#e524312eb1728c63dd0b2ac49e3282e6ed85963a"
   integrity sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==
 
-mve-core@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/mve-core/-/mve-core-2.0.1.tgz#73657b7c8fdac4f1cec46dbd64086b6bd3ee44c0"
-  integrity sha512-HjsADKpewTJ3t96SZ+BW5uWlm1eTTOq014mQKGR7r6a/R/4tQZ0niG5PN15gXxJD4VQbHhDWN7RECgy450CIXA==
-  dependencies:
-    wy-helper "^0.1.14"
-
 mve-core@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/mve-core/-/mve-core-2.0.2.tgz#9dd0530021d21aab80037b0651fd13999f1a1dd9"
@@ -678,13 +671,13 @@ mve-core@^2.0.2:
   dependencies:
     wy-helper "^0.1.16"
 
-mve-helper@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/mve-helper/-/mve-helper-2.0.1.tgz#c20b352516d81be4bf3d362503f01fbf7a1a7622"
-  integrity sha512-wXRJNLyRyYj+eOh5kbbe+qRq3y7SM73uRnUvxjUq0YDingvtqGXubg0iR4B0PC09GnKDOSjjDmyuCrWhfyUGQQ==
+mve-helper@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/mve-helper/-/mve-helper-2.0.2.tgz#2148fbaa4d2677d7527facc2dca5bc940661ff75"
+  integrity sha512-MOF1leTjI856oKQCGHhzhCC4i+eY1pp4P79cl1rmjrKQ/RGDW6pIohioZTXjSKX+pCKSHEdHQWy5a5UuuLqBrA==
   dependencies:
-    mve-core "^2.0.1"
-    wy-helper "^0.1.14"
+    mve-core "^2.0.2"
+    wy-helper "^0.1.16"
 
 nanoid@^3.3.7:
   version "3.3.7"
@@ -930,15 +923,6 @@ wy-dom-helper@^0.1.14:
     linebreak "^1.1.0"
     stylis "^4.3.1"
     wy-helper "^0.1.16"
-
-wy-helper@^0.1.14:
-  version "0.1.14"
-  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.14.tgz#1b8482e3306629d58085a510a97975e63dfad52c"
-  integrity sha512-uox/nREC+wC1MkE26zKNbo/NM/xN8iDwL0nj02Q2CI43JZBKR9iKavwFfEqZmxRIruenSspAA6qBheVWOeKbdA==
-  dependencies:
-    d3-binarytree "^1.0.2"
-    d3-octree "^1.1.0"
-    d3-quadtree "^3.0.1"
 
 wy-helper@^0.1.16:
   version "0.1.16"
