@@ -1,6 +1,6 @@
 import { hookDestroy } from "mve-helper"
 import { observerAnimateSignal } from "wy-dom-helper"
-import { AnimateFrameSignalConfig, batchSignalEnd, createSignal, GetValue } from "wy-helper"
+import { AnimateFrameSignalConfig, GetValue } from "wy-helper"
 export * from './canvasRender'
 export * from './absoluteRender'
 export * from './renderInput'
@@ -11,6 +11,7 @@ export * from './centerPicker'
 export * from './movePage'
 export * from './pop'
 export * from './three'
+export * from './fakeRoute'
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig
