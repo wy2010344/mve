@@ -47,9 +47,9 @@
   },
   "dependencies": {
     "mve-core": "^2.0.2",
+    "mve-dom": "^2.0.2",
     "mve-helper": "^2.0.2",
-    "wy-dom-helper": "^0.1.14",
-    "wy-helper": "^0.1.16",
-    "mve-dom": "^2.0.2"
+    "wy-dom-helper": "file:.yalc/wy-dom-helper",
+    "wy-helper": "^0.1.16"
   }
 }
