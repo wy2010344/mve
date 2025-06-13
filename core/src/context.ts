@@ -3,7 +3,7 @@ import { StateHolder } from "./stateHolder"
 
 
 export interface Context<T> {
-  provide(v: T): void
+  provide(v: T): T
   consume(): T
 }
 
@@ -17,12 +17,13 @@ class ContextFactory<T> implements Context<T> {
     public readonly defaultValue: T
   ) { }
 
-  provide(v: T): void {
+  provide(v: T): T {
     const holder = hookCurrentStateHolder()!
     holder.contexts.push({
       key: this,
       value: v
     })
+    return v
   }
   consume(): T {
     const holder = hookCurrentStateHolder()!

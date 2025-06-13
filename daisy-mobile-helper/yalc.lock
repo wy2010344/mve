@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "packages": {
+    "mve-dom": {
+      "signature": "4b33710ba05b92bc6b57ad3293080d2b",
+      "file": true,
+      "replaced": "^2.0.2"
+    },
+    "mve-dom-helper": {
+      "signature": "f97eb4c548e0121bdeaa0068e43ab74b",
+      "file": true,
+      "replaced": "^2.0.3"
+    },
+    "mve-core": {
+      "signature": "e5a185794c76c2154a1876b5918438ec",
+      "file": true
+    }
+  }
+}

@@ -15,26 +15,44 @@ export function mergeValue(
     setValue(value, node, ext)
   }
 }
+type Plugins<T> = {
+  plugins?: ((div: T) => void)[]
+}
 
-export type FDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
+function addPlugins<T>(node: T, plugins: Plugins<T>) {
+  if (plugins.plugins?.length) {
+    plugins.plugins.forEach(plugin => plugin(node))
+  }
+}
+const ignoreKeys = [
+  'plugins'
+]
+export type FPDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
   & BDomEvent<T>
-  & FGetChildAttr<DomElement<T>>
-export function renderFDom<T extends DomElementType>(type: T, arg: FDomAttributes<T> = emptyObject as any
+  & Plugins<DomElement<T>>
+export type FDomAttributes<T extends DomElementType> = FPDomAttributes<T> & FGetChildAttr<DomElement<T>>
+export function renderFDom<T extends DomElementType>(
+  type: T,
+  arg: FDomAttributes<T> = emptyObject as any
 ): DomElement<T> {
   const node = document.createElement(type)
-  renderFDomAttr(node, arg, mergeValue, renderChildren, emptyArray)
+  renderFDomAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
+  addPlugins(node, arg)
   return node
 }
 
-export type FSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
+export type FPSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
   & BSvgEvent<T>
+  & Plugins<SvgElement<T>>
+export type FSvgAttributes<T extends SvgElementType> = FPSvgAttributes<T>
   & FGetChildAttr<SvgElement<T>>
 export function renderFSvg<T extends SvgElementType>(type: T, arg: FSvgAttributes<T> = emptyObject as any
 ): SvgElement<T> {
   const node = document.createElementNS("http://www.w3.org/2000/svg", type)
-  renderFSvgAttr(node, arg, mergeValue, renderChildren, emptyArray)
+  renderFSvgAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
+  addPlugins(node, arg)
   return node
 }
 

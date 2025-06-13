@@ -17,9 +17,9 @@
       "replaced": "^2.0.1"
     },
     "mve-dom": {
-      "signature": "d46cfd5be4ca82b5679aa19bd78548af",
+      "signature": "4b33710ba05b92bc6b57ad3293080d2b",
       "file": true,
-      "replaced": "^2.0.1"
+      "replaced": "^2.0.2"
     },
     "mve-helper": {
       "signature": "571566e5c5ee42ee5eb979d4d429c00d",

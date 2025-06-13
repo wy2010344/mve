@@ -1,6 +1,6 @@
 import { addEffect, SetValue, tw } from "wy-helper";
-import { getHistoryState, history } from "../history";
 import { hookTrackSignal } from "mve-helper";
+import { routerConsume } from "../history";
 
 export const tabContainerClassName = tw`overflow-x-auto snap-x snap-mandatory flex items-stretch wib`
 export const tabItemClassName = tw`snap-center w-full shrink-0`
@@ -10,6 +10,7 @@ export interface HrefTab {
 }
 
 export function hookTrackIndex(tabs: HrefTab[], changeIndex: SetValue<number>) {
+  const { getHistoryState } = routerConsume()
   hookTrackSignal(() => {
     let idx = -1
     const pathname = getHistoryState().pathname
@@ -31,19 +32,28 @@ export function hookScroll(
   div: HTMLDivElement,
   tabs: HrefTab[]
 ) {
+  const { router } = routerConsume()
   div.addEventListener('scrollend', function (e) {
     const off = Math.round(div.scrollLeft / window.innerWidth)
-    const href = tabs[off].href
-    if (href != history.location.pathname) {
-      history.replace(href)
+    const tab = tabs[off]
+    if (!tab) {
+      return
+    }
+    const href = tab.href
+    if (href != router.location.pathname) {
+      router.replace(href)
     }
   })
+  let first = true
   hookTrackIndex(tabs, (idx) => {
     addEffect(() => {
       div.scrollTo({
         left: idx * window.innerWidth,
-        behavior: "smooth",
+        behavior: first ? "instant" : "smooth",
       })
+      if (first) {
+        first = false
+      }
     })
   })
 }

@@ -1,5 +1,4 @@
 import { addEffect, EmptyFun, emptyObject, GetValue, SetValue } from "wy-helper"
-import { getHistoryState } from "../history"
 import { hookDestroy } from "mve-helper"
 import { createPop } from "mve-dom-helper"
 import { hookAddResult } from "mve-core"
@@ -7,12 +6,18 @@ import { animate, AnimationOptions } from 'motion'
 import { fdom } from "mve-dom"
 import { Action } from "history"
 import { cns } from "wy-dom-helper"
-export function getTabsDirection(findTabIndex: (n: string) => number) {
-  const { beforePathname, pathname } = getHistoryState()
-  if (!beforePathname) {
+import { routerConsume } from "../history"
+export function getTabsDirection(
+  get: () => {
+    fromPathname?: string
+    pathname: string
+  },
+  findTabIndex: (n: string) => number) {
+  const { pathname, fromPathname } = get()
+  if (!fromPathname) {
     return
   }
-  const beforeIndex = findTabIndex(beforePathname)
+  const beforeIndex = findTabIndex(fromPathname)
   if (beforeIndex < 0) {
     return
   }
@@ -39,25 +44,23 @@ export function hookTabPage(
       // duration: 100
     },
     exitContainerClassName,
-    getContainer = () => {
+    getContainer = (div) => {
       const rect = div.getBoundingClientRect()
-      return (children) => {
+      return () => {
         return fdom.div({
           className: cns('fixed overflow-hidden', exitContainerClassName),
           s_left: rect.left + 'px',
           s_top: rect.top + 'px',
           s_width: rect.width + 'px',
           s_height: rect.height + 'px',
-          children
+          children() {
+            hookAddResult(div)
+          }
         })
       }
-    }
-  }: {
-    createPop?(callback: SetValue<EmptyFun>): void,
-    animationConfig?: AnimationOptions,
-    exitContainerClassName?: string
-    getContainer?(): (children: EmptyFun) => HTMLElement
-  } = emptyObject) {
+    },
+    cloneNode
+  }: TabPageConfig = emptyObject) {
   addEffect(() => {
     const direction = getDirection()
     if (direction) {
@@ -67,14 +70,12 @@ export function hookTabPage(
     }
   })
   hookDestroy(() => {
-    const container = getContainer()
+    const renderContainer = getContainer(cloneNode ? (div.cloneNode(true) as any) : div)
     addEffect(() => {
       const direction = getDirection()
       if (direction) {
         createPopI((close) => {
-          const div2 = container(() => {
-            hookAddResult(div)
-          })
+          const div2 = renderContainer()
           addEffect(() => {
             animate(div2, {
               x: direction == 'toLeft' ? [0, '100%'] : [0, '-100%']
@@ -86,6 +87,15 @@ export function hookTabPage(
   })
 }
 
-export function hookPage(div: HTMLElement) {
-  hookTabPage(() => getHistoryState().action == Action.Pop ? 'toLeft' : 'toRight', div,)
+export interface TabPageConfig {
+  cloneNode?: boolean
+  createPop?(callback: SetValue<EmptyFun>): void,
+  animationConfig?: AnimationOptions,
+  exitContainerClassName?: string
+  getContainer?(div: HTMLElement): () => HTMLElement
+}
+
+export function hookPage(div: HTMLElement, config?: TabPageConfig) {
+  const { getHistoryState } = routerConsume()
+  hookTabPage(() => getHistoryState().action == Action.Pop ? 'toLeft' : 'toRight', div, config)
 }
