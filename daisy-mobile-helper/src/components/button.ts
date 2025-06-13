@@ -6,22 +6,38 @@ export function button(props: FDomAttributes<"button"> & {
   loadingClassName?: string,
   loading?: GetValue<any>
 }) {
-  const innerLoading = createSignal(false)
-  const isLoading = props.loading ? function () {
-    return props.loading!() || innerLoading.get()
-  } : innerLoading.get
   const newProps = { ...props }
   const loadingClassName = props.loadingClassName || tw`daisy-loading-spinner`
   const className = valueOrGetToGet(newProps.className || '')
-  newProps.className = function () {
-    return cns('daisy-btn', className(), isLoading() && tw`daisy-btn-disabled daisy-loading ${loadingClassName}`)
+  if (props.onClick) {
+    const n = toButtonClick(props as any)
+    newProps.onClick = n.onClick
+    newProps.loading = n.loading
   }
-  if (newProps.onClick) {
-    newProps.onClick = function (e) {
+  newProps.className = function () {
+    return cns('daisy-btn', className(), newProps.loading?.() && tw`daisy-btn-disabled daisy-loading ${loadingClassName}`)
+  }
+  return fdom.button(newProps)
+}
+
+export function toButtonClick<T>({
+  onClick,
+  loading
+}: {
+  loading?: GetValue<any>
+  onClick(v: T): any
+}) {
+  const innerLoading = createSignal(false)
+  const isLoading = loading ? function () {
+    return loading!() || innerLoading.get()
+  } : innerLoading.get
+  return {
+    loading: isLoading,
+    onClick(v: T) {
       if (isLoading()) {
         return
       }
-      const out = props.onClick!(e) as any
+      const out = onClick!(v) as any
       if (out instanceof Promise) {
         innerLoading.set(true)
         out.finally(() => {
@@ -30,5 +46,4 @@ export function button(props: FDomAttributes<"button"> & {
       }
     }
   }
-  return fdom.button(newProps)
 }
