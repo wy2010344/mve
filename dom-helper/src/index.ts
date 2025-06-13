@@ -11,7 +11,9 @@ export * from './centerPicker'
 export * from './movePage'
 export * from './pop'
 export * from './three'
+export * from './cns'
 export * from './fakeRoute'
+export * from './tsxSupport'
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig
