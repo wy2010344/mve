@@ -1,4 +1,4 @@
-import { emptyFun, EmptyFun, GetValue, quote } from "wy-helper";
+import { emptyFun, EmptyFun, GetValue } from "wy-helper";
 import { renderArray, renderArrayKey } from "./renderMap";
 
 
@@ -13,9 +13,9 @@ export function renderIf(
     ]
   }, (d) => {
     if (d) {
-      whenTrue()
+      whenTrue(get)
     } else {
-      whenFalse()
+      whenFalse(get)
     }
   })
 }
@@ -32,7 +32,7 @@ export function renderOne<K>(
 export function renderOneKey<T, K>(
   get: GetValue<T>,
   getKey: (v: T) => K,
-  render: (key: K) => void
+  render: (key: K, get: GetValue<T>) => void
 ) {
-  renderArrayKey(() => [get()], getKey, (_, _1, key) => render(key))
+  renderArrayKey(() => [get()], getKey, (_, _1, key) => render(key, get))
 }

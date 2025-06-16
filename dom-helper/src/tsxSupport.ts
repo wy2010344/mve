@@ -29,6 +29,7 @@ declare namespace JSX {
 
 import { fdom, fsvg, renderChildren, renderTextContent } from "mve-dom";
 import { isSVG } from "wy-dom-helper";
+import { GetValue } from "wy-helper";
 
 type ConvertMapToUnion<T> = {
   [K in keyof T]: { type: K; props?: T[K] };
@@ -40,7 +41,9 @@ type NodeElement<T = Record<string, any>> = {
   props: T
   children: mve.ChildrenElement
 } | ConvertMapToUnion<mve.IntrinsicElements>
-type BElement = NodeElement | null | undefined | string | boolean | number | void
+
+type PureValue = null | undefined | string | boolean | number | void
+type BElement = NodeElement | PureValue | GetValue<PureValue>
 
 export namespace mve {
   export type IntrinsicElements = {
