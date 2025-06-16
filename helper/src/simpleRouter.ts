@@ -2,12 +2,13 @@ import { PairBranch, PairLeaf, PairNode, PairNotfound, TreeRoute } from "wy-help
 import { renderOne, renderOneKey } from "./renderIf"
 import { EmptyFun, emptyObject, GetValue, memo, PromiseResult, quote, SetValue } from "wy-helper"
 import { promiseSignal } from "./renderPromise"
+import { renderArray, renderArrayKey } from "./renderMap"
 
 export type BranchOrLeaf = PairBranch<BranchLoader, LeafLoader, NotfoundLoader> | PairLeaf<LeafLoader> | PairNotfound<NotfoundLoader>
 
 
 export type BranchLoader = {
-  default(arg: GetValue<Record<string, any>>, renderChildren: EmptyFun): void
+  default(arg: GetValue<Record<string, any>>, getBranch: GetValue<Branch>): void
 }
 export type LeafLoader = {
   default(arg: GetValue<Record<string, any>>): void
@@ -19,6 +20,45 @@ export type NotfoundLoader = {
 export type BranchAll = PairNode<BranchLoader, LeafLoader, NotfoundLoader>
 
 
+export type Branch = BranchOrLeaf | {
+  type: "error",
+  value: any
+  loader?: never
+  query?: never
+  next?: never
+  restNodes?: never
+}
+type BrancToList = (beforeBranch: Branch, branch: Branch) => Branch[]
+const defaultBranchToList: BrancToList = function (beforeBranch, branch) {
+  return [branch]
+}
+export function getBranchKey(n: Branch) {
+  return n?.loader
+}
+
+// const getBranchWithBefore = memo<{
+//   branch: Branch,
+//   beforeBranch?: Branch
+// }>(e => {
+//   return {
+//     branch: getBranch(),
+//     beforeBranch: e?.branch
+//   }
+// })
+// renderArrayKey(
+//   function () {
+//     const { beforeBranch, branch } = getBranchWithBefore()
+//     if (beforeBranch?.loader == branch.loader) {
+//       return [branch]
+//     }
+//     if (beforeBranch) {
+//       return toList(beforeBranch, branch)
+//     }
+//     return [branch]
+//   },
+//   getBranchKey,
+//   function (getBranch, getIndex, loader) {
+//   })
 export function createTreeRoute({
   treeArg = emptyObject,
   pages,
@@ -33,38 +73,7 @@ export function createTreeRoute({
   const tree = new TreeRoute<BranchLoader, LeafLoader, NotfoundLoader>(treeArg)
   tree.buildFromMap(pages, prefix)
   tree.finishBuild()
-  function renderBranch(getBranch: GetValue<BranchOrLeaf | {
-    type: "error",
-    value: any
-    loader?: never
-    query?: never
-    next?: never
-    restNodes?: never
-  }>) {
-    renderOneKey(getBranch, v => v?.loader, function (loader) {
-      const branch = getBranch()
-      if (!loader) {
-        renderError?.((branch as any).value)
-        return
-      }
-      const get = loaderCache(loader)
-      renderOne(get, function (value?: PromiseResult<any>) {
-        if (value?.type == 'success') {
-          if (branch.type == 'branch') {
-            value.value.default(() => getBranch().query, () => renderBranch(() => getBranch().next!))
-          } else if (branch.type == 'leaf') {
-            value.value.default(() => getBranch().query)
-          } else if (branch.type == 'notfound') {
-            value.value.default(() => getBranch().query, () => getBranch().restNodes!)
-          }
-        } else if (value?.type == 'error') {
-          renderError?.(value.value)
-        } else {
-
-        }
-      })
-    })
-  }
+  //渲染某一个分支,不考虑key
 
   const map = new Map()
   function loaderCache<T>(loader: GetValue<Promise<T>>) {
@@ -83,10 +92,37 @@ export function createTreeRoute({
       out = out.next
     }
   }
+  function renderBranch(
+    getBranch: GetValue<Branch>
+  ) {
+    const branch = getBranch()
+    const loader = branch.loader
+    if (!loader) {
+      renderError?.((branch as any).value)
+      return
+    }
+    const get = loaderCache(loader as any)
+    renderOne(get, function (value?: PromiseResult<any>) {
+      if (value?.type == 'success') {
+        if (branch.type == 'branch') {
+          value.value.default(() => getBranch().query, () => getBranch().next!)
+        } else if (branch.type == 'leaf') {
+          value.value.default(() => getBranch().query)
+        } else if (branch.type == 'notfound') {
+          value.value.default(() => getBranch().query, () => getBranch().restNodes!)
+        }
+      } else if (value?.type == 'error') {
+        renderError?.(value.value)
+      } else {
+        //loading状态
+      }
+    })
+  }
   return {
     preLoad,
-    renderPath(getPath: GetValue<string>) {
-      const branch = memo(() => {
+    renderBranch,
+    getBranch(getPath: GetValue<string>) {
+      return memo(() => {
         try {
           const nodes = getPath().split('/').filter(quote)
           const out = tree.matchNodes(nodes)
@@ -98,7 +134,6 @@ export function createTreeRoute({
           } as const
         }
       })
-      renderBranch(branch)
     }
   }
 }
