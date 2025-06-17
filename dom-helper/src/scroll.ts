@@ -1,23 +1,21 @@
-import { hookDestroy } from "mve-helper"
+import { hookDestroy, hookTrackSignal } from "mve-helper"
 import { animateSignal, pointerMove, pointerMoveDir } from "wy-dom-helper"
-import { AnimateSignal, AnimateSignalConfig, ClampingScrollFactory, createSignal, DeltaXSignalAnimationConfig, destinationWithMargin, eventGetPageX, eventGetPageY, getMaxScroll, GetValue, PointKey, scrollForEdge, ScrollFromPage, SetValue, storeRef, StoreRef } from "wy-helper"
+import { addEffect, AnimateSignal, AnimateSignalConfig, ClampingScrollFactory, createSignal, DeltaXSignalAnimationConfig, destinationWithMargin, eventGetPageX, eventGetPageY, getMaxScroll, GetValue, getValueOrGet, PointKey, scrollForEdge, ScrollFromPage, ScrollHelper, SetValue, storeRef, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
 
 
 export interface OnScrollI {
-  container: HTMLElement
-  direction: PointKey
-  scroll?: AnimateSignal
+
+  maxScroll: ValueOrGet<number>
+  minScroll?: ValueOrGet<number>
+  // direction: PointKey
   factory?: ClampingScrollFactory
   nextScroll?: OnScroll
   edgeSlow?: number
 
+  opposite?: boolean
 
-  onDragBegin?(): void
-  onDragEnd?(): void
-
-  onScroll?: StoreRef<boolean>
   //原始滚动中的属性
   edgeConfig?(velocity: number): AnimateSignalConfig;
   edgeBackConfig?: DeltaXSignalAnimationConfig;
@@ -27,12 +25,16 @@ export interface OnScrollI {
   getForceStop?: (current: number, idealTarget: number) => number;
   onProcess?: SetValue<number>;
   onOutProcess?: SetValue<number>;
+
+
+
+  onDragBegin?(): void
+  onDragEnd?(): void
 }
 
 interface DirectionGet {
   getContentSize(): number
   getContainerSize(): number
-  getDetail(e: WheelEvent): number
 }
 class XDirectionGet implements DirectionGet {
   constructor(
@@ -44,9 +46,6 @@ class XDirectionGet implements DirectionGet {
   }
   getContentSize(): number {
     return this.content.offsetWidth
-  }
-  getDetail(e: WheelEvent): number {
-    return e.deltaX
   }
 }
 class YDirectionGet implements DirectionGet {
@@ -60,107 +59,191 @@ class YDirectionGet implements DirectionGet {
   getContentSize(): number {
     return this.content.offsetHeight
   }
-  getDetail(e: WheelEvent): number {
-    return e.deltaY
+}
+export function measureMaxScroll(
+  direction: PointKey
+) {
+  const maxScroll = createSignal(0)
+  let inited = false
+  return {
+    get: maxScroll.get,
+    hookInit(
+      container: HTMLElement,
+      content: HTMLElement
+    ) {
+      if (inited) {
+        console.log('禁止重复初始化')
+        return
+      }
+      inited = true
+      let directionGet: DirectionGet
+      if (direction == 'x') {
+        directionGet = new XDirectionGet(container, content)
+      } else {
+        directionGet = new YDirectionGet(container, content)
+      }
+      addEffect(() => {
+        maxScroll.set(getMaxScroll(directionGet.getContainerSize(), directionGet.getContentSize()))
+      })
+      const ob = new ResizeObserver(function () {
+        maxScroll.set(getMaxScroll(directionGet.getContainerSize(), directionGet.getContentSize()))
+      })
+      ob.observe(container)
+      ob.observe(content)
+      hookDestroy(() => {
+        ob.disconnect()
+      })
+    }
   }
 }
-export function pluginOnScroll(config: OnScrollI) {
-  return function (content: HTMLElement) {
-    OnScroll.hookGet(content, config)
+
+function getWheelDetailX(e: WheelEvent) {
+  return e.deltaX
+}
+function getWheelDetailY(e: WheelEvent) {
+  return e.deltaY
+}
+
+
+export class OnScrollHelper {
+  get: GetValue<number>
+  private scroll: AnimateSignal
+  constructor(
+    readonly direction: PointKey
+  ) {
+    this.scroll = animateSignal(0)
+    this.get = this.scroll.get
+  }
+  private inited = false
+  hookLazyInit(config: OnScrollI) {
+    if (this.inited) {
+      throw '不要重复初始化'
+    }
+    this.inited = true
+    const s = new OnScroll(this.direction, this.scroll, config)
+    addEffect(() => {
+      this.scroll.set(s.getMinScroll())
+    })
+    return s
+  }
+  measureMaxScroll() {
+    return measureMaxScroll(this.direction)
   }
 }
 export class OnScroll {
   private edgeSlow: number
-  private readonly scroll: AnimateSignal
   readonly scrollFactory: ClampingScrollFactory
-  getScroll: GetValue<number>
-
-  readonly directionGet: DirectionGet
-  static hookGet(content: HTMLElement, config: OnScrollI) {
-    return new OnScroll(content, config)
+  readonly get: GetValue<number>
+  readonly onAnimate: GetValue<boolean>
+  set(n: number) {
+    return this.drag(n - this.get())
   }
+  animateTo(n: number) {
+    return this.destinationWithMargin(this.scrollFactory.getFromDistance(n))
+  }
+  readonly getWheelDetail: (e: WheelEvent) => number
+  static hookGet(
+    direction: PointKey,
+    container: HTMLElement,
+    config: OnScrollI
+  ) {
+    const helper = new OnScrollHelper(direction)
+    const scroll = helper.hookLazyInit(config)
+    container.addEventListener('pointerdown', scroll.pointerEventListner)
+    container.addEventListener('wheel', scroll.wheelEventListener)
+    return scroll
+  }
+  readonly getMinScroll: GetValue<number>
+  readonly getMaxScroll: GetValue<number>
   readonly getPage: (a: {
     pageX: number
     pageY: number
   }) => number
-  private constructor(
-    readonly content: HTMLElement,
+  constructor(
+    private readonly direction: PointKey,
+    private readonly scroll: AnimateSignal,
     readonly config: OnScrollI
   ) {
-    this.scroll = config?.scroll || animateSignal(0)
-    this.getScroll = this.scroll.get
     this.scrollFactory = config?.factory || ClampingScrollFactory.get()
     this.edgeSlow = this.config.edgeSlow || 3
-    const container = this.config.container
-    if (this.config.direction == 'x') {
-      this.directionGet = new XDirectionGet(container, content)
+    if (this.direction == 'x') {
+      this.getWheelDetail = getWheelDetailX
       this.getPage = eventGetPageX
     } else {
+      this.getWheelDetail = getWheelDetailY
       this.getPage = eventGetPageY
-      this.directionGet = new YDirectionGet(container, content)
     }
-    this.wheelScroll()
-    this.pointerScroll()
-
+    this.getMinScroll = valueOrGetToGet(config.minScroll || 0)
+    this.getMaxScroll = valueOrGetToGet(config.maxScroll)
+    if (typeof config.minScroll == 'function') {
+      hookTrackSignal(this.getMinScroll, v => {
+        addEffect(() => {
+          if (this.scroll.getTarget() < v) {
+            this.scroll.silentChangeTo(v)
+          }
+        })
+      })
+    }
+    if (typeof config.maxScroll == 'function') {
+      hookTrackSignal(this.getMaxScroll, v => {
+        addEffect(() => {
+          if (this.scroll.getTarget() > v) {
+            this.scroll.silentChangeTo(v)
+          }
+        })
+      })
+    }
+    this.get = this.scroll.get
+    this.onAnimate = this.scroll.onAnimation
     const that = this
-    const containerSize = createSignal(this.directionGet.getContainerSize())
-    const contentSize = createSignal(this.directionGet.getContentSize())
-    const ob = new ResizeObserver(function () {
-      const newContainerSize = that.directionGet.getContainerSize()
-      const newContentSize = that.directionGet.getContentSize()
-      const newMaxScroll = getMaxScroll(newContainerSize, newContentSize)
-      // const sY = that.scroll.getTarget()
-      // const oldMaxScroll = getMaxScroll(containerSize.get(), contentSize.get())
-      /**
-       * scroll怎么变,如果超出新的maxScroll
-       * 是按比例,按哪个比例?
-       * 
-       * 未超出时,按比例/不改变
-       * 超出后,截断,按比例
-       * 
-       */
-      if (that.scroll.getTarget() > newMaxScroll) {
-        that.scroll.silentChangeTo(newMaxScroll)
-      }
-      containerSize.set(newContainerSize)
-      contentSize.set(newContentSize)
-    })
-    ob.observe(config.container)
-    ob.observe(content)
-    hookDestroy(() => {
-      ob.disconnect()
-    })
-  }
-  private wheelScroll() {
-    let lastTime = performance.now()
-    this.config.container.addEventListener('wheel', e => {
-      this.config
-      const duration = e.timeStamp - lastTime
-      const detail = this.directionGet.getDetail(e)
-      this.drag(detail)
-      this.destination(detail / duration)
-      lastTime = e.timeStamp
-    })
-  }
 
+    let lastTime = performance.now()
+    const a = this.config.opposite ? -1 : 1
+    this.wheelEventListener = function (e: WheelEvent) {
+      const duration = e.timeStamp - lastTime
+      const detail = that.getWheelDetail(e) * a
+      that.drag(detail)
+      that.destination(detail / duration)
+      lastTime = e.timeStamp
+    }
+    this.pointerEventListner = pointerMoveDir(function () {
+      that.scroll.stop()
+      return {
+        onMove(e, dir) {
+          if (dir == that.direction) {
+            that.config.onDragBegin?.()
+            pointerMove(ScrollFromPage.from(e, {
+              getPage: that.getPage as any,
+              scrollDelta(delta, velocity) {
+                that.drag(delta)
+              },
+              opposite: that.config.opposite,
+              onFinish(velocity) {
+                that.config.onDragEnd?.()
+                that.destination(velocity)
+              }
+            }))
+          }
+        }
+      }
+    })
+  }
   private drag(delta: number) {
     const v = this.scroll.get()
     const tempV = v + delta
-    const maxScroll = getMaxScroll(
-      this.directionGet.getContainerSize(),
-      this.directionGet.getContentSize()
-    )
-    if (tempV < 0 || tempV > maxScroll) {
+    const minScroll = this.getMinScroll()
+    const maxScroll = this.getMaxScroll()
+    if (tempV < minScroll || tempV > maxScroll) {
       if (this.config.nextScroll) {
-        if (tempV < 0) {
-          this.scroll.set(0)
+        if (tempV < minScroll) {
+          this.scroll.set(minScroll)
           this.config.nextScroll.drag(tempV)
         } else {
           this.scroll.set(maxScroll)
           this.config.nextScroll.drag(tempV - maxScroll)
         }
       } else {
-        if (tempV < 0) {
+        if (tempV < minScroll) {
           this.scroll.set(tempV / this.edgeSlow)
         } else {
           this.scroll.set(maxScroll + (tempV - maxScroll) / this.edgeSlow)
@@ -169,7 +252,6 @@ export class OnScroll {
     } else {
       this.scroll.set(tempV)
     }
-    // const
   }
   /**
    * 惯性滚动到边界,带动外部
@@ -182,41 +264,29 @@ export class OnScroll {
       return true
     }
   }
+  private destinationWithMargin(frictional: ScrollHelper) {
+    return destinationWithMargin({
+      ...this.config,
+      maxScroll: this.getMaxScroll(),
+      minScroll: this.getMinScroll(),
+      scroll: this.scroll,
+      frictional,
+      scrollToEdge: this.scrollToEdge,
+    })
+  }
   /**
    * 惯性滚动
    * @param velocity 
    */
   private destination = (velocity: number) => {
-    destinationWithMargin({
-      ...this.config,
-      scroll: this.scroll,
-      frictional: this.scrollFactory.getFromVelocity(velocity),
-      containerSize: this.directionGet.getContainerSize(),
-      contentSize: this.directionGet.getContentSize(),
-      scrollToEdge: this.scrollToEdge,
-    })
+    return this.destinationWithMargin(this.scrollFactory.getFromVelocity(velocity))
   }
-  private pointerScroll() {
-    const that = this
-    this.config.container.addEventListener("pointerdown", pointerMoveDir(function () {
-      that.scroll.stop()
-      return {
-        onMove(e, dir) {
-          if (dir == that.config.direction) {
-            that.config.onDragBegin?.()
-            pointerMove(ScrollFromPage.from(e, {
-              getPage: that.getPage as any,
-              scrollDelta(delta, velocity) {
-                that.drag(delta)
-              },
-              onFinish(velocity) {
-                that.config.onDragEnd?.()
-                that.destination(velocity)
-              }
-            }))
-          }
-        }
-      }
-    }))
-  }
+  /**
+   * 应该可以允许多个容器,只要不重复
+   * @param container 
+   * @param config 
+   * @returns 
+   */
+  readonly pointerEventListner: SetValue<PointerEvent>
+  readonly wheelEventListener: SetValue<WheelEvent>
 }
