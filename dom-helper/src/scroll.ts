@@ -105,31 +105,6 @@ function getWheelDetailY(e: WheelEvent) {
 }
 
 
-export class OnScrollHelper {
-  get: GetValue<number>
-  private scroll: AnimateSignal
-  constructor(
-    readonly direction: PointKey
-  ) {
-    this.scroll = animateSignal(0)
-    this.get = this.scroll.get
-  }
-  private inited = false
-  hookLazyInit(config: OnScrollI) {
-    if (this.inited) {
-      throw '不要重复初始化'
-    }
-    this.inited = true
-    const s = new OnScroll(this.direction, this.scroll, config)
-    addEffect(() => {
-      this.scroll.set(s.getMinScroll())
-    })
-    return s
-  }
-  measureMaxScroll() {
-    return measureMaxScroll(this.direction)
-  }
-}
 export class OnScroll {
   private edgeSlow: number
   readonly scrollFactory: ClampingScrollFactory
@@ -142,26 +117,29 @@ export class OnScroll {
     return this.destinationWithMargin(this.scrollFactory.getFromDistance(n))
   }
   readonly getWheelDetail: (e: WheelEvent) => number
+
+  measureMaxScroll() {
+    return measureMaxScroll(this.direction)
+  }
   static hookGet(
     direction: PointKey,
     container: HTMLElement,
     config: OnScrollI
   ) {
-    const helper = new OnScrollHelper(direction)
-    const scroll = helper.hookLazyInit(config)
+    const scroll = new OnScroll(direction, config)
     container.addEventListener('pointerdown', scroll.pointerEventListner)
     container.addEventListener('wheel', scroll.wheelEventListener)
     return scroll
   }
   readonly getMinScroll: GetValue<number>
   readonly getMaxScroll: GetValue<number>
+  private readonly scroll: AnimateSignal
   readonly getPage: (a: {
     pageX: number
     pageY: number
   }) => number
   constructor(
     private readonly direction: PointKey,
-    private readonly scroll: AnimateSignal,
     readonly config: OnScrollI
   ) {
     this.scrollFactory = config?.factory || ClampingScrollFactory.get()
@@ -193,6 +171,7 @@ export class OnScroll {
         })
       })
     }
+    this.scroll = animateSignal(this.getMinScroll())
     this.get = this.scroll.get
     this.onAnimate = this.scroll.onAnimation
     const that = this

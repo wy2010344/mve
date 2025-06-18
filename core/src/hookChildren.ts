@@ -9,18 +9,10 @@ import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from "."
 
 export function addTrackEffect<T>(get: GetValue<T>, toEffect: (v: T) => EmptyFun, level = 0) {
   const addDestroy = hookAddDestroy()
-  addEffect(() => {
-    let first = true
-    addDestroy(trackSignal(get, v => {
-      const effect = toEffect(v)
-      if (first) {
-        first = false
-        effect()
-      } else {
-        addEffect(effect, level)
-      }
-    }))
-  }, level)
+  addDestroy(trackSignal(get, v => {
+    const effect = toEffect(v)
+    addEffect(effect, level)
+  }))
 }
 
 export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
@@ -70,12 +62,12 @@ export function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<
   const beforeList = hookAlterChildren(list)
   fun(n)
   hookAlterChildren(beforeList)
-  const set = memo(function () {
+  const get = memo(function () {
     const newList: T[] = []
     purifyList(list, newList)
     return newList
   }, after)
-  return set
+  return get
 }
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
@@ -93,7 +85,8 @@ export function createRenderChildren<T>(
     ) {
       const list = storeRef<T[]>(emptyArray as T[])
       const addDestroy = hookAddDestroy()
-      const getChildren = getRenderChildren<T, T>(fun, pNode)
+      const getChildren = getRenderChildren<T, T>(fun, pNode);
+      (getChildren as any).abc = (pNode as any).id
       hookChangeChildren(pNode, getChildren, quote, arg, list)
       addDestroy(() => {
         addEffect(() => {
@@ -108,7 +101,8 @@ export function createRenderChildren<T>(
       node: T,
       fun: SetValue<T>
     ) {
-      const getChildren = getRenderChildren<T, T>(fun, node)
+      const getChildren = getRenderChildren<T, T>(fun, node);
+      (getChildren as any).abc = (node as any).id
       hookChangeChildren(node, getChildren, quote, arg)
       return getChildren
     }
