@@ -7,12 +7,12 @@
       "replaced": "^2.0.2"
     },
     "mve-dom-helper": {
-      "signature": "f97eb4c548e0121bdeaa0068e43ab74b",
+      "signature": "9f8c7f84eccb2b1737696a50538ffd10",
       "file": true,
       "replaced": "^2.0.3"
     },
     "mve-core": {
-      "signature": "e5a185794c76c2154a1876b5918438ec",
+      "signature": "51b4c36f2b8b64ef7aef2b7c3d27667e",
       "file": true
     }
   }
