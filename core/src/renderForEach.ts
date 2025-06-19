@@ -135,9 +135,10 @@ export function renderForEach<T, K = T, O = void>(
       return x.getOut
     })
     return newMap
-  }, newMap => {
-    memoKeep(afterWork)
-  })
+  }, afterWork)
+  //  newMap => {
+  //   memoKeep(afterWork)
+  // })
   function afterWork() {
     //清理、销毁事件
     oldMap.forEach(oldRemoveStateHolders)
