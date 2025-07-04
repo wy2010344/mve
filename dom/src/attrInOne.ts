@@ -1,7 +1,7 @@
 import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderMDomAttr, renderMSvgAttr, SvgElement, SvgElementType, svgTagNames, GDomAttribute, renderGDomAttr } from "wy-dom-helper";
 import { SetValue, createOrProxy } from "wy-helper";
 import { hookAddResult } from "mve-core";
-import { mergeValue } from "./renderNode";
+import { addPlugins, addWillRemove, mergeValue, Plugins, WillRemove } from "./renderNode";
 import { renderChildren } from "./hookChildren";
 
 
@@ -13,6 +13,9 @@ export type MDomAttributes<T extends DomElementType> = {
   attrs?: SetValue<FDomAttribute<T>>
 } & BDomEvent<T>
   & FGetChildAttr<DomElement<T>>
+
+  & Plugins<DomElement<T>>
+  & WillRemove<DomElement<T>>
 export function renderMDom<T extends DomElementType>(
   type: T,
   arg: MDomAttributes<T>
@@ -35,6 +38,8 @@ export function renderGDom<T extends DomElementType>(
   const node = document.createElement(type)
   renderGDomAttr(node, arg, mergeValue, renderChildren)
   hookAddResult(node)
+  addPlugins(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 
@@ -45,6 +50,8 @@ export type MSvgAttributes<T extends SvgElementType> = {
   attrs?: SetValue<FSvgAttribute<T>>
 } & BSvgEvent<T>
   & FGetChildAttr<SvgElement<T>>
+  & Plugins<SvgElement<T>>
+  & WillRemove<SvgElement<T>>
 export function renderMSvg<T extends SvgElementType>(
   type: T,
   arg: MSvgAttributes<T>
@@ -52,6 +59,8 @@ export function renderMSvg<T extends SvgElementType>(
   const node = document.createElementNS("http://www.w3.org/2000/svg", type)
   renderMSvgAttr(node, arg, mergeValue, renderChildren)
   hookAddResult(node)
+  addPlugins(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 

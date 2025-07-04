@@ -2,7 +2,7 @@ import { addEffect, EmptyFun, emptyObject, GetValue, SetValue } from "wy-helper"
 import { hookDestroy } from "mve-helper"
 import { createPop } from "mve-dom-helper"
 import { hookAddResult } from "mve-core"
-import { animate, AnimationOptions } from 'motion'
+import { animate, AnimationOptions, CSSStyleDeclarationWithTransform, DOMKeyframesDefinition, ValueKeyframe } from 'motion'
 import { fdom } from "mve-dom"
 import { Action } from "history"
 import { cns } from "wy-dom-helper"
@@ -37,7 +37,8 @@ export type PageDirection = 'toRight' | 'toLeft'
 
 export function hookTabPage(
   getDirection: GetValue<PageDirection | undefined>,
-  div: HTMLElement, {
+  div: HTMLElement,
+  {
     createPop: createPopI = createPop,
     animationConfig = {
       type: "tween",
@@ -59,14 +60,22 @@ export function hookTabPage(
         })
       }
     },
+    enter = (div, push) => {
+      animate(div, {
+        x: push ? ['100%', 0] : ['-100%', 0]
+      }, animationConfig)
+    },
+    exit = (div, push) => {
+      return animate(div, {
+        x: push ? [0, '-100%'] : [0, '100%']
+      }, animationConfig).finished
+    },
     cloneNode
   }: TabPageConfig = emptyObject) {
   addEffect(() => {
     const direction = getDirection()
     if (direction) {
-      animate(div, {
-        x: direction == 'toLeft' ? ['-100%', 0] : ['100%', 0]
-      }, animationConfig)
+      enter(div, direction == 'toRight')
     }
   })
   hookDestroy(() => {
@@ -77,9 +86,7 @@ export function hookTabPage(
         createPopI((close) => {
           const div2 = renderContainer()
           addEffect(() => {
-            animate(div2, {
-              x: direction == 'toLeft' ? [0, '100%'] : [0, '-100%']
-            }, animationConfig).then(close as EmptyFun)
+            exit(div2, direction == 'toRight').then(close)
           })
         })
       }
@@ -88,6 +95,8 @@ export function hookTabPage(
 }
 
 export interface TabPageConfig {
+  enter?(div: HTMLElement, push?: boolean): void
+  exit?(div: HTMLElement, push?: boolean): Promise<any>
   cloneNode?: boolean
   createPop?(callback: SetValue<EmptyFun>): void,
   animationConfig?: AnimationOptions,

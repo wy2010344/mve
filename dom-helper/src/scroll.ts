@@ -114,7 +114,11 @@ export class OnScroll {
   set(n: number) {
     return this.drag(n - this.get())
   }
-  animateTo(n: number) {
+  animateTo(n: number, config?: DeltaXSignalAnimationConfig) {
+    n = numberBetween(this.getMinScroll(), n, this.getMaxScroll())
+    return this.scroll.animateTo(this.toSnap(n), config)
+  }
+  scrollTo(n: number) {
     return this.destinationWithMargin(this.scrollFactory.getFromDistance(n - this.get()))
   }
   readonly getWheelDetail: (e: WheelEvent) => number
@@ -235,6 +239,13 @@ export class OnScroll {
         this.animateTo(destination)
       }
     }
+  }
+  private toSnap(n: number) {
+    const targetSnap = this.config.targetSnap
+    if (targetSnap) {
+      return targetSnap(n)
+    }
+    return n
   }
   private drag(delta: number) {
     const v = this.scroll.get()

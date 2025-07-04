@@ -26,7 +26,9 @@ export type Branch = BranchOrLeaf | {
   loader?: never
   query?: never
   next?: never
-  restNodes?: never
+  nodes?: string[]
+  index?: number
+  // restNodes?: never
 }
 type BrancToList = (beforeBranch: Branch, branch: Branch) => Branch[]
 const defaultBranchToList: BrancToList = function (beforeBranch, branch) {
@@ -109,7 +111,7 @@ export function createTreeRoute({
         } else if (branch.type == 'leaf') {
           value.value.default(() => getBranch().query)
         } else if (branch.type == 'notfound') {
-          value.value.default(() => getBranch().query, () => getBranch().restNodes!)
+          value.value.default(() => getBranch().query, () => getBranch().nodes)
         }
       } else if (value?.type == 'error') {
         renderError?.(value.value)

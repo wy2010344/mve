@@ -1,5 +1,5 @@
 import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderFDomAttr, renderFSvgAttr, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
-import { createOrProxy, emptyArray, emptyObject } from "wy-helper"
+import { createOrProxy, emptyArray, EmptyFun, emptyObject } from "wy-helper"
 import { hookAddResult, hookTrackAttr, OrFun, } from "mve-core"
 import { renderChildren } from "./hookChildren"
 
@@ -15,21 +15,28 @@ export function mergeValue(
     setValue(value, node, ext)
   }
 }
-type Plugins<T> = {
+export type Plugins<T> = {
   plugins?: ((div: T) => void)[]
 }
-
-function addPlugins<T>(node: T, plugins: Plugins<T>) {
+export type WillRemove<T> = {
+  willRemove?(node: T): any
+}
+export function addPlugins<T>(node: T, plugins: Plugins<T>) {
   if (plugins.plugins?.length) {
     plugins.plugins.forEach(plugin => plugin(node))
   }
 }
+export function addWillRemove<T>(node: T, willRemove: WillRemove<T>['willRemove']) {
+  (node as any)._willRemove_ = willRemove
+}
 const ignoreKeys = [
-  'plugins'
+  'plugins',
+  'willRemove'
 ]
 export type FPDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
   & BDomEvent<T>
   & Plugins<DomElement<T>>
+  & WillRemove<DomElement<T>>
 export type FDomAttributes<T extends DomElementType> = FPDomAttributes<T> & FGetChildAttr<DomElement<T>>
 export function renderFDom<T extends DomElementType>(
   type: T,
@@ -39,12 +46,14 @@ export function renderFDom<T extends DomElementType>(
   renderFDomAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
   addPlugins(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 
 export type FPSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
   & BSvgEvent<T>
   & Plugins<SvgElement<T>>
+  & WillRemove<SvgElement<T>>
 export type FSvgAttributes<T extends SvgElementType> = FPSvgAttributes<T>
   & FGetChildAttr<SvgElement<T>>
 export function renderFSvg<T extends SvgElementType>(type: T, arg: FSvgAttributes<T> = emptyObject as any
@@ -53,6 +62,7 @@ export function renderFSvg<T extends SvgElementType>(type: T, arg: FSvgAttribute
   renderFSvgAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
   addPlugins(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 
