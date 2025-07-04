@@ -1,11 +1,12 @@
-import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, EmptyFun, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memo, NoInsertArrayHelper, objectFreezeThrow, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { alawaysFalse, ArrayHelper, createSignal, defaultToGetTrue, emptyArray, EmptyFun, emptyObject, ExitAnimateMode, ExitAnimateWait, getOutResolvePromise, GetValue, memo, NoInsertArrayHelper, objectFreezeThrow, quote, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
-export function getExitAnimateArray<T>(
+export function getExitAnimateArray<T, K = T>(
   get: GetValue<T[]>,
   arg: {
+    getKey?: (v: T) => K,
     exitIgnore?: any | ((v: T) => any)
-    enterIgnore?: any | ((v: T) => any)
+    enterIgnore?: any | ((v: T, inited: boolean) => any)
     mode?: ValueOrGet<ExitAnimateMode | undefined>
     wait?: ValueOrGet<ExitAnimateWait | undefined>
 
@@ -14,6 +15,7 @@ export function getExitAnimateArray<T>(
     onAnimateComplete?(v?: any): void
   } = emptyObject
 ) {
+  const getKey = (arg.getKey || quote) as (v: T) => K
   const wait = valueOrGetToGet(arg.wait)
   const mode = valueOrGetToGet(arg.mode)
   const exitIgnore = defaultToGetTrue(arg.exitIgnore) || alawaysFalse
@@ -23,32 +25,32 @@ export function getExitAnimateArray<T>(
   function updateVersion() {
     version.set(version.get() + 1)
   }
-  let oldList: readonly ExitModelInner<T>[] = emptyArray as any[]
+  let oldList: readonly ExitModelInner<T, K>[] = emptyArray as any[]
 
-  const thisAddList: ExitModelInner<T>[] = []
-  const thisRemoveList: ExitModelInner<T>[] = []
-  function buildRemove(old: ExitModelInner<T>) {
+  const thisAddList: ExitModelInner<T, K>[] = []
+  const thisRemoveList: ExitModelInner<T, K>[] = []
+  function buildRemove(old: ExitModelInner<T, K>) {
     const [promise, resolve] = getOutResolvePromise()
     old.promise = promise
     old.resolve = resolve
     old.step = "exiting"
     promise.then(function () {
       const cacheList = new ArrayHelper(oldList)
-      cacheList.removeWhere(v => v == old)
+      cacheList.removeWhere(v => v.key == old.key)
       if (cacheList.isDirty()) {
         oldList = cacheList.get()
         updateVersion()
       }
     })
   }
-  const getList = memo<readonly ExitModel<T>[]>((lastReturn) => {
+  const getList = memo<readonly ExitModel<T, K>[]>((lastReturn, inited) => {
     version.get()
     const list = get()
     const newCacheList = new ArrayHelper(oldList)
     thisAddList.length = 0
     thisRemoveList.length = 0
     newCacheList.forEachRight(function (old, i) {
-      if (!isExitingItem(old) && !list.some(v => v == old.value)) {
+      if (!isExitingItem(old) && !list.some(v => getKey(v) == old.key)) {
         //old不是将删除元素,且新列表里已经找不到old
         if (exitIgnore(old.value)) {
           newCacheList.removeAt(i)
@@ -63,18 +65,25 @@ export function getExitAnimateArray<T>(
     let nextIndex = 0
     for (let i = 0, len = list.length; i < len; i++) {
       const v = list[i]
-      const oldIndex = newCacheList.get().findIndex(old => !isExitingItem(old) && old.value == v)
+      const key = getKey(v)
+      const oldIndex = newCacheList.get().findIndex(old => !isExitingItem(old) && old.key == key)
       if (oldIndex < 0) {
         if (mode() == 'shift') {
-          let item: ExitModelInner<T>
+          let item: ExitModelInner<T, K>
           while ((item = newCacheList.get()[nextIndex]) && isExitingItem(item)) {
             nextIndex++
           }
         }
-        const cache: ExitModelInner<T> = {
+        const ignore = enterIgnore(v, inited)
+        const cache: ExitModelInner<T, K> = {
           value: v,
+          key,
           target: {
-            value: v,
+            key,
+            value() {
+              getList()
+              return cache.value
+            },
             step() {
               //不像renderForEach在内部访问,所以没有循环访问
               getList()
@@ -85,9 +94,10 @@ export function getExitAnimateArray<T>(
             },
             promise() {
               return cache.promise
-            }
+            },
+            enterIgnore: ignore
           },
-          enterIgnore: enterIgnore(v),
+          enterIgnore: ignore,
           step: addStep
         }
         objectFreezeThrow(cache.target)
@@ -99,6 +109,7 @@ export function getExitAnimateArray<T>(
         }
         newCacheList.insert(nextIndex, cache)
       } else {
+        newCacheList.get()[i].value = v
         nextIndex = oldIndex + 1
       }
     }
@@ -120,7 +131,7 @@ export function getExitAnimateArray<T>(
           let i = 0
           cacheList.forEach(cache => {
             if (cache.step == 'will-enter') {
-              const row = thisAddList.find(v => v == cache)
+              const row = thisAddList.find(v => v.key == cache.key)
               if (row) {
                 i++
                 row.step = 'enter'
@@ -164,21 +175,29 @@ export function getExitAnimateArray<T>(
   return getList
 }
 
-export type ExitModel<V> = {
-  readonly value: V
+/**
+ * 它本身也可以作为新的key
+ * 即使用renderArray.
+ * 还有一种方法,就是buildUseExitAnimate的封装
+ */
+export type ExitModel<V, K = V> = {
+  readonly value: GetValue<V>
+  readonly key: K
   //因为will-exiting时原节点就删除了,需要在此时clone节点
   readonly step: GetValue<"exiting" | "will-exiting" | "enter">
   readonly resolve: EmptyFun
   readonly promise: GetValue<Promise<void> | undefined>
+  readonly enterIgnore?: boolean
 }
 
-function getExitModel<V>(v: ExitModelInner<V>) {
+function getExitModel<V, K>(v: ExitModelInner<V, K>) {
   return v.target
 }
 
-interface ExitModelInner<V> {
+interface ExitModelInner<V, K> {
   value: V
-  target: ExitModel<V>
+  key: K
+  target: ExitModel<V, K>
   readonly enterIgnore?: false
   /** */
   promise?: Promise<any>
@@ -186,11 +205,11 @@ interface ExitModelInner<V> {
   step: "exiting" | "will-exiting" | "will-enter" | "enter"
 }
 
-function isExitingItem(v: ExitModelInner<any>) {
+function isExitingItem(v: ExitModelInner<any, any>) {
   return v.step == 'exiting' || v.step == 'will-exiting'
 }
 
-function hideAsShowAndRemoteHide<T>(v: ExitModelInner<T>, i: number, array: ArrayHelper<ExitModelInner<T>>) {
+function hideAsShowAndRemoteHide<T, K>(v: ExitModelInner<T, K>, i: number, array: ArrayHelper<ExitModelInner<T, K>>) {
   if (v.step == 'will-enter') {
     array.removeAt(i)
   }

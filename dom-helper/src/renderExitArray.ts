@@ -9,9 +9,9 @@ export type ExitArrayCloneOutList = ExitArrayCloneOut<Node> | {
   call?(): void
   list: readonly ExitArrayCloneOut<Node>[]
 }
-export function renderExitArrayClone<T>(
-  get: GetValue<readonly ExitModel<T>[]>,
-  render: (row: ExitModel<T>, getIndex: GetValue<number>) => ExitArrayCloneOutList
+export function renderExitArrayClone<T, K = T>(
+  get: GetValue<readonly ExitModel<T, K>[]>,
+  render: (row: ExitModel<T, K>, getIndex: GetValue<number>) => ExitArrayCloneOutList
 ) {
   renderArray(get, (row, getIndex) => {
     let out!: ExitArrayCloneOutList

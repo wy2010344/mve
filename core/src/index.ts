@@ -1,4 +1,4 @@
-import { EmptyFun, GetValue } from 'wy-helper'
+import { batchSignalEnd, EmptyFun, GetValue } from 'wy-helper'
 import { hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from './cache'
 import { StateHolder } from './stateHolder'
 
@@ -16,6 +16,7 @@ export function render(create: EmptyFun) {
   hookAlterStateHolder(stateHolder)
   create()
   hookAlterStateHolder(undefined)
+  batchSignalEnd()
   return () => {
     stateHolder.destroy()
   }

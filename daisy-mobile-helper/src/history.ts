@@ -70,7 +70,7 @@ export function fLink(props: FDomAttributes<"a"> & {
   const { router } = routerConsume()
   const href = props.href
   if (href) {
-    fdom.a({
+    return fdom.a({
       ...props,
       href: 'javascript:void(0)',
       onClick() {
@@ -85,6 +85,6 @@ export function fLink(props: FDomAttributes<"a"> & {
       }
     })
   } else {
-    fdom.a(props)
+    return fdom.a(props)
   }
 }

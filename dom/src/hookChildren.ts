@@ -23,7 +23,19 @@ const a = createRenderChildren<Node>({
   moveBefore: 'moveBefore' in document.body ? moveBefore : insertBefore,
   removeChild(parent, child) {
     if (child.parentNode == parent) {
-      parent.removeChild(child)
+      const willRemove = (child as any)._willRemove_
+      if (willRemove) {
+        const p = willRemove(child)
+        if (p && p instanceof Promise) {
+          p.finally(() => {
+            parent.removeChild(child)
+          })
+        } else {
+          parent.removeChild(child)
+        }
+      } else {
+        parent.removeChild(child)
+      }
     }
   },
   nextSibling(child) {
