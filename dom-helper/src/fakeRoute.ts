@@ -16,7 +16,8 @@ export function fakeRoute(callback: EmptyFun) {
   function closeIt() {
     if (isOpen) {
       isOpen = false
-      removeEqual(closeList, closeIt)
+      //这个不需要,如何仍然存在,则在popstate里移除时调用,如果不存在,则不需要调用
+      //removeEqual(closeList, closeIt)
       callback()
       return true
     }

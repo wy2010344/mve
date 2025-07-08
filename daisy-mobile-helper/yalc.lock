@@ -2,17 +2,26 @@
   "version": "v1",
   "packages": {
     "mve-dom": {
-      "signature": "4b33710ba05b92bc6b57ad3293080d2b",
+      "signature": "4da4fa36734a861448eb112da7bfa726",
       "file": true,
       "replaced": "^2.0.2"
     },
     "mve-dom-helper": {
-      "signature": "9f8c7f84eccb2b1737696a50538ffd10",
+      "signature": "c1ae1f8288d4add40acee6fbcf53751d",
       "file": true,
       "replaced": "^2.0.3"
     },
     "mve-core": {
-      "signature": "51b4c36f2b8b64ef7aef2b7c3d27667e",
+      "signature": "2a9c482e74afec072c1e16848138bd31",
+      "file": true
+    },
+    "mve-helper": {
+      "signature": "a914e9dd67be3759370628e3e607248f",
+      "file": true,
+      "replaced": "^2.0.2"
+    },
+    "mve-icons": {
+      "signature": "818181d6cd073f9873674de9ef3f8539",
       "file": true
     }
   }
