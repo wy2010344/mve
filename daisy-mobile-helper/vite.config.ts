@@ -21,7 +21,9 @@ export default defineConfig({
         "mve-dom",
         "mve-dom-helper",
         'history',
-        'motion'
+        'motion',
+        /^mve-icons(\/)?/,
+        'tyme4ts'
       ]
     }
   },

@@ -10,6 +10,10 @@ function insertBefore(parent: Node, newChild: Node, beforeNode: Node | null) {
   parent.insertBefore(newChild, beforeNode)
 }
 function moveBefore(parent: any, newChild: Node, beforeNode: Node | null) {
+  if (!newChild.parentNode) {
+    //强制重绘.没有用...
+    (newChild as any).scrollTop
+  }
   if (newChild.parentNode != parent) {
     return insertBefore(parent, newChild, beforeNode)
   }
@@ -20,7 +24,7 @@ function moveBefore(parent: any, newChild: Node, beforeNode: Node | null) {
 }
 
 const a = createRenderChildren<Node>({
-  moveBefore: 'moveBefore' in document.body ? moveBefore : insertBefore,
+  moveBefore: insertBefore,//'moveBefore' in document.body ? moveBefore :
   removeChild(parent, child) {
     if (child.parentNode == parent) {
       const willRemove = (child as any)._willRemove_
