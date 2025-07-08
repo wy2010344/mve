@@ -90,6 +90,7 @@ export namespace mve {
         const { type, props, children } = child as any
         if (typeof type == 'string') {
           let node: any
+          delete props.children
           if (isSVG(type)) {
             node = fsvg[type as 'svg'](props)
           } else {

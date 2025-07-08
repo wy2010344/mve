@@ -2,3 +2,69 @@
 @plugin "daisyui" {
   prefix: "daisy-";
 }
+@theme {
+  /* 📌 Display (展示) */
+  --text-display-large: 57px;
+  --text-display-large--line-height: 64px;
+  --text-display-large--font-weight: 400;
+
+  --text-display-medium: 45px;
+  --text-display-medium--line-height: 52px;
+  --text-display-medium--font-weight: 400;
+
+  --text-display-small: 36px;
+  --text-display-small--line-height: 44px;
+  --text-display-small--font-weight: 400;
+
+  /* 📌 Headline (标题) */
+  --text-headline-large: 32px;
+  --text-headline-large--line-height: 40px;
+  --text-headline-large--font-weight: 400;
+
+  --text-headline-medium: 28px;
+  --text-headline-medium--line-height: 36px;
+  --text-headline-medium--font-weight: 400;
+
+  --text-headline-small: 24px;
+  --text-headline-small--line-height: 32px;
+  --text-headline-small--font-weight: 400;
+
+  /* 📌 Title (小标题) */
+  --text-title-large: 22px;
+  --text-title-large--line-height: 28px;
+  --text-title-large--font-weight: 400;
+
+  --text-title-medium: 16px;
+  --text-title-medium--line-height: 24px;
+  --text-title-medium--font-weight: 500;
+
+  --text-title-small: 14px;
+  --text-title-small--line-height: 20px;
+  --text-title-small--font-weight: 500;
+
+  /* 📌 Body (正文) */
+  --text-body-large: 16px;
+  --text-body-large--line-height: 24px;
+  --text-body-large--font-weight: 400;
+
+  --text-body-medium: 14px;
+  --text-body-medium--line-height: 20px;
+  --text-body-medium--font-weight: 400;
+
+  --text-body-small: 12px;
+  --text-body-small--line-height: 16px;
+  --text-body-small--font-weight: 400;
+
+  /* 📌 Label (标签) */
+  --text-label-large: 14px;
+  --text-label-large--line-height: 20px;
+  --text-label-large--font-weight: 500;
+
+  --text-label-medium: 12px;
+  --text-label-medium--line-height: 16px;
+  --text-label-medium--font-weight: 500;
+
+  --text-label-small: 11px;
+  --text-label-small--line-height: 16px;
+  --text-label-small--font-weight: 500;
+}
