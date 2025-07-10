@@ -15,6 +15,7 @@ export * from './three'
 export * from './cns'
 export * from './fakeRoute'
 export * from './tsxSupport'
+export * from './moveEdgeScroll'
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig
