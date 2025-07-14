@@ -1,9 +1,9 @@
 import { fdom } from "mve-dom";
-import { memo, numberIntFillWithN0, simpleEqualsEqual, tw, YearMonthDayVirtualView, YearMonthVirtualView, WeekVirtualView, StoreRef, GetValue, dateFromYearMonthDay, emptyArray, emptyObject, Compare } from "wy-helper";
+import { memo, numberIntFillWithN0, simpleEqualsEqual, tw, YearMonthDayVirtualView, YearMonthVirtualView, WeekVirtualView, StoreRef, GetValue, dateFromYearMonthDay, emptyArray, emptyObject, Compare, memoFun, getInterpolate, extrapolationClamp } from "wy-helper";
 import { getExitAnimateArray, hookTrackSignal, memoArray, renderArray, renderIf } from "mve-helper";
 import { animateSignal, cns } from "wy-dom-helper";
-import { hookTrackLayout } from "../hookTrackLayout";
-import { firstDayOfWeekIndex, WEEKTIMES } from "../firstDayOfWeek";
+import { hookTrackLayout } from "../p";
+import { firstDayOfWeekIndex, WEEKTIMES } from "../p";
 import renderCalendar from "./renderCalendar";
 import { topContext } from "./context";
 import { IoReturnUpBackOutline } from "mve-icons/io5";
@@ -13,10 +13,11 @@ import renderWeekday from "./renderWeekday";
 import { selectShadowCell } from "./renderCell";
 
 export default function (
-  date: StoreRef<YearMonthDayVirtualView>,
-  getFullWidth: GetValue<number>
+  date: StoreRef<YearMonthDayVirtualView>
 ) {
-  const { showYearMonth, yearMonthScrollY, calendarScrollY, calendarClose, showCalendar, today, renderHeaderRight } = topContext.consume()
+  const {
+    topScrollY,
+    showCalendar, today, renderHeaderRight, calendarOpenHeight } = topContext.consume()
   hookTrackLayout(date.get, selectShadowCell)
   const yearMonth = memo<YearMonthVirtualView>((m) => {
     const d = date.get()
@@ -30,14 +31,10 @@ export default function (
   fdom.div({
     className: "relative",
     onPointerDown(e) {
-      if (calendarScrollY.onAnimation()) {
+      if (topScrollY.onAnimation()) {
         return
       }
-      if (showYearMonth()) {
-        yearMonthScrollY.pointerEventListner(e)
-      } else {
-        calendarScrollY.pointerEventListner(e)
-      }
+      topScrollY.pointerEventListner(e)
     },
     children() {
       //星期与天都需要滚动
@@ -91,6 +88,14 @@ export default function (
             children() {
               renderIf(showCalendar, function () {
 
+                const calendarScrollY = memoFun(() => {
+                  const moveHeight = calendarOpenHeight()
+                  return getInterpolate({
+                    0: 0,
+                    [moveHeight]: moveHeight
+                  }, extrapolationClamp)
+                })
+
                 renderArray(memoArray(() => {
                   const ym = yearMonth()
                   return [ym.lastMonth(), ym, ym.nextMonth()]
@@ -98,9 +103,11 @@ export default function (
                   renderCalendar(
                     yearMonth,
                     getIndex,
-                    calendarScrollY,
-                    date,
-                    getFullWidth)
+                    memo(() => {
+                      const y = calendarScrollY(topScrollY.get())
+                      return y
+                    }),
+                    date)
                 })
               }, function () {
                 renderArray(memoArray(() => {
@@ -180,7 +187,7 @@ export default function (
                     'text-2xl text-base-content font-bold',
                     tn.equals(dn) ? 'text-2xl' : tn.year == dn.year ? 'text-xl' : 'text-lg',
 
-                    calendarScrollY.onAnimation() ? tw`cursor-not-allowed` : tw`cursor-pointer`
+                    topScrollY.onAnimation() ? tw`cursor-not-allowed` : tw`cursor-pointer`
                   )
                 },
                 childrenType: 'text',
@@ -192,14 +199,14 @@ export default function (
                   return `${numberIntFillWithN0(d.month, 2)}-${numberIntFillWithN0(d.day, 2)}`
                 },
                 onClick() {
-                  if (calendarScrollY.onAnimation()) {
+                  if (topScrollY.onAnimation()) {
                     return
                   }
                   if (showCalendar()) {
                     //为了使越界触发
-                    calendarClose()
+                    topScrollY.animateTo(0)
                   } else {
-                    calendarScrollY.animateTo(0)
+                    topScrollY.animateTo(calendarOpenHeight())
                   }
                 }
               })
@@ -207,26 +214,6 @@ export default function (
           })
 
           renderHeaderRight()
-          // fdom.div({
-          //   className: 'text-base-content',
-          //   children() {
-          //     fdom.span({
-          //       className: 'mr-[0.125em] text-2xl',
-          //       childrenType: 'text',
-          //       children: '¥'
-          //     })
-          //     fdom.span({
-          //       className: 'text-2xl',
-          //       childrenType: 'text',
-          //       children: '23'
-          //     })
-          //     fdom.sup({
-          //       className: 'opacity-50 text-[0.75em] -top-[0.75em]',
-          //       childrenType: 'text',
-          //       children: '.00'
-          //     })
-          //   }
-          // })
         }
       })
     }

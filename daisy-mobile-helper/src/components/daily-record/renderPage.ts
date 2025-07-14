@@ -13,7 +13,9 @@ export default function (
   getIndex: GetValue<number>,
   onScrollX: GetValue<any>
 ) {
-  const { showCalendar, showYearMonth, yearMonthScrollY, calendarScrollY, renderContent } = topContext.consume()
+  const { showCalendar, topScrollY,
+    didCreate,
+    renderContent } = topContext.consume()
   const scrollY: OnScroll = new OnScroll('y', {
     edgeSlow: 2,
     maxScroll() {
@@ -22,6 +24,11 @@ export default function (
   })
   const maxScroll = scrollY.measureMaxScroll()
 
+  hookTrackSignal(scrollY.get, function (e) {
+    if (e < CREATE_SCROLLY) {
+      didCreate(w)
+    }
+  })
 
   hookTrackSignal(onScrollX, function (v) {
     if (!v && getIndex() != 1) {
@@ -45,17 +52,8 @@ export default function (
       e.preventDefault()
     },
     onPointerDown(e) {
-      if (yearMonthScrollY.onAnimation()) {
-        return
-      }
-      if (calendarScrollY.onAnimation()) {
-        return
-      }
-      if (showYearMonth()) {
-        return yearMonthScrollY.pointerEventListner(e)
-      }
       if (showCalendar()) {
-        return calendarScrollY.pointerEventListner(e)
+        return topScrollY.pointerEventListner(e)
       }
       scrollY.pointerEventListner(e)
     },

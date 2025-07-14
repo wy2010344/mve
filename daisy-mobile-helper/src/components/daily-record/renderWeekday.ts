@@ -1,6 +1,6 @@
 import { fdom, mdom } from "mve-dom"
 import { dateFromYearMonthDay, GetValue, getWeekOfYear, StoreRef, WeekVirtualView, YearMonthDay, yearMonthDayEqual, YearMonthDayVirtualView } from "wy-helper"
-import { firstDayOfWeekIndex, WEEKS } from "../firstDayOfWeek"
+import { firstDayOfWeekIndex, WEEKS } from "../p"
 import { SolarDay } from "tyme4ts"
 import renderCell from "./renderCell"
 

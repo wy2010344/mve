@@ -32,6 +32,7 @@ export function renderCodeChange(
       model.set(v)
       const c = getCurrentEditRecord(v)
       onChange(c.value, c.range)
+      return v
     }
   }
 }
