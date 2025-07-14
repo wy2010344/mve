@@ -2,23 +2,17 @@ import { renderIf } from "mve-helper";
 import { fdom, mdom } from "mve-dom";
 import { dateFromYearMonthDay, extrapolationClamp, getInterpolate, GetValue, getWeekOfMonth, memo, memoFun, StoreRef, YearMonthDayVirtualView, YearMonthVirtualView } from "wy-helper";
 import { SolarDay } from "tyme4ts";
-import { firstDayOfWeekIndex, WEEKS } from "../firstDayOfWeek";
+import { firstDayOfWeekIndex, WEEKS } from "../p";
 import { topContext } from "./context";
 import { renderFirstDayWeek, renderWeekHeader } from "./renderWeekday";
 import renderCell from "./renderCell";
-import { OnScroll } from "mve-dom-helper";
 export default function (
   yearMonth: YearMonthVirtualView,
   getIndex: GetValue<number>,
-  calendarScrollY: OnScroll,
-  date: StoreRef<YearMonthDayVirtualView>,
-  fullWidth: GetValue<number>
+  calendarScrollY: GetValue<number>,
+  date: StoreRef<YearMonthDayVirtualView>
 ) {
-
-  function perSize() {
-    return fullWidth() / 7
-  }
-  const { showCalendar } = topContext.consume()
+  const { showCalendar, calendarOpenHeight, perSize } = topContext.consume()
 
   function selectCurrent() {
     const d = date.get()
@@ -43,25 +37,27 @@ export default function (
       //周这个需要snap
       const interpolateY = memoFun(() => {
         const perHeight = perSize()
-        const moveHeight = perHeight * 5
+        const moveHeight = calendarOpenHeight()
         const weekOfMonth = getWeekOfMonth(dateFromYearMonthDay(date.get()), firstDayOfWeekIndex.get()) - 1
+        // console.log("wwww", weekOfMonth)
         return getInterpolate({
-          0: 0,
-          [moveHeight]: perHeight * weekOfMonth
+          0: -perHeight * weekOfMonth,
+          [moveHeight]: 0
         }, extrapolationClamp)
       })
       const interpolateH = memoFun(() => {
+        const perHeight = perSize()
         //展示月份
-        const moveHeight = perSize() * 5
+        const moveHeight = calendarOpenHeight()
         return getInterpolate({
-          0: perSize() * 6,
-          [moveHeight]: perSize()
+          0: perHeight,
+          [moveHeight]: perHeight * 6
         }, extrapolationClamp)
       })
       fdom.div({
         className: 'overflow-hidden bg-base-200 relative',
         s_height() {
-          const y = calendarScrollY.get()
+          const y = calendarScrollY()
           return interpolateH(y) + 'px'
         },
         children() {
@@ -72,8 +68,8 @@ export default function (
                 return perSize() * 7 + 'px'
               },
               s_transform() {
-                const ty = Math.max(calendarScrollY.get(), 0)
-                return `translateY(${-interpolateY(ty)}px)`
+                const ty = Math.max(calendarScrollY(), 0)
+                return `translateY(${interpolateY(ty)}px)`
               },
               children() {
                 for (let y = 0; y < 6; y++) {

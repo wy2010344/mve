@@ -23,6 +23,11 @@
     "mve-icons": {
       "signature": "818181d6cd073f9873674de9ef3f8539",
       "file": true
+    },
+    "wy-helper": {
+      "signature": "9a0ff23c7a9f54afde1502e3e512cbda",
+      "file": true,
+      "replaced": "^0.1.16"
     }
   }
 }

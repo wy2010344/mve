@@ -38,6 +38,6 @@
     "tailwindcss": "^4.1.7",
     "tyme4ts": "^1.3.4",
     "wy-dom-helper": "^0.1.14",
-    "wy-helper": "^0.1.16"
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }
