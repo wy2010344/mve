@@ -1,28 +1,22 @@
 import { fdom } from "mve-dom";
 import { topContext } from "./context";
-import { getInterpolate, getYearMonthDays, mapInterpolateRange, memoFun, mixNumber, numberIntFillWithN0, StoreRef, YearMonthDayVirtualView } from "wy-helper";
+import { extrapolationExtend, getInterpolate, GetValue, getYearMonthDays, memoFun, mixNumber, numberIntFillWithN0, StoreRef, YearMonthDayVirtualView } from "wy-helper";
 import { centerPicker } from "mve-dom-helper";
 
 
-export default function (date: StoreRef<YearMonthDayVirtualView>) {
-  const { yearMonthScrollY, scrollYearMonthOpenHeight } = topContext.consume()
+export default function (date: StoreRef<YearMonthDayVirtualView>, yearMonthScrollY: GetValue<number>) {
+  const { scrollYearMonthOpenHeight } = topContext.consume()
 
-  const interpolateH = memoFun(() => {
+  const interpolateY = memoFun(() => {
     return getInterpolate({
-      0: scrollYearMonthOpenHeight(),
+      0: -scrollYearMonthOpenHeight(),
       [scrollYearMonthOpenHeight()]: 0
-    }, function (x, low, last, row) {
-      if (low) {
-        //拖过界时,继续
-        return mapInterpolateRange(x, last, row, mixNumber)
-      }
-      //使用clip
-      return row[1]
-    })
+    }, extrapolationExtend)
+
   })
   fdom.div({
     s_height() {
-      return interpolateH(yearMonthScrollY.get()) + 'px'
+      return (yearMonthScrollY()) + 'px'
     },
     children() {
       fdom.div({
@@ -30,7 +24,7 @@ export default function (date: StoreRef<YearMonthDayVirtualView>) {
           return scrollYearMonthOpenHeight() + 'px'
         },
         s_transform() {
-          return `translateY(${-yearMonthScrollY.get()}px)`
+          return `translateY(${interpolateY(yearMonthScrollY())}px)`
         },
         className: 'relative w-full',
         children() {
@@ -52,6 +46,7 @@ export default function (date: StoreRef<YearMonthDayVirtualView>) {
                         const days = Math.min(getYearMonthDays(v, d.month), d.day)
                         date.set(YearMonthDayVirtualView.from(v, d.month, days))
                       }
+                      return v
                     },
                   },
 
@@ -79,6 +74,7 @@ export default function (date: StoreRef<YearMonthDayVirtualView>) {
                         const days = Math.min(getYearMonthDays(d.year, v), d.day)
                         date.set(YearMonthDayVirtualView.from(d.year, v, days))
                       }
+                      return v
                     },
                   },
                   circle: {

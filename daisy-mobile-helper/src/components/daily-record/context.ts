@@ -1,16 +1,15 @@
 import { createContext } from "mve-core";
 import { OnScroll } from "mve-dom-helper";
-import { AnimateSignal, YearMonthDayVirtualView } from "wy-helper";
+import { YearMonthDayVirtualView } from "wy-helper";
 
 export const topContext = createContext<{
+  perSize(): number
   today(): YearMonthDayVirtualView
-  yearMonthScrollY: OnScroll,
+  topScrollY: OnScroll
   scrollYearMonthOpenHeight(): number
-  calendarScrollY: OnScroll
-  showYearMonth(): boolean
   showCalendar(): boolean
   calendarOpenHeight(): number
-  calendarClose(): void
   renderHeaderRight(): void
+  didCreate(w: YearMonthDayVirtualView): void
   renderContent(w: YearMonthDayVirtualView): void
 }>(undefined as any)

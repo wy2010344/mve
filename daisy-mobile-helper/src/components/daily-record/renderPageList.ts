@@ -1,13 +1,12 @@
 import { fdom } from "mve-dom";
-import { dateFromYearMonthDay, DAYMILLSECONDS, memo, simpleEqualsEqual, YearMonthDayVirtualView, StoreRef, FrictionalFactory, eventGetPageX, ClampingScrollFactory, Compare } from "wy-helper";
-import { hookTrackSignal, memoArray, renderArray } from "mve-helper";
-import { animateSignal, pointerMoveDir, } from "wy-dom-helper";
+import { dateFromYearMonthDay, DAYMILLSECONDS, simpleEqualsEqual, YearMonthDayVirtualView, StoreRef, Compare } from "wy-helper";
+import { memoArray, renderArray } from "mve-helper";
+import { animateSignal, } from "wy-dom-helper";
 import renderPage from "./renderPage";
-import { movePage, pluginSimpleMovePage } from "mve-dom-helper";
+import { pluginSimpleMovePage } from "mve-dom-helper";
 
 export default function (
-  date: StoreRef<YearMonthDayVirtualView>,
-  // getFullWidth: GetValue<number>
+  date: StoreRef<YearMonthDayVirtualView>
 ) {
   const bodyScrollX = animateSignal(0)
   fdom.div({
