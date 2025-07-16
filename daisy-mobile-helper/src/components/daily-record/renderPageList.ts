@@ -3,17 +3,16 @@ import { dateFromYearMonthDay, DAYMILLSECONDS, simpleEqualsEqual, YearMonthDayVi
 import { memoArray, renderArray } from "mve-helper";
 import { animateSignal, } from "wy-dom-helper";
 import renderPage from "./renderPage";
-import { pluginSimpleMovePage } from "mve-dom-helper";
+import { movePage, pluginSimpleMovePage } from "mve-dom-helper";
 
 export default function (
   date: StoreRef<YearMonthDayVirtualView>
 ) {
-  const bodyScrollX = animateSignal(0)
+  const mp = movePage()
   fdom.div({
     className: 'flex-1 overflow-hidden',
     plugins: [
-      pluginSimpleMovePage({
-        scroll: bodyScrollX,
+      pluginSimpleMovePage(mp.init, {
         direction: 'x',
         getValue: date.get,
         compare(d, lastDate) {
@@ -42,7 +41,7 @@ export default function (
       fdom.div({
         className: 'h-full',
         s_transform() {
-          return `translateX(${-bodyScrollX.get()}px)`
+          return `translateX(${-mp.get()}px)`
         },
         children() {
           renderArray(memoArray(() => {
@@ -54,7 +53,7 @@ export default function (
             ]
           }, simpleEqualsEqual as Compare<YearMonthDayVirtualView>), function (w, getIndex) {
             renderPage(w, getIndex, () => {
-              return bodyScrollX.onAnimation()
+              return mp.onAnimation()
             })
           })
         }

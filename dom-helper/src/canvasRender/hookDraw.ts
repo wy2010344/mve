@@ -1,9 +1,8 @@
-import { getRenderChildren, hookAddDestroy, hookAddResult } from "mve-core"
+import { AppendList, hookAddDestroy, hookAddResult, HookChild } from "mve-core"
 import { fdom, FDomAttributes } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
 import { path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
-import { asLazy, batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, PointKey, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { LayoutNode } from "wy-helper"
+import { batchSignalEnd, createSignal, emptyArray, emptyObject, GetValue, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -38,28 +37,29 @@ export type CMNode = NodeParent & {
 
 class CNode implements CMNode {
   readonly ext: Record<string, any>
+  private list: HookChild<CNode>[] = []
+  private appendList = new AppendList(this, this.list, list => {
+    list.forEach((row, index) => {
+      row.setParent(this, index)
+    })
+  })
+  children = this.appendList.target
+  collect(fun: SetValue<NodeParent>) {
+    this.appendList.collect(fun)
+  }
   constructor(
     public readonly configure: CNodeConfigure
   ) {
     this.ext = configure.ext || emptyObject
     this.x = valueOrGetToGet(configure.x)
     this.y = valueOrGetToGet(configure.y)
-    // if (configure.beforeChildren) {
-    //   this.beforeChildren = makeParentAndIndex(configure.beforeChildren, this, true)
-    // } else {
-    //   this.beforeChildren = asLazy(emptyArray as any[])
-    // }
     if (configure.children) {
-      this.children = makeParentAndIndex(configure.children, this)
-    } else {
-      this.children = asLazy(emptyArray as any[])
+      this.appendList.collect(configure.children)
     }
   }
 
   public hasClip = false
-  parent!: NodeParent// = hookCurrentParent() as NodeParent
-  // ctx!: CanvaRenderCtx
-  // public isBefore: boolean | undefined
+  parent!: NodeParent
   setParent(
     parent: NodeParent,
     index: number,
@@ -97,9 +97,6 @@ class CNode implements CMNode {
 
   x: GetValue<number>
   y: GetValue<number>
-  // beforeChildren: GetValue<CNode[]>
-  children: GetValue<CNode[]>
-
   path?: Path2D
 }
 
@@ -278,7 +275,13 @@ export function renderCanvas(
     ext: ext,
     children: undefined as any
   }
-  const getChildren = makeParentAndIndex(children, rootParent)
+  const appendList = new AppendList<CNode, NodeParent>(rootParent, [], list => {
+    list.forEach((row, index) => {
+      row.setParent(rootParent, index)
+    })
+  })
+  appendList.collect(children as any)
+  const getChildren = appendList.target
   rootParent.children = getChildren
   let _ctx: CanvasRenderingContext2D
   let _children: CNode[]
@@ -370,7 +373,7 @@ export function renderCanvas(
     _ctx = ctx
     m._mve_canvas_render_ctx = beforeCtx
   })
-  return canvas
+  return appendList
 }
 
 
@@ -380,17 +383,4 @@ const m = globalThis as {
 
 export function hookCurrentCtx() {
   return m._mve_canvas_render_ctx!
-}
-
-
-function makeParentAndIndex(
-  children: EmptyFun,
-  parent: NodeParent,
-  // before = false
-) {
-  return getRenderChildren<CNode, NodeParent>(children, parent, list => {
-    list.forEach((row, index) => {
-      row.setParent(parent, index)
-    })
-  })
 }
