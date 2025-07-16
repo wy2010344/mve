@@ -1,6 +1,6 @@
 
-import { MoveEnd, pointerMoveDir } from "wy-dom-helper"
-import { addEffect, AnimateSignal, batchSignalEnd, Compare, DeltaXSignalAnimationConfig, eventGetPageX, eventGetPageY, FrictionalFactory, GetValue, memo, PointKey, ScrollFromPage, spring, WeightMeasure } from "wy-helper"
+import { animateSignal, pointerMoveDir } from "wy-dom-helper"
+import { addEffect, batchSignalEnd, DeltaXSignalAnimationConfig, emptyObject, eventGetPageX, eventGetPageY, GetValue, memo, PointKey, ScrollFromPage, spring } from "wy-helper"
 import { defaultGetDistanceFromVelocity } from "./centerPicker"
 
 export function defaultGetPageSnap(velocity: number) {
@@ -17,22 +17,37 @@ export type MovePageProps = {
   direction: PointKey
   onMoveBegin?(): void
   getDistanceFromVelocity?(velocity: number): number
+  disableLeft?(): boolean
+  disableRight?(): void
   callback: (direction: 1 | -1, velocity: number) => void
 }
 export function movePage(
-  scroll: AnimateSignal,
-  getSize: GetValue<number>,
-  getPageSnap: (velocity: number) => DeltaXSignalAnimationConfig = defaultGetPageSnap
+  {
+    getPageSnap = defaultGetPageSnap
+  }: {
+    getPageSnap?(velocity: number): DeltaXSignalAnimationConfig
+  } = emptyObject
 ) {
+  const scroll = animateSignal(0)
   //翻页时的全局速度
   let globalDirectionVelocity = 0
-  return {
-    getOnPointerDown(
+
+  let inited = false
+  function init(
+    getSize: GetValue<number>
+  ) {
+    if (inited) {
+      throw 'only allow init once'
+    }
+    inited = true
+    function getOnPointerDown(
       {
         direction,
         onMoveBegin,
         callback,
-        getDistanceFromVelocity = defaultGetDistanceFromVelocity
+        getDistanceFromVelocity = defaultGetDistanceFromVelocity,
+        disableLeft,
+        disableRight
       }: MovePageProps
     ) {
       return pointerMoveDir(function () {
@@ -43,9 +58,22 @@ export function movePage(
               return ScrollFromPage.from(e, {
                 getPage: direction == 'x' ? eventGetPageX : eventGetPageY,
                 scrollDelta(delta) {
-                  scroll.changeDiff(delta)
+                  const v = scroll.get() + delta
+                  if (disableLeft?.() && v > 0) {
+                    return
+                  }
+                  if (disableRight?.() && v < 0) {
+                    return
+                  }
+                  scroll.changeTo(v)
                 },
                 onFinish(velocity) {
+                  if (disableLeft?.() && velocity > 0) {
+                    return
+                  }
+                  if (disableRight?.() && velocity < 0) {
+                    return
+                  }
                   const distance = getDistanceFromVelocity(velocity)
                   const targetDis = distance + scroll.get()
                   const absTargetDis = Math.abs(targetDis)
@@ -68,8 +96,9 @@ export function movePage(
           }
         }
       })
-    },
-    hookCompare<T>(getValue: GetValue<T>, compare: SortFun<T>) {
+    }
+
+    function hookCompare<T>(getValue: GetValue<T>, compare: SortFun<T>) {
       hookTrackSignal(memo<T>((lastValue, init) => {
         const d = getValue()
         if (init) {
@@ -89,14 +118,25 @@ export function movePage(
         return d
       }))
     }
+    return {
+      getOnPointerDown,
+      hookCompare
+    }
+  }
+  return {
+    onAnimation: scroll.onAnimation,
+    get: scroll.get,
+    init
   }
 }
+
+export type MovePageInit = ReturnType<(typeof movePage)>['init']
+
 export type SortFun<T> = (a: T, b: T) => number
 import { hookTrackSignal } from "mve-helper"
 
 
 export type MovePageConfig<T> = {
-  scroll: AnimateSignal
   getSize?(): number,
   getValue(): T,
   /**
@@ -107,22 +147,24 @@ export type MovePageConfig<T> = {
    */
   compare: SortFun<T>
 } & MovePageProps
-export function hookSimpleMovePage<T>(container: HTMLElement, {
-  scroll,
-  getSize,
-  getValue,
-  compare,
-  ...args
-}: MovePageConfig<T>) {
-  const mp = movePage(scroll, getSize
+export function hookSimpleMovePage<T>(
+  container: HTMLElement,
+  init: MovePageInit,
+  {
+    getSize,
+    getValue,
+    compare,
+    ...args
+  }: MovePageConfig<T>) {
+  const out = init(getSize
     || (args.direction == 'x'
       ? (() => container.clientWidth)
       : (() => container.clientHeight)))
-  container.addEventListener('pointerdown', mp.getOnPointerDown(args))
-  mp.hookCompare(getValue, compare)
+  container.addEventListener('pointerdown', out.getOnPointerDown(args))
+  out.hookCompare(getValue, compare)
 }
-export function pluginSimpleMovePage<T>(config: MovePageConfig<T>) {
+export function pluginSimpleMovePage<T>(init: MovePageInit, config: MovePageConfig<T>) {
   return function (container: HTMLElement) {
-    return hookSimpleMovePage(container, config)
+    return hookSimpleMovePage(container, init, config)
   }
 }

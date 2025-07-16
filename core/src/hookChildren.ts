@@ -1,4 +1,4 @@
-import { addEffect, emptyArray, EmptyFun, emptyFun, GetValue, memo, quote, SetValue, storeRef, trackSignal } from "wy-helper"
+import { addEffect, emptyArray, EmptyFun, emptyFun, GetValue, memo, MemoFun, objectFreeze, quote, SetValue, storeRef, trackSignal } from "wy-helper"
 import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from "."
 
 
@@ -57,17 +57,48 @@ function purifyList<T>(children: HookChild<T>[], list: T[]) {
   }
 }
 
-export function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<T[]> = emptyFun) {
-  const list: HookChild<T>[] = []
-  const beforeList = hookAlterChildren(list)
-  fun(n)
-  hookAlterChildren(beforeList)
+
+function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
   const get = memo(function () {
+    objectFreeze(list)
     const newList: T[] = []
     purifyList(list, newList)
     return newList
   }, after)
   return get
+}
+
+
+/**
+ * 这个可以在canvas中实践
+ */
+export class AppendList<T, N> {
+
+  constructor(
+    public readonly node: N,
+    private list: HookChild<T>[],
+    private readonly after: SetValue<T[]>
+  ) {
+    this.target = getRenderChildrenList(this.list, this.after)
+  }
+
+  readonly target: MemoFun<T[]>
+
+  collect(fun: SetValue<N>) {
+    const beforeList = hookAlterChildren(this.list)
+    fun(this.node)
+    hookAlterChildren(beforeList)
+  }
+
+}
+
+
+function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<T[]> = emptyFun) {
+  const list: HookChild<T>[] = []
+  const beforeList = hookAlterChildren(list)
+  fun(n)
+  hookAlterChildren(beforeList)
+  return getRenderChildrenList(list, after)
 }
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void

@@ -38,52 +38,50 @@ export default function (
     },
     children() {
       //星期与天都需要滚动
-      const scrollX = animateSignal(0)
-      const mp = movePage(scrollX, getContainerWidth)
-      mp.hookCompare(week, function (a, b) {
-        if (showCalendar()) {
-          return 0
-        }
-        return a.cells[0].toNumber() - b.cells[0].toNumber()
-      })
-      mp.hookCompare(yearMonth, function (ym, oldMonth) {
-        if (!showCalendar()) {
-          return 0
-        }
-        return ym.toNumber() - oldMonth.toNumber()
-      })
-      function getContainerWidth() {
-        return container.clientWidth
-      }
-      const container = fdom.div({
+      const mp = movePage()
+      fdom.div({
         className: 'overflow-hidden  bg-base-300 touch-none',
-        onPointerDown: mp.getOnPointerDown({
-          direction: "x",
-          callback(direction, velocity) {
+        children(container: HTMLElement) {
+          const out = mp.init(() => container.clientWidth)
+          out.hookCompare(week, function (a, b) {
             if (showCalendar()) {
-              //切换月份
-              const c = direction < 0 ? yearMonth().lastMonth() : yearMonth().nextMonth()
-              if (date.get().day > c.days) {
-                date.set(YearMonthDayVirtualView.from(c.year, c.month, c.days))
-              } else {
-                date.set(YearMonthDayVirtualView.from(c.year, c.month, date.get().day))
-              }
-            } else {
-              //切换周
-              const m = dateFromYearMonthDay(date.get())
-              m.setTime(m.getTime() + direction * WEEKTIMES)
-              if (direction) {
-                date.set(YearMonthDayVirtualView.fromDate(m))
-              }
+              return 0
             }
-          },
-        }),
-        children() {
+            return a.cells[0].toNumber() - b.cells[0].toNumber()
+          })
+          out.hookCompare(yearMonth, function (ym, oldMonth) {
+            if (!showCalendar()) {
+              return 0
+            }
+            return ym.toNumber() - oldMonth.toNumber()
+          })
+          container.addEventListener('pointerdown', out.getOnPointerDown({
+            direction: "x",
+            callback(direction, velocity) {
+              if (showCalendar()) {
+                //切换月份
+                const c = direction < 0 ? yearMonth().lastMonth() : yearMonth().nextMonth()
+                if (date.get().day > c.days) {
+                  date.set(YearMonthDayVirtualView.from(c.year, c.month, c.days))
+                } else {
+                  date.set(YearMonthDayVirtualView.from(c.year, c.month, date.get().day))
+                }
+              } else {
+                //切换周
+                const m = dateFromYearMonthDay(date.get())
+                m.setTime(m.getTime() + direction * WEEKTIMES)
+                if (direction) {
+                  date.set(YearMonthDayVirtualView.fromDate(m))
+                }
+              }
+            },
+          }))
+
           //滚动区域
           fdom.div({
             className: 'relative',
             s_transform() {
-              return `translateX(${-scrollX.get()}px)`
+              return `translateX(${-mp.get()}px)`
             },
             children() {
               renderIf(showCalendar, function () {
