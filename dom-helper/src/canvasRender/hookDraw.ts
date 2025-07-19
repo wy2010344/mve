@@ -44,8 +44,8 @@ class CNode implements CMNode {
     })
   })
   children = this.appendList.target
-  collect(fun: SetValue<NodeParent>) {
-    this.appendList.collect(fun)
+  collect<T = void>(fun: (n: CNode) => T) {
+    return this.appendList.collect(fun)
   }
   constructor(
     public readonly configure: CNodeConfigure

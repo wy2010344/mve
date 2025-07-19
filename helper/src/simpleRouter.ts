@@ -28,39 +28,14 @@ export type Branch = BranchOrLeaf | {
   next?: never
   nodes?: string[]
   index?: number
+  load?: never
   // restNodes?: never
 }
 type BrancToList = (beforeBranch: Branch, branch: Branch) => Branch[]
-const defaultBranchToList: BrancToList = function (beforeBranch, branch) {
-  return [branch]
-}
 export function getBranchKey(n: Branch) {
   return n?.loader
 }
 
-// const getBranchWithBefore = memo<{
-//   branch: Branch,
-//   beforeBranch?: Branch
-// }>(e => {
-//   return {
-//     branch: getBranch(),
-//     beforeBranch: e?.branch
-//   }
-// })
-// renderArrayKey(
-//   function () {
-//     const { beforeBranch, branch } = getBranchWithBefore()
-//     if (beforeBranch?.loader == branch.loader) {
-//       return [branch]
-//     }
-//     if (beforeBranch) {
-//       return toList(beforeBranch, branch)
-//     }
-//     return [branch]
-//   },
-//   getBranchKey,
-//   function (getBranch, getIndex, loader) {
-//   })
 export function createTreeRoute({
   treeArg = emptyObject,
   pages,
@@ -107,7 +82,13 @@ export function createTreeRoute({
     renderOne(get, function (value?: PromiseResult<any>) {
       if (value?.type == 'success') {
         if (branch.type == 'branch') {
-          value.value.default(() => getBranch().query, () => getBranch().next!)
+          value.value.default(
+            () => getBranch().query,
+            () => getBranch().next!,
+            (path: string) => {
+              const nodes = path.split('/').filter(quote)
+              return getBranch().load!(nodes)
+            })
         } else if (branch.type == 'leaf') {
           value.value.default(() => getBranch().query)
         } else if (branch.type == 'notfound') {

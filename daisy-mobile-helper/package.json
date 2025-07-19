@@ -37,7 +37,7 @@
     "mve-icons": "file:.yalc/mve-icons",
     "tailwindcss": "^4.1.7",
     "tyme4ts": "^1.3.4",
-    "wy-dom-helper": "^0.1.14",
+    "wy-dom-helper": "file:.yalc/wy-dom-helper",
     "wy-helper": "file:.yalc/wy-helper"
   }
 }
