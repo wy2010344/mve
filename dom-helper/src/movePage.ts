@@ -1,6 +1,6 @@
 
 import { animateSignal, pointerMoveDir } from "wy-dom-helper"
-import { addEffect, batchSignalEnd, DeltaXSignalAnimationConfig, emptyObject, eventGetPageX, eventGetPageY, GetValue, memo, PointKey, ScrollFromPage, spring } from "wy-helper"
+import { addEffect, alawaysFalse, AnimateSignal, batchSignalEnd, DeltaXSignalAnimationConfig, emptyObject, eventGetPageX, eventGetPageY, FalseType, GetValue, memo, PointKey, Quote, ScrollFromPage, spring, ScrollDelta, StoreRef, valueOrGetToGet, PagePoint } from "wy-helper"
 import { defaultGetDistanceFromVelocity } from "./centerPicker"
 
 export function defaultGetPageSnap(velocity: number) {
@@ -14,129 +14,110 @@ export function defaultGetPageSnap(velocity: number) {
 }
 
 export type MovePageProps = {
-  direction: PointKey
-  onMoveBegin?(): void
+  scrollEndToChange?: boolean
   getDistanceFromVelocity?(velocity: number): number
-  disableLeft?(): boolean
-  disableRight?(): void
-  callback: (direction: 1 | -1, velocity: number) => void
+  callback: (direction: 1 | -1, velocity: number) => void | boolean
 }
-export function movePage(
-  {
-    getPageSnap = defaultGetPageSnap
-  }: {
-    getPageSnap?(velocity: number): DeltaXSignalAnimationConfig
-  } = emptyObject
-) {
+
+export function movePage({
+  getPageSnap = defaultGetPageSnap,
+  getSize,
+}: {
+  //延迟获得
+  getSize: GetValue<number>,
+  getPageSnap?(velocity: number): DeltaXSignalAnimationConfig
+}) {
   const scroll = animateSignal(0)
   //翻页时的全局速度
-  let globalDirectionVelocity = 0
-
-  let inited = false
-  function init(
-    getSize: GetValue<number>
-  ) {
-    if (inited) {
-      throw 'only allow init once'
-    }
-    inited = true
-    function getOnPointerDown(
-      {
-        direction,
-        onMoveBegin,
-        callback,
-        getDistanceFromVelocity = defaultGetDistanceFromVelocity,
-        disableLeft,
-        disableRight
-      }: MovePageProps
-    ) {
-      return pointerMoveDir(function () {
-        return {
-          onMove(e, dir) {
-            if (dir == direction) {
-              onMoveBegin?.()
-              return ScrollFromPage.from(e, {
-                getPage: direction == 'x' ? eventGetPageX : eventGetPageY,
-                scrollDelta(delta) {
-                  const v = scroll.get() + delta
-                  if (disableLeft?.() && v > 0) {
-                    return
-                  }
-                  if (disableRight?.() && v < 0) {
-                    return
-                  }
-                  scroll.changeTo(v)
-                },
-                onFinish(velocity) {
-                  if (disableLeft?.() && velocity > 0) {
-                    return
-                  }
-                  if (disableRight?.() && velocity < 0) {
-                    return
-                  }
-                  const distance = getDistanceFromVelocity(velocity)
-                  const targetDis = distance + scroll.get()
-                  const absTargetDis = Math.abs(targetDis)
-                  if (absTargetDis < getSize() / 2) {
-                    //恢复原状
-                    scroll.changeTo(
-                      0,
-                      //效果不太好,有速度就变化
-                      getPageSnap(velocity),
-                    )
-                  } else {
-                    const direction = targetDis > 0 ? 1 : -1
-                    globalDirectionVelocity = velocity
-                    callback(direction, velocity)
-                    batchSignalEnd()
-                  }
-                }
-              })
+  function getMoveEvent(e: PointerEvent,
+    direction: PointKey, {
+      scrollEndToChange,
+      getDistanceFromVelocity = defaultGetDistanceFromVelocity,
+      callback
+    }: MovePageProps) {
+    return ScrollFromPage.from(e, {
+      getPage: direction == 'x' ? eventGetPageX : eventGetPageY,
+      scrollDelta(delta: number, velocity: number, inMove?: boolean) {
+        const c = scroll.get()
+        const v = c + delta
+        scroll.set(v)
+        if (inMove) {
+          return
+        }
+        const distance = getDistanceFromVelocity(velocity)
+        const targetDis = distance + scroll.get()
+        const absTargetDis = Math.abs(targetDis)
+        if (absTargetDis < getSize() / 2) {
+          //恢复原状
+          scroll.changeTo(
+            0,
+            //效果不太好,有速度就变化
+            getPageSnap(velocity),
+          )
+        } else {
+          const direction = targetDis > 0 ? 1 : -1
+          const dis = scrollEndToChange ? Math.min(absTargetDis, getSize()) * direction : getSize() * direction
+          scroll.animateTo(dis, getPageSnap(velocity)).then((value) => {
+            if (!value) {
+              return
             }
-          }
-        }
-      })
-    }
-
-    function hookCompare<T>(getValue: GetValue<T>, compare: SortFun<T>) {
-      hookTrackSignal(memo<T>((lastValue, init) => {
-        const d = getValue()
-        if (init) {
-          const direction = Math.sign(compare(d, lastValue!))
-          if (direction) {
-            addEffect(() => {
-              const diffSize = direction * getSize()
+            //成功的情况下
+            const cancel = callback(direction, velocity)
+            if (cancel) {
               scroll.changeTo(
-                diffSize,
-                getPageSnap(globalDirectionVelocity),
+                0,
+                //效果不太好,有速度就变化
+                getPageSnap(0),
               )
-              globalDirectionVelocity = 0
-              scroll.silentDiff(-diffSize)
-            })
-          }
+            } else {
+              batchSignalEnd()
+            }
+          })
         }
-        return d
-      }))
-    }
-    return {
-      getOnPointerDown,
-      hookCompare
-    }
+      }
+    })
+  }
+
+  function hookCompare<T>(getValue: GetValue<T>, compare: SortFun<T>) {
+    hookTrackSignal(memo<T>((lastValue, init) => {
+      const d = getValue()
+      if (init) {
+        const direction = Math.sign(compare(d, lastValue!))
+        if (direction) {
+          addEffect(() => {
+            const diffSize = direction * getSize()
+            const diff = scroll.get() - diffSize
+            if (diff) {
+              //状态变化造成,也可能是拖拽速度未到达终点
+              scroll.animateTo(
+                diffSize,
+                getPageSnap(0),
+              )
+              scroll.silentDiff(-diffSize)
+            } else {
+              //拖拽造成
+              scroll.set(0)
+            }
+          })
+        }
+      }
+      return d
+    }))
   }
   return {
     onAnimation: scroll.onAnimation,
     get: scroll.get,
-    init
+    getMoveEvent,
+    hookCompare
   }
 }
-
-export type MovePageInit = ReturnType<(typeof movePage)>['init']
 
 export type SortFun<T> = (a: T, b: T) => number
 import { hookTrackSignal } from "mve-helper"
 
-
 export type MovePageConfig<T> = {
+  getPageSnap?(velocity: number): DeltaXSignalAnimationConfig
+  direction: PointKey
   getSize?(): number,
   getValue(): T,
   /**
@@ -146,25 +127,41 @@ export type MovePageConfig<T> = {
    * @param b 
    */
   compare: SortFun<T>
-} & MovePageProps
-export function hookSimpleMovePage<T>(
-  container: HTMLElement,
-  init: MovePageInit,
+} & Omit<MovePageProps, 'getSize'>
+
+
+export function createSimpleMovePage<T>(
   {
+    getPageSnap,
     getSize,
     getValue,
     compare,
+    direction,
     ...args
   }: MovePageConfig<T>) {
-  const out = init(getSize
-    || (args.direction == 'x'
-      ? (() => container.clientWidth)
-      : (() => container.clientHeight)))
-  container.addEventListener('pointerdown', out.getOnPointerDown(args))
+  let container!: HTMLElement
+  const out = movePage({
+    getSize: getSize
+      || (direction == 'x'
+        ? (() => container.clientWidth)
+        : (() => container.clientHeight)),
+    getPageSnap
+  })
+  container.addEventListener('pointerdown', e => {
+    pointerMoveDir(e, {
+      onMove(e, dir, v) {
+        if (dir == direction) {
+          return out.getMoveEvent(e, direction, args)
+        }
+      }
+    })
+  })
   out.hookCompare(getValue, compare)
-}
-export function pluginSimpleMovePage<T>(init: MovePageInit, config: MovePageConfig<T>) {
-  return function (container: HTMLElement) {
-    return hookSimpleMovePage(container, init, config)
+  //作为plubin
+  return {
+    ...out,
+    plugin(c: HTMLElement) {
+      container = c
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { hookDestroy, hookTrackSignal } from "mve-helper"
 import { animateSignal, pointerMove, pointerMoveDir } from "wy-dom-helper"
-import { addEffect, AnimateSignal, AnimateSignalConfig, ClampingScrollFactory, createSignal, DeltaXSignalAnimationConfig, destinationWithMargin, eventGetPageX, eventGetPageY, getMaxScroll, GetValue, getValueOrGet, numberBetween, PointKey, scrollForEdge, ScrollFromPage, ScrollHelper, SetValue, storeRef, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { addEffect, AnimateSignal, AnimateSignalConfig, ClampingScrollFactory, createSignal, DeltaXSignalAnimationConfig, destinationWithMargin, eventGetPageX, eventGetPageY, getMaxScroll, GetValue, getValueOrGet, numberBetween, PointKey, ScrollDelta, scrollForEdge, ScrollFromPage, ScrollFromPageI, ScrollHelper, SetValue, storeRef, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 
 
@@ -30,7 +30,6 @@ export interface OnScrollI {
 
 
   onDragBegin?(): void
-  onDragEnd?(): void
 }
 
 interface DirectionGet {
@@ -98,10 +97,10 @@ export function measureMaxScroll(
   }
 }
 
-function getWheelDetailX(e: WheelEvent) {
+export function getWheelDetailX(e: WheelEvent) {
   return e.deltaX
 }
-function getWheelDetailY(e: WheelEvent) {
+export function getWheelDetailY(e: WheelEvent) {
   return e.deltaY
 }
 
@@ -112,7 +111,7 @@ export class OnScroll {
   readonly get: GetValue<number>
   readonly onAnimation: GetValue<boolean>
   set(n: number) {
-    return this.drag(n - this.get())
+    return this.drag(n - this.get(), 0)
   }
   animateTo(n: number, config?: DeltaXSignalAnimationConfig) {
     n = numberBetween(this.getMinScroll(), n, this.getMaxScroll())
@@ -141,10 +140,7 @@ export class OnScroll {
   readonly getMinScroll: GetValue<number>
   readonly getMaxScroll: GetValue<number>
   private readonly scroll: AnimateSignal
-  readonly getPage: (a: {
-    pageX: number
-    pageY: number
-  }) => number
+  readonly getPage: (a: PointerEvent) => number
   constructor(
     private readonly direction: PointKey,
     readonly config: OnScrollI
@@ -194,29 +190,22 @@ export class OnScroll {
     this.wheelEventListener = function (e: WheelEvent) {
       const duration = e.timeStamp - lastTime
       const detail = that.getWheelDetail(e) * a
-      that.drag(detail)
-      that.destination(detail / duration)
+      that.drag(detail, detail / duration)
       lastTime = e.timeStamp
     }
     /**
      * 代理问题挺多
      */
-    this.pointerEventListner = pointerMoveDir(function () {
+    this.pointerEventListner = function (e: PointerEvent) {
       that.scroll.stop()
-      return {
+      pointerMoveDir(e, {
         onMove(e, dir) {
           if (dir == that.direction) {
             that.config.onDragBegin?.()
             pointerMove(ScrollFromPage.from(e, {
-              getPage: that.getPage as any,
-              scrollDelta(delta, velocity) {
-                that.drag(delta)
-              },
-              opposite: that.config.opposite,
-              onFinish(velocity) {
-                that.config.onDragEnd?.()
-                that.destination(velocity)
-              }
+              getPage: that.getPage,
+              scrollDelta: that.drag,
+              opposite: that.config.opposite
             }))
           } else {
             //如果有吸附,需要吸附
@@ -227,8 +216,9 @@ export class OnScroll {
           //如果有吸附,需要吸附
           that.scrollToIdeal()
         },
-      }
-    })
+      })
+    }
+
   }
   private scrollToIdeal() {
     const targetSnap = this.config.targetSnap
@@ -247,7 +237,8 @@ export class OnScroll {
     }
     return n
   }
-  private drag(delta: number) {
+
+  private drag = (delta: number, velocity: number, inMove?: boolean): void => {
     const v = this.scroll.get()
     const tempV = v + delta
     const minScroll = this.getMinScroll()
@@ -255,13 +246,11 @@ export class OnScroll {
     if (tempV < minScroll || tempV > maxScroll) {
       if (tempV < minScroll && this.minNextScroll) {
         this.scroll.set(minScroll)
-        this.minNextScroll.drag(tempV)
-        return
+        return this.minNextScroll.drag(tempV, velocity, inMove)
       }
       if (tempV > maxScroll && this.maxNextScroll) {
         this.scroll.set(maxScroll)
-        this.maxNextScroll.drag(tempV - maxScroll)
-        return
+        return this.maxNextScroll.drag(tempV - maxScroll, velocity, inMove)
       }
       if (tempV < minScroll) {
         this.scroll.set(v + delta / this.edgeSlow)
@@ -271,6 +260,10 @@ export class OnScroll {
     } else {
       this.scroll.set(tempV)
     }
+    if (inMove) {
+      return
+    }
+    this.destination(velocity)
   }
   /**
    * 惯性滚动到边界,带动外部
@@ -288,13 +281,6 @@ export class OnScroll {
     }
   }
   private destinationWithMargin(frictional: ScrollHelper): Promise<boolean | "immediately"> {
-    const c = this.get()
-    if (this.getMaxScroll() == c && this.maxNextScroll && frictional.distance > 0) {
-      return this.maxNextScroll.destinationWithMargin(frictional)
-    }
-    if (this.getMinScroll() == c && this.minNextScroll && frictional.distance < 0) {
-      return this.minNextScroll.destinationWithMargin(frictional)
-    }
     return destinationWithMargin({
       ...this.config,
       maxScroll: this.getMaxScroll(),
