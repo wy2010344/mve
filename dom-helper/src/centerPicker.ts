@@ -71,18 +71,19 @@ export function centerPicker({
     }
   })
   return {
-    onPointerDown: pointerMoveDir(function () {
+    onPointerDown(e: PointerEvent) {
       scrollY.stop()
-      return {
+      pointerMoveDir(e, {
         onMove(e, dir) {
           if (dir == 'y') {
             return ScrollFromPage.from(e, {
               getPage: eventGetPageY,
-              scrollDelta(delta, velocity) {
+              scrollDelta(delta, velocity, inMove) {
                 scrollY.changeDiff(delta)
                 didChange()
-              },
-              onFinish(velocity) {
+                if (inMove) {
+                  return
+                }
                 const distance = getDistanceFromVelocity(velocity)
                 const targetDis = distance + scrollY.get()
                 addValue(Math.round(targetDis / cellHeight))
@@ -99,8 +100,8 @@ export function centerPicker({
             })
           }
         }
-      }
-    }),
+      })
+    },
     children() {
       fdom.div({
         s_transform() {

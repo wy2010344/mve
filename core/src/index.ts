@@ -11,14 +11,29 @@ export {
 export { createContext } from './context'
 export type { Context } from './context'
 export * from './hookChildren'
+
+
+
+const globalHolder = new StateHolder()
+export function runGlobalHolder(fun: EmptyFun) {
+  const before = hookAlterStateHolder(globalHolder)
+  fun()
+  hookAlterStateHolder(before)
+}
+
+export function destroyGlobalHolder() {
+  globalHolder.destroy()
+}
+
+
 export function render(create: EmptyFun) {
-  const stateHolder = new StateHolder()
-  hookAlterStateHolder(stateHolder)
+  const stateHolder = new StateHolder(globalHolder)
+  const before = hookAlterStateHolder(stateHolder)
   create()
-  hookAlterStateHolder(undefined)
+  hookAlterStateHolder(before)
   batchSignalEnd()
-  return () => {
-    stateHolder.destroy()
+  return function () {
+    stateHolder.removeFromParent()
   }
 }
 

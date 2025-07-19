@@ -73,7 +73,6 @@ function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
  * 这个可以在canvas中实践
  */
 export class AppendList<T, N> {
-
   constructor(
     public readonly node: N,
     private list: HookChild<T>[],
@@ -84,22 +83,14 @@ export class AppendList<T, N> {
 
   readonly target: MemoFun<T[]>
 
-  collect(fun: SetValue<N>) {
+  collect<T = void>(fun: (n: N) => T) {
     const beforeList = hookAlterChildren(this.list)
-    fun(this.node)
+    const o = fun(this.node)
     hookAlterChildren(beforeList)
+    return o
   }
-
 }
 
-
-function getRenderChildren<T, N>(fun: SetValue<N>, n: N, after: SetValue<T[]> = emptyFun) {
-  const list: HookChild<T>[] = []
-  const beforeList = hookAlterChildren(list)
-  fun(n)
-  hookAlterChildren(beforeList)
-  return getRenderChildrenList(list, after)
-}
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
   removeChild(parent: Node, child: Node): void
@@ -116,9 +107,9 @@ export function createRenderChildren<T>(
     ) {
       const list = storeRef<T[]>(emptyArray as T[])
       const addDestroy = hookAddDestroy()
-      const getChildren = getRenderChildren<T, T>(fun, pNode);
-      (getChildren as any).abc = (pNode as any).id
-      hookChangeChildren(pNode, getChildren, quote, arg, list)
+      const appendList = new AppendList(pNode, [], emptyFun)
+      appendList.collect(fun)
+      hookChangeChildren(pNode, appendList.target, quote, arg, list)
       addDestroy(() => {
         addEffect(() => {
           list.get().forEach(function (node) {
@@ -126,16 +117,16 @@ export function createRenderChildren<T>(
           })
         }, -2)
       })
-      return getChildren
+      return appendList
     },
     renderChildren(
       node: T,
       fun: SetValue<T>
     ) {
-      const getChildren = getRenderChildren<T, T>(fun, node);
-      (getChildren as any).abc = (node as any).id
-      hookChangeChildren(node, getChildren, quote, arg)
-      return getChildren
+      const appendList = new AppendList(node, [], emptyFun)
+      appendList.collect(fun)
+      hookChangeChildren(node, appendList.target, quote, arg)
+      return appendList
     }
   }
 }
@@ -170,11 +161,7 @@ function hookChangeChildren<Node, T>(
         if (newChild != beforeNode) {
           moveBefore(pNode, newChild, beforeNode)
         } else if (beforeNode) {
-          //beforeNode = beforeNode?.nextSibling
           beforeNode = nextSibling(beforeNode)
-          // beforeIndex = beforeIndex + 1
-          // const ol = oldList[beforeIndex]
-          // beforeNode = ol ? get(ol) : null
         }
       } else {
         const ol = oldList[i]
@@ -189,8 +176,6 @@ function hookChangeChildren<Node, T>(
     oldList.forEach(last => {
       const lastChild = get(last)
       if (!newList.includes(last)) {
-        // && lastChild.parentNode == pNode
-        // lastChild.parentNode?.removeChild(lastChild)
         removeChild(pNode, lastChild)
       }
     })

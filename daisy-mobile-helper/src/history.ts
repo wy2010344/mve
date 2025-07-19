@@ -7,6 +7,7 @@ import { createContext } from 'mve-core'
 const RouterContext = createContext<{
   router: History
   getHistoryState(): HistoryState
+  backOrReplace(v: string): void
 }>(undefined!)
 
 export interface HistoryState {
@@ -20,33 +21,49 @@ export interface HistoryState {
 
 export function routerProvide(router: History) {
   const _historyState = createSignal<Update>(router)
+  let stackLength = 0
   router.listen(function (update) {
+    if (update.action == Action.Pop) {
+      stackLength--
+    }
+    if (update.action == Action.Push) {
+      stackLength++
+    }
     _historyState.set(update)
     batchSignalEnd()
   })
+
+  const getHistoryState = memo<HistoryState>((e) => {
+    const state = _historyState.get()
+    let lastLocation = e?.location
+    const location = state.location
+    let pathname = e?.pathname!
+    if (lastLocation?.pathname != location.pathname) {
+      pathname = decodeURI(location.pathname)
+    }
+    let search = e?.search!
+    if (lastLocation?.search != location.search) {
+      search = new URLSearchParams(location.search) as ReadURLSearchParam
+    }
+    return {
+      fromPathname: e?.pathname,
+      pathname,
+      location,
+      action: state.action,
+      hash: state.location.hash,
+      search
+    }
+  })
   return RouterContext.provide({
     router,
-    getHistoryState: memo<HistoryState>((e) => {
-      const state = _historyState.get()
-      let lastLocation = e?.location
-      const location = state.location
-      let pathname = e?.pathname!
-      if (lastLocation?.pathname != location.pathname) {
-        pathname = decodeURI(location.pathname)
+    backOrReplace(href: string) {
+      if (stackLength) {
+        router.back()
+      } else {
+        router.replace(href)
       }
-      let search = e?.search!
-      if (lastLocation?.search != location.search) {
-        search = new URLSearchParams(location.search) as ReadURLSearchParam
-      }
-      return {
-        fromPathname: e?.pathname,
-        pathname,
-        location,
-        action: state.action,
-        hash: state.location.hash,
-        search
-      }
-    })
+    },
+    getHistoryState
   })
 }
 

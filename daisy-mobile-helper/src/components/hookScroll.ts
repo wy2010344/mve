@@ -12,7 +12,7 @@ export function hookXScroll<T>(
   equal = simpleEqual
 ) {
   div.addEventListener('scrollend', function (e) {
-    const off = Math.round(div.scrollLeft / window.innerWidth)
+    const off = Math.round(div.scrollLeft / div.clientWidth)
     if (off < tabs.length) {
       const tab = tabs[off]
       if (!equal(tab, get())) {
@@ -28,7 +28,7 @@ export function hookXScroll<T>(
     }
     addEffect(function () {
       div.scrollTo({
-        left: idx * window.innerWidth,
+        left: idx * div.clientWidth,
         behavior: first ? "instant" : "smooth",
       })
     })
