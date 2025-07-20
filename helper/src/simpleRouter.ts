@@ -4,17 +4,19 @@ import { EmptyFun, emptyObject, GetValue, memo, PromiseResult, quote, SetValue }
 import { promiseSignal } from "./renderPromise"
 import { renderArray, renderArrayKey } from "./renderMap"
 
-export type BranchOrLeaf = PairBranch<BranchLoader, LeafLoader, NotfoundLoader> | PairLeaf<LeafLoader> | PairNotfound<NotfoundLoader>
+export type BranchOrLeaf = BranchLoaderParam | LeafLoaderParam | NotfoundLoaderParam
 
-
+export type BranchLoaderParam = PairBranch<BranchLoader, LeafLoader, NotfoundLoader>
 export type BranchLoader = {
-  default(arg: GetValue<Record<string, any>>, getBranch: GetValue<Branch>): void
+  default(getBranch: GetValue<BranchLoaderParam>): void
 }
+export type LeafLoaderParam = PairLeaf<LeafLoader>
 export type LeafLoader = {
-  default(arg: GetValue<Record<string, any>>): void
+  default(getBranch: GetValue<LeafLoaderParam>): void
 }
+export type NotfoundLoaderParam = PairNotfound<NotfoundLoader>
 export type NotfoundLoader = {
-  default(arg: GetValue<Record<string, any>>, rest: GetValue<string[]>): void
+  default(getBranch: GetValue<NotfoundLoaderParam>): void
 }
 
 export type BranchAll = PairNode<BranchLoader, LeafLoader, NotfoundLoader>
@@ -82,17 +84,11 @@ export function createTreeRoute({
     renderOne(get, function (value?: PromiseResult<any>) {
       if (value?.type == 'success') {
         if (branch.type == 'branch') {
-          value.value.default(
-            () => getBranch().query,
-            () => getBranch().next!,
-            (path: string) => {
-              const nodes = path.split('/').filter(quote)
-              return getBranch().load!(nodes)
-            })
+          value.value.default(getBranch)
         } else if (branch.type == 'leaf') {
-          value.value.default(() => getBranch().query)
+          value.value.default(getBranch)
         } else if (branch.type == 'notfound') {
-          value.value.default(() => getBranch().query, () => getBranch().nodes)
+          value.value.default(getBranch)
         }
       } else if (value?.type == 'error') {
         renderError?.(value.value)
