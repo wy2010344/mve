@@ -147,21 +147,21 @@ export function createSimpleMovePage<T>(
         : (() => container.clientHeight)),
     getPageSnap
   })
-  container.addEventListener('pointerdown', e => {
-    pointerMoveDir(e, {
-      onMove(e, dir, v) {
-        if (dir == direction) {
-          return out.getMoveEvent(e, direction, args)
-        }
-      }
-    })
-  })
   out.hookCompare(getValue, compare)
   //作为plubin
   return {
     ...out,
     plugin(c: HTMLElement) {
       container = c
+      container.addEventListener('pointerdown', e => {
+        pointerMoveDir(e, {
+          onMove(e, dir, v) {
+            if (dir == direction) {
+              return out.getMoveEvent(e, direction, args)
+            }
+          }
+        })
+      })
     }
   }
 }
