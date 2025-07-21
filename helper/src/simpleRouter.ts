@@ -4,17 +4,43 @@ import { EmptyFun, emptyObject, GetValue, memo, PromiseResult, quote, SetValue }
 import { promiseSignal } from "./renderPromise"
 import { renderArray, renderArrayKey } from "./renderMap"
 
-export type BranchOrLeaf = BranchLoaderParam | LeafLoaderParam | NotfoundLoaderParam
+export type BranchOrLeaf = PairBranch<BranchLoader, LeafLoader, NotfoundLoader>
+  | PairLeaf<LeafLoader>
+  | PairNotfound<NotfoundLoader>
 
-export type BranchLoaderParam = PairBranch<BranchLoader, LeafLoader, NotfoundLoader>
+export class BranchLoaderParam {
+  constructor(readonly get: GetValue<PairBranch<BranchLoader, LeafLoader, NotfoundLoader>>) { }
+  getQuery() {
+    return this.get().query
+  }
+  load(path: string, absolute?: boolean) {
+    return this.get().load(path, absolute)
+  }
+  getAbsolutePath(path: string) {
+    return this.get().getAbsolutePath(path)
+  }
+  getChildren = () => {
+    return this.get().next
+  }
+}
 export type BranchLoader = {
   default(getBranch: GetValue<BranchLoaderParam>): void
 }
-export type LeafLoaderParam = PairLeaf<LeafLoader>
+export class LeafLoaderParam {
+  constructor(readonly get: GetValue<PairLeaf<LeafLoader>>) { }
+  getQuery() {
+    return this.get().query
+  }
+}
 export type LeafLoader = {
   default(getBranch: GetValue<LeafLoaderParam>): void
 }
-export type NotfoundLoaderParam = PairNotfound<NotfoundLoader>
+export class NotfoundLoaderParam {
+  constructor(readonly get: GetValue<PairNotfound<NotfoundLoader>>) { }
+  getQuery() {
+    return this.get().query
+  }
+}
 export type NotfoundLoader = {
   default(getBranch: GetValue<NotfoundLoaderParam>): void
 }
@@ -84,11 +110,11 @@ export function createTreeRoute({
     renderOne(get, function (value?: PromiseResult<any>) {
       if (value?.type == 'success') {
         if (branch.type == 'branch') {
-          value.value.default(getBranch)
+          value.value.default(new BranchLoaderParam(getBranch as any))
         } else if (branch.type == 'leaf') {
-          value.value.default(getBranch)
+          value.value.default(new LeafLoaderParam(getBranch as any))
         } else if (branch.type == 'notfound') {
-          value.value.default(getBranch)
+          value.value.default(new NotfoundLoaderParam(getBranch as any))
         }
       } else if (value?.type == 'error') {
         renderError?.(value.value)
