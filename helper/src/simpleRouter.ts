@@ -1,17 +1,16 @@
 import { PairBranch, PairLeaf, PairNode, PairNotfound, TreeRoute } from "wy-helper/router"
-import { renderOne, renderOneKey } from "./renderIf"
-import { EmptyFun, emptyObject, GetValue, memo, PromiseResult, quote, SetValue } from "wy-helper"
+import { renderOne } from "./renderIf"
+import { emptyObject, GetValue, memo, PromiseResult, quote, SetValue } from "wy-helper"
 import { promiseSignal } from "./renderPromise"
-import { renderArray, renderArrayKey } from "./renderMap"
 
 export type BranchOrLeaf = PairBranch<BranchLoader, LeafLoader, NotfoundLoader>
   | PairLeaf<LeafLoader>
   | PairNotfound<NotfoundLoader>
 
-export class BranchLoaderParam {
+export class BranchLoaderParam<T = Record<string, any>> {
   constructor(readonly get: GetValue<PairBranch<BranchLoader, LeafLoader, NotfoundLoader>>) { }
   getQuery() {
-    return this.get().query
+    return this.get().query as T
   }
   load(path: string, absolute?: boolean) {
     return this.get().load(path, absolute)
@@ -26,19 +25,25 @@ export class BranchLoaderParam {
 export type BranchLoader = {
   default(getBranch: GetValue<BranchLoaderParam>): void
 }
-export class LeafLoaderParam {
+export class LeafLoaderParam<T = Record<string, any>> {
   constructor(readonly get: GetValue<PairLeaf<LeafLoader>>) { }
   getQuery() {
-    return this.get().query
+    return this.get().query as T
+  }
+  getAbsolutePath(path: string) {
+    return this.get().getAbsolutePath(path)
   }
 }
 export type LeafLoader = {
   default(getBranch: GetValue<LeafLoaderParam>): void
 }
-export class NotfoundLoaderParam {
+export class NotfoundLoaderParam<T = Record<string, any>> {
   constructor(readonly get: GetValue<PairNotfound<NotfoundLoader>>) { }
   getQuery() {
-    return this.get().query
+    return this.get().query as T
+  }
+  getAbsolutePath(path: string) {
+    return this.get().getAbsolutePath(path)
   }
 }
 export type NotfoundLoader = {
