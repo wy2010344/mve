@@ -525,6 +525,62 @@ function Cell({ title, note, leftIcon, rightIcon, onClick }: CellProps) {
 
 ## 🔧 全局状态管理
 
+### Context 迁移：基于调用栈 vs 组件树
+
+```typescript
+// React Context
+const ThemeContext = React.createContext('light');
+
+function App() {
+  return (
+    <ThemeContext.Provider value="dark">
+      <Header />
+    </ThemeContext.Provider>
+  );
+}
+
+function Header() {
+  const theme = useContext(ThemeContext);
+  return <div style={{ color: theme === 'dark' ? 'white' : 'black' }} />;
+}
+
+// MVE Context - 基于调用栈
+const ThemeContext = createContext<() => "light" | "dark">(() => "light");
+
+function App() {
+  fdom.div({
+    children() {
+      // 提供 Context 值（基于调用栈）
+      ThemeContext.provide(() => "dark");
+      Header(); // 在这个调用栈中能获取到 "dark"
+    }
+  });
+}
+
+function Header() {
+  const getTheme = ThemeContext.consume(); // 获取 getter 函数
+  
+  fdom.div({
+    s_color() {
+      return getTheme() === "dark" ? "white" : "black"; // 调用函数获取值
+    }
+  });
+}
+
+// 动态 Context 值
+function App() {
+  const theme = createSignal<"light" | "dark">("light");
+  
+  fdom.div({
+    children() {
+      // 传递 getter 函数，不是值
+      ThemeContext.provide(() => theme.get());
+      Header();
+    }
+  });
+}
+```
+
 ### 使用 runGlobalHolder
 
 ```typescript
@@ -604,4 +660,67 @@ function logout() {
    - 使用 `addEffect` 的级别参数控制执行顺序
    - 列表渲染使用 `renderArrayKey` 提供稳定的 key
 
-这个迁移指南应该能帮助你顺利从 Vue/React 项目迁移到 MVE，特别是 tdesign-vue-mobile 这样的组件库项目。
+## 🚨 迁移中的关键陷阱
+
+### 最容易犯的错误
+
+从 Vue/React 迁移时，最容易犯的错误是保持原有的思维模式：
+
+```typescript
+// Vue/React 思维（错误）
+export default function () {
+  const { themeColors } = gContext.consume();
+  const colors = themeColors(); // ❌ 以为这样就能响应变化
+  
+  return fdom.div({
+    className: `${colors.bg} p-4`, // ❌ 永远不会更新
+  });
+}
+
+// MVE 正确思维
+export default function () {
+  const { themeColors } = gContext.consume();
+  
+  fdom.div({
+    className() {
+      const colors = themeColors(); // ✅ 在属性函数中调用
+      return `${colors.bg} p-4`;
+    },
+  });
+}
+```
+
+### 核心思维转换
+
+1. **Vue/React**：可以在任何地方调用响应式 API
+2. **MVE**：只能在属性函数中调用 Signal 才能建立响应式绑定
+
+### 迁移检查清单补充
+
+#### 响应式绑定检查
+- [ ] 移除所有组件顶层的 Signal 调用
+- [ ] 确保所有 Signal 调用都在属性函数内
+- [ ] 检查副作用处理是否使用了 `hookTrackSignal`
+
+#### 常见错误模式
+```typescript
+// ❌ 这些都是错误的顶层调用
+const colors = themeColors();
+const isDark = theme() === "dark";
+const user = getUserData();
+const stats = dataStatistics();
+
+// ✅ 正确的做法
+fdom.div({
+  className() {
+    const colors = themeColors(); // 在属性函数中
+    return colors.bg;
+  },
+  children() {
+    const user = getUserData(); // 在 children 函数中
+    return user ? user.name : "未登录";
+  }
+});
+```
+
+这个迁移指南应该能帮助你顺利从 Vue/React 项目迁移到 MVE，特别是 tdesign-vue-mobile 这样的组件库项目。记住：**MVE 的响应式绑定必须在属性函数中建立**，这是与 Vue/React 最大的区别。

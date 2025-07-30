@@ -71,7 +71,7 @@ const complexCalc = memo((old, inited) => {
 
 ### trackSignal - 依赖追踪
 
-trackSignal 类似 Vue 的 watchEffect，只有 newValue 参数：
+trackSignal 类似 Vue 的 watchEffect，只有 newValue 参数,在mve中一般使用它的封装hookTrackSignal, 会自动随生命周期销毁：
 
 ```typescript
 import { trackSignal, hookTrackSignal } from "wy-helper";
@@ -113,7 +113,7 @@ runGlobalHolder(() => {
 
 ### addEffect - 批量更新后回调
 
-addEffect 类似于 nextTick，在所有 Signal 更新完成后执行，支持 level 层级：
+addEffect 类似于 nextTick，在本批次 Signal 更新完成后执行，支持 level 层级：
 
 ```typescript
 import { addEffect } from "wy-helper";
@@ -396,7 +396,7 @@ mdom({
 
 ```typescript
 import { hookPromiseSignal } from "mve-helper";
-
+import {renderInput} from 'mve-dom-helper'
 function DataComponent() {
   const signalA = createSignal("param1");
   const signalB = createSignal("param2");
@@ -420,49 +420,34 @@ function DataComponent() {
             childrenType: "text",
             children: "加载中..."
           });
-        },
-        () => {
-          const data = get.get();
-          if (data) {
-            fdom.div({
-              childrenType: "text",
-              children: `数据: ${JSON.stringify(data)}`
-            });
-            
-            fdom.button({
-              onClick() {
-                // 如果请求成功，可以修改信号的内容
-                reduceSet((currentData) => {
-                  return { ...currentData, modified: true };
-                });
-              },
-              childrenType: "text",
-              children: "修改数据"
-            });
-          }
         }
       );
-      
+      renderOne(get,function(o){
+        if(o?.type=='success'){
+          const data=o.value
+          fdom.div({
+            childrenType: "text",
+            children: `数据: ${JSON.stringify(data)}`
+          });
+          
+          fdom.button({
+            onClick() {
+              // 如果请求成功，可以修改信号的内容
+              reduceSet((currentData) => {
+                return { ...currentData, modified: true };
+              });
+            },
+            childrenType: "text",
+            children: "修改数据"
+          });
+        }
+      })
       // 控制参数
-      fdom.input({
-        value() {
-          return signalA.get();
-        },
-        onInput(e) {
-          const target = e.target as HTMLInputElement;
-          signalA.set(target.value);
-        }
-      });
+      renderInput(signalA.get,signalA.set,fdom.input({
+      }));
       
-      fdom.input({
-        value() {
-          return signalB.get();
-        },
-        onInput(e) {
-          const target = e.target as HTMLInputElement;
-          signalB.set(target.value);
-        }
-      });
+      renderInput(signalB.get,signalB.set,fdom.input({
+      }));
     }
   });
 }
@@ -587,6 +572,7 @@ function TimerComponent() {
 createSignal 是原子的，对象更新需整体替换，或手动创建嵌套信号优化。
 
 ### 2. children() 用法
+如果没有childrenType:'text'|'html',children只是子层级.
 信号内容需要在最终观察属性节点上展开，不在 children 回调中获取。
 
 ### 3. memo 性能考虑
