@@ -27,21 +27,23 @@ export default function (e: BranchLoaderParam) {
     // 追踪示例
     const trackingLog = createSignal<string[]>([]);
 
-    // 副作用处理 - 使用 addEffect 而不是 hookTrackSignal
-    addEffect(() => {
-      const currentCount = count.get();
+    // 副作用处理 - 正确使用 hookTrackSignal 建立依赖追踪
+    hookTrackSignal(count.get, function (currentCount) {
       const log = `计数变化: ${currentCount} (${new Date().toLocaleTimeString()})`;
-      trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+      addEffect(() => {
+        trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+      });
 
       if (currentCount === 10) {
         alert('🎉 恭喜！计数达到 10');
       }
     });
 
-    addEffect(() => {
-      const currentName = name.get();
+    hookTrackSignal(name.get, function (currentName) {
       const log = `名称变化: "${currentName}" (${new Date().toLocaleTimeString()})`;
-      trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+      addEffect(() => {
+        trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+      });
     });
 
     // 生命周期
@@ -101,8 +103,7 @@ export default function (e: BranchLoaderParam) {
                   const url = e.getAbsolutePath(`./${section.id}`)
                   fdom.button({
                     onClick() {
-                      router.push(url)
-                      // currentSection.set(section.id as any);
+                      router.replace(url)
                     },
                     className() {
                       const pathname = getHistoryState().pathname
