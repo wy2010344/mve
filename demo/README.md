@@ -76,6 +76,66 @@
 - 大数据量处理技巧
 - 生产级应用架构
 
+## 🏗️ 架构设计
+
+### 模块化路由架构
+MVE 支持基于文件系统的树形路由，实现真正的 SPA 应用：
+
+```typescript
+// 1. 创建树形路由
+const { renderBranch, getBranch, preLoad } = createTreeRoute({
+  treeArg: { number: argForceNumber },
+  pages: import.meta.glob('./pages/**'),
+  prefix: './pages/',
+});
+
+// 2. 路由状态管理
+const { router, getHistoryState } = routerConsume();
+router.push('/path'); // 导航
+const pathname = getHistoryState().pathname; // 获取当前路径
+
+// 3. 渲染路由内容
+renderOneKey(
+  getBranch(() => getHistoryState().pathname),
+  getBranchKey,
+  (key, branch) => renderBranch(branch)
+);
+```
+
+### Context 层级设计
+合理的 Context 层级设计可以实现高效的状态管理：
+
+```typescript
+// 全局 Context - 主题、通知等跨应用状态
+export const gContext = createContext<{
+  theme(): ThemeType;
+  toggleTheme(): void;
+  addNotification(n: Notification): void;
+}>(undefined!);
+
+// 功能 Context - 特定功能模块的状态
+const featureContext = createContext<{
+  data: StoreRef<DataType>;
+  actions: ActionType;
+}>(undefined!);
+
+// 使用时的层级调用
+gContext.provide(globalValue);
+  featureContext.provide(featureValue);
+    renderComponent(); // 可以 consume 两个 context
+```
+
+### 组件生命周期
+```typescript
+// ✅ 正确的生命周期管理
+import { hookDestroy } from "mve-helper";
+
+hookDestroy(() => {
+  console.log('组件销毁清理');
+  // 清理定时器、事件监听等
+});
+```
+
 ## ⚠️ 重要说明
 
 ### hookTrackSignal 的正确使用
@@ -362,8 +422,17 @@ demo/
 1. **动手实践**：跟着示例敲代码，理解每个概念
 2. **查看控制台**：观察 memo 计算和依赖追踪的日志
 3. **修改参数**：尝试修改示例中的参数，观察效果变化
-4. **性能对比**：使用性能工具对比不同实现方式
-5. **阅读源码**：深入理解框架的实现原理
+4. **路由导航**：体验基于路由的模块化架构
+5. **Context 层级**：理解全局和局部 Context 的使用场景
+6. **性能对比**：使用性能工具对比不同实现方式
+7. **阅读源码**：深入理解框架的实现原理
+
+### 架构最佳实践
+1. **模块化设计**：每个功能模块独立目录，包含 meta.ts、index.ts、layout.ts
+2. **Context 分层**：全局状态用全局 Context，功能状态用局部 Context
+3. **路由驱动**：使用路由状态驱动 UI 变化，而不是内部状态
+4. **类型安全**：使用 StoreRef<T> 确保 Signal 的类型安全
+5. **生命周期**：正确使用 hookDestroy 进行资源清理
 
 ## 🤝 贡献指南
 
