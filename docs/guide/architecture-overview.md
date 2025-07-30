@@ -112,7 +112,7 @@ function updateMultiple() {
 // 1. 销毁回调钩子管理
 // 2. Context 上下文管理
 
-import { hookDestroy } from "mve-core";
+import { hookDestroy } from "mve-helper";
 
 function MyComponent() {
   // 添加销毁回调
@@ -179,10 +179,8 @@ fdom.div({
   className() {
     return isActive.get() ? "active" : "inactive"; // 自动追踪 isActive
   },
-  style() {
-    return {
-      color: theme.get() === "dark" ? "white" : "black" // 自动追踪 theme
-    };
+  s_color(){
+    return theme.get() === "dark" ? "white" : "black" // 自动追踪 theme
   }
 });
 ```
@@ -194,6 +192,12 @@ dom.div({
   className: 'container',
   onClick() {
     // 事件处理
+  },
+  style:{
+    color:'red',
+    backgroundColor(){
+      return isDark()?'red':'green'
+    }
   }
 }).render(() => {
   dom.p().renderTextContent("内容");
@@ -220,11 +224,14 @@ fdom.div({
 // 针对 textNode 的专门处理
 import { renderText, renderTextContent } from "mve-dom";
 
+renderTextContent('abc')
 // 渲染动态文本
-renderText(() => `当前计数: ${count.get()}`);
+renderTextContent(() => `当前计数: ${count.get()}`);
 
 // 渲染文本内容
-renderTextContent(textSignal);
+renderText`abc`
+
+renderText`aa${()=>getValue()}da`
 ```
 
 ### 4. 辅助工具层
