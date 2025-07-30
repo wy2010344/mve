@@ -75,7 +75,7 @@ function useTrigger<
  * @param param0 
  * @returns 
  */
-export function renderInputTrans<T extends 'textarea' | 'input', B>(
+export function renderInputTrans<T extends 'textarea' | 'input'|'select', B>(
   transform: StoreTransform<B, string>,
   getValue: GetValue<B>,
   setValue: SetValue<B>,
@@ -85,7 +85,7 @@ export function renderInputTrans<T extends 'textarea' | 'input', B>(
   useTrigger(getValue, setValue, transform || anyStoreTransform, new InputCache(div as HTMLInputElement), triggerTime)
   return div
 }
-export function renderInput<T extends 'textarea' | 'input',>(
+export function renderInput<T extends 'textarea' | 'input'|'select',>(
   getValue: GetValue<string>,
   setValue: SetValue<string>,
   div: DomElement<T>,

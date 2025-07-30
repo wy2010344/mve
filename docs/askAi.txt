@@ -1,0 +1,347 @@
+我需要为我的mve框架写一个文档.
+mve是基于signal模式的前端框架.
+你可以参考:https://github.com/wy2010344/mve-vite-demo 这个项目,我里面用mve写了很多代码,它在这台电脑的路径是 /Volumes/移动硬盘/Users/wangyang/Documents/github/mve-vite-demo.
+它依赖我的多个自研项目:wy-helper,wy-dom-helper,mve-core,mve-helper,mve-dom,mve-dom-helper,你也可以尝试着去阅读它们的源代码.(/Volumes/移动硬盘/Users/wangyang/Documents/github/wy-helper,/Volumes/移动硬盘/Users/wangyang/Documents/github/mve)
+希望你输出的文档对于ai友好,任何新ai对话阅读后都能写出理想的代码,并能实现其它框架代码(如vue、react、svelte等)向mve框架的代码迁移.(比如我将来会要做一个tdesign-vue的代码转化成我的mve的代码,本次任务你不做)
+你有不懂的地方可以问我,理解后可以补全文档与案例.
+你可以边学习边询问,还可以给出建议,比如你觉得有什么更好的解决方案.
+文档太长可以拆分.
+比如你可以在 /Volumes/移动硬盘/Users/wangyang/Documents/github/mve/demo/src/pages 下写几个demo,我边看边补充你的理解.
+文档输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/docs 避开覆盖askAi.txt这个文档,
+demo输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/demo/src/pages 
+
+
+我看了下你生成的代码与文档,目前有这样几个问题.
+1. /Volumes/移动硬盘/Users/wangyang/Documents/github/mve 这种是绝对路径,就是当前这个mve目录.你不能访问它上层github目录下的相邻项目吗?如果不能请告知,如果能请调整一下.
+2. 在dom上桥接,目前做了三种尝试,你可以仔细阅读mve/dom下的源码及分析类型,主要类似于
+```
+
+//最原始的,最接近原始xml定义的
+dom.div({
+  className:'xxx',
+  style:{
+    color:...
+  }
+}).render(()=>{
+
+})
+
+//将包括style,children,data-attr等打平在参数object里的
+fdom.div({
+  className:...,
+  s_color:...,
+  children(){
+    ...
+  }
+})
+//参考只受一个函数依赖的attrs.
+mdom.div({
+  attrs(m){
+    m.className=...
+    m.s_color=...
+  },
+  children(){
+    ...
+  }
+})
+```
+3. 你可以阅读wy-helper中signal.ts的源码,有一个重要的trackSignal,及其在mve框架中的hookTrackSignal,类似于vue中的watch.以及addEffect,类似react的useEffect,将事件预设到更新后统一的执行.
+
+如果你不理解,请发问.
+如果理解了,请逐个解决,更新代码与文档
+
+
+先处理第一个问题,你写到了目录 /Volumes/移动硬盘/Users/wangyang/Documents/github/mve/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/ 而不是  /Volumes/移动硬盘/Users/wangyang/Documents/github/mve/ 请调整一下,我们再继续工作
+
+感觉有点混乱,有点不成体系,有些地方仍然是错误的且不说了.你就没有疑问吗?比如异步请求数据怎么做?动画怎么做?
+
+有个hookPromiseSignal的函数,一般用于观察依赖触发异步回调的状态更新,你可以一层一层的查阅它的代码,了解它的底层实现,顺便加深对其它工具函数的理解.如果觉得以前的理解有误,记得更新文档
+
+需要你整理一下你创建的所有文档,需要更简洁干练,最好相互映证,统一规划,整体一致,并修复一些看到的逻辑上出错的地方.(不是要你1、2、3、4这样不断增加地创建文档,而是要在一种整体规划的总分结构下,各有分工)
+
+
+
+希望你再仔细阅读
+/Volumes/移动硬盘/Users/wangyang/Documents/github/mve-vite-demo
+如果不够,还有
+/Volumes/移动硬盘/Users/wangyang/Documents/github/verify-app
+/Volumes/移动硬盘/Users/wangyang/Documents/github/chat-note/client
+来完善你对这套写法的理解
+如果有疑问,再先询问我,不要自行编造.
+还有demo我启动起来了.我加了tailwindcss你可以美化,我会将运行时错误报告给你.
+基于上优化文档与demo.
+
+createTreeRoute 是遍历 import.meta.glob('./pages/**') 的加载,生成基于目录的路由,其中,一般index.ts是页面,layout.ts是布局,default.ts是未找到时展示的页面.daisy-mobile-helper是我常用的移动端封装,主要是集成tailwindcss与daisy-ui,还有history.renderPop()是有一个简单的全局弹窗封装.IconContext主要是为mve-icons这个图标提供全局的默认解释.项目中大量使用了 Tailwind CSS 和 DaisyUI,只是我的一种偏好.目前并未看到错误.你需要多读代码,不要浅尝辄止.还是我需要通过别的什么方式将代码提供给你,这样读得太慢?
+
+
+
+减少面向对象的使用,面向对象不是必要的,信号可以充当中心状态,所以并不需要特别去制作.还有经常出现的一个错,在fdom.xx({...})里,没有style属性,所有style下的属性,都在attr这一层,如style.color,现在其实是s_color.
+
+
+我认为mve的核心仍然在wy-helper的signal.ts这个模块里,主要是信号(createSignal)与对信号的观察(trackSignal),以及从信号到观察中间减少计算的优化(memo),当然有一个类似react在所有更新完成后的事件回调(addEffect).因为是批量更新,可以显式调用立即执行这个批量更新(batchSignalEnd)
+然后是基于信号的声明式gui框架,主要是mve-core里实现基础,重要的是stateHolder,主要就是销毁的回调钩子(此后多用hookDestroy添加进去)与context.对于条件渲染与列表渲染,封装了一个基础的renderForEach,此后的renderArray/renderIf/renderOne/renderArayKey...等,都是基于这个renderForEach的封装.renderForEach下每一个子项在后台有一个自己的stateHolder.
+然后主要是mve在dom上的桥接实现,在mve-dom这个模块里.利用ts的联合类型,一个属性字段可以是值,也可以是一个get值的函数,如果是一个返回值的函数,那么就是利用trackSignal观察这个函数里面的信号,来通知变更这个属性.出于不同的使用场景,有3套封装,即dom.xx/svg.xx,fdom.xx/svg.xx,mdom.xx/asvg.xx.还有对针对textNode的renderText,renderTextContent函数.
+mve-helper是mve-core的一些外围帮助函数,mve-dom-helper是自己封装的一些常用的dom helper函数.
+基于这项基础认识,再总结一下.或者有什么疑问和建议,可以先反馈一下.
+
+
+
+我需要为我的mve框架写一个文档.
+它依赖我的多个自研项目:wy-helper,wy-dom-helper,mve-core,mve-helper,mve-dom,mve-dom-helper,你也可以尝试着去阅读它们的源代码.(/Volumes/移动硬盘/Users/wangyang/Documents/github/wy-helper,/Volumes/移动硬盘/Users/wangyang/Documents/github/mve)
+mve的核心在wy-helper的signal.ts这个模块里,主要是信号(createSignal)与对信号的观察(trackSignal),以及从信号到观察中间减少计算的优化(memo),当然有一个类似react在所有更新完成后的事件回调(addEffect).因为是批量更新,可以显式调用立即执行这个批量更新(batchSignalEnd)
+然后是基于信号的声明式gui框架,主要是mve-core里实现基础,重要的是stateHolder,主要就是销毁的回调钩子(此后多用hookDestroy添加进去)与context.对于条件渲染与列表渲染,封装了一个基础的renderForEach,此后的renderArray/renderIf/renderOne/renderArayKey...等,都是基于这个renderForEach的封装.renderForEach下每一个子项在后台有一个自己的stateHolder.
+然后主要是mve在dom上的桥接实现,在mve-dom这个模块里.利用ts的联合类型,一个属性字段可以是值,也可以是一个get值的函数,如果是一个返回值的函数,那么就是利用trackSignal观察这个函数里面的信号,来通知变更这个属性.出于不同的使用场景,有3套封装,即dom.xx/svg.xx,fdom.xx/svg.xx,mdom.xx/asvg.xx.还有对针对textNode的renderText,renderTextContent函数.
+mve-helper是mve-core的一些外围帮助函数,mve-dom-helper是自己封装的一些常用的dom helper函数.
+你可以边学习边询问,还可以给出建议,比如你觉得有什么更好的解决方案.
+希望你创建的所有文档,简洁干练,最好相互映证,统一规划,整体一致.
+希望你再仔细阅读
+/Volumes/移动硬盘/Users/wangyang/Documents/github/mve-vite-demo
+如果不够,还有
+/Volumes/移动硬盘/Users/wangyang/Documents/github/verify-app
+/Volumes/移动硬盘/Users/wangyang/Documents/github/chat-note/client
+理解它的用法.
+文档输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/tecent
+demo输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/demo/src/tecent 
+
+renderForEach有签名```function renderForEach<T, K = T, O = void>(
+  forEach: (
+    callback: (
+      key: K,
+      value: T
+    ) => GetValue<O>
+  ) => void,
+  creater: Creater<T, K, O>,
+  arg: RenderForEachArg = emptyObject
+)```即回调里会传有key,你是否需要先阅读代码再作反问?而且一般使用的是mve-helper中封装的renderArrayKey、renderIf、renderOne、renderOneKey.
+因为直接用ts的语法来制作的DSL,本身就是类型安全的,不需要tsx画蛇添足.比如:
+```
+fdom.div({
+  className:'abc'
+})
+fdom.div({
+  className(){
+    return signalA()?'abc':'bcd'
+  }
+})
+``
+其它补充:
+memo类似vue的computed,比如两个memo:a,b.b只依赖a,而a的每次返回都相同,则b的计算不会发生.
+addEffect可以放在任何函数处,包括memo内,trackSignal的回调内.在memo与trackSignal都不能直接更新signal,但在addEffect的回调里可以.所以也可以模拟react的usEffect.addEffect的第二个参数level类似zIndex,同一批次中,level越大越往后执行.
+trackSignal类似vue中的watchEffect之类的api,
+```
+trackSignal(getA,function(a){
+
+})
+```
+比如上面这个合金trackSignal中getA部分不会自动memo,第二部分只有a发生变化时才执行.
+在框架里一般也不直接用trackSignal,而是用hookTrackSignal,将销毁绑定到stateHolder上.即使全局任意地方,也可以写成:
+```
+runGlobalHolder(function(){
+  hookTrackSignal(()=>xxx,vv=>{
+
+  })
+})
+```
+你再看看文档是否有更好的补充?或者更好的整理.记住我们的初衷:文档是希望方便迁移vue/react的代码,主要是tdesign-vue-mobile的代码
+
+不需要你太深入原理,只需要别的ai阅读文档后能写代码,或能从vue/react的代码转化成这个mve的代码.
+需要你输入文档与demo
+文档输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/tecent
+demo输出位置:/Volumes/移动硬盘/Users/wangyang/Documents/github/mve/demo/src/tecent 
+
+
+你的文档又开始在变多,整理一下,一些不必要的删除.比如怎么有个core-concepts-corrected.md,又有个core-concepts.md?
+我看到你在FEEDBACK_AND_QUESTIONS.md中的问题,
+renderForEach一般不直接调用,通常调用它的封装renderArrayKey、renderIf、renderOne等.
+比如renderArrayKey,参数1是获得数组的依赖函数,参数2是从每个数组元素中取得标记唯一性的key,参数3则是回调渲染的函数(getItem,getIndex,key)=>void.
+当数组变化时,如果新数组中某item消失,则对应key的stateHolder消失,如果有新增,则新建一个stateHolder.如果仍然存在,则保持,没什么神秘的,回调函数里getItem,getIndex动态获得最新的item内容与序号.
+trackSignal的依赖收集,受vue启发,代码也不复杂相信你能理解.它本来性能已经最优,一般计算链路上的优化,使用memo.
+另,trackSignal的回调里,只有newValue没有oldValue,memo的回调参数
+interface MemoGet<T> {
+  (old: undefined, inited: false): T,
+  (old: T, inited: true): T
+},参数1是旧值,参数2是是否不是第一次执行.
+dom.xx是比较符合dom的结构,如
+```
+dom.div({
+  style:{
+    color:'red',
+    background(){
+      return a()?bg1():bg2()
+    }
+  }
+}).render(function(){
+  renderTextContent('abc')
+  dom.span().renderText`abc`
+  dom.div().renderTextContent(()=>{
+    return `${value()}abc`
+  })
+})
+```
+fdom.xx,是希望简化dom.xx的api,比如
+```
+fdom.div({
+  className:'abc',
+  s_color:'red',
+  s_background(){
+      return a()?bg1():bg2()
+  },
+  children(){
+    renderText`abc`
+    fdom.span({
+      childrenType:"text",
+      children:`abc`
+    })
+    fdom.div({
+      childrenType:'html',
+      children(){
+        return `<svg>${svgStr()}</svg>`
+      }
+    })
+  }
+})
+```
+mdom.xx是应对同一元素上过多属性依赖相同的信号,减少建立trackSignal,并使代码简洁,如
+```
+mdom({
+  attrs(m){
+    if(a()){
+      m.s_color='red'
+      m.s_background='green'
+    }else{
+      m.s_color='blue'
+      m.s_background='yellow'
+    }
+    m.className='abc'
+  },
+  children(){
+    mdom({
+      childrenType:'text',
+      children(){
+        return `abc${dy()}`
+      }
+    })
+  }
+})
+```
+开发工具,暂时不考虑
+错误边界,对这个框架不适用
+异步状态,不需要原生支持.有个hookPromiseSignal,如
+```
+const {get,loading,reduceSet}=hookPromiseSignal(()=>{
+  const a=getSignalA()
+  const b=getSignalB()
+  return function(){
+    return fetchRemote(a,b)
+  }
+})
+
+```
+即getSignalA()与getSignalB()发生变化,都会触发fetchRemote的重新执行.
+这个get就是远程返回的信号,loading是是否正在加载中,reduceSet,是如果是成功的,可以修改信号的内容
+如果你有理解了,更新好了文档之后,可以删除相应的问题
+
+
+
+其它看到问题补充
+1.createSignal创建的是原子信号,不是像vue的ref嵌套创建信号,或者说像shallowRef.所以有时候可以考虑手动按需创建嵌套的信号来优化,如
+```
+const a=createSignal({
+  value:createSignal(9),
+  name:createSignal('8')
+})
+///在回调中
+a.get().value.set(8)
+a.get().value.name.set('ddd')
+```
+且createSignal创建出来的只是一个object,可以随意解包成get、set,不是对象,不考虑绑定this.
+
+2.context一般传递的是信号与事件,即getSignal,changeSignal这种
+```
+//提供的时候
+ThemeContext.provide(theme.get);
+//消耗的时候
+const getTheme=ThemeContext.consume()
+fdom.div({
+  s_color(){
+    return getTheme()=='light'?'black':'white'
+  }
+})
+
+```
+3.children()回调中一般不获得信号内容,信号内容需要在最终观察属性节点上展开
+```
+//错误的写法
+fdom.li({
+  children() {
+    const todo = getItem();
+    const index = getIndex();
+    
+    fdom.span({
+      childrenType: "text",
+      children: `${index + 1}. ${todo.text}`
+    });
+    
+  }
+})
+//正确的写法,childrenType为text或html时,children变成get这个text与html的内容
+fdom.li({
+  children() {
+    fdom.span({
+      childrenType: "text",
+      children(){
+        const todo = getItem();
+        const index = getIndex();
+        return `${index + 1}. ${todo.text}`
+      }
+    });
+    
+  }
+})
+```
+
+还有其它一些错误:
+```
+//错误:
+dom.div().className("container").onClick(handler).append(
+  dom.p().text("内容")
+);
+//正确
+dom.div({
+  className:'container',
+  onClick(){
+    //
+  }
+}).render(function(){
+  dom.p().renderTextContent("内容")
+})
+```
+基于以上,再看看修正与优化
+
+文档越来越多,考虑合并一些重复的内容.memo一般是减少重复的重计算,参考源码可以看到背后依赖了Map,如果计算量远少于它的实现,可以考虑不使用,在fdom中,除了style.xxx转化成s_xxx,还有data-attrXXX转化成data_attrXXX,css亦是--varcssxx变成css_varcssxxx,aria-xxx变成aria_xxx.mdom中attrs(m){}中m,属性与之类似.mdom与fdom的children、childrenType是一样的.
+
+addEffect的调用其实类似于nextTick,只是它有level层级,默认level 0.level -1,-2是dom更新的副作用,所以一般level都需要大于-1.hookTrackSignal的时候,常常在第二个回调参数里按需addEffect.
+
+
+
+我看到你写的代码中至少有这两个错误:
+1.hookTrackSignal其实在实际中很少用,主要已经用于dom/fdom等的属性绑定,还有hookPromiseSignal里也有,后续可能js受控动画可能需要.所以hookPromiseSignal返回中的get,可以间接用于绑定到属性上,而不需要通过hookTrackSignal同步到某个signal上.比如```
+const {get}=hookPromiseSignal(....)
+fdom({
+  s_color(){
+    const n=get()
+    if(n?.type=='success'){
+      return n.value.color
+    }
+    return ''
+  }
+})
+```
+2.context的用法使用错误,你使用了react式的用法,其实
+```
+XXContext.provide('a')
+funA()//内部使用XXContext.consume()获得的是'a'
+XXContext.provide('b')
+funB()//内部使用XXContext.consume()获得的是'b'
+```
+根据以上再优化,看看是否文档也需要补充.
