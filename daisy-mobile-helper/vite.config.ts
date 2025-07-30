@@ -28,7 +28,13 @@ export default defineConfig({
     }
   },
   plugins: [
-    dts(),
-    tailwindcss()
+    dts({
+      entryRoot: 'src',
+      outDir: 'dist',
+      insertTypesEntry: true,
+      cleanVueFileName: true,
+      // skipDiagnostics: false
+    }),
+    // tailwindcss()
   ]
 });

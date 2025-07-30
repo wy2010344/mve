@@ -7,7 +7,6 @@ export default function () {
 
   const { count, name, trackingLog } = gettingStartedContext.consume()
   const { theme } = gContext.consume()
-  const isDark = theme() === "dark";
 
   fdom.div({
     className: "space-y-8",
@@ -23,6 +22,7 @@ export default function () {
 
           fdom.p({
             className() {
+              const isDark = theme() === "dark";
               return `text-lg ${isDark ? "text-gray-300" : "text-gray-600"}`;
             },
             childrenType: "text",
@@ -37,6 +37,7 @@ export default function () {
           // 左侧：控制区域
           fdom.div({
             className() {
+              const isDark = theme() === "dark";
               return `${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border rounded-2xl p-6 shadow-lg`;
             },
             children() {
@@ -49,6 +50,7 @@ export default function () {
               // 当前状态
               fdom.div({
                 className() {
+                  const isDark = theme() === "dark";
                   return `text-center p-4 rounded-xl mb-6 ${isDark ? "bg-gray-700" : "bg-blue-50"}`;
                 },
                 children() {
@@ -99,6 +101,7 @@ export default function () {
                         },
                         placeholder: "修改名称",
                         className() {
+                          const isDark = theme() === "dark";
                           return `px-4 py-2 border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDark
                             ? "bg-gray-700 border-gray-600 text-white"
                             : "bg-white border-gray-300 text-gray-900"
@@ -115,6 +118,7 @@ export default function () {
           // 右侧：追踪日志
           fdom.div({
             className() {
+              const isDark = theme() === "dark";
               return `${isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} border rounded-2xl p-6 shadow-lg`;
             },
             children() {
@@ -126,6 +130,7 @@ export default function () {
 
               fdom.div({
                 className() {
+                  const isDark = theme() === "dark";
                   return `${isDark ? "bg-gray-900" : "bg-gray-50"} rounded-lg p-4 h-64 overflow-y-auto`;
                 },
                 children() {
@@ -134,6 +139,7 @@ export default function () {
                     () => {
                       fdom.div({
                         className() {
+                          const isDark = theme() === "dark";
                           return `text-center ${isDark ? "text-gray-500" : "text-gray-400"} py-8`;
                         },
                         childrenType: "text",
@@ -147,6 +153,7 @@ export default function () {
                           renderArray(() => trackingLog.get(), (log, getIndex) => {
                             fdom.div({
                               className() {
+                                const isDark = theme() === "dark";
                                 return `text-sm p-2 rounded ${isDark ? "bg-gray-800 text-green-400" : "bg-white text-gray-700"} border-l-4 border-blue-500`;
                               },
                               childrenType: "text",
@@ -165,6 +172,7 @@ export default function () {
                 children() {
                   fdom.pre({
                     className() {
+                      const isDark = theme() === "dark";
                       return `${isDark ? "bg-gray-900 text-green-400" : "bg-gray-100 text-gray-800"} p-3 rounded-lg text-xs`;
                     },
                     childrenType: "text",

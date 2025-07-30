@@ -345,3 +345,20 @@ XXContext.provide('b')
 funB()//内部使用XXContext.consume()获得的是'b'
 ```
 根据以上再优化,看看是否文档也需要补充.
+
+
+我还看到一个错误,就是依赖count的变化生成trackingLog的记录,虽然正常使用中不会出现这种需求(一般是memo到signal)
+addEffect的回调不是统计依赖自动执行
+需要写成
+```
+hookTrackSignal(count.get,function(c){
+  const log = `计数变化: ${currentCount} (${new Date().toLocaleTimeString()})`;
+  addEffect(()=>{
+    trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+  })
+  if (currentCount === 10) {
+    alert('🎉 恭喜！计数达到 10');
+  }
+})
+```
+才会真正有效.
