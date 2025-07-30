@@ -3,7 +3,7 @@ import { fdom, fsvg } from "mve-dom";
 import { EmptyFun, tw, ValueOrGet } from "wy-helper";
 import { LuChevronLeft } from "mve-icons/lu";
 import { cns } from "wy-dom-helper";
-import { routerConsume } from "../history";
+import { routerConsume } from "mve-dom-helper/history";
 
 
 export function renderNavbar({

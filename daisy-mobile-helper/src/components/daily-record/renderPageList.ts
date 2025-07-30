@@ -1,6 +1,6 @@
 import { fdom } from "mve-dom";
 import { dateFromYearMonthDay, DAYMILLSECONDS, simpleEqualsEqual, YearMonthDayVirtualView, StoreRef, Compare } from "wy-helper";
-import { memoArray, renderArray } from "mve-helper";
+import { memoArray, renderArray, renderArrayKey } from "mve-helper";
 import { animateSignal, } from "wy-dom-helper";
 import renderPage from "./renderPage";
 import { movePage, createSimpleMovePage } from "mve-dom-helper";
@@ -44,15 +44,15 @@ export default function (
           return `translateX(${-mp.get()}px)`
         },
         children() {
-          renderArray(memoArray(() => {
+          renderArrayKey(() => {
             const d = date.get()
             return [
               d.beforeDay(),
               d,
               d.nextDay()
             ]
-          }, simpleEqualsEqual as Compare<YearMonthDayVirtualView>), function (w, getIndex) {
-            renderPage(w, getIndex, () => {
+          }, v => v.toNumber(), function (w, getIndex) {
+            renderPage(w(), getIndex, () => {
               return mp.onAnimation()
             })
           })

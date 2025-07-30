@@ -1,5 +1,5 @@
 import { EmptyFun, ValueOrGet, valueOrGetToGet } from "wy-helper"
-import { routerConsume, fLink } from "../history"
+import { fLink, routerConsume } from "mve-dom-helper/history";
 import { cns } from "wy-dom-helper"
 
 export function linkTab({

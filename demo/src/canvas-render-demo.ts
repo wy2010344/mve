@@ -4,12 +4,6 @@ import { renderArray } from "mve-helper";
 import { createSignal } from "wy-helper";
 
 export default function () {
-  const canvas = dom.canvas({
-    width: 500,
-    height: 500,
-    className: "border-solid border-[1px] border-red-300"
-  }).render()
-
   const list = createSignal<number[]>([])
   const count = createSignal(0)
   dom.button({
@@ -18,25 +12,32 @@ export default function () {
       count.set(count.get() + 1)
     }
   }).renderText`列表数量${() => list.get().length}`
-  renderCanvas(canvas, () => {
+  renderCanvas({
+    width: 500,
+    height: 500,
+    className: "border-solid border-[1px] border-red-300"
+  }, function () {
     hookDraw({
       x: 100,
       y: 100,
       draw: colorRectPath(),
-
+      withPath: true,
       children() {
         hookDraw({
           x: 10,
           y: 10,
+          withPath: true,
           draw: colorRectPath(),
         })
         hookDraw({
           x: 40,
           y: 40,
+          withPath: true,
           draw: colorRectPath("yellow", true),
           children() {
             hookDraw({
               x: 0,
+              withPath: true,
               y: 10,
               draw: colorRectPath('orange'),
             })
@@ -45,6 +46,7 @@ export default function () {
             hookDraw({
               x: 0,
               y: 30,
+              withPath: true,
               draw: colorRectPath('yellow'),
             })
           }
@@ -57,6 +59,7 @@ export default function () {
             y() {
               return getIndex() * 20 + 100
             },
+            withPath: true,
             draw: colorRectPath('red'),
             onClick(e) {
               console.log("a", e, row)
@@ -69,11 +72,9 @@ export default function () {
   })
 }
 function colorRectPath(strokeStyle = "blue", clip?: boolean) {
-  return function rectPath(): PathResult {
-    const path = new Path2D()
+  return function rectPath(ctx: any, path: Path2D): PathResult {
     path.rect(0, 30, 100, 100)
     const rs: PathResult = {
-      path,
       operates: [
         {
           type: "stroke",

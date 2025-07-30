@@ -11,6 +11,7 @@ import { movePage } from "mve-dom-helper";
 import { animate } from "motion";
 import renderWeekday from "./renderWeekday";
 import { selectShadowCell } from "./renderCell";
+import { renderArrayKey } from "../../../../helper/src/renderMap";
 
 export default function (
   date: StoreRef<YearMonthDayVirtualView>
@@ -104,12 +105,12 @@ export default function (
                   }, extrapolationClamp)
                 })
 
-                renderArray(memoArray(() => {
+                renderArrayKey(() => {
                   const ym = yearMonth()
                   return [ym.lastMonth(), ym, ym.nextMonth()]
-                }, simpleEqualsEqual as Compare<YearMonthVirtualView>), function (yearMonth, getIndex) {
+                }, v => v.toNumber(), function (yearMonth, getIndex) {
                   renderCalendar(
-                    yearMonth,
+                    yearMonth(),
                     getIndex,
                     memo(() => {
                       const y = calendarScrollY(topScrollY.get())
@@ -118,11 +119,11 @@ export default function (
                     date)
                 })
               }, function () {
-                renderArray(memoArray(() => {
+                renderArrayKey(() => {
                   const wk = week()
                   return [wk.beforeWeek(), wk, wk.nextWeek()]
-                }, simpleEqualsEqual as Compare<WeekVirtualView>), function (week, getIndex) {
-                  renderWeekday(week, getIndex, date)
+                }, v => v.cells[0].toNumber(), function (week, getIndex) {
+                  renderWeekday(week(), getIndex, date)
                 })
               })
             }
