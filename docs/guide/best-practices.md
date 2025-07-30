@@ -147,58 +147,59 @@ dom.div().className("container").onClick(handler).append(
 
 ## 🏗️ Context 使用
 
-### ✅ 正确：传递函数而非值
+### ✅ 正确：Context 基于调用栈的用法
+
+Context 的工作原理是基于调用栈，不是 React 式的 Provider 组件：
 
 ```typescript
-// ✅ 正确：传递 getter 函数
+// ✅ 正确的 Context 用法
 const ThemeContext = createContext<() => "light" | "dark">(() => "light");
 
+// 提供 Context 值
+ThemeContext.provide(() => theme.get()); // 传递 getter 函数
+funA(); // 内部 consume() 获得的是 () => theme.get()
+
+ThemeContext.provide(() => "dark"); // 提供不同的值
+funB(); // 内部 consume() 获得的是 () => "dark"
+
+// 消费 Context
+function Header() {
+  const getTheme = ThemeContext.consume(); // 获取 getter 函数
+  
+  fdom.header({
+    s_backgroundColor() {
+      return getTheme() === "dark" ? "#333" : "#f8f9fa"; // 调用函数获取值
+    }
+  });
+}
+
+// ✅ 完整示例
 function App() {
   const theme = createSignal<"light" | "dark">("light");
   
   fdom.div({
     children() {
-      // 正确：传递 getter 函数
+      // 提供 Context
       ThemeContext.provide(() => theme.get());
+      
+      // 在这个调用栈中的所有组件都能获取到这个值
       Header();
+      Content();
     }
   });
 }
-
-function Header() {
-  // 正确：获取的是 getter 函数
-  const getTheme = ThemeContext.consume();
-  
-  fdom.header({
-    s_backgroundColor() {
-      // 正确：每次都会获取最新值
-      return getTheme() === "dark" ? "#333" : "#f8f9fa";
-    }
-  });
-}
-
-// ✅ 更完整的模式：传递信号和事件
-interface ThemeContextType {
-  getTheme: () => "light" | "dark";
-  toggleTheme: () => void;
-}
-
-const contextValue: ThemeContextType = {
-  getTheme: () => theme.get(),
-  toggleTheme: () => {
-    theme.set(theme.get() === "light" ? "dark" : "light");
-  }
-};
 ```
 
-### ❌ 错误：传递值
+### ❌ 错误：React 式的理解
 
 ```typescript
-// ❌ 错误：传递的是值，不是函数
-ThemeContext.provide(theme.get()); // 错误！
+// ❌ 错误：传递值而不是函数
+ThemeContext.provide(theme.get()); // 错误！传递的是静态值
 
-// ❌ 错误：获取的是静态值，不会响应变化
-const theme = ThemeContext.consume(); // 错误！
+// ❌ 错误：以为需要 Provider 组件包裹
+<ThemeContext.Provider value={theme}>
+  <Header />
+</ThemeContext.Provider>
 ```
 
 ## 🔄 响应式系统
@@ -462,5 +463,61 @@ renderArrayKey(
   }
 );
 ```
+
+## 🤖 AI 开发者特别注意
+
+### 响应式绑定的根本原理
+
+MVE 最容易犯的错误是在组件顶层调用 Signal 函数：
+
+```typescript
+// ❌ 致命错误：render 函数只执行一次，这些值永远不会更新
+export default function () {
+  const { themeColors, theme } = gContext.consume();
+  const colors = themeColors(); // ❌ 只获得初始值
+  const isDark = theme() === "dark"; // ❌ 只获得初始值
+  
+  fdom.div({
+    className: `${colors.bg} ${colors.text}`, // ❌ 永远不会更新
+  });
+}
+
+// ✅ 正确：在属性函数中调用，建立响应式绑定
+export default function () {
+  const { themeColors, theme } = gContext.consume();
+  
+  fdom.div({
+    className() {
+      const colors = themeColors(); // ✅ 每次都获取最新值
+      const isDark = theme() === "dark"; // ✅ 每次都获取最新值
+      return `${colors.bg} ${colors.text} ${isDark ? 'dark' : 'light'}`;
+    },
+  });
+}
+```
+
+### 副作用处理的正确模式
+
+```typescript
+// ❌ 错误：addEffect 不会追踪依赖
+addEffect(() => {
+  const currentCount = count.get(); // 不会在 count 变化时执行
+  trackingLog.set([`计数: ${currentCount}`, ...trackingLog.get()]);
+});
+
+// ✅ 正确：使用 hookTrackSignal 建立依赖追踪
+hookTrackSignal(count.get, function(currentCount) {
+  const log = `计数变化: ${currentCount}`;
+  addEffect(() => {
+    trackingLog.set([log, ...trackingLog.get().slice(0, 4)]);
+  });
+});
+```
+
+### 快速检查错误的方法
+
+使用这些正则表达式快速发现错误：
+- `const (colors|isDark|stats|user|data) = ` - 检查顶层 Signal 调用
+- `function.*\{\s*const.*(themeColors|theme)\(\)` - 检查函数内顶层调用
 
 掌握这些最佳实践，就能避免常见错误，写出高效的 MVE 代码。
