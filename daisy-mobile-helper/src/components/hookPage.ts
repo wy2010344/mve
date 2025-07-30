@@ -6,7 +6,7 @@ import { animate, AnimationOptions, CSSStyleDeclarationWithTransform, DOMKeyfram
 import { fdom } from "mve-dom"
 import { Action } from "history"
 import { cns } from "wy-dom-helper"
-import { routerConsume } from "../history"
+import { routerConsume } from "mve-dom-helper/history";
 export function getTabsDirection(
   get: () => {
     fromPathname?: string

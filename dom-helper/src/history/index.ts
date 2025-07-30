@@ -8,6 +8,7 @@ const RouterContext = createContext<{
   router: History
   getHistoryState(): HistoryState
   backOrReplace(v: string): void
+  replaceAndFirstPush(v: string): void
 }>(undefined!)
 
 export interface HistoryState {
@@ -61,6 +62,13 @@ export function routerProvide(router: History) {
         router.back()
       } else {
         router.replace(href)
+      }
+    },
+    replaceAndFirstPush(href: string) {
+      if (stackLength) {
+        router.replace(href)
+      } else {
+        router.push(href)
       }
     },
     getHistoryState

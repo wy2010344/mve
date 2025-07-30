@@ -1,6 +1,6 @@
 import { batchSignalEnd, createSignal, emptyFun, EmptyFun, emptyObject, delay as delayFun, } from "wy-helper";
 import { fakeRoute } from "mve-dom-helper";
-import { currentHref, routerConsume } from "../history";
+import { currentHref, routerConsume } from "mve-dom-helper/history";
 export function routerDelayClose({
   afterClose = emptyFun,
   delay = 300,

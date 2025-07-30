@@ -105,6 +105,7 @@ export function movePage({
     }))
   }
   return {
+    getSize,
     onAnimation: scroll.onAnimation,
     get: scroll.get,
     getMoveEvent,
