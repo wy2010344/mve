@@ -3,30 +3,42 @@ import { renderArray, renderArrayKey } from "./renderMap";
 
 
 export function renderIf(
-  get: GetValue<any>,
+  get: any,
   whenTrue: EmptyFun,
   whenFalse: EmptyFun = emptyFun
 ) {
-  renderArray(() => {
-    return [
-      Boolean(get())
-    ]
-  }, (d) => {
-    if (d) {
+  if (typeof get == 'function') {
+    renderArray(() => {
+      return [
+        Boolean(get())
+      ]
+    }, (d) => {
+      if (d) {
+        whenTrue(get)
+      } else {
+        whenFalse(get)
+      }
+    })
+  } else {
+    if (get) {
       whenTrue(get)
     } else {
       whenFalse(get)
     }
-  })
+  }
 }
 
 
 
 export function renderOne<K>(
-  get: GetValue<K>,
+  get: GetValue<K> | K,
   render: (v: K) => void
 ) {
-  renderArray(() => [get()], render)
+  if (typeof get == 'function') {
+    renderArray(() => [(get as any)()], render)
+  } else {
+    render(get)
+  }
 }
 
 export function renderOneKey<T, K>(

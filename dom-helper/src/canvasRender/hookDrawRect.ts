@@ -1,13 +1,13 @@
 import { AlignSelfFun, InstanceCallbackOrValue, LayoutConfig, Point, PointKey, ValueOrGet } from "wy-helper"
 import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from "wy-helper"
-import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw, PathResult } from "./hookDraw"
+import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw } from "./hookDraw"
 export { simpleFlex } from 'wy-helper'
 
 export type DrawRectConfig =
   Omit<LayoutNodeConfigure<CMNode, PointKey>, 'axis'>
-  & Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath'>
+  & Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath' | 'skipDraw'>
   & {
-
+    skipDraw?(n: LayoutNode<CMNode, keyof Point<number>>): any
     x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
     width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
     paddingLeft?: ValueOrGet<number>
@@ -22,7 +22,7 @@ export type DrawRectConfig =
     alignSelf?: AlignSelfFun
     alignSelfX?: AlignSelfFun
     alignSelfY?: AlignSelfFun
-    draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, path: Path2D): PathResult | void
+    draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, path: Path2D): void
   }
 
 const config: LayoutConfig<CMNode, PointKey> = {
@@ -59,14 +59,23 @@ export function hookDrawRect(
       }
     }
   })
+  const skipDraw = n.skipDraw
   x.target = hookDraw({
     ...n,
     x: x.axis.x.position,
     y: x.axis.y.position,
     withPath: true,
+
+    skipDraw: skipDraw ? () => skipDraw(x) : undefined,
     draw(ctx, path) {
       path.rect(0, 0, x.axis.x.size(), x.axis.y.size())
-      return n.draw?.(ctx, x, path)
+      if (!n.draw) {
+        return
+      }
+      const before = m._mve_canvas_render_current_rect
+      m._mve_canvas_render_current_rect = x
+      n.draw(ctx, x, path)
+      m._mve_canvas_render_current_rect = before
     },
     ext: {
       ...n.ext,
@@ -74,4 +83,12 @@ export function hookDrawRect(
     }
   })
   return x
+}
+
+const m = globalThis as unknown as {
+  _mve_canvas_render_current_rect: LayoutNode<CMNode, keyof Point<number>>
+}
+
+export function hookCurrentRect() {
+  return m._mve_canvas_render_current_rect!
 }

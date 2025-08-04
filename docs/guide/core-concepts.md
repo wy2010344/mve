@@ -27,13 +27,13 @@ userState.set({ ...userState.get(), age: 26 }); // 正确
 // 手动创建嵌套信号来优化性能
 const nestedState = createSignal({
   value: createSignal(9),
-  name: createSignal('8')
+  name: createSignal("8"),
 });
 
 // 在回调中使用
 function updateNested() {
   nestedState.get().value.set(8);
-  nestedState.get().name.set('ddd');
+  nestedState.get().name.set("ddd");
 }
 ```
 
@@ -49,8 +49,8 @@ const a = createSignal(1);
 // memo 的回调参数：(old, inited)
 const memoA = memo((old, inited) => {
   // old: 旧值，inited: 是否不是第一次执行
-  console.log('memoA 计算', { old, inited });
-  return a.get() > 0 ? 'positive' : 'negative';
+  console.log("memoA 计算", { old, inited });
+  return a.get() > 0 ? "positive" : "negative";
 });
 
 const memoB = memo((old, inited) => {
@@ -71,7 +71,7 @@ const complexCalc = memo((old, inited) => {
 
 ### trackSignal - 依赖追踪
 
-trackSignal 类似 Vue 的 watchEffect，只有 newValue 参数,在mve中一般使用它的封装hookTrackSignal, 会自动随生命周期销毁：
+trackSignal 类似 Vue 的 watchEffect，只有 newValue 参数,在 mve 中一般使用它的封装 hookTrackSignal, 会自动随生命周期销毁：
 
 ```typescript
 import { trackSignal, hookTrackSignal } from "wy-helper";
@@ -80,34 +80,46 @@ const count = createSignal(0);
 const name = createSignal("张三");
 
 // 基础用法
-trackSignal(() => count.get(), (newValue) => {
-  console.log('count 变化:', newValue);
-});
+trackSignal(
+  () => count.get(),
+  (newValue) => {
+    console.log("count 变化:", newValue);
+  }
+);
 
 // 推荐用法 - hookTrackSignal（自动绑定到 stateHolder）
 function MyComponent() {
-  hookTrackSignal(() => count.get(), (newValue) => {
-    console.log('count 变化:', newValue);
-  });
-  
+  hookTrackSignal(
+    () => count.get(),
+    (newValue) => {
+      console.log("count 变化:", newValue);
+    }
+  );
+
   // 监听多个依赖
-  hookTrackSignal(() => {
-    return {
-      count: count.get(),
-      name: name.get()
-    };
-  }, (newValue) => {
-    console.log('多个依赖变化:', newValue);
-  });
+  hookTrackSignal(
+    () => {
+      return {
+        count: count.get(),
+        name: name.get(),
+      };
+    },
+    (newValue) => {
+      console.log("多个依赖变化:", newValue);
+    }
+  );
 }
 
 // 全局使用 hookTrackSignal
 import { runGlobalHolder } from "mve-core";
 
 runGlobalHolder(() => {
-  hookTrackSignal(() => count.get(), (newValue) => {
-    document.title = `Count: ${newValue}`;
-  });
+  hookTrackSignal(
+    () => count.get(),
+    (newValue) => {
+      document.title = `Count: ${newValue}`;
+    }
+  );
 });
 ```
 
@@ -142,21 +154,24 @@ addEffect(() => {
 }, 1);
 
 // 常见用法：在 hookTrackSignal 的回调中按需使用 addEffect
-hookTrackSignal(() => count.get(), (newValue) => {
-  console.log('count 变化:', newValue);
-  
-  // 按需在 addEffect 中执行副作用
-  addEffect(() => {
-    // 更新其他 Signal
-    doubledCount.set(newValue * 2);
-    
-    // 更新 DOM
-    document.title = `Count: ${newValue}`;
-    
-    // 发送分析数据
-    analytics.track('count_changed', { value: newValue });
-  }, 1); // level 1，确保在 DOM 更新后执行
-});
+hookTrackSignal(
+  () => count.get(),
+  (newValue) => {
+    console.log("count 变化:", newValue);
+
+    // 按需在 addEffect 中执行副作用
+    addEffect(() => {
+      // 更新其他 Signal
+      doubledCount.set(newValue * 2);
+
+      // 更新 DOM
+      document.title = `Count: ${newValue}`;
+
+      // 发送分析数据
+      analytics.track("count_changed", { value: newValue });
+    }, 1); // level 1，确保在 DOM 更新后执行
+  }
+);
 ```
 
 ## 🎨 渲染系统
@@ -170,20 +185,21 @@ import { renderArrayKey } from "mve-helper";
 
 const todos = createSignal([
   { id: 1, text: "学习 MVE", completed: false },
-  { id: 2, text: "写代码", completed: true }
+  { id: 2, text: "写代码", completed: true },
 ]);
 
 fdom.ul({
   children() {
     renderArrayKey(
-      () => todos.get(),           // 参数1: 获得数组的依赖函数
-      (todo) => todo.id,           // 参数2: 从每个数组元素中取得唯一 key
-      (getItem, getIndex, key) => { // 参数3: 渲染回调函数
+      () => todos.get(), // 参数1: 获得数组的依赖函数
+      (todo) => todo.id, // 参数2: 从每个数组元素中取得唯一 key
+      (getItem, getIndex, key) => {
+        // 参数3: 渲染回调函数
         // 当数组变化时：
         // - 如果某 item 消失，对应 key 的 stateHolder 销毁
         // - 如果有新增，新建一个 stateHolder
         // - 如果仍然存在，保持 stateHolder，getItem/getIndex 动态获得最新内容
-        
+
         fdom.li({
           children() {
             fdom.span({
@@ -193,14 +209,14 @@ fdom.ul({
                 const todo = getItem();
                 const index = getIndex();
                 return `${index + 1}. ${todo.text}`;
-              }
+              },
             });
-            
+
             fdom.button({
               onClick() {
                 const todo = getItem(); // 在事件中获取最新值
                 const currentTodos = todos.get();
-                const updatedTodos = currentTodos.map(t => 
+                const updatedTodos = currentTodos.map((t) =>
                   t.id === todo.id ? { ...t, completed: !t.completed } : t
                 );
                 todos.set(updatedTodos);
@@ -210,13 +226,13 @@ fdom.ul({
                 // 正确：在 children 回调中获取动态内容
                 const todo = getItem();
                 return todo.completed ? "撤销" : "完成";
-              }
+              },
             });
-          }
+          },
         });
       }
     );
-  }
+  },
 });
 ```
 
@@ -234,7 +250,7 @@ renderIf(
     // 加载状态
     fdom.div({
       childrenType: "text",
-      children: "加载中..."
+      children: "加载中...",
     });
   },
   () => {
@@ -262,19 +278,22 @@ import { renderOne } from "mve-helper";
 
 const currentView = createSignal<"list" | "grid" | "table">("list");
 
-renderOne(() => currentView.get(), (view) => {
-  switch (view) {
-    case "list":
-      ListView();
-      break;
-    case "grid":
-      GridView();
-      break;
-    case "table":
-      TableView();
-      break;
+renderOne(
+  () => currentView.get(),
+  (view) => {
+    switch (view) {
+      case "list":
+        ListView();
+        break;
+      case "grid":
+        GridView();
+        break;
+      case "table":
+        TableView();
+        break;
+    }
   }
-});
+);
 ```
 
 ## 🌐 三套 DOM API
@@ -284,26 +303,29 @@ renderOne(() => currentView.get(), (view) => {
 ```typescript
 import { dom } from "mve-dom";
 
-dom.div({
-  className: 'container',
-  s_color: 'red',
-  s_background() {
-    return isActive.get() ? 'green' : 'blue';
-  }
-}).render(() => {
-  renderTextContent('abc');
-  
-  dom.span().renderText`abc`;
-  
-  dom.div().renderTextContent(() => {
-    return `${value.get()}abc`;
+dom
+  .div({
+    className: "container",
+    s_color: "red",
+    s_background() {
+      return isActive.get() ? "green" : "blue";
+    },
+  })
+  .render(() => {
+    renderTextContent("abc");
+
+    dom.span().renderText`abc`;
+
+    dom.div().renderTextContent(() => {
+      return `${value.get()}abc`;
+    });
   });
-});
 ```
 
 ### 2. fdom.xx - 简化的扁平参数 API（推荐）
 
 fdom 中的属性转换规则：
+
 - `style.xxx` → `s_xxx`
 - `data-attrXXX` → `data_attrXXX`
 - `--varcssxx` → `css_varcssxx`
@@ -313,40 +335,40 @@ fdom 中的属性转换规则：
 import { fdom } from "mve-dom";
 
 fdom.div({
-  className: 'abc',
-  
+  className: "abc",
+
   // 样式属性
-  s_color: 'red',
+  s_color: "red",
   s_backgroundColor() {
-    return isActive.get() ? 'green' : 'blue';
+    return isActive.get() ? "green" : "blue";
   },
-  
+
   // data 属性
-  data_testId: 'my-div',
+  data_testId: "my-div",
   data_customValue() {
     return `value-${id.get()}`;
   },
-  
+
   // CSS 变量
-  css_primaryColor: '#007bff',
+  css_primaryColor: "#007bff",
   css_fontSize() {
     return `${size.get()}px`;
   },
-  
+
   // ARIA 属性
-  aria_label: '主要内容',
+  aria_label: "主要内容",
   aria_expanded() {
     return isExpanded.get();
   },
-  
+
   children() {
     fdom.span({
       childrenType: "text",
       children() {
         return `动态内容: ${content.get()}`;
-      }
+      },
     });
-  }
+  },
 });
 ```
 
@@ -361,32 +383,32 @@ mdom({
   attrs(m) {
     // m 的属性与 fdom 类似，支持相同的转换规则
     if (isActive.get()) {
-      m.s_color = 'red';
-      m.s_backgroundColor = 'green';
-      m.data_status = 'active';
+      m.s_color = "red";
+      m.s_backgroundColor = "green";
+      m.data_status = "active";
       m.aria_selected = true;
     } else {
-      m.s_color = 'blue';
-      m.s_backgroundColor = 'yellow';
-      m.data_status = 'inactive';
+      m.s_color = "blue";
+      m.s_backgroundColor = "yellow";
+      m.data_status = "inactive";
       m.aria_selected = false;
     }
-    m.className = 'abc';
+    m.className = "abc";
     m.css_customVar = `--value-${value.get()}`;
   },
-  
+
   // children 和 childrenType 与 fdom 完全一样
   children() {
     mdom({
-      childrenType: 'text',
+      childrenType: "text",
       children() {
-        return `状态: ${isActive.get() ? '激活' : '未激活'}`;
-      }
+        return `状态: ${isActive.get() ? "激活" : "未激活"}`;
+      },
     });
-    
+
     // 也可以渲染子组件
     ChildComponent();
-  }
+  },
 });
 ```
 
@@ -396,21 +418,21 @@ mdom({
 
 ```typescript
 import { hookPromiseSignal } from "mve-helper";
-import {renderInput} from 'mve-dom-helper'
+import { renderInput } from "mve-dom-helper";
 function DataComponent() {
   const signalA = createSignal("param1");
   const signalB = createSignal("param2");
-  
+
   // 当 signalA 或 signalB 变化时，都会触发 fetchRemote 重新执行
   const { get, loading, reduceSet } = hookPromiseSignal(() => {
     const a = signalA.get();
     const b = signalB.get();
-    
+
     return () => {
       return fetchRemote(a, b);
     };
   });
-  
+
   fdom.div({
     children() {
       renderIf(
@@ -418,18 +440,18 @@ function DataComponent() {
         () => {
           fdom.div({
             childrenType: "text",
-            children: "加载中..."
+            children: "加载中...",
           });
         }
       );
-      renderOne(get,function(o){
-        if(o?.type=='success'){
-          const data=o.value
+      renderOne(get, function (o) {
+        if (o?.type == "success") {
+          const data = o.value;
           fdom.div({
             childrenType: "text",
-            children: `数据: ${JSON.stringify(data)}`
+            children: `数据: ${JSON.stringify(data)}`,
           });
-          
+
           fdom.button({
             onClick() {
               // 如果请求成功，可以修改信号的内容
@@ -438,23 +460,21 @@ function DataComponent() {
               });
             },
             childrenType: "text",
-            children: "修改数据"
+            children: "修改数据",
           });
         }
-      })
+      });
       // 控制参数
-      renderInput(signalA.get,signalA.set,fdom.input({
-      }));
-      
-      renderInput(signalB.get,signalB.set,fdom.input({
-      }));
-    }
+      renderInput(signalA.get, signalA.set, fdom.input({}));
+
+      renderInput(signalB.get, signalB.set, fdom.input({}));
+    },
   });
 }
 
 async function fetchRemote(a: string, b: string) {
   // 模拟异步请求
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   return { result: `${a}-${b}`, timestamp: Date.now() };
 }
 ```
@@ -470,22 +490,22 @@ const ThemeContext = createContext<() => "light" | "dark">(() => "light");
 
 function App() {
   const theme = createSignal<"light" | "dark">("light");
-  
+
   fdom.div({
     children() {
       // 提供的是 getter 函数
       ThemeContext.provide(() => theme.get());
-      
+
       Header();
       MainContent();
-    }
+    },
   });
 }
 
 function Header() {
   // 消费的是 getter 函数
   const getTheme = ThemeContext.consume();
-  
+
   fdom.header({
     s_backgroundColor() {
       return getTheme() === "dark" ? "#333" : "#f8f9fa";
@@ -496,9 +516,9 @@ function Header() {
     children() {
       fdom.h1({
         childrenType: "text",
-        children: "我的应用"
+        children: "我的应用",
       });
-    }
+    },
   });
 }
 
@@ -510,24 +530,24 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType>({
   getTheme: () => "light",
-  toggleTheme: () => {}
+  toggleTheme: () => {},
 });
 
 function App() {
   const theme = createSignal<"light" | "dark">("light");
-  
+
   const contextValue: ThemeContextType = {
     getTheme: () => theme.get(),
     toggleTheme: () => {
       theme.set(theme.get() === "light" ? "dark" : "light");
-    }
+    },
   };
-  
+
   fdom.div({
     children() {
       ThemeContext.provide(contextValue);
       Header();
-    }
+    },
   });
 }
 ```
@@ -535,33 +555,33 @@ function App() {
 ## 🔧 生命周期管理
 
 ```typescript
-import { hookDestroy, hookIsDestroyed } from "mve-core";
-
+import { hookIsDestroyed } from "mve-core";
+import { hookDestroy } from "mve-helper";
 function TimerComponent() {
   const time = createSignal(new Date().toLocaleTimeString());
-  
+
   // 创建定时器
   const timer = setInterval(() => {
     if (!hookIsDestroyed()) {
       time.set(new Date().toLocaleTimeString());
     }
   }, 1000);
-  
+
   // 注册清理函数
   hookDestroy(() => {
     console.log("清理定时器");
     clearInterval(timer);
   });
-  
+
   fdom.div({
     children() {
       fdom.p({
         childrenType: "text",
         children() {
           return `当前时间: ${time.get()}`;
-        }
+        },
       });
-    }
+    },
   });
 }
 ```
@@ -569,18 +589,22 @@ function TimerComponent() {
 ## ⚠️ 重要注意事项
 
 ### 1. Signal 原子性
+
 createSignal 是原子的，对象更新需整体替换，或手动创建嵌套信号优化。
 
 ### 2. children() 用法
-如果没有childrenType:'text'|'html',children只是子层级.
+
+如果没有 childrenType:'text'|'html',children 只是子层级.
 信号内容需要在最终观察属性节点上展开，不在 children 回调中获取。
 
 ### 3. memo 性能考虑
+
 memo 背后依赖 Map，简单计算可以不使用 memo。
 
 ### 4. 属性转换规则
+
 - `style.xxx` → `s_xxx`
-- `data-attrXXX` → `data_attrXXX`  
+- `data-attrXXX` → `data_attrXXX`
 - `--varcssxx` → `css_varcssxx`
 - `aria-xxx` → `aria_xxx`
 
@@ -593,10 +617,11 @@ memo 背后依赖 Map，简单计算可以不使用 memo。
 ```typescript
 // ✅ 推荐：使用 memo 缓存昂贵计算
 const processedItems = memo((old, inited) => {
-  console.log('处理数据', { old, inited });
-  return largeArray.get()
-    .filter(item => item.active)
-    .map(item => processItem(item))
+  console.log("处理数据", { old, inited });
+  return largeArray
+    .get()
+    .filter((item) => item.active)
+    .map((item) => processItem(item))
     .sort((a, b) => a.priority - b.priority);
 });
 
@@ -609,7 +634,7 @@ fdom.div({
         ItemComponent({ item: getItem() });
       }
     );
-  }
+  },
 });
 ```
 
@@ -619,7 +644,7 @@ fdom.div({
 // ✅ 使用稳定的 key 优化列表渲染
 const items = createSignal([
   { id: 1, name: "项目1" },
-  { id: 2, name: "项目2" }
+  { id: 2, name: "项目2" },
 ]);
 
 fdom.ul({
@@ -633,13 +658,13 @@ fdom.ul({
             const item = getItem();
             fdom.span({
               childrenType: "text",
-              children: item.name
+              children: item.name,
             });
-          }
+          },
         });
       }
     );
-  }
+  },
 });
 ```
 

@@ -1,5 +1,5 @@
 import { dom } from "mve-dom";
-import { hookDraw, PathResult, renderCanvas } from "mve-dom-helper/canvasRender";
+import { hookClip, hookDraw, hookFill, hookStroke, renderCanvas } from "mve-dom-helper/canvasRender";
 import { renderArray } from "mve-helper";
 import { createSignal } from "wy-helper";
 
@@ -72,29 +72,13 @@ export default function () {
   })
 }
 function colorRectPath(strokeStyle = "blue", clip?: boolean) {
-  return function rectPath(ctx: any, path: Path2D): PathResult {
+  return function rectPath(ctx: any, path: Path2D) {
     path.rect(0, 30, 100, 100)
-    const rs: PathResult = {
-      operates: [
-        {
-          type: "stroke",
-          width: 10,
-          style: strokeStyle
-        },
-        {
-          type: "fill",
-          style: "green"
-        }
-      ],
-      afterClipOperates: []
-    }
+    hookStroke(10, strokeStyle)
+    hookFill('green')
     if (clip) {
-      rs.afterClipOperates?.push({
-        type: "stroke",
-        width: 30,
-        style: "black"
-      })
+      hookClip()
+      hookStroke(30, 'black')
     }
-    return rs
   }
 }
