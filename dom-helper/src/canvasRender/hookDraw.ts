@@ -1,8 +1,8 @@
 import { AppendList, hookAddDestroy, hookAddResult, HookChild } from "mve-core"
 import { fdom, FDomAttributes } from "mve-dom"
 import { hookTrackSignal } from "mve-helper"
-import { path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
-import { batchSignalEnd, createSignal, emptyArray, emptyObject, GetValue, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { CanvasStyle, path2DOperate, Path2DOperate } from "wy-dom-helper/canvas"
+import { batchSignalEnd, createSignal, emptyArray, EmptyFun, emptyObject, GetValue, SetValue, ValueOrGet, valueOrGetToGet } from "wy-helper"
 
 export function hookDraw(rect: CNodeConfigure) {
   const n = new CNode(rect)
@@ -57,8 +57,8 @@ class CNode implements CMNode {
       this.appendList.collect(configure.children)
     }
   }
-
   public hasClip = false
+  didDraw = false
   parent!: NodeParent
   setParent(
     parent: NodeParent,
@@ -101,6 +101,7 @@ class CNode implements CMNode {
 }
 
 interface CBaseNodeConfigure {
+  skipDraw?(): any
   x: ValueOrGet<number>
   y: ValueOrGet<number>
   beforeChildren?(): void
@@ -113,7 +114,7 @@ interface CBaseNodeConfigure {
 
 export type CNodePathConfigure = (CBaseNodeConfigure & {
   withPath: true
-  draw?(ctx: CanvaRenderCtx, path: Path2D): PathResult | void
+  draw?(ctx: CanvaRenderCtx, path: Path2D): void
 
   onClick?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseDown?(e: CanvasMouseEvent<MouseEvent>): any
@@ -146,12 +147,6 @@ export type CanvasMouseEvent<T> = {
   node: CNode
 }
 
-export type PathResult = {
-  operates?: Path2DOperate[]
-  clipFillRule?: CanvasFillRule
-  afterClipOperates?: Path2DOperate[]
-}
-
 function doToEvent(
   _ctx: CanvasRenderingContext2D,
   children: CNode[],
@@ -164,37 +159,37 @@ function doToEvent(
   let i = 0
   while (will && i < children.length) {
     const child = children[i]
-    const nx = x - child.x()
-    const ny = y - child.y()
-
-    // will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
-
-    let tryChildren = true
-    if (will && child.path) {
-      //inPath,就是点在边界内
-      const inPath = _ctx.isPointInPath(child.path, nx, ny)
-      //inStroke,就是点恰好在边界中间,因为stroke在边界两边
-      const inStroke = child.configure.mouseContainStroke ? _ctx.isPointInStroke(child.path, nx, ny) : false
-      if (inPath || inStroke) {
-        const e = {
-          node: child,
-          x: nx,
-          y: ny,
-          inPath,
-          inStroke,
-          original: undefined
+    if (child.didDraw) {
+      const nx = x - child.x()
+      const ny = y - child.y()
+      // will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
+      let tryChildren = true
+      if (will && child.path) {
+        //inPath,就是点在边界内
+        const inPath = _ctx.isPointInPath(child.path, nx, ny)
+        //inStroke,就是点恰好在边界中间,因为stroke在边界两边
+        const inStroke = child.configure.mouseContainStroke ? _ctx.isPointInStroke(child.path, nx, ny) : false
+        if (inPath || inStroke) {
+          const e = {
+            node: child,
+            x: nx,
+            y: ny,
+            inPath,
+            inStroke,
+            original: undefined
+          }
+          cs.unshift(e)
+          if (callback(e)) {
+            will = false
+            cs.length = 0
+          }
+        } else if (child.hasClip) {
+          tryChildren = false
         }
-        cs.unshift(e)
-        if (callback(e)) {
-          will = false
-          cs.length = 0
-        }
-      } else if (child.hasClip) {
-        tryChildren = false
       }
-    }
-    if (will && tryChildren) {
-      will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
+      if (will && tryChildren) {
+        will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
+      }
     }
     i++
   }
@@ -216,7 +211,6 @@ function doEvent(_ctx: CanvasRenderingContext2D,
     }
   }
 }
-
 
 
 const mouseEvents = ([
@@ -335,6 +329,11 @@ export function renderCanvas(
       children: CNode[]
     ) {
       children.forEach((child) => {
+        child.didDraw = false
+        if (child.configure.skipDraw?.()) {
+          return
+        }
+        child.didDraw = true
         const x = child.x()
         const y = child.y()
         ctx.save()
@@ -344,18 +343,30 @@ export function renderCanvas(
         // draw(child.beforeChildren())
         if (child.configure.withPath) {
           const path = new Path2D()
-          const out = child.configure.draw?.(ctx, path)
-          if (out) {
-            child.path = path
-            path2DOperate(ctx, path, out.operates || emptyArray)
-            let hasClip = false
-            if (out.clipFillRule || out.afterClipOperates?.length) {
-              hasClip = true
-              ctx.clip(path, out.clipFillRule)
-              path2DOperate(ctx, path, out.afterClipOperates || emptyArray)
-            }
-            (child as any).hasClip = hasClip
-          }
+          child.path = path
+          const before = m._mve_canvas_render_current_Node
+          m._mve_canvas_render_current_Node = child
+          child.hasClip = false
+          child.configure.draw?.(ctx, path)
+          m._mve_canvas_render_current_Node = before
+
+          //
+          // if (out) {
+          //   child.path = path
+          //   /**
+          //    * @todo 
+          //    * 将ctx,path隐藏到后台,用一些钩子函数来执行
+          //    * 对溢出clip的部分,不展示.
+          //    */
+          //   path2DOperate(ctx, path, out.operates || emptyArray)
+          //   let hasClip = false
+          //   if (out.clipFillRule || out.afterClipOperates?.length) {
+          //     hasClip = true
+          //     ctx.clip(path, out.clipFillRule)
+          //     path2DOperate(ctx, path, out.afterClipOperates || emptyArray)
+          //   }
+          //   (child as any).hasClip = hasClip
+          // }
         } else {
           child.configure.draw?.(ctx)
         }
@@ -379,8 +390,47 @@ export function renderCanvas(
 
 const m = globalThis as {
   _mve_canvas_render_ctx?: CanvaRenderCtx
+  _mve_canvas_render_current_Node?: CNode
 }
 
 export function hookCurrentCtx() {
   return m._mve_canvas_render_ctx!
+}
+
+
+export function hookCurrentPath() {
+  return m._mve_canvas_render_current_Node?.path!
+}
+
+export function hookClip(clipFillRule?: CanvasFillRule) {
+  const ctx = m._mve_canvas_render_ctx!
+  const node = m._mve_canvas_render_current_Node!
+  ctx.clip(node.path!, clipFillRule)
+  node.hasClip = true
+}
+
+export function hookTranslate(x: number, y: number, fun: EmptyFun) {
+  const ctx = m._mve_canvas_render_ctx! as CanvasRenderingContext2D
+  ctx.save()
+  ctx.translate(x, y)
+  fun()
+  ctx.restore()
+}
+
+export function hookFill(style: CanvasStyle, value?: CanvasFillRule) {
+  const ctx = m._mve_canvas_render_ctx!
+  const path = m._mve_canvas_render_current_Node!.path!
+  ctx.fillStyle = style
+  ctx.fill(path, value)
+}
+
+export function hookStroke(
+  width: number,
+  value: CanvasStyle
+) {
+  const ctx = m._mve_canvas_render_ctx!
+  const path = m._mve_canvas_render_current_Node!.path!
+  ctx.lineWidth = width
+  ctx.strokeStyle = value
+  ctx.stroke(path)
 }
