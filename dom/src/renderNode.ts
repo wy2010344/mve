@@ -15,27 +15,25 @@ export function mergeValue(
     setValue(value, node, ext)
   }
 }
-export type Plugins<T> = {
-  plugins?: ((div: T) => void)[]
+export type Plugin<T> = {
+  plugin?(div: T): void
 }
 export type WillRemove<T> = {
   willRemove?(node: T): any
 }
-export function addPlugins<T>(node: T, plugins: Plugins<T>) {
-  if (plugins.plugins?.length) {
-    plugins.plugins.forEach(plugin => plugin(node))
-  }
+export function addPlugin<T>(node: T, plugin: Plugin<T>) {
+  plugin.plugin?.(node)
 }
 export function addWillRemove<T>(node: T, willRemove: WillRemove<T>['willRemove']) {
   (node as any)._willRemove_ = willRemove
 }
 const ignoreKeys = [
-  'plugins',
+  'plugin',
   'willRemove'
 ]
 export type FPDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
   & BDomEvent<T>
-  & Plugins<DomElement<T>>
+  & Plugin<DomElement<T>>
   & WillRemove<DomElement<T>>
 export type FDomAttributes<T extends DomElementType> = FPDomAttributes<T> & FGetChildAttr<DomElement<T>>
 export function renderFDom<T extends DomElementType>(
@@ -45,14 +43,14 @@ export function renderFDom<T extends DomElementType>(
   const node = document.createElement(type)
   renderFDomAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
-  addPlugins(node, arg)
+  addPlugin(node, arg)
   addWillRemove(node, arg.willRemove)
   return node
 }
 
 export type FPSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
   & BSvgEvent<T>
-  & Plugins<SvgElement<T>>
+  & Plugin<SvgElement<T>>
   & WillRemove<SvgElement<T>>
 export type FSvgAttributes<T extends SvgElementType> = FPSvgAttributes<T>
   & FGetChildAttr<SvgElement<T>>
@@ -61,7 +59,7 @@ export function renderFSvg<T extends SvgElementType>(type: T, arg: FSvgAttribute
   const node = document.createElementNS("http://www.w3.org/2000/svg", type)
   renderFSvgAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
-  addPlugins(node, arg)
+  addPlugin(node, arg)
   addWillRemove(node, arg.willRemove)
   return node
 }

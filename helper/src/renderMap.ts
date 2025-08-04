@@ -1,28 +1,35 @@
 import { EachTime, renderForEach, RenderForEachArg } from "mve-core"
-import { arrayEqual, arrayNotEqualOrOne, Compare, emptyObject, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, SetValue, simpleEqual } from "wy-helper"
+import { arrayEqual, arrayNotEqualOrOne, asLazy, Compare, emptyObject, GetValue, memo, normalMapCreater, quote, ReadArray, RMap, run, SetValue, simpleEqual } from "wy-helper"
 
 
 
 export function renderArray<T>(
-  getVs: GetValue<ReadArray<T>>,
+  getVs: GetValue<ReadArray<T>> | ReadArray<T>,
   render: (value: T, getIndex: GetValue<number>) => void,
   createMap?: <V>() => RMap<any, V>
 ) {
-  renderForEach<T, T, void>(
-    function (callback) {
-      const vs = getVs()
-      for (let i = 0; i < vs.length; i++) {
-        const v = vs[i]
-        callback(v, v)
-      }
-    },
-    function (key, et) {
-      render(key, et.getIndex)
-    },
-    {
-      createMap,
-      bindIndex: true
-    })
+  if (typeof getVs == 'function') {
+    renderForEach<T, T, void>(
+      function (callback) {
+        const vs = getVs()
+        for (let i = 0; i < vs.length; i++) {
+          const v = vs[i]
+          callback(v, v)
+        }
+      },
+      function (key, et) {
+        render(key, et.getIndex)
+      },
+      {
+        createMap,
+        bindIndex: true
+      })
+  } else {
+    for (let i = 0; i < getVs.length; i++) {
+      const v = getVs[i]
+      render(v, asLazy(i))
+    }
+  }
 }
 
 

@@ -1,8 +1,9 @@
 import { EmptyFun, memo, PointKey, quote, Quote, ValueOrGet, valueOrGetToGet } from "wy-helper"
 import { DrawRectConfig, hookDrawRect } from "./hookDrawRect"
 import { drawTextWrap, measureTextWrap, DrawTextWrapExt, TextWrapTextConfig, drawText, measureText, DrawTextExt, OCanvasTextDrawingStyles, MeasuredTextWrapOut } from "wy-dom-helper/canvas"
-import { CanvaRenderCtx, CMNode, hookCurrentCtx, PathResult } from "./hookDraw"
+import { CanvaRenderCtx, CMNode, hookCurrentCtx } from "./hookDraw"
 import { LayoutNode } from "wy-helper"
+import { mdraw } from "./hookCurrentDraw"
 
 type TextWrapConfig = TextWrapTextConfig & {
   text: string
@@ -28,7 +29,7 @@ function makeCurrentDefaultFont(out: any) {
 type DrawTextOut = Omit<DrawTextExt, 'y' | 'x'>
 export function hookDrawText(arg: {
   config: ValueOrGet<DrawTextConfig>
-  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): void
   drawInfo?: ((arg: DrawTextConfig & {
     measure: TextMetrics
   }) => DrawTextOut) | DrawTextOut,
@@ -39,27 +40,6 @@ export function hookDrawText(arg: {
   const getDrawInfo = valueOrGetToGet(arg.drawInfo)
   const getWidth = valueOrGetToGet(arg.width || quote)
   const getHeight = valueOrGetToGet(arg.height || quote)
-  const d = hookDrawRect({
-    ...arg,
-    width() {
-      return getWidth(mout().measure.width)
-    },
-    height() {
-      return mout().height
-    },
-    draw(ctx, n, p) {
-      function draw() {
-        const c = mout()
-        const info = getDrawInfo?.(c)
-        drawText(ctx, c, info)
-      }
-      if (!arg.draw) {
-        draw()
-      }
-      const out = arg.draw?.(ctx, n, draw, p) || {}
-      return out as PathResult
-    },
-  })
   const mout = memo(function () {
     const c = getConfig()
     const out = { ...c } as DrawTextConfig & {
@@ -83,7 +63,29 @@ export function hookDrawText(arg: {
     out.lineDiffStart = (lineHeight - fontHeight) / 2
     return out
   })
-  return d
+  return hookDrawRect({
+    ...arg,
+    width() {
+      return getWidth(mout().measure.width)
+    },
+    height() {
+      return mout().height
+    },
+    draw(ctx, n, p) {
+      function draw() {
+        const c = mout()
+        const info = getDrawInfo?.(c)
+        drawText(ctx, c, info)
+      }
+      if (!arg.draw) {
+        return draw()
+      }
+      const before = mdraw._mve_canvas_render_current_rect_draw
+      mdraw._mve_canvas_render_current_rect_draw = draw
+      arg.draw(ctx, n, draw, p)
+      mdraw._mve_canvas_render_current_rect_draw = before
+    },
+  })
 }
 
 export function hookDrawTextWrap(arg: {
@@ -91,7 +93,7 @@ export function hookDrawTextWrap(arg: {
   config: ValueOrGet<TextWrapConfig>
   /**只与绘制相关 */
   drawInfo?: ((arg: MeasuredTextWrapOut) => DrawTextWrapExt) | DrawTextWrapExt
-  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, p: Path2D): void
   height?: Quote<number> | number
 } & Omit<DrawRectConfig, 'height' | 'draw'>) {
   const getConfig = valueOrGetToGet(arg.config)
@@ -108,10 +110,12 @@ export function hookDrawTextWrap(arg: {
         drawTextWrap(ctx, m, getDrawInfo?.(m))
       }
       if (!arg.draw) {
-        draw()
+        return draw()
       }
-      const out = arg.draw?.(ctx, n, draw, p) || {}
-      return out as PathResult
+      const before = mdraw._mve_canvas_render_current_rect_draw
+      mdraw._mve_canvas_render_current_rect_draw = draw
+      arg.draw(ctx, n, draw, p)
+      mdraw._mve_canvas_render_current_rect_draw = before
     },
   })
   const mout = memo(function () {
