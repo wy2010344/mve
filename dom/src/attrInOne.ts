@@ -23,6 +23,8 @@ export function renderMDom<T extends DomElementType>(
   const node = document.createElement(type)
   renderMDomAttr(node, arg, mergeValue, renderChildren)
   hookAddResult(node)
+  addPlugin(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 

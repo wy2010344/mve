@@ -85,12 +85,20 @@ export class AppendList<T, N> {
 
   collect<T = void>(fun: (n: N) => T) {
     const beforeList = hookAlterChildren(this.list)
+    const before = m._mve_current_parent_node
+    m._mve_current_parent_node = this.node
     const o = fun(this.node)
+    m._mve_current_parent_node = before
     hookAlterChildren(beforeList)
     return o
   }
 }
-
+const m = globalThis as unknown as {
+  _mve_current_parent_node: any
+}
+export function hookCurrentParent() {
+  return m._mve_current_parent_node
+}
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
   removeChild(parent: Node, child: Node): void
