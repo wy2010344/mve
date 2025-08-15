@@ -16,6 +16,11 @@ export * from './cns'
 export * from './fakeRoute'
 export * from './tsxSupport'
 export * from './moveEdgeScroll'
+export * from './hookTransition'
+export * from './hookLockScroll'
+export * from './hookTouch'
+export * from './pluginTouchHover'
+export * from './renderNode'
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig

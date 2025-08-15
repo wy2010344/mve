@@ -3,7 +3,7 @@ import { ComponentValueCache, ContentHTMLCache, ContentTextCache, DomElement, Do
 import { addEffect, anyStoreTransform, batchSignalEnd, EmptyFun, GetValue, SetValue, StoreTransform, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
-export type TriggerTime = "onInput" | "onBlur"
+export type TriggerTime = "onInput" | "onInputWithComposition" | "onBlur"
 //这个不需要处理select-change
 function useUpdateValue<V, F>(
   getValue: GetValue<F>,
@@ -23,7 +23,7 @@ function useUpdateValue<V, F>(
     if (transform.shouldChange(v, cache.get())) {
       //必须用实时值去改!!!
       effect.value = transform.toComponentValue(v)
-      addEffect(effect)
+      addEffect(effect, -0.5)
     }
   })
 }
@@ -46,9 +46,23 @@ function useTrigger<
    * 因为输入成功,value会变,自动触发同步比较与合并value
    */
   const [version, updateVersion] = useVersion()
-  const getTriggerTime = valueOrGetToGet(triggerTime || 'onInput')
-  cache.input.addEventListener("input", function (e) {
-    if (getTriggerTime() == 'onInput') {
+  const getTriggerTime = valueOrGetToGet(triggerTime || 'onInputWithComposition')
+  cache.input.addEventListener("input", function (e: any) {
+    const t = getTriggerTime()
+    if (t == 'onInputWithComposition') {
+      if (e.isComposing || e.inputType === 'insertCompositionText')
+        return;
+      updateVersion()
+      transform.fromComponent(cache.get(), setValue)
+      batchSignalEnd()
+    } else if (t == 'onInput') {
+      updateVersion()
+      transform.fromComponent(cache.get(), setValue)
+      batchSignalEnd()
+    }
+  })
+  cache.input.addEventListener('compositionend', e => {
+    if (getTriggerTime() == 'onInputWithComposition') {
       updateVersion()
       transform.fromComponent(cache.get(), setValue)
       batchSignalEnd()
@@ -75,7 +89,7 @@ function useTrigger<
  * @param param0 
  * @returns 
  */
-export function renderInputTrans<T extends 'textarea' | 'input'|'select', B>(
+export function renderInputTrans<T extends 'textarea' | 'input' | 'select', B>(
   transform: StoreTransform<B, string>,
   getValue: GetValue<B>,
   setValue: SetValue<B>,
@@ -85,7 +99,7 @@ export function renderInputTrans<T extends 'textarea' | 'input'|'select', B>(
   useTrigger(getValue, setValue, transform || anyStoreTransform, new InputCache(div as HTMLInputElement), triggerTime)
   return div
 }
-export function renderInput<T extends 'textarea' | 'input'|'select',>(
+export function renderInput<T extends 'textarea' | 'input' | 'select',>(
   getValue: GetValue<string>,
   setValue: SetValue<string>,
   div: DomElement<T>,
