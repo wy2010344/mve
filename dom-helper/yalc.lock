@@ -7,7 +7,7 @@
       "replaced": "^0.1.16"
     },
     "wy-dom-helper": {
-      "signature": "9fbac07bc08a1734a32a88b05e2eb211",
+      "signature": "5ea668664629696d527783d03a73f11f",
       "file": true,
       "replaced": "^0.1.14"
     },
@@ -17,7 +17,7 @@
       "replaced": "^2.0.2"
     },
     "mve-dom": {
-      "signature": "cde86e287fd5bb1fa79073e86bb09571",
+      "signature": "d748a2995f9752a48d720b0702e10dc6",
       "file": true,
       "replaced": "^2.0.2"
     },
