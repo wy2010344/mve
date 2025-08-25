@@ -1,26 +1,45 @@
-import { addEffect, emptyArray, EmptyFun, emptyFun, GetValue, memo, MemoFun, objectFreeze, quote, SetValue, storeRef, trackSignal } from "wy-helper"
-import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from "."
+import {
+  addEffect,
+  emptyArray,
+  EmptyFun,
+  emptyFun,
+  GetValue,
+  memo,
+  MemoFun,
+  objectFreeze,
+  quote,
+  SetValue,
+  StoreRef,
+  storeRef,
+  trackSignal,
+} from 'wy-helper'
+import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from '.'
 
-
-
-
-
-
-
-export function addTrackEffect<T>(get: GetValue<T>, toEffect: (v: T) => EmptyFun, level = 0) {
+export function addTrackEffect<T>(
+  get: GetValue<T>,
+  toEffect: (v: T) => EmptyFun,
+  level = 0
+) {
   const addDestroy = hookAddDestroy()
-  addDestroy(trackSignal(get, v => {
-    const effect = toEffect(v)
-    addEffect(effect, level)
-  }))
+  addDestroy(
+    trackSignal(get, (v) => {
+      const effect = toEffect(v)
+      addEffect(effect, level)
+    })
+  )
 }
 
-export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?: any) {
+export function hookTrackAttr<V>(
+  get: GetValue<V>,
+  set: SetValue<V>,
+  b?: any,
+  f?: any
+) {
   const isDestroyed = hookIsDestroyed()
   const effect: {
     (): void
-    v: any,
-    b: any,
+    v: any
+    b: any
     f: any
   } = function () {
     if (isDestroyed()) {
@@ -28,23 +47,23 @@ export function hookTrackAttr<V>(get: GetValue<V>, set: SetValue<V>, b?: any, f?
     }
     set(effect.v, effect.b, effect.f)
   } as any
-  addTrackEffect(get, function (v) {
-    effect.v = v
-    effect.b = b
-    effect.f = f
-    return effect
-  }, -1)
+  addTrackEffect(
+    get,
+    function (v) {
+      effect.v = v
+      effect.b = b
+      effect.f = f
+      return effect
+    },
+    -1
+  )
 }
 
 export type OrFun<T extends {}> = {
   [key in keyof T]: T[key] | GetValue<T[key]>
 }
 
-
 export type HookChild<T> = T | (() => HookChild<T>[])
-
-
-
 
 function purifyList<T>(children: HookChild<T>[], list: T[]) {
   for (let i = 0; i < children.length; i++) {
@@ -57,7 +76,6 @@ function purifyList<T>(children: HookChild<T>[], list: T[]) {
   }
 }
 
-
 function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
   const get = memo(function () {
     objectFreeze(list)
@@ -67,7 +85,6 @@ function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
   }, after)
   return get
 }
-
 
 /**
  * 这个可以在canvas中实践
@@ -105,14 +122,9 @@ export type RenderChildrenOperante<Node> = {
   nextSibling(child: Node): Node | null
 }
 
-export function createRenderChildren<T>(
-  arg: RenderChildrenOperante<T>
-) {
+export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
   return {
-    renderPortal(
-      pNode: T,
-      fun: SetValue<T>
-    ) {
+    renderPortal(pNode: T, fun: SetValue<T>) {
       const list = storeRef<T[]>(emptyArray as T[])
       const addDestroy = hookAddDestroy()
       const appendList = new AppendList(pNode, [], emptyFun)
@@ -123,38 +135,38 @@ export function createRenderChildren<T>(
           list.get().forEach(function (node) {
             arg.removeChild(pNode, node)
           })
+          list.get().length = 0
+          list.set(emptyArray)
         }, -2)
       })
       return appendList
     },
-    renderChildren(
-      node: T,
-      fun: SetValue<T>
-    ) {
+    renderChildren(node: T, fun: SetValue<T>) {
       const appendList = new AppendList(node, [], emptyFun)
       appendList.collect(fun)
       hookChangeChildren(node, appendList.target, quote, arg)
       return appendList
-    }
+    },
   }
 }
 function hookChangeChildren<Node, T>(
   pNode: Node,
   getChildren: GetValue<readonly T[]>,
   get: (v: T) => Node,
-  {
-    moveBefore,
-    removeChild,
-    nextSibling
-  }: RenderChildrenOperante<Node>,
-  listRef = storeRef<readonly T[]>(emptyArray)
+  { moveBefore, removeChild, nextSibling }: RenderChildrenOperante<Node>,
+  listRef?: StoreRef<readonly T[]>
 ) {
+  const autoClear = !listRef
+  listRef = listRef || storeRef<readonly T[]>(emptyArray)
   const isDestroyed = hookIsDestroyed()
   const effect: {
     (): void
     newList: readonly T[]
   } = function () {
     if (isDestroyed()) {
+      if (autoClear) {
+        listRef.set(emptyArray)
+      }
       return
     }
     const newList = effect.newList
@@ -181,7 +193,7 @@ function hookChangeChildren<Node, T>(
         }
       }
     }
-    oldList.forEach(last => {
+    oldList.forEach((last) => {
       const lastChild = get(last)
       if (!newList.includes(last)) {
         removeChild(pNode, lastChild)
@@ -189,8 +201,12 @@ function hookChangeChildren<Node, T>(
     })
     listRef.set(newList)
   } as any
-  addTrackEffect(getChildren, function (list) {
-    effect.newList = list
-    return effect
-  }, -2)
+  addTrackEffect(
+    getChildren,
+    function (list) {
+      effect.newList = list
+      return effect
+    },
+    -2
+  )
 }

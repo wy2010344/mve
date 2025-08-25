@@ -1,6 +1,18 @@
-import { GetValue, RMap, normalMapCreater, memoKeep, memo, MemoFun, emptyObject } from "wy-helper"
-import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
-import { StateHolder } from "./stateHolder"
+import {
+  GetValue,
+  RMap,
+  normalMapCreater,
+  memo,
+  MemoFun,
+  emptyObject,
+} from 'wy-helper'
+import {
+  hookAddResult,
+  hookAlterChildren,
+  hookAlterStateHolder,
+  hookCurrentStateHolder,
+} from './cache'
+import { StateHolder } from './stateHolder'
 
 export function cloneMap<K, T>(
   map: RMap<K, T[]>,
@@ -18,20 +30,24 @@ export interface EachTime<T> {
   getValue(): T
 }
 class EachTimeI<T, K, O> implements EachTime<T> {
-  constructor(private it: EachValue<T, K, O>) {
-    if (it.arg.bindIndex) {
+  constructor(
+    arg: RenderForEachArg,
+    private createSignal: GetValue<any>,
+    private it: EachValue<T, K, O>
+  ) {
+    if (arg.bindIndex) {
       this.getIndex = this.getIndex.bind(this)
     }
-    if (it.arg.bindValue) {
+    if (arg.bindValue) {
       this.getValue = this.getValue.bind(this)
     }
   }
   getIndex() {
-    this.it.createSignal()
+    this.createSignal()
     return this.it.index
   }
   getValue() {
-    this.it.createSignal()
+    this.createSignal()
     return this.it.value
   }
 }
@@ -42,14 +58,12 @@ class EachValue<T, K, O> {
     readonly arg: RenderForEachArg,
     readonly creater: Creater<T, K, O>,
     readonly createSignal: MemoFun<RMap<K, EachValue<T, K, O>[]>>,
-    private stateHolder: StateHolder,
+    private stateHolder: StateHolder
   ) {
     if (arg.bindOut) {
       this.getOut = this.getOut.bind(this)
     }
-    this.eachTime = new EachTimeI(this)
   }
-  private eachTime: EachTime<T>
   private out!: O
   public value!: T
   public index!: number
@@ -57,10 +71,13 @@ class EachValue<T, K, O> {
   getOut() {
     return this.out
   }
-  create() {
+  create(createSignal: GetValue<any>) {
     const before = hookAlterStateHolder(this.stateHolder)
     const beforeChildren = hookAlterChildren(this.children)
-    this.out = this.creater(this.key, this.eachTime)
+    this.out = this.creater(
+      this.key,
+      new EachTimeI(this.arg, createSignal, this)
+    )
     hookAlterChildren(beforeChildren)
     hookAlterStateHolder(before)
   }
@@ -78,12 +95,7 @@ export type RenderForEachArg = {
   createMap?: <K, V>() => RMap<K, V>
 }
 export function renderForEach<T, K = T, O = void>(
-  forEach: (
-    callback: (
-      key: K,
-      value: T
-    ) => GetValue<O>
-  ) => void,
+  forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
   creater: Creater<T, K, O>,
   arg: RenderForEachArg = emptyObject
 ) {
@@ -115,10 +127,8 @@ export function renderForEach<T, K = T, O = void>(
           arg,
           creater,
           createSignal,
-          new StateHolder(
-            stateHolder,
-            contextIndex
-          ))
+          new StateHolder(stateHolder, contextIndex)
+        )
         thisTimeAdd.push(x)
       }
       x.index = index++
@@ -154,9 +164,8 @@ export function renderForEach<T, K = T, O = void>(
   return createSignal
 }
 
-
 function thisTimeAddEach<T, K, O>(add: EachValue<T, K, O>) {
-  add.create()
+  add.create(add.createSignal)
 }
 
 function oldRemoveStateHolders<T, K, O>(children: EachValue<T, K, O>[]) {
