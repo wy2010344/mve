@@ -197,7 +197,7 @@ fdom.ul({
   children() {
     renderArrayKey(
       () => todos.get(), // 参数1: 获得数组的依赖函数
-      (todo) => todo.id, // 参数2: 从每个数组元素中取得唯一 key
+      (todo) => todo.id, // 参数2: 从每个数组元素中取得唯一 key,需要稳定的key
       (getItem, getIndex, key) => {
         // 参数3: 渲染回调函数
         // 当数组变化时：
@@ -331,18 +331,30 @@ import { dom } from 'mve-dom'
 dom
   .div({
     className: 'container',
-    s_color: 'red',
-    s_background() {
-      return isActive.get() ? 'green' : 'blue'
+    //这里类似react
+    style: {
+      color: 'red',
+      background() {
+        return isActive.get() ? 'green' : 'blue'
+      },
     },
   })
   .render(() => {
     renderTextContent('abc')
 
+    //渲染子区域为文字
     dom.span().renderText`abc`
 
+    //渲染子区域为文字,但文字是动态的
     dom.div().renderTextContent(() => {
       return `${value.get()}abc`
+    })
+
+    //渲染子区域为html
+    dom.span().rendrHtml`<b>abc</b>`
+    dom.span().rendrHtmlContent(function () {
+      //返回一段html的内容
+      return html.get()
     })
   })
 ```
@@ -386,12 +398,50 @@ fdom.div({
     return isExpanded.get()
   },
 
+  onClick(e) {
+    //点击事件,其它事件类似,如react
+  },
+  onClickCapture(e) {
+    //capture
+  },
+  plugin(e) {
+    //e为该div实例,只调用一次,可注入一些东西.
+  },
   children() {
     fdom.span({
+      //此时,children为文本,或返回文本的函数
       childrenType: 'text',
       children() {
         return `动态内容: ${content.get()}`
       },
+    })
+    fdom.span({
+      //只是文本,可以省略childrenType
+      children: 'abc',
+    })
+
+    fdom.span({
+      //此时,children为html,或返回html的函数
+      childrenType: 'html',
+      children() {
+        return `<b>动态内容: ${content.get()}</b>`
+      },
+    })
+
+    fdom.span({
+      //getContent为返回文本或数字的函数.此时子区域渲染为该文本,toText来源于wy-dom-helper
+      children: toText`abc--${getContent}---bcc`,
+    })
+
+    fdom.span({
+      //getContent为返回文本或数字的函数.此时子区域渲染为html,toHtml来源于wy-dom-helper
+      children: toHtml`<b>abc--${getContent}---bcc</b>`,
+    })
+    fdom.span({
+      //getContent为返回文本或数字的函数.此时子区域渲染为html,toGetHtml来源于wy-dom-helper
+      children: toGetHtml(function () {
+        return `<b>abc--${getContent()}---bcc</b>`
+      }),
     })
   },
 })
@@ -399,7 +449,7 @@ fdom.div({
 
 ### 3. mdom.xx - 减少重复依赖的优化 API
 
-当同一元素上过多属性依赖相同的信号时，使用 mdom 可以减少 trackSignal 的建立。mdom 与 fdom 的 children、childrenType 是一样的：
+当同一元素上过多属性依赖相同的信号时，使用 mdom 可以减少 trackSignal 的建立。其它地方,mdom 与 fdom 一样
 
 ```typescript
 import { mdom } from 'mve-dom'
@@ -421,7 +471,9 @@ mdom({
     m.className = 'abc'
     m.css_customVar = `--value-${value.get()}`
   },
-
+  onClick(e) {
+    //点击事件
+  },
   // children 和 childrenType 与 fdom 完全一样
   children() {
     mdom({
@@ -520,7 +572,6 @@ function App() {
     children() {
       // 提供的是 getter 函数
       ThemeContext.provide(() => theme.get())
-
       Header()
       MainContent()
     },
@@ -615,80 +666,40 @@ function TimerComponent() {
 
 ### 1. Signal 原子性
 
-createSignal 是原子的，对象更新需整体替换，或手动创建嵌套信号优化。
+createSignal 是原子的，对象更新需整体替换，或手动创建嵌套信号优化,即类似 vue 的 shallowRef 而不是 ref。
 
 ### 2. children() 用法
 
 如果没有 childrenType:'text'|'html',children 只是子层级.
 信号内容需要在最终观察属性节点上展开，不在 children 回调中获取。
 
-### 3. memo 性能考虑
-
-memo 背后依赖 Map，简单计算可以不使用 memo。
-
-### 4. 属性转换规则
-
-- `style.xxx` → `s_xxx`
-- `data-attrXXX` → `data_attrXXX`
-- `--varcssxx` → `css_varcssxx`
-- `aria-xxx` → `aria_xxx`
-
-详细的错误示例和修正方法请参考 [最佳实践文档](./best-practices.md)。
-
-## 🚀 性能优化
-
-### 使用 memo 优化计算
-
-```typescript
-// ✅ 推荐：使用 memo 缓存昂贵计算
-const processedItems = memo((old, inited) => {
-  console.log('处理数据', { old, inited })
-  return largeArray
-    .get()
-    .filter((item) => item.active)
-    .map((item) => processItem(item))
-    .sort((a, b) => a.priority - b.priority)
-})
-
+```ts
 fdom.div({
   children() {
-    renderArrayKey(
-      () => processedItems(),
-      (item) => item.id,
-      (getItem, getIndex, key) => {
-        ItemComponent({ item: getItem() })
-      }
-    )
+    //这里只能获得singalA最初的值,而不能获得动态的值.即该children函数在整个生命周期中,只执行一次
+    const a = signalA.get()
   },
 })
 ```
 
-### 使用 renderArrayKey 优化列表
+一般改造
 
-```typescript
-// ✅ 使用稳定的 key 优化列表渲染
-const items = createSignal([
-  { id: 1, name: '项目1' },
-  { id: 2, name: '项目2' },
-])
-
-fdom.ul({
+```ts
+fdom.div({
   children() {
-    renderArrayKey(
-      () => items.get(),
-      (item) => item.id, // 稳定的 key
-      (getItem, getIndex, key) => {
-        fdom.li({
-          children() {
-            const item = getItem()
-            fdom.span({
-              childrenType: 'text',
-              children: item.name,
-            })
-          },
-        })
-      }
-    )
+    //这里只能获得singalA最初的值,而不能获得动态的值.即该children函数在整个生命周期中,只执行一次
+
+    fdom.span({
+      s_background() {
+        //在具体的属性场合展开
+        return signalB.get() ? 'blue' : 'green'
+      },
+      childrenType: 'text',
+      children() {
+        //在真正需要的场合展开,如children是text节点
+        return signalA.get()
+      },
+    })
   },
 })
 ```
