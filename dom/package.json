@@ -1,6 +1,6 @@
 {
   "name": "mve-dom",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -22,7 +22,9 @@
   ],
   "scripts": {
     "build": "tsc && vite build",
-    "prepare": "yarn build"
+    "prepare": "yarn build",
+    "ts": "tsc --noEmit --incremental --skipLibCheck",
+    "ts:watch": "yarn ts --watch"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
@@ -31,15 +33,15 @@
     "vite-plugin-dts": "^3.9.1"
   },
   "peerDependencies": {
-    "mve-core": "^2.0.1",
+    "mve-core": "^2.0.2",
     "mve-helper": "^2.0.1",
-    "wy-dom-helper": "^0.1.12",
-    "wy-helper": "^0.1.14"
+    "wy-dom-helper": "^0.1.14",
+    "wy-helper": "^0.1.16"
   },
   "dependencies": {
-    "mve-core": "^2.0.1",
-    "mve-helper": "^2.0.1",
-    "wy-dom-helper": "^0.1.12",
-    "wy-helper": "^0.1.14"
+    "mve-core": "file:.yalc/mve-core",
+    "mve-helper": "file:.yalc/mve-helper",
+    "wy-dom-helper": "file:.yalc/wy-dom-helper",
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }

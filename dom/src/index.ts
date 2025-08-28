@@ -1,14 +1,15 @@
-import { hookAddResult, render } from "mve-core"
+import { hookAddResult, hookTrackAttr, render, renderForEach } from "mve-core"
 import { EmptyFun, genTemplateStringS1, genTemplateStringS2, ValueOrGet, VType, vTypeisGetValue } from "wy-helper"
-import { hookTrackAttr, renderPortal } from "./hookChildren"
+import { renderPortal } from "./hookChildren"
+import { renderArray, renderOne } from "mve-helper"
 export { dom } from './dom'
 export { svg } from './svg'
-export type { HookChild } from './hookChildren'
-export { renderPortal, getRenderChildren, diffChangeChildren, renderChildren } from './hookChildren'
-export type { OrFun } from './hookChildren'
 export type { StyleProps } from './node'
 export * from './renderNode'
 export * from './attrInOne'
+export * from './hookChildren'
+
+
 export function createRoot(node: Node, create: EmptyFun) {
   return render(() => {
     renderPortal(node, create)
@@ -43,4 +44,36 @@ export function renderText(ts: TemplateStringsArray, ...vs: VType[]) {
   }
   hookAddResult(node)
   return node
+}
+
+
+export function renderHtmlContent(value: ValueOrGet<string | number>) {
+  const container = document.createElement('div')
+  if (typeof value == 'function') {
+    renderArray(() => {
+      container.innerHTML = value() + ''
+      return Array.from(container.childNodes)
+    }, hookAddResult)
+  } else {
+    container.innerHTML = value + ''
+    container.childNodes.forEach(node => {
+      hookAddResult(node)
+    })
+  }
+}
+
+
+export function renderHtml(ts: TemplateStringsArray, ...vs: VType[]) {
+  const container = document.createElement('div')
+  if (vs.some(vTypeisGetValue)) {
+    renderArray(() => {
+      container.innerHTML = genTemplateStringS2(ts, vs)
+      return Array.from(container.childNodes)
+    }, hookAddResult)
+  } else {
+    container.innerHTML = genTemplateStringS1(ts, vs as any)
+    container.childNodes.forEach(node => {
+      hookAddResult(node)
+    })
+  }
 }
