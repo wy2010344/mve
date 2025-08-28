@@ -1,47 +1,110 @@
-import { GetValue, RMap, normalMapCreater, memoKeep, memo } from "wy-helper"
-import { hookAddResult, hookAlterChildren, hookAlterStateHolder, hookCurrentStateHolder } from "./cache"
-import { StateHolder } from "./stateHolder"
+import {
+  GetValue,
+  RMap,
+  normalMapCreater,
+  memo,
+  MemoFun,
+  emptyObject,
+} from 'wy-helper'
+import {
+  hookAddResult,
+  hookAlterChildren,
+  hookAlterStateHolder,
+  hookCurrentStateHolder,
+} from './cache'
+import { StateHolder } from './stateHolder'
 
-export interface RMapCreater<K, V> {
-  (): RMap<K, V>
-}
-export function cloneMap<T>(
-  map: RMap<any, T[]>,
-  creater: RMapCreater<any, T[]>
+export function cloneMap<K, T>(
+  map: RMap<K, T[]>,
+  creater: <K, V>() => RMap<K, V>
 ) {
-  const newMap = creater()
+  const newMap = creater<K, T[]>()
   map.forEach(function (v, k) {
     newMap.set(k, v.slice())
   })
   return newMap
 }
 
-type EachValue<T, O> = {
-  index: number
-  stateHolder: StateHolder
-  value: T
-  children: any[],
-  out: O,
-  getOut(): O
+export interface EachTime<T> {
+  getIndex(): number
+  getValue(): T
 }
-export function renderForEach<T, O>(
-  forEach: (
-    callback: (
-      value: T,
-      creater: (value: T, getIndex: GetValue<number>) => O,
-    ) => GetValue<O>) => void,
-  createMap: RMapCreater<any, EachValue<T, O>[]> = normalMapCreater
+class EachTimeI<T, K, O> implements EachTime<T> {
+  constructor(
+    arg: RenderForEachArg,
+    private createSignal: GetValue<any>,
+    private it: EachValue<T, K, O>
+  ) {
+    if (arg.bindIndex) {
+      this.getIndex = this.getIndex.bind(this)
+    }
+    if (arg.bindValue) {
+      this.getValue = this.getValue.bind(this)
+    }
+  }
+  getIndex() {
+    this.createSignal()
+    return this.it.index
+  }
+  getValue() {
+    this.createSignal()
+    return this.it.value
+  }
+}
+
+class EachValue<T, K, O> {
+  constructor(
+    readonly key: K,
+    readonly arg: RenderForEachArg,
+    readonly creater: Creater<T, K, O>,
+    readonly createSignal: MemoFun<RMap<K, EachValue<T, K, O>[]>>,
+    private stateHolder: StateHolder
+  ) {
+    if (arg.bindOut) {
+      this.getOut = this.getOut.bind(this)
+    }
+  }
+  private out!: O
+  public value!: T
+  public index!: number
+  readonly children: any[] = []
+  getOut() {
+    return this.out
+  }
+  create(createSignal: GetValue<any>) {
+    const before = hookAlterStateHolder(this.stateHolder)
+    const beforeChildren = hookAlterChildren(this.children)
+    this.out = this.creater(
+      this.key,
+      new EachTimeI(this.arg, createSignal, this)
+    )
+    hookAlterChildren(beforeChildren)
+    hookAlterStateHolder(before)
+  }
+
+  remove() {
+    this.stateHolder.removeFromParent()
+  }
+}
+
+type Creater<T, K, O> = (key: K, eachTime: EachTime<T>) => O
+export type RenderForEachArg = {
+  bindIndex?: any
+  bindValue?: any
+  bindOut?: any
+  createMap?: <K, V>() => RMap<K, V>
+}
+export function renderForEach<T, K = T, O = void>(
+  forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
+  creater: Creater<T, K, O>,
+  arg: RenderForEachArg = emptyObject
 ) {
-  let cacheMap = createMap()
-
-  let oldMap!: RMap<T, EachValue<T, O>[]>
-  let newMap!: RMap<T, EachValue<T, O>[]>
-  const thisTimeAdd: {
-    x: EachValue<T, O>,
-    build: (value: T, getIndex: GetValue<number>) => O
-  }[] = []
-  const thisChildren: EachValue<T, O>[] = []
-
+  const createMap: <K, V>() => RMap<K, V> = arg.createMap || normalMapCreater
+  let cacheMap = createMap<K, EachValue<T, K, O>[]>()
+  let oldMap!: RMap<K, EachValue<T, K, O>[]>
+  let newMap!: RMap<K, EachValue<T, K, O>[]>
+  const thisTimeAdd: EachValue<T, K, O>[] = []
+  const thisChildren: EachValue<T, K, O>[] = []
   const stateHolder = hookCurrentStateHolder()
   if (!stateHolder) {
     throw '需要在stateHolder里面'
@@ -53,73 +116,65 @@ export function renderForEach<T, O>(
     thisTimeAdd.length = 0
     thisChildren.length = 0
     let index = 0
-    forEach((value, build) => {
-      let holders = oldMap.get(value)
-      let x: EachValue<T, O>
+    forEach((key, value) => {
+      let holders = oldMap.get(key)
+      let x: EachValue<T, K, O>
       if (holders?.length) {
         x = holders.shift()!
       } else {
-        x = {
-          index,
-          value,
-          children: [],
-          stateHolder: new StateHolder(
-            stateHolder,
-            contextIndex
-          ),
-          out: undefined!,
-          getOut() {
-            return x.out
-          },
-        }
-        thisTimeAdd.push({
-          x,
-          build
-        })
-      }
-      if (x.value != value) {
-        console.warn(`同key下字段发生变化`, x.value, value)
+        x = new EachValue(
+          key,
+          arg,
+          creater,
+          createSignal,
+          new StateHolder(stateHolder, contextIndex)
+        )
+        thisTimeAdd.push(x)
       }
       x.index = index++
-      let newEnvs = newMap.get(value)
+      x.value = value
+      let newEnvs = newMap.get(key)
       if (newEnvs) {
         newEnvs.push(x)
-        console.warn(`重复的value`, value, `出现第${newEnvs.length}次`)
+        console.warn(`重复的key`, key, `出现第${newEnvs.length}次`)
       } else {
         newEnvs = [x]
       }
-      newMap.set(value, newEnvs)
+      newMap.set(key, newEnvs)
       thisChildren.push(x)
       return x.getOut
     })
     return newMap
-  }, newMap => {
-    memoKeep(afterWork)
-  })
+  }, afterWork)
+  //  newMap => {
+  //   memoKeep(afterWork)
+  // })
   function afterWork() {
     //清理、销毁事件
-    oldMap.forEach(function (values) {
-      values.forEach(value => {
-        stateHolder!.removeChild(value.stateHolder)
-      })
-    })
+    oldMap.forEach(oldRemoveStateHolders)
     //构造新的
-    thisTimeAdd.forEach(add => {
-      const before = hookAlterStateHolder(add.x.stateHolder)
-      const beforeChildren = hookAlterChildren(add.x.children)
-      add.x.out = add.build(add.x.value, () => {
-        createSignal()
-        return add.x.index
-      })
-      hookAlterChildren(beforeChildren)
-      hookAlterStateHolder(before)
-    })
+    thisTimeAdd.forEach(thisTimeAddEach)
     //重新生成
     cacheMap = newMap
   }
   hookAddResult(() => {
     createSignal()
-    return thisChildren.flatMap(child => child.children)
+    return thisChildren.flatMap(getChildren)
   })
   return createSignal
+}
+
+function thisTimeAddEach<T, K, O>(add: EachValue<T, K, O>) {
+  add.create(add.createSignal)
+}
+
+function oldRemoveStateHolders<T, K, O>(children: EachValue<T, K, O>[]) {
+  children.forEach(removeStateHolder)
+}
+
+function removeStateHolder<T, K, O>(child: EachValue<T, K, O>) {
+  child.remove()
+}
+function getChildren<T, K, O>(child: EachValue<T, K, O>) {
+  return child.children
 }

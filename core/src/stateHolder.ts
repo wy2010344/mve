@@ -1,8 +1,6 @@
 import { EmptyFun, run } from "wy-helper";
 import { Context } from "./context";
-
 export class StateHolder {
-
   constructor(
     public readonly parent?: StateHolder,
     public readonly parentContextIndex: number = 0
@@ -12,14 +10,24 @@ export class StateHolder {
   }
   private destroyList: EmptyFun[] = []
   addDestroy(destroy: EmptyFun) {
+    if (this._destroyed) {
+      throw new Error('can not add to a destroyed holder')
+    }
     this.destroyList.push(destroy)
   }
+  private _destroyed = false
+  destroyed = () => this._destroyed
   destroy() {
+    if (this._destroyed) {
+      console.warn('duplicate destroy', this)
+      return
+    }
+    this._destroyed = true
     this.children.forEach(destroyHolder)
     this.destroyList.forEach(run)
   }
 
-  removeChild(child: StateHolder) {
+  private removeChild(child: StateHolder) {
     if (this.children.delete(child)) {
       child.destroy()
     }
@@ -29,6 +37,10 @@ export class StateHolder {
     value: any
   }[] = []
   private children = new Set<StateHolder>
+
+  removeFromParent() {
+    this.parent!.removeChild(this)
+  }
 }
 
 function destroyHolder(stateHolder: StateHolder) {

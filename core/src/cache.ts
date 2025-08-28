@@ -16,10 +16,11 @@ export function hookAlterChildren(vs?: any[]) {
   return before
 }
 
-export function hookAddResult(node: any) {
+export function hookAddResult<T>(node: T) {
   const children = mveGlobal.currentChildren
   if (children) {
     children.push(node)
+    return node
   } else {
     throw '不在render执行添加到children'
   }

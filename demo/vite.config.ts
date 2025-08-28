@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import vitePluginRequire from "vite-plugin-require";
 import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   server: {
@@ -10,7 +9,6 @@ export default defineConfig({
     }
   },
   plugins: [
-    vitePluginRequire.default(),
     tailwindcss(),
   ],
 })

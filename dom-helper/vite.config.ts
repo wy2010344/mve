@@ -10,7 +10,8 @@ export default defineConfig({
       // Could also be a dictionary or array of multiple entry points
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        canvasRender: resolve(__dirname, 'src/canvasRender/index.ts')
+        canvasRender: resolve(__dirname, 'src/canvasRender/index.ts'),
+        history: resolve(__dirname, 'src/history/index.ts')
       },
       formats: ["es", "cjs"]
     },
@@ -21,7 +22,8 @@ export default defineConfig({
         /^wy-dom-helper(\/)?/,
         "mve-core",
         "mve-helper",
-        "mve-dom"
+        "mve-dom",
+        "history"
       ]
     }
   },

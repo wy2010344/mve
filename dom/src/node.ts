@@ -1,8 +1,8 @@
 
 import { genTemplateStringS2, genTemplateStringS1, objectDiffDeleteKey, VType, vTypeisGetValue, GetValue, emptyObject, emptyFun } from "wy-helper"
 import { addEvent, CSSProperties, isEvent, React, UpdateProp } from "wy-dom-helper"
-import { hookAddResult } from "mve-core"
-import { hookTrackAttr, OrFun, renderChildren } from "./hookChildren"
+import { hookAddResult, hookTrackAttr, OrFun } from "mve-core"
+import { renderChildren } from "./hookChildren"
 
 
 export type StyleProps = {
@@ -216,7 +216,7 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   }
   render(fun: (node: N) => void = emptyFun): N {
     const node = this.useHelper()
-    renderChildren(node, fun)
+    renderChildren(node, fun as any)
     return node
   }
 }

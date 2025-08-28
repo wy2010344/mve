@@ -1,166 +1,176 @@
-import { OrFun, renderFDom } from "mve-dom";
 import { hookTrackSignal, useVersion } from "mve-helper";
-import { BDomEvent, DomElement, DomElementType, FDomAttribute } from "wy-dom-helper";
-import { batchSignalEnd, EmptyFun, emptyFun, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { ComponentValueCache, ContentHTMLCache, ContentTextCache, DomElement, DomElementType, InputCache, InputCheckCache } from "wy-dom-helper";
+import { addEffect, anyStoreTransform, batchSignalEnd, EmptyFun, GetValue, SetValue, StoreTransform, ValueOrGet, valueOrGetToGet } from "wy-helper";
 
 
-export type TriggerTime = "onInput" | "onBlur"
-type InputTypeProps<T extends DomElementType> = OrFun<FDomAttribute<T>> & BDomEvent<T> & {
-  triggerTime?: ValueOrGet<TriggerTime>,
-  value?: ValueOrGet<string>
-  onValueChange(v: string): void
-}
-
-export type TextareaProps = InputTypeProps<'textarea'>
-export type InputProps = Omit<InputTypeProps<"input">, 'type'> & {
-  /**
-   * 不支持那几项
-   */
-  type?: ValueOrGet<Exclude<FDomAttribute<'input'>['type'],
-    'checkbox'
-    | 'button'
-    | 'hidden'
-    | 'radio'
-    | 'reset'
-    | 'submit'
-    | 'image'>>
-}
-
-function useUpdateValue<K extends string, V>(
-  _getValue: ValueOrGet<V>,
-  input: {
-    [key in K]: V | null
-  },
-  key: K,
-  getDep: EmptyFun
+export type TriggerTime = "onInput" | "onInputWithComposition" | "onBlur"
+//这个不需要处理select-change
+function useUpdateValue<V, F>(
+  getValue: GetValue<F>,
+  transform: StoreTransform<F, V>,
+  cache: ComponentValueCache<any, V>,
+  getDep: EmptyFun,
 ) {
-  const getValue = valueOrGetToGet(_getValue)
+  const effect: {
+    value: V
+    (): void
+  } = function () {
+    cache.set(effect.value)
+  } as any
   hookTrackSignal(() => {
     getDep()
-    const value = getValue()
-    if (value != input[key]) {
+    const v = getValue()
+    if (transform.shouldChange(v, cache.get())) {
       //必须用实时值去改!!!
-      input[key] = value
+      effect.value = transform.toComponentValue(v)
+      addEffect(effect, -0.5)
     }
   })
 }
 
 function useTrigger<
-  K extends string,
-  N extends {
-    [key in K]: string | null
-  }
+  E extends HTMLElement,
+  V,
+  F
 >(
-  triggerTime: ValueOrGet<TriggerTime> = "onInput",
-  props: Record<string, any>,
-  value: ValueOrGet<string> = "",
-  onValueChange: (v: string) => void,
-  render: (props: Record<string, any>) => N,
-  key: K
+  value: GetValue<F>,
+  setValue: SetValue<F>,
+  transform: StoreTransform<F, V>,
+  cache: ComponentValueCache<E, V>,
+  triggerTime?: ValueOrGet<TriggerTime>
 ) {
+
   //只是为了强制这个模块更新
   /**
    * updateVersion起的作用只是强制撤销,即禁止输入
    * 因为输入成功,value会变,自动触发同步比较与合并value
    */
   const [version, updateVersion] = useVersion()
-  const getTriggerTime = valueOrGetToGet(triggerTime)
-  const onInput = props.onInput
-  props.onInput = (e: any) => {
-    if (getTriggerTime() == 'onInput') {
-      const newValue = input[key] || ''
+  const getTriggerTime = valueOrGetToGet(triggerTime || 'onInputWithComposition')
+  cache.input.addEventListener("input", function (e: any) {
+    const t = getTriggerTime()
+    if (t == 'onInputWithComposition') {
+      if (e.isComposing || e.inputType === 'insertCompositionText')
+        return;
       updateVersion()
-      onValueChange(newValue)
-      onInput?.(e)
+      transform.fromComponent(cache.get(), setValue)
       batchSignalEnd()
-    } else {
-      onInput?.(e)
+    } else if (t == 'onInput') {
+      updateVersion()
+      transform.fromComponent(cache.get(), setValue)
+      batchSignalEnd()
     }
-  }
-  const onBlur = props.onBlur
-  props.onBlur = (e: any) => {
+  })
+  cache.input.addEventListener('compositionend', e => {
+    if (getTriggerTime() == 'onInputWithComposition') {
+      updateVersion()
+      transform.fromComponent(cache.get(), setValue)
+      batchSignalEnd()
+    }
+  })
+  cache.input.addEventListener("blur", function (e) {
     if (getTriggerTime() == 'onBlur') {
-      const newValue = input[key] || ''
       updateVersion()
-      onValueChange(newValue)
+      transform.fromComponent(cache.get(), setValue)
       batchSignalEnd()
-    } else {
-      onBlur?.(e)
     }
-  }
-  const input = render(props)
-  useUpdateValue(value, input, key, version)
-  return input
+  })
+  useUpdateValue(value, transform, cache, version)
 }
-
-
-export function renderInput(type: "textarea", args: TextareaProps): HTMLTextAreaElement
-export function renderInput(type: "input", props: InputProps): HTMLInputElement
-export function renderInput(
-  type: any,
-  {
-    value,
-    onValueChange,
-    triggerTime,
-    ...props
-  }: any
-) {
-  return useTrigger(triggerTime, props, value, onValueChange, props => {
-    return renderFDom(type, props)
-  }, 'value') as any
-}
-
-
-
-export type ContentEditableProps<T extends DomElementType> = OrFun<FDomAttribute<T>> & BDomEvent<T> & {
+/**
+ * 这里的input,type不支持    
+ *  'checkbox'
+    | 'button'
+    | 'hidden'
+    | 'radio'
+    | 'reset'
+    | 'submit'
+    | 'image'>>
+ * @param param0 
+ * @returns 
+ */
+export function renderInputTrans<T extends 'textarea' | 'input' | 'select', B>(
+  transform: StoreTransform<B, string>,
+  getValue: GetValue<B>,
+  setValue: SetValue<B>,
+  div: DomElement<T>,
   triggerTime?: ValueOrGet<TriggerTime>,
-  value?: ValueOrGet<string>
-  onValueChange(v: string): void
+) {
+  useTrigger(getValue, setValue, transform || anyStoreTransform, new InputCache(div as HTMLInputElement), triggerTime)
+  return div
+}
+export function renderInput<T extends 'textarea' | 'input' | 'select',>(
+  getValue: GetValue<string>,
+  setValue: SetValue<string>,
+  div: DomElement<T>,
+  triggerTime?: ValueOrGet<TriggerTime>,
+) {
+  return renderInputTrans(anyStoreTransform as StoreTransform<string, string>, getValue, setValue, div, triggerTime)
+}
+
+export function renderContentEditableTrans<T extends DomElementType, B>(
+  transform: StoreTransform<B, string | null>,
+  getValue: GetValue<B>,
+  setValue: SetValue<B>,
+  div: DomElement<T>,
+  triggerTime?: ValueOrGet<TriggerTime>
+) {
+  useTrigger(getValue, setValue, transform, new ContentTextCache(div), triggerTime)
+  return div
 }
 export function renderContentEditable<T extends DomElementType>(
-  type: T,
-  arg: ContentEditableProps<T>
-): DomElement<T> {
-  const {
-    value,
-    onValueChange,
-    triggerTime,
-    ...props
-  } = arg as any
-  return useTrigger(triggerTime, props, value, onValueChange, props => {
-    return renderFDom(type, props as any)
-  }, 'textContent')
+  getValue: GetValue<string | null>,
+  setValue: SetValue<string | null>,
+  div: DomElement<T>,
+  triggerTime?: ValueOrGet<TriggerTime>
+) {
+  return renderContentEditableTrans(anyStoreTransform as StoreTransform<string | null, string | null>, getValue, setValue, div, triggerTime)
+}
+export function renderContentEditableHtmlTrans<T extends DomElementType, B>(
+  transform: StoreTransform<B, string>,
+  getValue: GetValue<B>,
+  setValue: SetValue<B>,
+  div: DomElement<T>,
+  triggerTime?: ValueOrGet<TriggerTime>
+) {
+  useTrigger(getValue, setValue, transform, new ContentHTMLCache(div), triggerTime)
+  return div
+}
+
+export function renderContentEditableHtml<T extends DomElementType>(getValue: GetValue<string>,
+  setValue: SetValue<string>,
+  div: DomElement<T>,
+  triggerTime?: ValueOrGet<TriggerTime>
+) {
+  return renderContentEditableHtmlTrans(anyStoreTransform as StoreTransform<string, string>, getValue, setValue, div, triggerTime)
 }
 
 
-
-
-
-export type InputBoolProps = OrFun<Omit<FDomAttribute<'input'>, 'type'> & {
-  type: "checkbox" | "radio"
-  checked: boolean
-}> & BDomEvent<"input">
-export function renderInputBool({
-  checked: _checked,
-  onInput,
-  ...props
-}: InputBoolProps) {
-  const checked = valueOrGetToGet(_checked)
+/**
+ * 这里的input,value只支持checkbox、radio
+ * @param param0 
+ * @returns 
+ */
+export function renderInputBoolTrans<B>(
+  getValue: GetValue<B>,
+  setValue: SetValue<B>,
+  input: HTMLInputElement,
+  transfrom: StoreTransform<B, boolean>
+) {
   //只是为了强制这个模块更新
   const [version, updateVersion] = useVersion()
-  const input = renderFDom("input", {
-
-    /**
-     * 使用onInput实时事件,而不是使用onKeyUp与onCompositionEnd
-     * @param e 
-     */
-    ...props,
-    onInput(e: any) {
-      updateVersion()
-      onInput?.(e)
-      batchSignalEnd()
-    },
+  input.addEventListener('input', function (e) {
+    updateVersion()
+    transfrom.fromComponent(input.checked, setValue)
+    batchSignalEnd()
   })
-  useUpdateValue(checked, input, 'checked', version)
+  useUpdateValue(getValue, transfrom, new InputCheckCache(input), version)
   return input
+}
+
+export function renderInputBool(
+  getValue: GetValue<boolean>,
+  setValue: SetValue<boolean>,
+  input: HTMLInputElement) {
+  return renderInputBoolTrans(getValue, setValue, input, anyStoreTransform as StoreTransform<boolean, boolean>)
 }

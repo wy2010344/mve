@@ -1,15 +1,17 @@
 import { hookPromiseSignal, promiseSignal, renderOne } from "mve-helper";
-import { CanvasRectNode, DrawRectConfig, hookDrawRect } from "./hookDrawRect";
+import { DrawRectConfig, hookDrawRect } from "./hookDrawRect";
 import { loadImage } from "wy-dom-helper";
-import { EmptyFun, PromiseResult, SetValue, SizeKey, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper";
-import { CanvaRenderCtx, PathResult } from ".";
+import { EmptyFun, PointKey, SetValue, SizeKey, ValueOrGet, valueOrGetToGet } from "wy-helper";
+import { CanvaRenderCtx, CMNode } from "./hookDraw";
+import { LayoutNode } from "wy-helper"
+import { mdraw } from "./hookCurrentDraw";
 
 
 
 
 export function hookDrawUrlImage(n: {
   src: ValueOrGet<string>
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun): void
   relay?: SizeKey
   onLoading?: EmptyFun,
   onError?: SetValue<any>
@@ -34,18 +36,18 @@ export function hookDrawUrlImage(n: {
 export function hookDrawImage(arg: {
   image: ValueOrGet<HTMLImageElement>
   relay?: SizeKey | undefined
-  draw?(ctx: CanvaRenderCtx, n: CanvasRectNode, draw: EmptyFun, path: Path2D): Partial<PathResult>
+  draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, draw: EmptyFun, path: Path2D): void
 } & Omit<DrawRectConfig, 'draw'>) {
   const getImage = valueOrGetToGet(arg.image)
   if (arg.relay == 'width') {
     arg.height = (n) => {
       const image = getImage()
-      return image.naturalHeight * n.width() / image.naturalWidth
+      return image.naturalHeight * n.axis.x.size() / image.naturalWidth
     }
   } else if (arg.relay == 'height') {
     arg.width = n => {
       const image = getImage()
-      return image.naturalWidth * n.height() / image.naturalHeight
+      return image.naturalWidth * n.axis.y.size() / image.naturalHeight
     }
   } else {
     arg.width = n => {
@@ -62,14 +64,15 @@ export function hookDrawImage(arg: {
     draw(ctx, n, p) {
       const image = getImage()
       function draw() {
-        ctx.drawImage(image, 0, 0, n.width(), n.height())
+        ctx.drawImage(image, 0, 0, n.axis.x.size(), n.axis.y.size())
       }
       if (!arg.draw) {
-        draw()
+        return draw()
       }
-      const out = arg.draw?.(ctx, n, draw, p) || {}
-      p.rect(0, 0, n.width(), n.height())
-      return out as PathResult
+      const before = mdraw._mve_canvas_render_current_rect_draw
+      mdraw._mve_canvas_render_current_rect_draw = draw
+      arg.draw(ctx, n, draw, p)
+      mdraw._mve_canvas_render_current_rect_draw = before
     },
   })
 }
