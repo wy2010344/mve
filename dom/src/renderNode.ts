@@ -1,7 +1,7 @@
 import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderFDomAttr, renderFSvgAttr, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
-import { hookTrackAttr, OrFun, renderChildren } from "./hookChildren"
-import { createOrProxy, emptyArray, emptyObject } from "wy-helper"
-import { hookAddResult } from "mve-core"
+import { createOrProxy, emptyArray, EmptyFun, emptyObject } from "wy-helper"
+import { hookAddResult, hookTrackAttr, OrFun, } from "mve-core"
+import { renderChildren } from "./hookChildren"
 
 
 
@@ -15,26 +15,52 @@ export function mergeValue(
     setValue(value, node, ext)
   }
 }
-
-export type FDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
+export type Plugin<T> = {
+  plugin?(div: T): void
+}
+export type WillRemove<T> = {
+  willRemove?(node: T): any
+}
+export function addPlugin<T>(node: T, plugin: Plugin<T>) {
+  plugin.plugin?.(node)
+}
+export function addWillRemove<T>(node: T, willRemove: WillRemove<T>['willRemove']) {
+  (node as any)._willRemove_ = willRemove
+}
+const ignoreKeys = [
+  'plugin',
+  'willRemove'
+]
+export type FPDomAttributes<T extends DomElementType> = OrFun<FDomAttribute<T>>
   & BDomEvent<T>
-  & FGetChildAttr<DomElement<T>>
-export function renderFDom<T extends DomElementType>(type: T, arg: FDomAttributes<T> = emptyObject as any
+  & Plugin<DomElement<T>>
+  & WillRemove<DomElement<T>>
+export type FDomAttributes<T extends DomElementType> = FPDomAttributes<T> & FGetChildAttr<DomElement<T>>
+export function renderFDom<T extends DomElementType>(
+  type: T,
+  arg: FDomAttributes<T> = emptyObject as any
 ): DomElement<T> {
   const node = document.createElement(type)
-  renderFDomAttr(node, arg, mergeValue, renderChildren, emptyArray)
+  renderFDomAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
+  addPlugin(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 
-export type FSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
+export type FPSvgAttributes<T extends SvgElementType> = OrFun<FSvgAttribute<T>>
   & BSvgEvent<T>
+  & Plugin<SvgElement<T>>
+  & WillRemove<SvgElement<T>>
+export type FSvgAttributes<T extends SvgElementType> = FPSvgAttributes<T>
   & FGetChildAttr<SvgElement<T>>
 export function renderFSvg<T extends SvgElementType>(type: T, arg: FSvgAttributes<T> = emptyObject as any
 ): SvgElement<T> {
   const node = document.createElementNS("http://www.w3.org/2000/svg", type)
-  renderFSvgAttr(node, arg, mergeValue, renderChildren, emptyArray)
+  renderFSvgAttr(node, arg, mergeValue, renderChildren, ignoreKeys)
   hookAddResult(node)
+  addPlugin(node, arg)
+  addWillRemove(node, arg.willRemove)
   return node
 }
 

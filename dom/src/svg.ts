@@ -1,7 +1,7 @@
 import { BSvgAttribute, BSvgEvent, DataAttr, updateSvgProps, React, SvgElement, SvgElementType, svgTagNames } from "wy-dom-helper"
 import { createOrProxy } from "wy-helper"
 import { NodeCreater, StyleGetProps, StyleProps } from "./node"
-import { OrFun } from "./hookChildren"
+import { OrFun } from "mve-core"
 
 
 type SvgAttribute<T extends SvgElementType> = BSvgAttribute<T> & React.AriaAttributes & DataAttr

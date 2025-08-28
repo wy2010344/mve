@@ -866,10 +866,10 @@ vue-tsc@^1.8.27:
     "@vue/language-core" "1.8.27"
     semver "^7.5.4"
 
-wy-helper@^0.1.14:
-  version "0.1.14"
-  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.14.tgz#1b8482e3306629d58085a510a97975e63dfad52c"
-  integrity sha512-uox/nREC+wC1MkE26zKNbo/NM/xN8iDwL0nj02Q2CI43JZBKR9iKavwFfEqZmxRIruenSspAA6qBheVWOeKbdA==
+wy-helper@^0.1.16:
+  version "0.1.16"
+  resolved "https://registry.yarnpkg.com/wy-helper/-/wy-helper-0.1.16.tgz#13f4e78ac752567979f0486c69dd98bbf4c335a9"
+  integrity sha512-28lDTCYSW8LkUsKwuEBxGhI8/UdXcKr78OrPf/ZG1TWzFwjyrJEHWeSgbGIxY7zdnZREzSnHxtd5AdmnzhvyaQ==
   dependencies:
     d3-binarytree "^1.0.2"
     d3-octree "^1.1.0"

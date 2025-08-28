@@ -1,6 +1,6 @@
 {
   "name": "mve-dom-helper",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -19,35 +19,45 @@
       "types": "./dist/canvasRender/index.d.ts",
       "import": "./dist/canvasRender.mjs",
       "require": "./dist/cacanvasRendernvas.js"
+    },
+    "./history": {
+      "types": "./dist/history/index.d.ts",
+      "import": "./dist/history.mjs",
+      "require": "./dist/history.js"
     }
   },
   "files": [
     "dist",
     "src",
-    "canvasRender"
+    "canvasRender",
+    "history"
   ],
   "scripts": {
     "build": "tsc && vite build",
-    "prepare": "yarn build"
+    "prepare": "yarn build",
+    "ts": "tsc --noEmit --incremental --skipLibCheck",
+    "ts:watch": "yarn ts --watch"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "vite-plugin-dts": "^3.9.1"
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.4"
   },
   "peerDependencies": {
-    "mve-dom": "^2.0.1",
-    "mve-core": "^2.0.1",
-    "mve-helper": "^2.0.1",
-    "wy-dom-helper": "^0.1.12",
-    "wy-helper": "^0.1.14"
+    "history": "^5.3.0",
+    "mve-core": "^2.0.2",
+    "mve-dom": "^2.0.2",
+    "mve-helper": "^2.0.2",
+    "wy-dom-helper": "^0.1.14",
+    "wy-helper": "^0.1.16"
   },
   "dependencies": {
-    "mve-dom": "^2.0.1",
-    "mve-core": "^2.0.1",
-    "mve-helper": "^2.0.1",
-    "wy-dom-helper": "^0.1.12",
-    "wy-helper": "^0.1.14"
+    "history": "^5.3.0",
+    "mve-core": "file:.yalc/mve-core",
+    "mve-dom": "file:.yalc/mve-dom",
+    "mve-helper": "file:.yalc/mve-helper",
+    "wy-dom-helper": "file:.yalc/wy-dom-helper",
+    "wy-helper": "file:.yalc/wy-helper"
   }
 }
