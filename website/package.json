@@ -1,0 +1,17 @@
+{
+  "name": "website",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "author": "wyknmjj",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.12",
+    "vitepress-plugin-diagrams": "^1.0.0"
+  }
+}

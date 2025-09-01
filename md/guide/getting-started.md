@@ -77,26 +77,7 @@ my-mve-app/
 
 ## 配置 Tailwind CSS
 
-创建 `tailwind.config.js`：
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [
-    require("daisyui")
-  ],
-  daisyui: {
-    themes: ["light", "dark", "cupcake", "bumblebee", "emerald", "corporate"],
-  },
-}
-```
+略,参照 tailwindcss 配置在 vite 项目中.
 
 更新 `vite.config.ts`：
 
@@ -116,12 +97,17 @@ export default defineConfig({
 ```typescript
 import './style.css'
 import { createRoot, fdom, svg } from 'mve-dom'
-import { IconContext } from "mve-icons";
+import { IconContext } from 'mve-icons'
 import { renderPop } from 'mve-dom-helper'
 import { routerProvide } from 'daisy-mobile-helper'
-import { createTreeRoute, argForceNumber, renderOneKey, getBranchKey } from 'mve-helper';
-import { createBrowserHistory } from 'history';
-import { destroyGlobalHolder } from 'mve-core';
+import {
+  createTreeRoute,
+  argForceNumber,
+  renderOneKey,
+  getBranchKey,
+} from 'mve-helper'
+import { createBrowserHistory } from 'history'
+import { destroyGlobalHolder } from 'mve-core'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -129,30 +115,32 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 const pages = import.meta.glob('./pages/**')
 const { renderBranch, getBranch, preLoad } = createTreeRoute({
   treeArg: {
-    number: argForceNumber
+    number: argForceNumber,
   },
   pages,
   prefix: './pages/',
-  renderError
+  renderError,
 })
 
 createRoot(app, () => {
   // 路由提供者（实际项目必备）
   const { getHistoryState, router } = routerProvide(createBrowserHistory())
-  
+
   // 图标系统配置（实际项目标配）
   IconContext.provide({
     renderItem(tag, attrs, children) {
       svg[tag as 'svg'](attrs).render(children)
     },
     renderRoot(attrs, children) {
-      svg.svg({
-        ...attrs,
-        fill: "currentColor",
-        stroke: 'currentColor',
-        strokeWidth: '0'
-      }).render(children)
-    }
+      svg
+        .svg({
+          ...attrs,
+          fill: 'currentColor',
+          stroke: 'currentColor',
+          strokeWidth: '0',
+        })
+        .render(children)
+    },
   })
 
   // 主应用容器
@@ -167,12 +155,12 @@ createRoot(app, () => {
           renderBranch(get)
         }
       )
-    }
+    },
   })
 
   // 全局弹窗容器（实际项目必备）
   renderPop()
-});
+})
 
 // 错误处理组件
 function renderError(message: string) {
@@ -192,18 +180,18 @@ function renderError(message: string) {
             strokeWidth: 2,
             d: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
           })
-        }
+        },
       })
       fdom.span({
         childrenType: 'text',
         children: message,
       })
-    }
+    },
   })
 }
 
 // 清理函数
-window.addEventListener("unload", destroyGlobalHolder)
+window.addEventListener('unload', destroyGlobalHolder)
 ```
 
 ## 创建首页
@@ -211,347 +199,366 @@ window.addEventListener("unload", destroyGlobalHolder)
 创建 `src/pages/home/index.ts`：
 
 ```typescript
-import { fdom } from "mve-dom";
-import { createSignal, memo } from "wy-helper";
-import { renderArray, renderIf } from "mve-helper";
-import { FaPlus, FaTrash, FaCheck } from "mve-icons/fa";
+import { fdom } from 'mve-dom'
+import { createSignal, memo } from 'wy-helper'
+import { renderArray, renderIf } from 'mve-helper'
+import { FaPlus, FaTrash, FaCheck } from 'mve-icons/fa'
 
 interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-  createdAt: Date;
+  id: number
+  text: string
+  completed: boolean
+  createdAt: Date
 }
 
 export default function HomePage() {
   // 状态管理（实际项目模式）
   const todos = createSignal<Todo[]>([
-    { id: 1, text: "学习 MVE 框架", completed: false, createdAt: new Date() },
-    { id: 2, text: "构建实际应用", completed: true, createdAt: new Date() }
-  ]);
-  
-  const newTodoText = createSignal("");
-  const filter = createSignal<"all" | "active" | "completed">("all");
+    { id: 1, text: '学习 MVE 框架', completed: false, createdAt: new Date() },
+    { id: 2, text: '构建实际应用', completed: true, createdAt: new Date() },
+  ])
+
+  const newTodoText = createSignal('')
+  const filter = createSignal<'all' | 'active' | 'completed'>('all')
 
   // 计算属性（实际项目常用）
   const filteredTodos = memo(() => {
-    const allTodos = todos.get();
-    const currentFilter = filter.get();
-    
+    const allTodos = todos.get()
+    const currentFilter = filter.get()
+
     switch (currentFilter) {
-      case "active":
-        return allTodos.filter(todo => !todo.completed);
-      case "completed":
-        return allTodos.filter(todo => todo.completed);
+      case 'active':
+        return allTodos.filter((todo) => !todo.completed)
+      case 'completed':
+        return allTodos.filter((todo) => todo.completed)
       default:
-        return allTodos;
+        return allTodos
     }
-  });
+  })
 
   const stats = memo(() => {
-    const allTodos = todos.get();
+    const allTodos = todos.get()
     return {
       total: allTodos.length,
-      completed: allTodos.filter(t => t.completed).length,
-      active: allTodos.filter(t => !t.completed).length
-    };
-  });
+      completed: allTodos.filter((t) => t.completed).length,
+      active: allTodos.filter((t) => !t.completed).length,
+    }
+  })
 
   // 操作函数
   function addTodo() {
-    const text = newTodoText.get().trim();
-    if (!text) return;
+    const text = newTodoText.get().trim()
+    if (!text) return
 
     const newTodo: Todo = {
       id: Date.now(),
       text,
       completed: false,
-      createdAt: new Date()
-    };
+      createdAt: new Date(),
+    }
 
-    todos.set([...todos.get(), newTodo]);
-    newTodoText.set("");
+    todos.set([...todos.get(), newTodo])
+    newTodoText.set('')
   }
 
   function toggleTodo(id: number) {
     todos.set(
-      todos.get().map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+      todos
+        .get()
+        .map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        )
+    )
   }
 
   function deleteTodo(id: number) {
-    todos.set(todos.get().filter(todo => todo.id !== id));
+    todos.set(todos.get().filter((todo) => todo.id !== id))
   }
 
   // 渲染主界面（使用 Tailwind CSS + DaisyUI）
   fdom.div({
-    className: "min-h-screen bg-base-200",
+    className: 'min-h-screen bg-base-200',
     children() {
       fdom.div({
-        className: "container mx-auto px-4 py-8 max-w-4xl",
+        className: 'container mx-auto px-4 py-8 max-w-4xl',
         children() {
           // 头部
           fdom.div({
-            className: "text-center mb-8",
+            className: 'text-center mb-8',
             children() {
               fdom.h1({
-                className: "text-4xl font-bold text-base-content mb-4",
-                childrenType: "text",
-                children: "MVE 待办应用"
-              });
+                className: 'text-4xl font-bold text-base-content mb-4',
+                childrenType: 'text',
+                children: 'MVE 待办应用',
+              })
 
               fdom.p({
-                className: "text-base-content/70",
-                childrenType: "text",
-                children: "基于实际项目模式构建的示例应用"
-              });
-            }
-          });
+                className: 'text-base-content/70',
+                childrenType: 'text',
+                children: '基于实际项目模式构建的示例应用',
+              })
+            },
+          })
 
           // 统计卡片
-          StatsCards();
-          
+          StatsCards()
+
           // 添加待办表单
-          AddTodoForm();
-          
+          AddTodoForm()
+
           // 过滤器
-          FilterTabs();
-          
+          FilterTabs()
+
           // 待办列表
-          TodoList();
-        }
-      });
-    }
-  });
+          TodoList()
+        },
+      })
+    },
+  })
 
   // 统计卡片组件
   function StatsCards() {
     fdom.div({
-      className: "grid grid-cols-1 md:grid-cols-3 gap-6 mb-8",
+      className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-8',
       children() {
         const cards = [
-          { label: "总计", value: () => stats().total, color: "primary" },
-          { label: "已完成", value: () => stats().completed, color: "success" },
-          { label: "待完成", value: () => stats().active, color: "warning" }
-        ];
+          { label: '总计', value: () => stats().total, color: 'primary' },
+          { label: '已完成', value: () => stats().completed, color: 'success' },
+          { label: '待完成', value: () => stats().active, color: 'warning' },
+        ]
 
-        renderArray(() => cards, (card) => {
-          fdom.div({
-            className: "card bg-base-100 shadow-xl",
-            children() {
-              fdom.div({
-                className: "card-body",
-                children() {
-                  fdom.h2({
-                    className: "card-title text-base-content/70",
-                    childrenType: "text",
-                    children: card.label
-                  });
+        renderArray(
+          () => cards,
+          (card) => {
+            fdom.div({
+              className: 'card bg-base-100 shadow-xl',
+              children() {
+                fdom.div({
+                  className: 'card-body',
+                  children() {
+                    fdom.h2({
+                      className: 'card-title text-base-content/70',
+                      childrenType: 'text',
+                      children: card.label,
+                    })
 
-                  fdom.p({
-                    className: `text-3xl font-bold text-${card.color}`,
-                    childrenType: "text",
-                    children() {
-                      return card.value().toString();
-                    }
-                  });
-                }
-              });
-            }
-          });
-        });
-      }
-    });
+                    fdom.p({
+                      className: `text-3xl font-bold text-${card.color}`,
+                      childrenType: 'text',
+                      children() {
+                        return card.value().toString()
+                      },
+                    })
+                  },
+                })
+              },
+            })
+          }
+        )
+      },
+    })
   }
 
   // 添加待办表单
   function AddTodoForm() {
     fdom.div({
-      className: "card bg-base-100 shadow-xl mb-8",
+      className: 'card bg-base-100 shadow-xl mb-8',
       children() {
         fdom.div({
-          className: "card-body",
+          className: 'card-body',
           children() {
             fdom.div({
-              className: "flex gap-4",
+              className: 'flex gap-4',
               children() {
                 fdom.input({
-                  type: "text",
-                  placeholder: "添加新的待办事项...",
-                  className: "input input-bordered flex-1",
+                  type: 'text',
+                  placeholder: '添加新的待办事项...',
+                  className: 'input input-bordered flex-1',
                   value() {
-                    return newTodoText.get();
+                    return newTodoText.get()
                   },
                   onInput(e) {
-                    const target = e.target as HTMLInputElement;
-                    newTodoText.set(target.value);
+                    const target = e.target as HTMLInputElement
+                    newTodoText.set(target.value)
                   },
                   onKeyDown(e) {
-                    if (e.key === "Enter") {
-                      addTodo();
+                    if (e.key === 'Enter') {
+                      addTodo()
                     }
-                  }
-                });
+                  },
+                })
 
                 fdom.button({
                   onClick: addTodo,
                   disabled() {
-                    return !newTodoText.get().trim();
+                    return !newTodoText.get().trim()
                   },
-                  className: "btn btn-primary",
+                  className: 'btn btn-primary',
                   children() {
-                    FaPlus(() => {}, "16px");
+                    FaPlus(() => {}, '16px')
                     fdom.span({
-                      className: "ml-2",
-                      childrenType: "text",
-                      children: "添加"
-                    });
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
-    });
+                      className: 'ml-2',
+                      childrenType: 'text',
+                      children: '添加',
+                    })
+                  },
+                })
+              },
+            })
+          },
+        })
+      },
+    })
   }
 
   // 过滤器标签
   function FilterTabs() {
     fdom.div({
-      className: "tabs tabs-boxed mb-6 justify-center",
+      className: 'tabs tabs-boxed mb-6 justify-center',
       children() {
-        const filters: Array<{ key: "all" | "active" | "completed"; label: string }> = [
-          { key: "all", label: "全部" },
-          { key: "active", label: "待完成" },
-          { key: "completed", label: "已完成" }
-        ];
+        const filters: Array<{
+          key: 'all' | 'active' | 'completed'
+          label: string
+        }> = [
+          { key: 'all', label: '全部' },
+          { key: 'active', label: '待完成' },
+          { key: 'completed', label: '已完成' },
+        ]
 
-        renderArray(() => filters, (filterItem) => {
-          fdom.button({
-            onClick() {
-              filter.set(filterItem.key);
-            },
-            className() {
-              return `tab ${filter.get() === filterItem.key ? "tab-active" : ""}`;
-            },
-            childrenType: "text",
-            children: filterItem.label
-          });
-        });
-      }
-    });
+        renderArray(
+          () => filters,
+          (filterItem) => {
+            fdom.button({
+              onClick() {
+                filter.set(filterItem.key)
+              },
+              className() {
+                return `tab ${
+                  filter.get() === filterItem.key ? 'tab-active' : ''
+                }`
+              },
+              childrenType: 'text',
+              children: filterItem.label,
+            })
+          }
+        )
+      },
+    })
   }
 
   // 待办列表
   function TodoList() {
     fdom.div({
-      className: "space-y-4",
+      className: 'space-y-4',
       children() {
         renderIf(
           () => filteredTodos().length === 0,
           () => {
             // 空状态
             fdom.div({
-              className: "text-center py-12",
+              className: 'text-center py-12',
               children() {
                 fdom.div({
-                  className: "text-6xl mb-4",
-                  childrenType: "text",
-                  children: "📝"
-                });
+                  className: 'text-6xl mb-4',
+                  childrenType: 'text',
+                  children: '📝',
+                })
 
                 fdom.p({
-                  className: "text-xl text-base-content/70",
-                  childrenType: "text",
+                  className: 'text-xl text-base-content/70',
+                  childrenType: 'text',
                   children() {
-                    const currentFilter = filter.get();
+                    const currentFilter = filter.get()
                     switch (currentFilter) {
-                      case "active":
-                        return "没有待完成的事项";
-                      case "completed":
-                        return "还没有完成任何事项";
+                      case 'active':
+                        return '没有待完成的事项'
+                      case 'completed':
+                        return '还没有完成任何事项'
                       default:
-                        return "还没有任何待办事项";
+                        return '还没有任何待办事项'
                     }
-                  }
-                });
-              }
-            });
+                  },
+                })
+              },
+            })
           },
           () => {
             // 待办列表
             renderArray(filteredTodos, (todo) => {
-              TodoItem({ todo });
-            });
+              TodoItem({ todo })
+            })
           }
-        );
-      }
-    });
+        )
+      },
+    })
   }
 
   // 待办项组件
   function TodoItem({ todo }: { todo: Todo }) {
     fdom.div({
-      className: "card bg-base-100 shadow-sm hover:shadow-md transition-shadow",
+      className: 'card bg-base-100 shadow-sm hover:shadow-md transition-shadow',
       children() {
         fdom.div({
-          className: "card-body p-4",
+          className: 'card-body p-4',
           children() {
             fdom.div({
-              className: "flex items-center gap-4",
+              className: 'flex items-center gap-4',
               children() {
                 // 完成状态复选框
                 fdom.button({
                   onClick() {
-                    toggleTodo(todo.id);
+                    toggleTodo(todo.id)
                   },
-                  className: `btn btn-circle btn-sm ${todo.completed ? "btn-success" : "btn-outline"}`,
+                  className: `btn btn-circle btn-sm ${
+                    todo.completed ? 'btn-success' : 'btn-outline'
+                  }`,
                   children() {
                     if (todo.completed) {
-                      FaCheck(() => {}, "12px");
+                      FaCheck(() => {}, '12px')
                     }
-                  }
-                });
+                  },
+                })
 
                 // 待办内容
                 fdom.div({
-                  className: "flex-1",
+                  className: 'flex-1',
                   children() {
                     fdom.p({
-                      className: `${todo.completed ? "line-through text-base-content/50" : "text-base-content"}`,
-                      childrenType: "text",
-                      children: todo.text
-                    });
+                      className: `${
+                        todo.completed
+                          ? 'line-through text-base-content/50'
+                          : 'text-base-content'
+                      }`,
+                      childrenType: 'text',
+                      children: todo.text,
+                    })
 
                     fdom.p({
-                      className: "text-sm text-base-content/50",
-                      childrenType: "text",
+                      className: 'text-sm text-base-content/50',
+                      childrenType: 'text',
                       children() {
-                        return `创建于 ${todo.createdAt.toLocaleDateString()}`;
-                      }
-                    });
-                  }
-                });
+                        return `创建于 ${todo.createdAt.toLocaleDateString()}`
+                      },
+                    })
+                  },
+                })
 
                 // 删除按钮
                 fdom.button({
                   onClick() {
-                    deleteTodo(todo.id);
+                    deleteTodo(todo.id)
                   },
-                  className: "btn btn-ghost btn-sm text-error",
+                  className: 'btn btn-ghost btn-sm text-error',
                   children() {
-                    FaTrash(() => {}, "14px");
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
-    });
+                    FaTrash(() => {}, '14px')
+                  },
+                })
+              },
+            })
+          },
+        })
+      },
+    })
   }
 }
 ```
@@ -566,10 +573,12 @@ export default function HomePage() {
 @tailwind utilities;
 
 /* 全局样式 */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    sans-serif;
 }
 
 #app {
@@ -621,10 +630,10 @@ npm run dev
 使用 `IconContext` 和 `mve-icons` 统一管理图标：
 
 ```typescript
-import { FaPlus, FaTrash, FaCheck } from "mve-icons/fa";
+import { FaPlus, FaTrash, FaCheck } from 'mve-icons/fa'
 
 // 在组件中使用
-FaPlus(() => {}, "16px");
+FaPlus(() => {}, '16px')
 ```
 
 ### 4. 全局弹窗系统
@@ -644,7 +653,6 @@ FaPlus(() => {}, "16px");
 现在你已经了解了基于实际项目的 MVE 开发模式，可以：
 
 1. 阅读[核心概念](./core-concepts.md)深入理解框架原理
-2. 查看[高级主题](./advanced-topics.md)学习路由、移动端开发等高级功能
 3. 参考[API 参考](../api/api-reference.md)了解完整的 API
 4. 查看 [demo 目录](../../demo/) 中的更多实际示例
 

@@ -149,6 +149,9 @@ destroy();
 渲染动态列表的核心函数。这是 `renderArray` 等函数的底层实现。
 
 ```typescript
+//T 每一个列表Item
+//K 用来对比相等性的key
+//O 如果creater有返回值,forEach里调用callback执行会获得获取它的信号,自行组织到外部的映射(一般不考虑)
 function renderForEach<T, K, O>(
   forEach: (callback: (key: K, value: T) => () => O) => void,
   creater: (key: K, eachTime: EachTime<T>) => O,
