@@ -270,7 +270,9 @@ ThemeContext.provide(() => theme.get()) ──► 传递 getter 函数
 ```
 
 这个架构图展示了 MVE 框架的完整结构和各组件之间的关系。核心思想是基于 Signal 的细粒度响应式更新，通过 trackSignal 自动建立依赖关系，最终通过三套 DOM API 将变化反映到界面上。
+
 ## 🔍 h
+
 ookPromiseSignal 异步处理图
 
 ```
@@ -353,7 +355,7 @@ childrenType 的三种模式:
 
 3. "html" 模式 (渲染 HTML)
    fdom.div({
-     childrenType: "html", 
+     childrenType: "html",
      children() {
        return `<svg>${svgStr.get()}</svg>`; ← 返回 HTML 字符串
      }
@@ -544,6 +546,7 @@ Vue/React 迁移路径:
 这个架构图展示了 MVE 框架的完整生态系统：
 
 ### 核心优势
+
 - **原子信号**: 简单直接的状态管理
 - **智能优化**: memo 的返回值比较机制
 - **自动追踪**: trackSignal 的依赖收集
@@ -551,12 +554,14 @@ Vue/React 迁移路径:
 - **生命周期管理**: 自动资源清理
 
 ### 设计理念
+
 - **函数式**: 传递函数而不是值
 - **声明式**: 描述状态和关系，框架处理更新
 - **性能优先**: 减少不必要的计算和更新
 - **类型安全**: 完整的 TypeScript 支持
 
 ### 适用场景
+
 - 需要细粒度状态管理的应用
 - 从 Vue/React 迁移的项目
 - 对性能有较高要求的应用

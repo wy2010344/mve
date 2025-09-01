@@ -108,7 +108,6 @@ fdom.ul({
 
 - [入门指南](./guide/getting-started.md) - 详细的入门教程
 - [核心概念](./guide/core-concepts.md) - 深入理解 MVE 的核心概念
-- [高级主题](./guide/advanced-topics.md) - 高级用法和最佳实践
 - [API 参考](./api/api-reference.md) - 完整的 API 文档
 
 ## 示例
