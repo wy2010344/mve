@@ -41,6 +41,7 @@ jobs:
         with:
           node-version: 22
           cache: npm # 或 pnpm / yarn
+          cache-dependency-path: website/package-lock.json # 👈 指定 lock 文件位置
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Install dependencies
