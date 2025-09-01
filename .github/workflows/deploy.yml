@@ -46,7 +46,7 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Install dependencies
         working-directory: website # 👈 切到 website 目录
-        run: npm ci # 或 pnpm install / yarn install / bun install
+        run: npm ci --force # 或 pnpm install / yarn install / bun install
       - name: Build with VitePress
         working-directory: website # 👈 切到 website 目录
         run: npm run docs:build # 或 pnpm docs:build / yarn docs:build / bun run docs:build
