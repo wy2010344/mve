@@ -653,7 +653,6 @@ FaPlus(() => {}, '16px')
 现在你已经了解了基于实际项目的 MVE 开发模式，可以：
 
 1. 阅读[核心概念](./core-concepts.md)深入理解框架原理
-2. 查看[高级主题](./advanced-topics.md)学习路由、移动端开发等高级功能
 3. 参考[API 参考](../api/api-reference.md)了解完整的 API
 4. 查看 [demo 目录](../../demo/) 中的更多实际示例
 
