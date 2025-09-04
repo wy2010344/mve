@@ -90,10 +90,10 @@ function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
  * 这个可以在canvas中实践
  */
 export class AppendList<T, N> {
+  private list: HookChild<T>[] = []
   constructor(
     public readonly node: N,
-    private list: HookChild<T>[],
-    private readonly after: SetValue<T[]>
+    private readonly after: SetValue<T[]> = emptyFun
   ) {
     this.target = getRenderChildrenList(this.list, this.after)
   }
@@ -127,7 +127,7 @@ export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
     renderPortal(pNode: T, fun: SetValue<T>) {
       const list = storeRef<T[]>(emptyArray as T[])
       const addDestroy = hookAddDestroy()
-      const appendList = new AppendList(pNode, [], emptyFun)
+      const appendList = new AppendList(pNode)
       appendList.collect(fun)
       hookChangeChildren(pNode, appendList.target, quote, arg, list)
       addDestroy(() => {
@@ -142,7 +142,7 @@ export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
       return appendList
     },
     renderChildren(node: T, fun: SetValue<T>) {
-      const appendList = new AppendList(node, [], emptyFun)
+      const appendList = new AppendList(node)
       appendList.collect(fun)
       hookChangeChildren(node, appendList.target, quote, arg)
       return appendList
