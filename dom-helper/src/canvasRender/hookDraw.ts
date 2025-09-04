@@ -50,8 +50,7 @@ export type CMNode = NodeParent & {
 
 class CNode implements CMNode {
   readonly ext: Record<string, any>
-  private list: HookChild<CNode>[] = []
-  private appendList = new AppendList(this, this.list, (list) => {
+  private appendList = new AppendList<CNode, CNode>(this, (list) => {
     list.forEach((row, index) => {
       row.setParent(this, index)
     })
@@ -272,8 +271,18 @@ export function renderCanvas(
       canvas: HTMLCanvasElement
     }
   >,
-  ext: Record<string, any> = emptyObject
+  /**
+   * beforeDraw
+   */
+  ext: {
+    translateX?: ValueOrGet<number>
+    translateY?: ValueOrGet<number>
+    beforeDraw?(ctx: CanvasRenderingContext2D): void
+    afterDraw?(ctx: CanvasRenderingContext2D): void
+  } = emptyObject
 ) {
+  const translateX = valueOrGetToGet(ext.translateX || 0)
+  const translateY = valueOrGetToGet(ext.translateY || 0)
   const getWidth = valueOrGetToGet(width)
   const getHeight = valueOrGetToGet(height)
   const canvas = fdom.canvas({
@@ -301,15 +310,11 @@ export function renderCanvas(
       return 0
     },
   }
-  const appendList = new AppendList<CNode, NodeParent>(
-    rootParent,
-    [],
-    (list) => {
-      list.forEach((row, index) => {
-        row.setParent(rootParent, index)
-      })
-    }
-  )
+  const appendList = new AppendList<CNode, NodeParent>(rootParent, (list) => {
+    list.forEach((row, index) => {
+      row.setParent(rootParent, index)
+    })
+  })
   appendList.collect(children as any)
   const getChildren = appendList.target
   rootParent.children = getChildren
@@ -320,8 +325,8 @@ export function renderCanvas(
       doEvent(
         _ctx,
         _children,
-        e.offsetX,
-        e.offsetY,
+        e.offsetX + translateX(),
+        e.offsetY + translateY(),
         (child) => {
           const c = child as unknown as CanvasMouseEvent<MouseEvent>
           c.original = e
@@ -371,6 +376,7 @@ export function renderCanvas(
         const x = child.x()
         const y = child.y()
         //因为是累加的,所以返回
+        ctx.save()
         ctx.translate(x, y)
         child.path = undefined
         if (child.configure.withPath) {
@@ -385,14 +391,16 @@ export function renderCanvas(
           child.configure.draw?.(ctx)
         }
         draw(child.children())
-        ctx.translate(-x, -y)
+        ctx.restore()
       })
     }
     ctx.reset()
     const scale = devicePixelRatio.get() // Change to 1 on retina screens to see blurry canvas.
     ctx.scale(scale, scale)
+    ctx.translate(translateX(), translateY())
     ext.beforeDraw?.(ctx)
     draw(getChildren())
+    ext.afterDraw?.(ctx)
     _children = getChildren()
     _ctx = ctx
     m._mve_canvas_render_ctx = beforeCtx
