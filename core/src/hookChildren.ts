@@ -12,6 +12,7 @@ import {
   StoreRef,
   storeRef,
   trackSignal,
+  collectSignal,
 } from 'wy-helper'
 import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from '.'
 
@@ -35,28 +36,25 @@ export function hookTrackAttr<V>(
   b?: any,
   f?: any
 ) {
+  /**
+   * 属性节点依赖子节点构造出结构
+   */
   const isDestroyed = hookIsDestroyed()
-  const effect: {
-    (): void
-    v: any
-    b: any
-    f: any
-  } = function () {
+  function effect() {
     if (isDestroyed()) {
       return
     }
-    set(effect.v, effect.b, effect.f)
-  } as any
-  addTrackEffect(
-    get,
-    function (v) {
-      effect.v = v
-      effect.b = b
-      effect.f = f
-      return effect
-    },
-    -1
-  )
+    const value = collect(get)
+    if (value != lastValue) {
+      lastValue = value
+      set(value, b, f)
+    }
+  }
+  let lastValue: any = effect
+  const { destroy, collect } = collectSignal(function () {
+    addEffect(effect, -1)
+  })
+  hookAddDestroy()(destroy)
 }
 
 export type OrFun<T extends {}> = {

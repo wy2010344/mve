@@ -25,9 +25,9 @@ createRoot(app, () => {
   //业务代码放在这里
   // todoDemo()
   // canvasRenderDemo()
-  countDemo()
+  // countDemo()
 
-  return
+  // return
   const theme = createSignal<ThemeType>("light");
 
   // 计算属性

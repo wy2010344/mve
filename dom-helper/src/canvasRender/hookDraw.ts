@@ -10,6 +10,7 @@ import {
   emptyObject,
   GetValue,
   PointKey,
+  removeEqual,
   SetValue,
   ValueOrGet,
   valueOrGetToGet,
@@ -254,6 +255,11 @@ matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
     batchSignalEnd()
   }
 )
+
+const ctxs: CanvasRenderingContext2D[] = []
+export function getOneCtx() {
+  return ctxs[0]
+}
 export function renderCanvas(
   {
     width,
@@ -356,14 +362,16 @@ export function renderCanvas(
     batchSignalEnd()
   })
   ob.observe(canvas)
+
   hookAddDestroy()(() => {
     ob.disconnect()
+    removeEqual(ctxs, ctx)
   })
-
+  const ctx = canvas.getContext('2d')!
+  ctxs.push(ctx)
   hookTrackSignal(() => {
     mHeight.get()
     mHeight.get()
-    const ctx = canvas.getContext('2d')!
     const beforeCtx = m._mve_canvas_render_ctx
     m._mve_canvas_render_ctx = ctx
     function draw(children: CNode[]) {

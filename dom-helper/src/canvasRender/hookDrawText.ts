@@ -20,7 +20,7 @@ import {
   OCanvasTextDrawingStyles,
   MeasuredTextWrapOut,
 } from 'wy-dom-helper/canvas'
-import { CanvaRenderCtx, CMNode, hookCurrentCtx } from './hookDraw'
+import { CanvaRenderCtx, CMNode, getOneCtx, hookCurrentCtx } from './hookDraw'
 import { LayoutNode } from 'wy-helper'
 import { mdraw } from './hookCurrentDraw'
 
@@ -74,6 +74,7 @@ export function hookDrawText(
   const getWidth = valueOrGetToGet(arg.width || quote)
   const getHeight = valueOrGetToGet(arg.height || quote)
   const mout = memo(function () {
+    const ctx = getOneCtx()
     const c = getConfig()
     const out = { ...c } as DrawTextConfig & {
       textBaseline?: CanvasTextBaseline
@@ -83,7 +84,7 @@ export function hookDrawText(
     }
     makeCurrentDefaultFont(out)
     out.textBaseline = 'top'
-    const m = measureText(hookCurrentCtx(), c.text, out)
+    const m = measureText(ctx, c.text, out)
     out.measure = m
 
     const fontHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent
@@ -175,8 +176,8 @@ export function hookDrawTextWrap(
   const mout = memo(function () {
     const c = { ...getConfig() } as any
     makeCurrentDefaultFont(c)
-    const ctx = hookCurrentCtx()
     c.width = d.axis.x.innerSize()
+    const ctx = getOneCtx()
     return measureTextWrap(ctx, c.text, c)
   })
   d.measure = mout
