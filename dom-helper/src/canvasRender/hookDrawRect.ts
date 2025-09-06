@@ -1,45 +1,58 @@
-import { AlignSelfFun, InstanceCallbackOrValue, LayoutConfig, Point, PointKey, ValueOrGet } from "wy-helper"
-import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from "wy-helper"
-import { CanvaRenderCtx, CMNode, CNodePathConfigure, hookDraw } from "./hookDraw"
+import {
+  AlignSelfFun,
+  InstanceCallbackOrValue,
+  LayoutConfig,
+  Point,
+  PointKey,
+  ValueOrGet,
+} from 'wy-helper'
+import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from 'wy-helper'
+import {
+  CanvaRenderCtx,
+  CMNode,
+  CNodePathConfigure,
+  hookDraw,
+} from './hookDraw'
 export { simpleFlex } from 'wy-helper'
 
-export type DrawRectConfig =
-  Omit<LayoutNodeConfigure<CMNode, PointKey>, 'axis'>
-  & Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath' | 'skipDraw'>
-  & {
+export type DrawRectConfig = Omit<
+  LayoutNodeConfigure<CMNode, PointKey>,
+  'axis'
+> &
+  Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath' | 'skipDraw'> & {
     skipDraw?(n: LayoutNode<CMNode, keyof Point<number>>): any
-    x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
-    width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
     paddingLeft?: ValueOrGet<number>
     paddingRight?: ValueOrGet<number>
 
-
-    y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
-    height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>,
+    y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
     paddingTop?: ValueOrGet<number>
     paddingBottom?: ValueOrGet<number>
 
     alignSelf?: AlignSelfFun
     alignSelfX?: AlignSelfFun
     alignSelfY?: AlignSelfFun
-    draw?(ctx: CanvaRenderCtx, n: LayoutNode<CMNode, PointKey>, path: Path2D): void
+    draw?(
+      ctx: CanvaRenderCtx,
+      n: LayoutNode<CMNode, PointKey>,
+      path: Path2D
+    ): void
   }
 
 const config: LayoutConfig<CMNode, PointKey> = {
   getLayout(m): void | LayoutNode<CMNode, keyof Point<number>> {
     return m.ext.rect
   },
-  getParentLayout(m: CMNode): void | LayoutNode<CMNode, keyof Point<number>> {
+  getParentLayout(m): void | LayoutNode<CMNode, keyof Point<number>> {
     return m.parent.ext.rect
   },
   getChildren(m): readonly CMNode[] {
     return m.children()
   },
 }
-export function hookDrawRect(
-  n: DrawRectConfig
-) {
-
+export function hookDrawRect(n: DrawRectConfig) {
   const x = createLayoutNode(config, {
     ...n,
     axis: {
@@ -48,16 +61,16 @@ export function hookDrawRect(
         size: n.width,
         paddingStart: n.paddingLeft,
         paddingEnd: n.paddingRight,
-        alignSelf: n.alignSelfX ?? n.alignSelf
+        alignSelf: n.alignSelfX ?? n.alignSelf,
       },
       y: {
         position: n.y,
         size: n.height,
         paddingStart: n.paddingTop,
         paddingEnd: n.paddingBottom,
-        alignSelf: n.alignSelfY ?? n.alignSelf
-      }
-    }
+        alignSelf: n.alignSelfY ?? n.alignSelf,
+      },
+    },
   })
   const skipDraw = n.skipDraw
   x.target = hookDraw({
@@ -79,8 +92,8 @@ export function hookDrawRect(
     },
     ext: {
       ...n.ext,
-      rect: x
-    }
+      rect: x,
+    },
   })
   return x
 }

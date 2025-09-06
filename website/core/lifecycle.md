@@ -38,7 +38,12 @@ function TimerComponent() {
 ## 过程
 
 ```
-批量执行:
+事件更新信号
+  messageChannel 异步
+  batchSignalEnd 手动立即
+    批量执行
+
+进入批量执行:
   1. 执行受信号影响的监听
     重复(a)
   2. 执行新增加的监听
@@ -52,8 +57,4 @@ function TimerComponent() {
     3. 其它副作用
 检查是否重复执行执行
 
-事件更新信号
-  messageChannel
-  batchSignalEnd
-    批量执行
 ```
