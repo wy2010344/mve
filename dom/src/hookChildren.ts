@@ -1,18 +1,16 @@
-import { AppendList, createRenderChildren } from "mve-core"
-import { SetValue } from "wy-helper"
-
-
-
-
-
+import { AppendList, createRenderChildren } from 'mve-core'
+import { SetValue } from 'wy-helper'
 
 function insertBefore(parent: Node, newChild: Node, beforeNode: Node | null) {
+  if (newChild.parentNode == parent && newChild.nextSibling == beforeNode) {
+    return
+  }
   parent.insertBefore(newChild, beforeNode)
 }
 function moveBefore(parent: any, newChild: Node, beforeNode: Node | null) {
   if (!newChild.parentNode) {
     //强制重绘.没有用...
-    (newChild as any).scrollTop
+    ;(newChild as any).scrollTop
   }
   if (newChild.parentNode != parent) {
     return insertBefore(parent, newChild, beforeNode)
@@ -24,7 +22,7 @@ function moveBefore(parent: any, newChild: Node, beforeNode: Node | null) {
 }
 
 const a = createRenderChildren<Node>({
-  moveBefore: insertBefore,//'moveBefore' in document.body ? moveBefore :
+  moveBefore: insertBefore, //'moveBefore' in document.body ? moveBefore :
   removeChild(parent, child) {
     if (child.parentNode == parent) {
       const willRemove = (child as any)._willRemove_
@@ -45,10 +43,13 @@ const a = createRenderChildren<Node>({
   nextSibling(child) {
     return child.nextSibling
   },
+  firstChild(child: Node) {
+    return child.firstChild
+  },
 })
 
 export function renderChildren(n: Node, render: SetValue<Node>) {
-  (n as any)._mve_children_ = a.renderChildren(n, render)
+  ;(n as any)._mve_children_ = a.renderChildren(n, render)
 }
 
 export function collect<T extends Node, V = void>(n: T, fun: (n: T) => V) {

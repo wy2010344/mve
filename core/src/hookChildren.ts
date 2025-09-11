@@ -118,6 +118,9 @@ export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
   removeChild(parent: Node, child: Node): void
   nextSibling(child: Node): Node | null
+  firstChild(child: Node): Node | null
+  // lastChild(child: Node): Node | null
+  // children(): Node[]
 }
 
 export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
@@ -127,7 +130,7 @@ export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
       const addDestroy = hookAddDestroy()
       const appendList = new AppendList(pNode)
       appendList.collect(fun)
-      hookChangeChildren(pNode, appendList.target, quote, arg, list)
+      hookChangeChildren(pNode, appendList.target, arg, list)
       addDestroy(() => {
         addEffect(() => {
           list.get().forEach(function (node) {
@@ -142,24 +145,30 @@ export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
     renderChildren(node: T, fun: SetValue<T>) {
       const appendList = new AppendList(node)
       appendList.collect(fun)
-      hookChangeChildren(node, appendList.target, quote, arg)
+      hookChangeChildren(node, appendList.target, arg)
       return appendList
     },
   }
 }
-function hookChangeChildren<Node, T>(
+
+function hookChangeChildren<Node>(
   pNode: Node,
-  getChildren: GetValue<readonly T[]>,
-  get: (v: T) => Node,
-  { moveBefore, removeChild, nextSibling }: RenderChildrenOperante<Node>,
-  listRef?: StoreRef<readonly T[]>
+  getChildren: GetValue<readonly Node[]>,
+  {
+    moveBefore,
+    removeChild,
+    nextSibling,
+    firstChild,
+  }: // lastChild,
+  RenderChildrenOperante<Node>,
+  listRef?: StoreRef<readonly Node[]>
 ) {
   const autoClear = !listRef
-  listRef = listRef || storeRef<readonly T[]>(emptyArray)
+  listRef = listRef || storeRef<readonly Node[]>(emptyArray)
   const isDestroyed = hookIsDestroyed()
   const effect: {
     (): void
-    newList: readonly T[]
+    newList: readonly Node[]
   } = function () {
     if (isDestroyed()) {
       if (autoClear) {
@@ -170,33 +179,29 @@ function hookChangeChildren<Node, T>(
     const newList = effect.newList
     //在-2时进行布局的重新整理
     const oldList = listRef.get()
-    let changed = false
-    let beforeNode: Node | null = null
+    //先删除
+    oldList.forEach((last) => {
+      if (!newList.includes(last)) {
+        removeChild(pNode, last)
+      }
+    })
+
+    let beforeNode: Node | null = firstChild(pNode)
+    while (beforeNode && !newList.includes(beforeNode)) {
+      beforeNode = nextSibling(beforeNode)
+    }
+    //再增加
     for (let i = 0; i < newList.length; i++) {
-      const nl = newList[i]
-      const newChild = get(nl)
-      if (changed) {
-        if (newChild != beforeNode) {
-          moveBefore(pNode, newChild, beforeNode)
-        } else if (beforeNode) {
-          beforeNode = nextSibling(beforeNode)
-        }
+      const newChild = newList[i]
+      if (newChild != beforeNode) {
+        moveBefore(pNode, newChild, beforeNode)
       } else {
-        const ol = oldList[i]
-        const lastChild = ol ? get(ol) : null
-        if (newChild != lastChild) {
-          changed = true
-          moveBefore(pNode, newChild, lastChild)
-          beforeNode = lastChild
+        //beforeNode可能不在newList里,需要找到newList上的节点
+        while (beforeNode && !newList.includes(beforeNode, i + 1)) {
+          beforeNode = nextSibling(beforeNode)
         }
       }
     }
-    oldList.forEach((last) => {
-      const lastChild = get(last)
-      if (!newList.includes(last)) {
-        removeChild(pNode, lastChild)
-      }
-    })
     listRef.set(newList)
   } as any
   addTrackEffect(
