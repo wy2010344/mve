@@ -281,14 +281,16 @@ export function renderCanvas(
    * beforeDraw
    */
   ext: {
-    translateX?: ValueOrGet<number>
-    translateY?: ValueOrGet<number>
+    //怎么感觉这个translateX又不如预期,不如在beforeDraw时ctx.translate
+    // translateX?: ValueOrGet<number>
+    // translateY?: ValueOrGet<number>
+
     beforeDraw?(ctx: CanvasRenderingContext2D): void
     afterDraw?(ctx: CanvasRenderingContext2D): void
   } = emptyObject
 ) {
-  const translateX = valueOrGetToGet(ext.translateX || 0)
-  const translateY = valueOrGetToGet(ext.translateY || 0)
+  // const translateX = valueOrGetToGet(ext.translateX || 0)
+  // const translateY = valueOrGetToGet(ext.translateY || 0)
   const getWidth = valueOrGetToGet(width)
   const getHeight = valueOrGetToGet(height)
   const canvas = fdom.canvas({
@@ -331,8 +333,8 @@ export function renderCanvas(
       doEvent(
         _ctx,
         _children,
-        e.offsetX + translateX(),
-        e.offsetY + translateY(),
+        e.offsetX, //+ translateX(),
+        e.offsetY, //+ translateY(),
         (child) => {
           const c = child as unknown as CanvasMouseEvent<MouseEvent>
           c.original = e
@@ -405,7 +407,7 @@ export function renderCanvas(
     ctx.reset()
     const scale = devicePixelRatio.get() // Change to 1 on retina screens to see blurry canvas.
     ctx.scale(scale, scale)
-    ctx.translate(translateX(), translateY())
+    // ctx.translate(translateX(), translateY())
     ext.beforeDraw?.(ctx)
     draw(getChildren())
     ext.afterDraw?.(ctx)
