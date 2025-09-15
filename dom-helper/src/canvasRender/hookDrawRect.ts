@@ -34,11 +34,7 @@ export type DrawRectConfig = Omit<
     alignSelf?: AlignSelfFun
     alignSelfX?: AlignSelfFun
     alignSelfY?: AlignSelfFun
-    draw?(
-      ctx: CanvaRenderCtx,
-      n: LayoutNode<CMNode, PointKey>,
-      path: Path2D
-    ): void
+    draw?(ctx: CanvaRenderCtx, path: Path2D): void
   }
 
 const config: LayoutConfig<CMNode, PointKey> = {
@@ -87,7 +83,7 @@ export function hookDrawRect(n: DrawRectConfig) {
       }
       const before = m._mve_canvas_render_current_rect
       m._mve_canvas_render_current_rect = x
-      n.draw(ctx, x, path)
+      n.draw(ctx, path)
       m._mve_canvas_render_current_rect = before
     },
     ext: {
@@ -95,6 +91,7 @@ export function hookDrawRect(n: DrawRectConfig) {
       rect: x,
     },
   })
+
   return x
 }
 
