@@ -1,5 +1,5 @@
 import {
-  EmptyFun,
+  GetValue,
   LayoutNode,
   memo,
   Point,
@@ -8,7 +8,6 @@ import {
   ValueOrGet,
   valueOrGetToGet,
 } from 'wy-helper'
-import { DrawRectConfig, hookDrawRect } from './hookDrawRect'
 import {
   drawTextWrap,
   measureTextWrap,
@@ -21,8 +20,8 @@ import {
   MeasuredTextWrapOut,
   setDrawingStyle,
 } from 'wy-dom-helper/canvas'
-import { CanvaRenderCtx, CMNode, getOneCtx } from './hookDraw'
-import { mdraw } from './hookCurrentDraw'
+import { CMNode, getOneCtx } from './hookDraw'
+import { DrawArgRect, DrawRectConfig, hookDrawRect } from './hookDrawRect'
 
 type TextWrapConfig = TextWrapTextConfig & {
   text: string
@@ -56,127 +55,46 @@ function makeCurrentDefaultFont(out: any) {
   out.fontWeight = out.fontWeight || def.fontWeight
 }
 type DrawTextOut = Omit<DrawTextExt, 'y' | 'x'>
-export function hookDrawText(
-  arg: {
-    config: ValueOrGet<DrawTextConfig>
-    draw?(ctx: CanvaRenderCtx, draw: EmptyFun, p: Path2D): void
-    drawInfo?:
-      | ((
-          arg: DrawTextConfig & {
-            measure: TextMetrics
-          }
-        ) => DrawTextOut)
-      | DrawTextOut
-    width?: Quote<number> | number
-    height?: Quote<number> | number
-  } & Omit<DrawRectConfig, 'width' | 'height' | 'draw'>
-) {
-  const getConfig = valueOrGetToGet(arg.config)
-  const getDrawInfo = valueOrGetToGet(arg.drawInfo)
-  const getWidth = valueOrGetToGet(arg.width || quote)
-  const getHeight = valueOrGetToGet(arg.height || quote)
-  const mout = memo(function () {
-    const ctx = getOneCtx()
-    const c = getConfig()
-    const out = { ...c } as MeasuredTextOut
-    makeCurrentDefaultFont(out)
-    out.textBaseline = 'top'
-    const m = measureText(ctx, c.text, out)
-    out.measure = m
-
-    const fontHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent
-    let lineHeight = getHeight(fontHeight)
-    const minLineHeight = fontHeight * 1.5
-    if (lineHeight < minLineHeight) {
-      lineHeight = minLineHeight
-    }
-    out.height = lineHeight
-    out.lineDiffStart = (lineHeight - fontHeight) / 2
-    return out
-  })
-  const d = hookDrawRect({
-    ...arg,
-    width() {
-      return getWidth(mout().measure.width)
-    },
-    height() {
-      return mout().height
-    },
-    draw(ctx, p) {
-      function draw() {
-        const c = mout()
-        const info = getDrawInfo?.(c)
-        drawText(ctx, c, info)
-      }
-      if (!arg.draw) {
-        return draw()
-      }
-      const before = mdraw._mve_canvas_render_current_rect_draw
-      mdraw._mve_canvas_render_current_rect_draw = draw
-      arg.draw(ctx, draw, p)
-      mdraw._mve_canvas_render_current_rect_draw = before
-    },
-  }) as DrawRectText
-  d.measureOut = mout
-  return d
-}
-
 export type DrawRectText = LayoutNode<CMNode, keyof Point<number>> & {
   measureOut(): MeasuredTextOut
 }
 
-export function hookDrawTextWrap(
-  arg: {
+/**
+ * 宽度使用自容器的宽度
+ */
+export class CtxTextWrapHelper {
+  rect!: LayoutNode<CMNode, keyof Point<number>>
+  readonly getConfig: GetValue<TextWrapConfig>
+  /**
+   * 取它的高度
+   */
+  readonly measureOut: GetValue<MeasuredTextWrapOut>
+  constructor(
     /**与字体测量相关 */
-    config: ValueOrGet<TextWrapConfig>
+    config: ValueOrGet<TextWrapConfig>,
+    width: ValueOrGet<number>
     /**只与绘制相关 */
-    drawInfo?: ((arg: MeasuredTextWrapOut) => DrawTextWrapExt) | DrawTextWrapExt
-    draw?(ctx: CanvaRenderCtx, draw: EmptyFun, p: Path2D): void
-    height?: Quote<number> | number
-  } & Omit<DrawRectConfig, 'height' | 'draw'>
-) {
-  const getConfig = valueOrGetToGet(arg.config)
-  const getDrawInfo = valueOrGetToGet(arg.drawInfo)
-  const getHeight = valueOrGetToGet(arg.height || quote)
-  const d = hookDrawRect({
-    ...arg,
-    height() {
-      return getHeight(mout().height)
-    },
-    draw(ctx, p) {
-      function draw() {
-        const m = mout()
-        drawTextWrap(ctx, m, getDrawInfo?.(m))
-      }
-      if (!arg.draw) {
-        return draw()
-      }
-      const before = mdraw._mve_canvas_render_current_rect_draw
-      mdraw._mve_canvas_render_current_rect_draw = draw
-      arg.draw(ctx, draw, p)
-      mdraw._mve_canvas_render_current_rect_draw = before
-    },
-  }) as DrawRectTextWrap
-  const config = memo(() => {
-    const c = { ...getConfig() } as any
+  ) {
+    this.getConfig = valueOrGetToGet(config)
+    const getWidth = valueOrGetToGet(width)
+    this.measureOut = memo(() => {
+      const c = this.getConfig()
+      makeCurrentDefaultFont(c)
+      const ctx = getOneCtx()
+      return measureTextWrap(ctx, c.text, getWidth(), c)
+    })
+  }
+  measureCtx() {
+    const c = this.getConfig()
     makeCurrentDefaultFont(c)
-    c.width = d.axis.x.innerSize()
-    return c
-  })
-  const mout = memo(function () {
-    const c = config()
-    const ctx = getOneCtx()
-    return measureTextWrap(ctx, c.text, c)
-  })
-
-  d.measureCtx = function () {
-    const c = config()
     const ctx = getOneCtx()
     setDrawingStyle(ctx, c, true)
     return ctx
   }
-  d.measureOut = mout
-  return d
+
+  withSelect(selectStart: ValueOrGet<number>, selectEnd: ValueOrGet<number>) {
+    return new DrawTextWrapWithSelect(this, this.rect, selectStart, selectEnd)
+  }
 }
 
 type DrawRectCtx = {
@@ -193,56 +111,82 @@ type Glyph = {
   y: number
   w: number
 }
-export function drawTextWrapWithSelect({
-  selectStart: _selectStart,
-  selectEnd: _selectEnd,
-  get,
-}: {
-  selectStart: ValueOrGet<number>
-  selectEnd: ValueOrGet<number>
-  get: DrawRectCtx
-}) {
-  const selectStart = valueOrGetToGet(_selectStart)
-  const selectEnd = valueOrGetToGet(_selectEnd)
-  const memoGraphs = memo(() => {
-    const mout = get.measureOut()
-    const ctx = get.measureCtx()
-    const list = mout.lines.map((line, i) => {
-      const chars = [...line.text]
-      let beforeWidth = 0
-      const y = i * mout.lineHeight
-      const glyphs: Glyph[] = []
-      for (let i = 0; i < chars.length; i++) {
-        const subText = chars.slice(0, i + 1).join('')
-        const afterWidth = ctx.measureText(subText).width
-        glyphs.push({
-          char: chars[i],
-          x: beforeWidth,
-          y,
-          w: afterWidth - beforeWidth,
-        })
-        beforeWidth = afterWidth
+
+export class DrawTextWrapWithSelect {
+  readonly selectStart: GetValue<number>
+  readonly selectEnd: GetValue<number>
+  readonly memoGraphs: GetValue<{
+    list: {
+      y: number
+      glyphs: Glyph[]
+    }[]
+    lineHeight: number
+  }>
+  readonly cursorPosition: GetValue<
+    | {
+        x: number
+        y: number
       }
+    | undefined
+  >
+  constructor(
+    get: DrawRectCtx,
+    readonly rect: LayoutNode<CMNode, keyof Point<number>>,
+    selectStart: ValueOrGet<number>,
+    selectEnd: ValueOrGet<number>
+  ) {
+    this.selectStart = valueOrGetToGet(selectStart)
+    this.selectEnd = valueOrGetToGet(selectEnd)
+    this.memoGraphs = memo(() => {
+      const mout = get.measureOut()
+      const ctx = get.measureCtx()
+      const list = mout.lines.map((line, i) => {
+        const chars = [...line.text]
+        let beforeWidth = 0
+        const y = i * mout.lineHeight
+        const glyphs: Glyph[] = []
+        for (let i = 0; i < chars.length; i++) {
+          const subText = chars.slice(0, i + 1).join('')
+          const afterWidth = ctx.measureText(subText).width
+          glyphs.push({
+            char: chars[i],
+            x: beforeWidth,
+            y,
+            w: afterWidth - beforeWidth,
+          })
+          beforeWidth = afterWidth
+        }
+        return {
+          y,
+          glyphs,
+        }
+      })
       return {
-        y,
-        glyphs,
+        list,
+        lineHeight: mout.lineHeight,
       }
     })
-    return {
-      list,
-      lineHeight: mout.lineHeight,
-    }
-  })
-  function getIndex(e: Point) {
-    const { list: mg, lineHeight } = memoGraphs()
+    this.cursorPosition = memo(() => {
+      const start = this.selectStart()
+      const end = this.selectEnd()
+      if (start == end) {
+        return this.getPosition(start)
+      }
+    })
+  }
+
+  getIndex(e: Point) {
+    const ex = e.x - this.rect.axis.x.paddingStart()
+    const ey = e.y - this.rect.axis.y.paddingStart()
+    const { list: mg, lineHeight } = this.memoGraphs()
     let index = 0
     let notFound = true
     for (let y = 0; y < mg.length && notFound; y++) {
       const row = mg[y]
-      if (row.y < e.y && e.y < row.y + lineHeight) {
+      if (row.y < ey && ey < row.y + lineHeight) {
         for (let x = 0; x < row.glyphs.length; x++) {
           const cell = row.glyphs[x]
-          if (e.x < cell.x + cell.w / 2) {
+          if (ex < cell.x + cell.w / 2) {
             return index
           }
           index++
@@ -253,15 +197,8 @@ export function drawTextWrapWithSelect({
     }
     return index
   }
-  const cursorPosition = memo(() => {
-    const start = selectStart()
-    const end = selectEnd()
-    if (start == end) {
-      return getPosition(start)
-    }
-  })
-  function getPosition(start: number) {
-    const { list: mg, lineHeight } = memoGraphs()
+  getPosition(start: number) {
+    const { list: mg, lineHeight } = this.memoGraphs()
     let mx = 0,
       my = 0
     let notFound = true
@@ -283,71 +220,184 @@ export function drawTextWrapWithSelect({
       y: my,
     }
   }
-  return {
-    cursorPosition,
-    getIndex,
-    draw(
-      ctx: {
-        fillRect(x: number, y: number, width: number, height: number): void
-      },
-      zeroWidth = 2
-    ) {
-      const { list: mg, lineHeight } = memoGraphs()
-      const start = selectStart()
-      const end = selectEnd()
-      const xy = cursorPosition()
-      if (xy) {
-        ctx.fillRect(xy.x, xy.y, zeroWidth, lineHeight)
-      } else {
-        let beginY = 0,
-          endY = 0
-        let beginX = 0,
-          endX = 0
-        const [min, max] = start > end ? [end, start] : [start, end]
-        let index = 0
-        let notFound = true
-        for (let y = 0; y < mg.length && notFound; y++) {
-          const row = mg[y]
-          for (let x = 0; x < row.glyphs.length; x++) {
-            if (index == min) {
-              beginY = y
-              beginX = x
-            }
-            if (index == max) {
-              endY = y
-              endX = x
-              notFound = false
-              break
-            }
-            index++
+  draw(
+    ctx: {
+      translate(x: number, y: number): void
+      fillRect(x: number, y: number, width: number, height: number): void
+    },
+    zeroWidth = 2
+  ) {
+    const px = this.rect.axis.x.paddingStart()
+    const py = this.rect.axis.y.paddingStart()
+    ctx.translate(px, py)
+    const { list: mg, lineHeight } = this.memoGraphs()
+    const start = this.selectStart()
+    const end = this.selectEnd()
+    const xy = this.cursorPosition()
+    if (xy) {
+      ctx.fillRect(xy.x, xy.y, zeroWidth, lineHeight)
+    } else {
+      let beginY = 0,
+        endY = 0
+      let beginX = 0,
+        endX = 0
+      const [min, max] = start > end ? [end, start] : [start, end]
+      let index = 0
+      let notFound = true
+      for (let y = 0; y < mg.length && notFound; y++) {
+        const row = mg[y]
+        for (let x = 0; x < row.glyphs.length; x++) {
+          if (index == min) {
+            beginY = y
+            beginX = x
           }
-        }
-
-        function fillSelect(y: number, start: number, end: number) {
-          if (start == end) {
-            return
+          if (index == max) {
+            endY = y
+            endX = x
+            notFound = false
+            break
           }
-          ctx.fillRect(start, y, end - start, lineHeight)
-        }
-        if (beginY == endY) {
-          const row = mg[beginY]
-          const start = row.glyphs[beginX].x
-          const end = row.glyphs[endX]
-          fillSelect(row.y, start, end.x)
-        } else {
-          const beginRow = mg[beginY]
-          const start = beginRow.glyphs[beginX].x
-          const end = beginRow.glyphs.at(-1)!
-          fillSelect(beginRow.y, start, end.x + end?.w)
-          for (let i = beginY + 1; i < endY; i++) {
-            const row = mg[i]
-            const end = row.glyphs.at(-1)!
-            fillSelect(row.y, 0, end.x + end?.w)
-          }
-          const endRow = mg[endY]
-          fillSelect(endRow.y, 0, endRow.glyphs[endX].x)
+          index++
         }
       }
-    },
+
+      function fillSelect(y: number, start: number, end: number) {
+        if (start == end) {
+          return
+        }
+        ctx.fillRect(start, y, end - start, lineHeight)
+      }
+      if (beginY == endY) {
+        const row = mg[beginY]
+        const start = row.glyphs[beginX].x
+        const end = row.glyphs[endX]
+        fillSelect(row.y, start, end.x)
+      } else {
+        const beginRow = mg[beginY]
+        const start = beginRow.glyphs[beginX].x
+        const end = beginRow.glyphs.at(-1)!
+        fillSelect(beginRow.y, start, end.x + end?.w)
+        for (let i = beginY + 1; i < endY; i++) {
+          const row = mg[i]
+          const end = row.glyphs.at(-1)!
+          fillSelect(row.y, 0, end.x + end?.w)
+        }
+        const endRow = mg[endY]
+        fillSelect(endRow.y, 0, endRow.glyphs[endX].x)
+      }
+    }
+    ctx.translate(-px, -py)
   }
+}
+
+/**
+ * 看来还是需要hookDrawTextWrap与hookDrawText
+ * 因为是内容撑开的,所有padding肯定在内容之外
+ */
+
+export type DrawArgText = DrawArgRect & {
+  draw(info?: DrawTextExt): void
+}
+export function hookDrawText(
+  args: Omit<
+    DrawRectConfig,
+    'width' | 'height' | 'widthAsInner' | 'heightAsInner' | 'draw'
+  > & {
+    config: ValueOrGet<DrawTextConfig>
+    height?: Quote<number> | number
+    draw?(e: DrawArgText): void
+  }
+) {
+  const getConfig = valueOrGetToGet(args.config)
+  const getHeight = valueOrGetToGet(args.height ?? quote)
+  const measureOut = memo(() => {
+    const ctx = getOneCtx()
+    const c = getConfig()
+    const out = { ...c } as MeasuredTextOut
+    makeCurrentDefaultFont(out)
+    out.textBaseline = 'top'
+    const m = measureText(ctx, c.text, out)
+    out.measure = m
+    const fontHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent
+    let lineHeight = getHeight(fontHeight)
+    const minLineHeight = fontHeight * 1.5
+    if (lineHeight < minLineHeight) {
+      lineHeight = minLineHeight
+    }
+    out.height = lineHeight
+    out.lineDiffStart = (lineHeight - fontHeight) / 2
+    return out
+  })
+  const n = hookDrawRect({
+    ...args,
+    widthAsInner: true,
+    width() {
+      return measureOut().measure.width
+    },
+    heightAsInner: true,
+    height() {
+      return measureOut().height
+    },
+    draw(e) {
+      function draw(info?: DrawTextExt) {
+        drawText(e.ctx, measureOut(), {
+          ...info,
+          x: e.rect.axis.x.paddingStart() + (info?.x ?? 0),
+        })
+      }
+      if (args.draw) {
+        const ee = e as DrawArgText
+        ee.draw = draw
+        args.draw!(ee)
+        args.draw(ee)
+      } else {
+        draw()
+      }
+    },
+  }) as LayoutNode<CMNode, keyof Point<number>> & {
+    measureOut: GetValue<MeasuredTextOut>
+  }
+  n.measureOut = measureOut
+  return n
+}
+export type DrawArgTextWrap = DrawArgRect & {
+  draw(info?: DrawTextWrapExt): void
+}
+export function hookDrawTextWrap(
+  args: Omit<DrawRectConfig, 'height' | 'heightAsInner' | 'draw'> & {
+    config: ValueOrGet<TextWrapConfig>
+    draw?(e: DrawArgTextWrap): void
+  }
+) {
+  const m = new CtxTextWrapHelper(args.config, () => {
+    return n.axis.x.innerSize()
+  })
+  const n = hookDrawRect({
+    ...args,
+    heightAsInner: true,
+    height() {
+      return m.measureOut().height
+    },
+    draw(e) {
+      function draw(info?: DrawTextWrapExt) {
+        drawTextWrap(e.ctx, m.measureOut(), {
+          ...info,
+          y: e.rect.axis.y.paddingStart() + (info?.y ?? 0),
+          x: e.rect.axis.x.paddingStart() + (info?.x ?? 0),
+        })
+      }
+      if (args.draw) {
+        const ee = e as DrawArgTextWrap
+        ee.draw = draw
+        args.draw!(ee)
+      } else {
+        draw()
+      }
+    },
+  }) as LayoutNode<CMNode, keyof Point<number>> & {
+    helper: CtxTextWrapHelper
+  }
+  m.rect = n
+  n.helper = m
+  return n
 }
