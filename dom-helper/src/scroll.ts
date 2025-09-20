@@ -1,9 +1,33 @@
-import { hookDestroy, hookTrackSignal } from "mve-helper"
-import { animateSignal, pointerMove, pointerMoveDir } from "wy-dom-helper"
-import { addEffect, AnimateSignal, AnimateSignalConfig, ClampingScrollFactory, createSignal, DeltaXSignalAnimationConfig, destinationWithMargin, eventGetPageX, eventGetPageY, getMaxScroll, GetValue, getValueOrGet, numberBetween, PointKey, ScrollDelta, scrollForEdge, ScrollFromPage, ScrollFromPageI, ScrollHelper, SetValue, storeRef, StoreRef, ValueOrGet, valueOrGetToGet } from "wy-helper"
+import { hookDestroy, hookTrackSignal } from 'mve-helper'
+import { animateSignal, pointerMove, pointerMoveDir } from 'wy-dom-helper'
+import {
+  addEffect,
+  AnimateSignal,
+  AnimateSignalConfig,
+  ClampingScrollFactory,
+  createSignal,
+  DeltaXSignalAnimationConfig,
+  destinationWithMargin,
+  eventGetPageX,
+  eventGetPageY,
+  getMaxScroll,
+  GetValue,
+  getValueOrGet,
+  numberBetween,
+  PointKey,
+  ScrollDelta,
+  scrollForEdge,
+  ScrollFromPage,
+  ScrollFromPageI,
+  ScrollHelper,
+  SetValue,
+  storeRef,
+  StoreRef,
+  ValueOrGet,
+  valueOrGetToGet,
+} from 'wy-helper'
 
-
-
+import { hookEffectCollect } from 'mve-core'
 
 export interface OnScrollI {
   init?: number
@@ -18,16 +42,14 @@ export interface OnScrollI {
   opposite?: boolean
 
   //原始滚动中的属性
-  edgeConfig?(velocity: number): AnimateSignalConfig;
-  edgeBackConfig?: DeltaXSignalAnimationConfig;
+  edgeConfig?(velocity: number): AnimateSignalConfig
+  edgeBackConfig?: DeltaXSignalAnimationConfig
   /**吸附 */
-  targetSnap?: (n: number) => number;
+  targetSnap?: (n: number) => number
   /**获得强制吸附的位置 */
-  getForceStop?: (current: number, idealTarget: number) => number;
-  onProcess?: SetValue<number>;
-  onOutProcess?: SetValue<number>;
-
-
+  getForceStop?: (current: number, idealTarget: number) => number
+  onProcess?: SetValue<number>
+  onOutProcess?: SetValue<number>
 
   onDragBegin?(): void
 }
@@ -37,10 +59,7 @@ interface DirectionGet {
   getContainerSize(): number
 }
 class XDirectionGet implements DirectionGet {
-  constructor(
-    private container: HTMLElement,
-    private content: HTMLElement
-  ) { }
+  constructor(private container: HTMLElement, private content: HTMLElement) {}
   getContainerSize(): number {
     return this.container.clientWidth
   }
@@ -49,10 +68,7 @@ class XDirectionGet implements DirectionGet {
   }
 }
 class YDirectionGet implements DirectionGet {
-  constructor(
-    private container: HTMLElement,
-    private content: HTMLElement
-  ) { }
+  constructor(private container: HTMLElement, private content: HTMLElement) {}
   getContainerSize(): number {
     return this.container.clientHeight
   }
@@ -60,17 +76,12 @@ class YDirectionGet implements DirectionGet {
     return this.content.offsetHeight
   }
 }
-export function measureMaxScroll(
-  direction: PointKey
-) {
+export function measureMaxScroll(direction: PointKey) {
   const maxScroll = createSignal(0)
   let inited = false
   return {
     get: maxScroll.get,
-    hookInit(
-      container: HTMLElement,
-      content: HTMLElement
-    ) {
+    hookInit(container: HTMLElement, content: HTMLElement) {
       if (inited) {
         console.log('禁止重复初始化')
         return
@@ -83,17 +94,27 @@ export function measureMaxScroll(
         directionGet = new YDirectionGet(container, content)
       }
       addEffect(() => {
-        maxScroll.set(getMaxScroll(directionGet.getContainerSize(), directionGet.getContentSize()))
+        maxScroll.set(
+          getMaxScroll(
+            directionGet.getContainerSize(),
+            directionGet.getContentSize()
+          )
+        )
       })
       const ob = new ResizeObserver(function () {
-        maxScroll.set(getMaxScroll(directionGet.getContainerSize(), directionGet.getContentSize()))
+        maxScroll.set(
+          getMaxScroll(
+            directionGet.getContainerSize(),
+            directionGet.getContentSize()
+          )
+        )
       })
       ob.observe(container)
       ob.observe(content)
       hookDestroy(() => {
         ob.disconnect()
       })
-    }
+    },
   }
 }
 
@@ -103,7 +124,6 @@ export function getWheelDetailX(e: WheelEvent) {
 export function getWheelDetailY(e: WheelEvent) {
   return e.deltaY
 }
-
 
 export class OnScroll {
   private edgeSlow: number
@@ -118,7 +138,9 @@ export class OnScroll {
     return this.scroll.animateTo(this.toSnap(n), config)
   }
   scrollTo(n: number) {
-    return this.destinationWithMargin(this.scrollFactory.getFromDistance(n - this.get()))
+    return this.destinationWithMargin(
+      this.scrollFactory.getFromDistance(n - this.get())
+    )
   }
   readonly getWheelDetail: (e: WheelEvent) => number
 
@@ -157,21 +179,19 @@ export class OnScroll {
     this.getMinScroll = valueOrGetToGet(config.minScroll || 0)
     this.getMaxScroll = valueOrGetToGet(config.maxScroll)
     if (typeof config.minScroll == 'function') {
-      hookTrackSignal(this.getMinScroll, v => {
-        addEffect(() => {
-          if (this.scroll.getTarget() < v) {
-            this.scroll.silentChangeTo(v)
-          }
-        })
+      hookEffectCollect(this.getMinScroll, (v) => {
+        v = Math.max(0, v)
+        if (this.scroll.getTarget() < v) {
+          this.scroll.silentChangeTo(v)
+        }
       })
     }
     if (typeof config.maxScroll == 'function') {
-      hookTrackSignal(this.getMaxScroll, v => {
-        addEffect(() => {
-          if (this.scroll.getTarget() > v) {
-            this.scroll.silentChangeTo(v)
-          }
-        })
+      hookEffectCollect(this.getMaxScroll, (v) => {
+        v = Math.max(v, 0)
+        if (this.scroll.getTarget() > v) {
+          this.scroll.silentChangeTo(v)
+        }
       })
     }
     let init = this.config.init
@@ -202,11 +222,13 @@ export class OnScroll {
         onMove(e, dir) {
           if (dir == that.direction) {
             that.config.onDragBegin?.()
-            pointerMove(ScrollFromPage.from(e, {
-              getPage: that.getPage,
-              scrollDelta: that.drag,
-              opposite: that.config.opposite
-            }))
+            pointerMove(
+              ScrollFromPage.from(e, {
+                getPage: that.getPage,
+                scrollDelta: that.drag,
+                opposite: that.config.opposite,
+              })
+            )
           } else {
             //如果有吸附,需要吸附
             that.scrollToIdeal()
@@ -218,7 +240,6 @@ export class OnScroll {
         },
       })
     }
-
   }
   private scrollToIdeal() {
     const targetSnap = this.config.targetSnap
@@ -267,8 +288,8 @@ export class OnScroll {
   }
   /**
    * 惯性滚动到边界,带动外部
-   * @param velocity 
-   * @returns 
+   * @param velocity
+   * @returns
    */
   private scrollToEdge = (velocity: number, edge: number) => {
     if (edge == this.getMinScroll() && this.minNextScroll) {
@@ -280,7 +301,9 @@ export class OnScroll {
       return true
     }
   }
-  private destinationWithMargin(frictional: ScrollHelper): Promise<boolean | "immediately"> {
+  private destinationWithMargin(
+    frictional: ScrollHelper
+  ): Promise<boolean | 'immediately'> {
     return destinationWithMargin({
       ...this.config,
       maxScroll: this.getMaxScroll(),
@@ -292,16 +315,18 @@ export class OnScroll {
   }
   /**
    * 惯性滚动
-   * @param velocity 
+   * @param velocity
    */
   private destination = (velocity: number) => {
-    return this.destinationWithMargin(this.scrollFactory.getFromVelocity(velocity))
+    return this.destinationWithMargin(
+      this.scrollFactory.getFromVelocity(velocity)
+    )
   }
   /**
    * 应该可以允许多个容器,只要不重复
-   * @param container 
-   * @param config 
-   * @returns 
+   * @param container
+   * @param config
+   * @returns
    */
   readonly pointerEventListner: SetValue<PointerEvent>
   readonly wheelEventListener: SetValue<WheelEvent>

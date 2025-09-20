@@ -1,4 +1,10 @@
-import { AppendList, hookAddDestroy, hookAddResult, HookChild } from 'mve-core'
+import {
+  AppendList,
+  hookAddDestroy,
+  hookAddResult,
+  HookChild,
+  hookCurrentParent,
+} from 'mve-core'
 import { fdom, FDomAttributes } from 'mve-dom'
 import { hookTrackSignal } from 'mve-helper'
 import { CanvasStyle, path2DOperate, Path2DOperate } from 'wy-dom-helper/canvas'
@@ -17,7 +23,8 @@ import {
 } from 'wy-helper'
 
 export function hookDraw(rect: CNodeConfigure) {
-  const n = new CNode(rect)
+  const parent = hookCurrentParent() as NodeParent
+  const n = new CNode(rect, parent)
   hookAddResult(n)
   return n
 }
@@ -53,14 +60,14 @@ class CNode implements CMNode {
   readonly ext: Record<string, any>
   private appendList = new AppendList<CNode, CNode>(this, (list) => {
     list.forEach((row, index) => {
-      row.setParent(this, index)
+      row._index = index
     })
   })
   children = this.appendList.target
   collect<T = void>(fun: (n: CNode) => T) {
     return this.appendList.collect(fun)
   }
-  constructor(public readonly configure: CNodeConfigure) {
+  constructor(readonly configure: CNodeConfigure, readonly parent: NodeParent) {
     this.ext = configure.ext || emptyObject
     this.x = valueOrGetToGet(configure.x)
     this.y = valueOrGetToGet(configure.y)
@@ -73,20 +80,7 @@ class CNode implements CMNode {
   }
   public hasClip = false
   didDraw = false
-  parent!: NodeParent
-  setParent(
-    parent: NodeParent,
-    index: number
-    // isBefore: boolean
-  ) {
-    if (this.parent && this.parent != parent) {
-      throw 'parent发生改变'
-    }
-    this.parent = parent
-    this._index = index
-    // this.isBefore = isBefore
-  }
-  private _index: number = 0
+  _index: number = 0
 
   index() {
     /**
@@ -126,9 +120,15 @@ interface CBaseNodeConfigure {
   ext?: Record<string, any>
 }
 
+export type DrawArgWithPath = {
+  node: CMNode
+  ctx: CanvaRenderCtx
+  path: Path2D
+}
+
 export type CNodePathConfigure = CBaseNodeConfigure & {
   withPath: true
-  draw?(ctx: CanvaRenderCtx, path: Path2D): void
+  draw?(arg: DrawArgWithPath): void
 
   onClick?(e: CanvasMouseEvent<MouseEvent>): any
   onMouseDown?(e: CanvasMouseEvent<MouseEvent>): any
@@ -171,8 +171,8 @@ function doToEvent(
   callback: (child: CanvasMouseEvent<undefined>) => any
 ): boolean {
   let will = true
-  let i = 0
-  while (will && i < children.length) {
+  let i = children.length - 1
+  while (will && i > -1) {
     const child = children[i]
     if (child.didDraw) {
       const nx = x - child.x()
@@ -208,7 +208,7 @@ function doToEvent(
         will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
       }
     }
-    i++
+    i--
   }
   return will
 }
@@ -282,15 +282,15 @@ export function renderCanvas(
    */
   ext: {
     //怎么感觉这个translateX又不如预期,不如在beforeDraw时ctx.translate
-    // translateX?: ValueOrGet<number>
-    // translateY?: ValueOrGet<number>
+    translateX?: ValueOrGet<number>
+    translateY?: ValueOrGet<number>
 
     beforeDraw?(ctx: CanvasRenderingContext2D): void
     afterDraw?(ctx: CanvasRenderingContext2D): void
   } = emptyObject
 ) {
-  // const translateX = valueOrGetToGet(ext.translateX || 0)
-  // const translateY = valueOrGetToGet(ext.translateY || 0)
+  const translateX = valueOrGetToGet(ext.translateX || 0)
+  const translateY = valueOrGetToGet(ext.translateY || 0)
   const getWidth = valueOrGetToGet(width)
   const getHeight = valueOrGetToGet(height)
   const canvas = fdom.canvas({
@@ -320,7 +320,7 @@ export function renderCanvas(
   }
   const appendList = new AppendList<CNode, NodeParent>(rootParent, (list) => {
     list.forEach((row, index) => {
-      row.setParent(rootParent, index)
+      row._index = index
     })
   })
   appendList.collect(children as any)
@@ -333,8 +333,8 @@ export function renderCanvas(
       doEvent(
         _ctx,
         _children,
-        e.offsetX, //+ translateX(),
-        e.offsetY, //+ translateY(),
+        e.offsetX + translateX(),
+        e.offsetY + translateY(),
         (child) => {
           const c = child as unknown as CanvasMouseEvent<MouseEvent>
           c.original = e
@@ -395,7 +395,11 @@ export function renderCanvas(
           const before = m._mve_canvas_render_current_Node
           m._mve_canvas_render_current_Node = child
           child.hasClip = false
-          child.configure.draw?.(ctx, path)
+          child.configure.draw?.({
+            node: child,
+            ctx,
+            path,
+          })
           m._mve_canvas_render_current_Node = before
         } else {
           child.configure.draw?.(ctx)
@@ -407,7 +411,7 @@ export function renderCanvas(
     ctx.reset()
     const scale = devicePixelRatio.get() // Change to 1 on retina screens to see blurry canvas.
     ctx.scale(scale, scale)
-    // ctx.translate(translateX(), translateY())
+    ctx.translate(translateX(), translateY())
     ext.beforeDraw?.(ctx)
     draw(getChildren())
     ext.afterDraw?.(ctx)

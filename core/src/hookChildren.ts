@@ -14,7 +14,13 @@ import {
   trackSignal,
   collectSignal,
 } from 'wy-helper'
-import { hookAddDestroy, hookAlterChildren, hookIsDestroyed } from '.'
+import {
+  createContext,
+  hookAddDestroy,
+  hookAlterChildren,
+  hookIsDestroyed,
+  renderStateHolder,
+} from '.'
 
 export function addTrackEffect<T>(
   get: GetValue<T>,
@@ -30,16 +36,16 @@ export function addTrackEffect<T>(
   )
 }
 
-export function hookTrackAttr<V>(
+export function hookEffectCollect<V>(
   get: GetValue<V>,
   set: SetValue<V>,
+  level = 0,
+  a?: any,
   b?: any,
-  f?: any
+  c?: any
 ) {
-  /**
-   * 属性节点依赖子节点构造出结构
-   */
   const isDestroyed = hookIsDestroyed()
+  let lastValue: any = effect
   function effect() {
     if (isDestroyed()) {
       return
@@ -47,14 +53,23 @@ export function hookTrackAttr<V>(
     const value = collect(get)
     if (value != lastValue) {
       lastValue = value
-      set(value, b, f)
+      set(value, a, b, c)
     }
   }
-  let lastValue: any = effect
+
   const { destroy, collect } = collectSignal(function () {
-    addEffect(effect, -1)
+    addEffect(effect, level)
   })
   hookAddDestroy()(destroy)
+}
+
+export function hookTrackAttr<V>(
+  get: GetValue<V>,
+  set: SetValue<V>,
+  b?: any,
+  f?: any
+) {
+  hookEffectCollect(get, set, -1, b, f)
 }
 
 export type OrFun<T extends {}> = {
@@ -100,19 +115,19 @@ export class AppendList<T, N> {
 
   collect<T = void>(fun: (n: N) => T) {
     const beforeList = hookAlterChildren(this.list)
-    const before = m._mve_current_parent_node
-    m._mve_current_parent_node = this.node
-    const o = fun(this.node)
-    m._mve_current_parent_node = before
+    const o = renderStateHolder(() => {
+      parentCtx.provide(this.node)
+      return fun(this.node)
+    })
     hookAlterChildren(beforeList)
     return o
   }
 }
-const m = globalThis as unknown as {
-  _mve_current_parent_node: any
-}
-export function hookCurrentParent() {
-  return m._mve_current_parent_node
+
+const parentCtx = createContext<any>(undefined!)
+
+export function hookCurrentParent<T>() {
+  return parentCtx.consume() as T
 }
 export type RenderChildrenOperante<Node> = {
   moveBefore(parent: Node, newChild: Node, beforeChild: Node | null): void
