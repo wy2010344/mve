@@ -342,6 +342,7 @@ export function hookDrawText(
       function draw(info?: DrawTextExt) {
         drawText(e.ctx, measureOut(), {
           ...info,
+          y: e.rect.axis.y.paddingStart() + (info?.y ?? 0),
           x: e.rect.axis.x.paddingStart() + (info?.x ?? 0),
         })
       }

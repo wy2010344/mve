@@ -27,21 +27,22 @@ export type DrawRectConfig = Omit<
   Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath' | 'skipDraw'> & {
     skipDraw?(n: LayoutNode<CMNode, keyof Point<number>>): any
 
-    padding?: ValueOrGet<number>
-    paddingInline?: ValueOrGet<number>
-    paddingBlock?: ValueOrGet<number>
+    padding?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    paddingInline?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    paddingBlock?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
 
+    size?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
     x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
     widthAsInner?: boolean
     width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingLeft?: ValueOrGet<number>
-    paddingRight?: ValueOrGet<number>
+    paddingLeft?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    paddingRight?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
 
     y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
     heightAsInner?: boolean
     height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingTop?: ValueOrGet<number>
-    paddingBottom?: ValueOrGet<number>
+    paddingTop?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    paddingBottom?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
 
     alignSelf?: AlignSelfFun
     alignSelfX?: AlignSelfFun
@@ -69,6 +70,9 @@ const config: LayoutConfig<CMNode, PointKey> = {
 }
 export function hookDrawRect(n: DrawRectConfig) {
   const {
+    size,
+    width = size,
+    height = size,
     padding,
     paddingBlock = padding,
     paddingInline = padding,
@@ -83,7 +87,7 @@ export function hookDrawRect(n: DrawRectConfig) {
       x: {
         sizeAsInner: n.widthAsInner,
         position: n.x,
-        size: n.width,
+        size: width,
         paddingStart: paddingLeft,
         paddingEnd: paddingRight,
         alignSelf: n.alignSelfX ?? n.alignSelf,
@@ -91,7 +95,7 @@ export function hookDrawRect(n: DrawRectConfig) {
       y: {
         sizeAsInner: n.heightAsInner,
         position: n.y,
-        size: n.height,
+        size: height,
         paddingStart: paddingTop,
         paddingEnd: paddingBottom,
         alignSelf: n.alignSelfY ?? n.alignSelf,
