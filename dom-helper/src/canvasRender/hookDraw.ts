@@ -2,16 +2,13 @@ import {
   AppendList,
   hookAddDestroy,
   hookAddResult,
-  HookChild,
   hookCurrentParent,
 } from 'mve-core'
-import { fdom, FDomAttributes } from 'mve-dom'
 import { hookTrackSignal } from 'mve-helper'
-import { CanvasStyle, path2DOperate, Path2DOperate } from 'wy-dom-helper/canvas'
+import { CanvasStyle } from 'wy-dom-helper/canvas'
 import {
   batchSignalEnd,
   createSignal,
-  emptyArray,
   EmptyFun,
   emptyObject,
   GetValue,
@@ -91,18 +88,6 @@ class CNode implements CMNode {
     this.parent.children()
     return this._index
   }
-
-  /**
-   * 这个每次至少遍历一遍,多计算一步
-   */
-  // index = memo(() => {
-  //   if (this.isBefore) {
-  //     return this.parent.beforeChildren!().indexOf(this)
-  //   } else {
-  //     return this.parent.children().indexOf(this)
-  //   }
-  // })
-
   x: GetValue<number>
   y: GetValue<number>
   path?: Path2D
@@ -120,12 +105,14 @@ interface CBaseNodeConfigure {
   ext?: Record<string, any>
 }
 
-export type DrawArgWithPath = {
+export type DrawArg = {
   node: CMNode
   ctx: CanvaRenderCtx
-  path: Path2D
 }
 
+export type DrawArgWithPath = DrawArg & {
+  path: Path2D
+}
 export type CNodePathConfigure = CBaseNodeConfigure & {
   withPath: true
   draw?(arg: DrawArgWithPath): void
@@ -150,7 +137,7 @@ export type CNodeConfigure =
   | CNodePathConfigure
   | (CBaseNodeConfigure & {
       withPath?: never
-      draw?(ctx: CanvaRenderCtx): void
+      draw?(ctx: DrawArg): void
     })
 
 export type CanvasMouseEvent<T> = {
@@ -164,67 +151,96 @@ export type CanvasMouseEvent<T> = {
 
 function doToEvent(
   _ctx: CanvasRenderingContext2D,
+  original: any,
   children: CNode[],
   x: number,
   y: number,
   cs: CanvasMouseEvent<undefined>[],
-  callback: (child: CanvasMouseEvent<undefined>) => any
+  captureEventKey: 'onClickCapture',
+  eventKey: 'onClick'
 ): boolean {
   let will = true
   let i = children.length - 1
   while (will && i > -1) {
     const child = children[i]
-    if (child.didDraw) {
-      const nx = x - child.x()
-      const ny = y - child.y()
-      // will = doToEvent(_ctx, child.beforeChildren(), nx, ny, cs, callback)
-      let tryChildren = true
-      if (will && child.path) {
-        //inPath,就是点在边界内
-        const inPath = _ctx.isPointInPath(child.path, nx, ny)
-        //inStroke,就是点恰好在边界中间,因为stroke在边界两边
-        const inStroke = child.configure.mouseContainStroke
-          ? _ctx.isPointInStroke(child.path, nx, ny)
-          : false
-        if (inPath || inStroke) {
+    const subChildren = child.children()
+    let captureEvent: ((e: CanvasMouseEvent<MouseEvent>) => any) | undefined =
+      undefined
+    let event: ((e: CanvasMouseEvent<MouseEvent>) => any) | undefined =
+      undefined
+    if (child.configure.withPath) {
+      captureEvent = child.configure[captureEventKey]
+      event = child.configure[eventKey]
+    }
+    const nx = x - child.x()
+    const ny = y - child.y()
+    let tryChildren = subChildren.length > 0
+    if (child.didDraw && child.path && (captureEvent || event || tryChildren)) {
+      //没有跳过绘制、有path,有相应的事件或children
+      //inPath,就是点在边界内
+      const scale = devicePixelRatio.get()
+      const sx = nx * scale
+      const sy = ny * scale
+      const inPath = _ctx.isPointInPath(child.path, sx, sy)
+      //inStroke,就是点恰好在边界中间,因为stroke在边界两边
+      const inStroke = child.configure.mouseContainStroke
+        ? _ctx.isPointInStroke(child.path, sx, sy)
+        : false
+      if (inPath || inStroke) {
+        if (captureEvent || event) {
           const e = {
+            original,
             node: child,
             x: nx,
             y: ny,
             inPath,
             inStroke,
-            original: undefined,
           }
-          cs.unshift(e)
-          if (callback(e)) {
+          if (event) {
+            cs.push(e)
+          }
+          if (captureEvent && captureEvent(e)) {
+            //有事件并阻止
             will = false
             cs.length = 0
           }
-        } else if (child.hasClip) {
-          tryChildren = false
         }
+      } else if (child.hasClip) {
+        tryChildren = false
       }
-      if (will && tryChildren) {
-        will = doToEvent(_ctx, child.children(), nx, ny, cs, callback)
-      }
+    }
+
+    if (will && tryChildren) {
+      will = doToEvent(
+        _ctx,
+        original,
+        subChildren,
+        nx,
+        ny,
+        cs,
+        captureEventKey,
+        eventKey
+      )
     }
     i--
   }
   return will
 }
-
 function doEvent(
   _ctx: CanvasRenderingContext2D,
+  e: any,
   children: CNode[],
   x: number,
   y: number,
-  capture: (child: CanvasMouseEvent<undefined>) => any,
-  back: (child: CanvasMouseEvent<undefined>) => any
+  captureEventKey: 'onClickCapture',
+  eventKey: 'onClick'
 ) {
   const cs: CanvasMouseEvent<undefined>[] = []
-  doToEvent(_ctx, children, x, y, cs, capture)
-  for (let i = 0; i < cs.length; i++) {
-    if (back(cs[i])) {
+  doToEvent(_ctx, e, children, x, y, cs, captureEventKey, eventKey)
+  for (let i = cs.length - 1; i > -1; i--) {
+    const c = cs[i]
+    const event = (c.node.configure as any)[eventKey]
+    if (event && event(c)) {
       return
     }
   }
@@ -260,18 +276,15 @@ const ctxs: CanvasRenderingContext2D[] = []
 export function getOneCtx() {
   return ctxs[0]
 }
+/**
+ *
+ * @param canvas 注意这个canvas不能绑定width与height,可以绑定style.width或style.height
+ * @param children
+ * @param ext
+ * @returns
+ */
 export function renderCanvas(
-  {
-    width,
-    height,
-    ...args
-  }: Omit<
-    FDomAttributes<'canvas'>,
-    'width' | 'height' | 's_width' | 's_height'
-  > & {
-    width: ValueOrGet<number>
-    height: ValueOrGet<number>
-  },
+  canvas: HTMLCanvasElement,
   children: SetValue<
     NodeParent & {
       canvas: HTMLCanvasElement
@@ -291,23 +304,6 @@ export function renderCanvas(
 ) {
   const translateX = valueOrGetToGet(ext.translateX || 0)
   const translateY = valueOrGetToGet(ext.translateY || 0)
-  const getWidth = valueOrGetToGet(width)
-  const getHeight = valueOrGetToGet(height)
-  const canvas = fdom.canvas({
-    width() {
-      return Math.floor(devicePixelRatio.get() * getWidth())
-    },
-    height() {
-      return Math.floor(devicePixelRatio.get() * getHeight())
-    },
-    s_width() {
-      return getWidth() + 'px'
-    },
-    s_height() {
-      return getHeight() + 'px'
-    },
-    ...(args as any),
-  })
   const rootParent: NodeParent & {
     canvas: HTMLCanvasElement
   } = {
@@ -332,26 +328,12 @@ export function renderCanvas(
     canvas.addEventListener(me.name as 'click', (e) => {
       doEvent(
         _ctx,
+        e,
         _children,
         e.offsetX + translateX(),
         e.offsetY + translateY(),
-        (child) => {
-          const c = child as unknown as CanvasMouseEvent<MouseEvent>
-          c.original = e
-          const configure = child.node.configure
-          if (configure.withPath) {
-            return configure[me.onCaptureEvent as 'onClickCapture']?.(c)
-          }
-        },
-        (child) => {
-          const c = child as unknown as CanvasMouseEvent<MouseEvent>
-          c.original = e
-
-          const configure = child.node.configure
-          if (configure.withPath) {
-            return configure[me.onEvent as 'onClick']?.(c)
-          }
-        }
+        me.onCaptureEvent as 'onClickCapture',
+        me.onEvent as 'onClick'
       )
     })
   })
@@ -364,7 +346,6 @@ export function renderCanvas(
     batchSignalEnd()
   })
   ob.observe(canvas)
-
   hookAddDestroy()(() => {
     ob.disconnect()
     removeEqual(ctxs, ctx)
@@ -389,27 +370,32 @@ export function renderCanvas(
         ctx.save()
         ctx.translate(x, y)
         child.path = undefined
+        const before = m._mve_canvas_render_current_Node
+        m._mve_canvas_render_current_Node = child
         if (child.configure.withPath) {
           const path = new Path2D()
           child.path = path
-          const before = m._mve_canvas_render_current_Node
-          m._mve_canvas_render_current_Node = child
           child.hasClip = false
           child.configure.draw?.({
             node: child,
             ctx,
             path,
           })
-          m._mve_canvas_render_current_Node = before
         } else {
-          child.configure.draw?.(ctx)
+          child.configure.draw?.({
+            node: child,
+            ctx,
+          })
         }
+        m._mve_canvas_render_current_Node = before
         draw(child.children())
         ctx.restore()
       })
     }
     ctx.reset()
     const scale = devicePixelRatio.get() // Change to 1 on retina screens to see blurry canvas.
+    canvas.width = canvas.clientWidth * scale
+    canvas.height = canvas.clientHeight * scale
     ctx.scale(scale, scale)
     ctx.translate(translateX(), translateY())
     ext.beforeDraw?.(ctx)
