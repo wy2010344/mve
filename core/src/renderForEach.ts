@@ -93,12 +93,19 @@ export type RenderForEachArg = {
   bindValue?: any
   bindOut?: any
   createMap?: <K, V>() => RMap<K, V>
+  duplicateInfo?: 'ignore' | 'warn' | 'throw'
+}
+export class DuplicateError extends Error {
+  constructor(message: string, readonly key: any) {
+    super(message)
+  }
 }
 export function renderForEach<T, K = T, O = void>(
   forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
   creater: Creater<T, K, O>,
   arg: RenderForEachArg = emptyObject
 ) {
+  const duplicateInfo = arg.duplicateInfo ?? 'warn'
   const createMap: <K, V>() => RMap<K, V> = arg.createMap || normalMapCreater
   let cacheMap = createMap<K, EachValue<T, K, O>[]>()
   let oldMap!: RMap<K, EachValue<T, K, O>[]>
@@ -136,7 +143,11 @@ export function renderForEach<T, K = T, O = void>(
       let newEnvs = newMap.get(key)
       if (newEnvs) {
         newEnvs.push(x)
-        console.warn(`重复的key`, key, `出现第${newEnvs.length}次`)
+        if (duplicateInfo == 'warn') {
+          console.warn(`重复的key`, key, `出现第${newEnvs.length}次`)
+        } else if (duplicateInfo == 'throw') {
+          throw new DuplicateError(`重复的key出现第${newEnvs.length}次`, key)
+        }
       } else {
         newEnvs = [x]
       }
