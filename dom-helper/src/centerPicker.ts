@@ -37,14 +37,16 @@ export type CenterPickerProps = {
   animationConfig?: DeltaXSignalAnimationConfig
   realTimeValue?: StoreRef<number>
   /**
-   * 要么是无限的,要么是有限的,有限就是circle
+   * 如果有总数量,就是循环的,比如12个月,就是12
+   * 如果没有总数量,就是无限的
    */
-  circle?: {
-    /**和0的距离,比如如果是从1开始,就是1*/
-    baseIndex?: ValueOrGet<number>
-    /**总数量,比如12个月,就是12 */
-    count: ValueOrGet<number>
-  }
+  count?: ValueOrGet<number>
+  /**
+   * 和0的距离,比如如果是从1开始,就是1
+   * 在循环状态下有效
+   */
+  baseIndex?: ValueOrGet<number>
+
   disabled?(i: number): any
 }
 
@@ -74,13 +76,14 @@ export function rangePicker(
   const cellHeight = valueOrGetToGet(_cellHeight)
   const size = valueOrGetToGet(_size)
   const scrollY = animateSignal(0)
-
   hookTrackSignal(value.get, function (v) {
-    if (scrollY.onAnimation()) {
-      scrollY.silentChangeTo(v * cellHeight())
-    } else {
-      scrollY.changeTo(v * cellHeight(), animationConfig)
-    }
+    addEffect(() => {
+      if (scrollY.onAnimation()) {
+        scrollY.silentChangeTo(v * cellHeight())
+      } else {
+        scrollY.changeTo(v * cellHeight(), animationConfig)
+      }
+    })
   })
   return {
     scroll: scrollY.get,
@@ -148,15 +151,16 @@ export function baseCenterPicker(
     animationConfig = defaultSpringAnimationConfig,
     getDistanceFromVelocity = defaultGetDistanceFromVelocity,
     realTimeValue = createSignal(value.get()),
-    circle,
+    count,
+    baseIndex,
     disabled,
   }: CenterPickerProps = emptyObject
 ) {
   const cellHeight = valueOrGetToGet(_cellHeight)
   const scrollY = animateSignal(0)
-  const getCount = valueOrGetToGet(circle?.count || 0)
-  const getCircleDiff = valueOrGetToGet(circle?.baseIndex || 0)
-
+  const getCount = valueOrGetToGet(count || 0)
+  const getCircleDiff = valueOrGetToGet(baseIndex || 0)
+  const circle = count
   const getRealValue: Quote<number> = circle
     ? (newValue: number) => {
         const circleDiff = getCircleDiff()

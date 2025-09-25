@@ -1,22 +1,39 @@
-import { BDomEvent, BSvgEvent, DomElement, DomElementType, domTagNames, FDomAttribute, FGetChildAttr, FSvgAttribute, renderMDomAttr, renderMSvgAttr, SvgElement, SvgElementType, svgTagNames, GDomAttribute, renderGDomAttr } from "wy-dom-helper";
-import { SetValue, createOrProxy } from "wy-helper";
-import { hookAddResult } from "mve-core";
-import { addPlugin, addWillRemove, mergeValue, Plugin, WillRemove } from "./renderNode";
-import { renderChildren } from "./hookChildren";
-
-
-
-
+import {
+  BDomEvent,
+  BSvgEvent,
+  DomElement,
+  DomElementType,
+  domTagNames,
+  FDomAttribute,
+  FGetChildAttr,
+  FSvgAttribute,
+  renderMDomAttr,
+  renderMSvgAttr,
+  SvgElement,
+  SvgElementType,
+  svgTagNames,
+  GDomAttribute,
+  renderGDomAttr,
+} from 'wy-dom-helper'
+import { createOrProxy } from 'wy-helper'
+import { hookAddResult } from 'mve-core'
+import {
+  addWillRemove,
+  mergeValue,
+  WillRemove,
+  Plugin,
+  addPlugin,
+} from './renderNode'
+import { renderChildren } from './hookChildren'
 
 export type MDomAttributes<T extends DomElementType> = {
   attrsNoObserver?: boolean
-  attrs?: SetValue<FDomAttribute<T>>
-} & BDomEvent<T>
-  & FGetChildAttr<DomElement<T>>
-
-  & Plugin<DomElement<T>>
-  & WillRemove<DomElement<T>>
-export function renderMDom<T extends DomElementType>(
+  attrs?(m: FDomAttribute<T>): void
+} & BDomEvent<T> &
+  Plugin<DomElement<T>> &
+  FGetChildAttr<DomElement<T>> &
+  WillRemove<DomElement<T>>
+export function renderKDom<T extends DomElementType>(
   type: T,
   arg: MDomAttributes<T>
 ) {
@@ -30,9 +47,10 @@ export function renderMDom<T extends DomElementType>(
 
 export type GDomAttributes<T extends DomElementType> = {
   attrsNoObserver?: boolean
-  attrs?: SetValue<GDomAttribute<T>>
-} & BDomEvent<T>
-  & FGetChildAttr<DomElement<T>>
+  attrs?(m: GDomAttribute<T>): void
+} & BDomEvent<T> &
+  Plugin<DomElement<T>> &
+  FGetChildAttr<DomElement<T>>
 export function renderGDom<T extends DomElementType>(
   type: T,
   arg: MDomAttributes<T>
@@ -45,20 +63,18 @@ export function renderGDom<T extends DomElementType>(
   return node
 }
 
-
-
 export type MSvgAttributes<T extends SvgElementType> = {
   attrsNoObserver?: boolean
-  attrs?: SetValue<FSvgAttribute<T>>
-} & BSvgEvent<T>
-  & FGetChildAttr<SvgElement<T>>
-  & Plugin<SvgElement<T>>
-  & WillRemove<SvgElement<T>>
-export function renderMSvg<T extends SvgElementType>(
+  attrs?(m: FSvgAttribute<T>): void
+} & BSvgEvent<T> &
+  Plugin<SvgElement<T>> &
+  FGetChildAttr<SvgElement<T>> &
+  WillRemove<SvgElement<T>>
+export function renderKSvg<T extends SvgElementType>(
   type: T,
   arg: MSvgAttributes<T>
 ) {
-  const node = document.createElementNS("http://www.w3.org/2000/svg", type)
+  const node = document.createElementNS('http://www.w3.org/2000/svg', type)
   renderMSvgAttr(node, arg, mergeValue, renderChildren)
   hookAddResult(node)
   addPlugin(node, arg)
@@ -66,34 +82,32 @@ export function renderMSvg<T extends SvgElementType>(
   return node
 }
 
-
-
-export const mdom: {
-  readonly [key in DomElementType]: {
-    (props?: MDomAttributes<key>): DomElement<key>
-  }
-} = createOrProxy(domTagNames, tag => {
-  return function (args: any) {
-    return renderMDom(tag, args)
-  } as any
-})
-
 export const gdom: {
   readonly [key in DomElementType]: {
     (props?: MDomAttributes<key>): DomElement<key>
   }
-} = createOrProxy(domTagNames, tag => {
+} = createOrProxy(domTagNames, (tag) => {
   return function (args: any) {
     return renderGDom(tag, args)
   } as any
 })
 
-export const msvg: {
+export const kdom: {
+  readonly [key in DomElementType]: {
+    (props?: MDomAttributes<key>): DomElement<key>
+  }
+} = createOrProxy(domTagNames, (tag) => {
+  return function (args: any) {
+    return renderKDom(tag, args)
+  } as any
+})
+
+export const ksvg: {
   readonly [key in SvgElementType]: {
     (props?: MSvgAttributes<key>): SvgElement<key>
   }
-} = createOrProxy(svgTagNames, tag => {
+} = createOrProxy(svgTagNames, (tag) => {
   return function (args: any) {
-    return renderMSvg(tag, args)
+    return renderKSvg(tag, args)
   } as any
 })
