@@ -1,6 +1,6 @@
 {
   "name": "mve-dom-helper",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -11,20 +11,24 @@
   },
   "exports": {
     ".": {
+      "development": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
     "./canvasRender": {
+      "development": "./src/canvasRender/index.ts",
       "types": "./dist/canvasRender/index.d.ts",
       "import": "./dist/canvasRender.mjs",
-      "require": "./dist/cacanvasRendernvas.js"
+      "require": "./dist/canvasRender.js"
     },
     "./history": {
+      "development": "./src/history/index.ts",
       "types": "./dist/history/index.d.ts",
       "import": "./dist/history.mjs",
       "require": "./dist/history.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -33,31 +37,27 @@
     "history"
   ],
   "scripts": {
-    "build": "tsc && vite build",
-    "prepare": "yarn build",
-    "ts": "tsc --noEmit --incremental --skipLibCheck",
-    "ts:watch": "yarn ts --watch"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint src/ --fix",
+    "lint:check": "eslint src/",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.17.6",
-    "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vite-plugin-dts": "^4.5.4"
+    "tsdown": "latest",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/prettier-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*"
   },
   "peerDependencies": {
     "history": "^5.3.0",
-    "mve-core": "^2.0.2",
-    "mve-dom": "^2.0.2",
-    "mve-helper": "^2.0.2",
-    "wy-dom-helper": "^0.1.14",
-    "wy-helper": "^0.1.16"
+    "mve-core": "workspace:*",
+    "mve-dom": "workspace:*",
+    "mve-helper": "workspace:*",
+    "wy-dom-helper": "workspace:*",
+    "wy-helper": "workspace:*"
   },
-  "dependencies": {
-    "history": "^5.3.0",
-    "mve-core": "file:.yalc/mve-core",
-    "mve-dom": "file:.yalc/mve-dom",
-    "mve-helper": "file:.yalc/mve-helper",
-    "wy-dom-helper": "file:.yalc/wy-dom-helper",
-    "wy-helper": "file:.yalc/wy-helper"
-  }
+  "packageManager": "pnpm@10.18.2+sha512.9fb969fa749b3ade6035e0f109f0b8a60b5d08a1a87fdf72e337da90dcc93336e2280ca4e44f2358a649b83c17959e9993e777c2080879f3801e6f0d999ad3dd"
 }

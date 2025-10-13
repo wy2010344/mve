@@ -28,26 +28,26 @@ requests = [0, 0, 0.3, 0.8, 1.4, 1.5, 1.6, 2];
 */
 
 function demo(capacity: number, rate: number, requests: number[]) {
-  let bulk = capacity
-  const per = 1 / rate
-  let lastReq = 0
-  return requests.map((req) => {
-    const diff = req - lastReq
+  let bulk = capacity;
+  const per = 1 / rate;
+  let lastReq = 0;
+  return requests.map(req => {
+    const diff = req - lastReq;
     if (diff < per) {
       //还未生成
       if (bulk == 0) {
-        return false
+        return false;
       }
-      bulk--
-      return true
+      bulk--;
+      return true;
     } else {
-      const m = Math.floor(diff / per)
-      bulk += m
-      bulk = Math.min(bulk, capacity)
-      bulk -= 1
-      lastReq = lastReq + m * per
-      return true
+      const m = Math.floor(diff / per);
+      bulk += m;
+      bulk = Math.min(bulk, capacity);
+      bulk -= 1;
+      lastReq = lastReq + m * per;
+      return true;
     }
-  })
+  });
 }
-console.log(demo(2, 2, [0, 0, 0.3, 0.8, 1.4, 1.5, 1.6, 2]))
+console.log(demo(2, 2, [0, 0, 0.3, 0.8, 1.4, 1.5, 1.6, 2]));

@@ -1,12 +1,12 @@
-import { emptyFun, EmptyFun, GetValue } from "wy-helper";
-import { renderArray, renderArrayKey } from "./renderMap";
+import { emptyFun, EmptyFun, GetValue } from 'wy-helper';
+import { renderArray, renderArrayKey } from './renderMap';
 
 export function renderIfP(
   get: any,
   whenTrue: EmptyFun,
   whenFalse: EmptyFun = emptyFun
 ) {
-  if (typeof get == "function") {
+  if (typeof get == 'function') {
     renderIf(get, whenTrue, whenFalse);
   } else {
     if (get) {
@@ -26,7 +26,7 @@ export function renderIf(
     () => {
       return [Boolean(get())];
     },
-    (d) => {
+    d => {
       if (d) {
         whenTrue(get);
       } else {
@@ -37,7 +37,7 @@ export function renderIf(
 }
 
 export function renderOneP<K>(get: GetValue<K> | K, render: (v: K) => void) {
-  if (typeof get == "function") {
+  if (typeof get == 'function') {
     renderOne(get as any, render);
   } else {
     render(get);
@@ -59,13 +59,12 @@ export function renderOneKey<T, K>(
   );
 }
 
-type ToTupleByKey<T, K extends keyof T> = T extends Record<K, infer Key>
-  ? [Key, GetValue<T>]
-  : never;
+type ToTupleByKey<T, K extends keyof T> =
+  T extends Record<K, infer Key> ? [Key, GetValue<T>] : never;
 export function renderOrKey<T, K extends keyof T>(
   get: GetValue<T | void | null | undefined>,
   key: K,
   render: (...vs: ToTupleByKey<T, K> | [undefined, GetValue<never>]) => void
 ) {
-  renderOneKey(get, (v) => v?.[key], render as any);
+  renderOneKey(get, v => v?.[key], render as any);
 }

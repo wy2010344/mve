@@ -5,69 +5,69 @@ import {
   Point,
   PointKey,
   ValueOrGet,
-} from 'wy-helper'
-import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from 'wy-helper'
+} from 'wy-helper';
+import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from 'wy-helper';
 import {
   CMNode,
   CNodePathConfigure,
   DrawArgWithPath,
   hookCurrentPath,
   hookDraw,
-} from './hookDraw'
-import { drawRoundedRect } from 'wy-dom-helper/canvas'
-export { simpleFlex } from 'wy-helper'
+} from './hookDraw';
+import { drawRoundedRect } from 'wy-dom-helper/canvas';
+export { simpleFlex } from 'wy-helper';
 
 export type DrawArgRect = DrawArgWithPath & {
-  rect: LayoutNode<CMNode, keyof Point<number>>
-}
+  rect: LayoutNode<CMNode, keyof Point<number>>;
+};
 export type DrawRectConfig = Omit<
   LayoutNodeConfigure<CMNode, PointKey>,
   'axis'
 > &
   Omit<CNodePathConfigure, 'x' | 'y' | 'draw' | 'withPath' | 'skipDraw'> & {
-    skipDraw?(n: LayoutNode<CMNode, keyof Point<number>>): any
+    skipDraw?(n: LayoutNode<CMNode, keyof Point<number>>): any;
 
-    padding?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingInline?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingBlock?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    padding?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingInline?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingBlock?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
 
-    size?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    widthAsInner?: boolean
-    width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingLeft?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingRight?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    size?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    x?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    widthAsInner?: boolean;
+    width?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingLeft?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingRight?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
 
-    y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    heightAsInner?: boolean
-    height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingTop?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
-    paddingBottom?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>
+    y?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    heightAsInner?: boolean;
+    height?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingTop?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
+    paddingBottom?: InstanceCallbackOrValue<LayoutNode<CMNode, PointKey>>;
 
-    alignSelf?: AlignSelfFun
-    alignSelfX?: AlignSelfFun
-    alignSelfY?: AlignSelfFun
-    draw?(arg: DrawArgRect): void
-  }
+    alignSelf?: AlignSelfFun;
+    alignSelfX?: AlignSelfFun;
+    alignSelfY?: AlignSelfFun;
+    draw?(arg: DrawArgRect): void;
+  };
 
 const config: LayoutConfig<CMNode, PointKey> = {
   getLayout(m): void | LayoutNode<CMNode, keyof Point<number>> {
-    return m.ext.rect
+    return m.ext.rect;
   },
   getParentLayout(m): void | LayoutNode<CMNode, keyof Point<number>> {
-    let x = m.parent
+    let x = m.parent;
     while (x) {
-      const rect = x.ext.rect
+      const rect = x.ext.rect;
       if (rect) {
-        return rect
+        return rect;
       }
-      x = (x as any).parent
+      x = (x as any).parent;
     }
   },
   getChildren(m): readonly CMNode[] {
-    return m.children()
+    return m.children();
   },
-}
+};
 export function hookDrawRect(n: DrawRectConfig) {
   const {
     size,
@@ -80,7 +80,7 @@ export function hookDrawRect(n: DrawRectConfig) {
     paddingBottom = paddingBlock,
     paddingLeft = paddingInline,
     paddingRight = paddingInline,
-  } = n
+  } = n;
   const x = createLayoutNode(config, {
     ...n,
     axis: {
@@ -101,8 +101,8 @@ export function hookDrawRect(n: DrawRectConfig) {
         alignSelf: n.alignSelfY ?? n.alignSelf,
       },
     },
-  })
-  const skipDraw = n.skipDraw
+  });
+  const skipDraw = n.skipDraw;
   x.target = hookDraw({
     ...n,
     x: x.axis.x.position,
@@ -112,29 +112,29 @@ export function hookDrawRect(n: DrawRectConfig) {
     skipDraw: skipDraw ? () => skipDraw(x) : undefined,
     draw: n.draw
       ? function (arg) {
-          const before = m._mve_canvas_render_current_rect
-          m._mve_canvas_render_current_rect = x
-          const args = arg as DrawArgRect
-          args.rect = x
-          n.draw!(args)
-          m._mve_canvas_render_current_rect = before
+          const before = m._mve_canvas_render_current_rect;
+          m._mve_canvas_render_current_rect = x;
+          const args = arg as DrawArgRect;
+          args.rect = x;
+          n.draw!(args);
+          m._mve_canvas_render_current_rect = before;
         }
       : undefined,
     ext: {
       ...n.ext,
       rect: x,
     },
-  })
-  x.parent = config.getParentLayout(x.target)
-  return x
+  });
+  x.parent = config.getParentLayout(x.target);
+  return x;
 }
 
 const m = globalThis as unknown as {
-  _mve_canvas_render_current_rect: LayoutNode<CMNode, keyof Point<number>>
-}
+  _mve_canvas_render_current_rect: LayoutNode<CMNode, keyof Point<number>>;
+};
 
 export function hookCurrentRect() {
-  return m._mve_canvas_render_current_rect!
+  return m._mve_canvas_render_current_rect!;
 }
 
 function hookAddRectI(
@@ -144,7 +144,7 @@ function hookAddRectI(
   x: number,
   y: number
 ) {
-  const path = hookCurrentPath()
+  const path = hookCurrentPath();
   if (r) {
     if (typeof r == 'number') {
       drawRoundedRect(path, {
@@ -153,7 +153,7 @@ function hookAddRectI(
         width,
         height,
         r,
-      })
+      });
     } else {
       drawRoundedRect(path, {
         x,
@@ -161,37 +161,37 @@ function hookAddRectI(
         width,
         height,
         ...r,
-      })
+      });
     }
   } else {
-    path.rect(x, y, width, height)
+    path.rect(x, y, width, height);
   }
 }
 type R =
   | number
   | {
-      r?: number
-      tl?: number
-      tr?: number
-      bl?: number
-      br?: number
-    }
+      r?: number;
+      tl?: number;
+      tr?: number;
+      bl?: number;
+      br?: number;
+    };
 export function hookAddRect(r: R = 0) {
-  const x = m._mve_canvas_render_current_rect
-  const width = x.axis.x.size()
-  const height = x.axis.y.size()
-  hookAddRectI(width, height, r, 0, 0)
+  const x = m._mve_canvas_render_current_rect;
+  const width = x.axis.x.size();
+  const height = x.axis.y.size();
+  hookAddRectI(width, height, r, 0, 0);
 }
 
 export function hookAddInnerRect(r: R = 0) {
-  const x = m._mve_canvas_render_current_rect
-  const width = x.axis.x.innerSize()
-  const height = x.axis.y.innerSize()
+  const x = m._mve_canvas_render_current_rect;
+  const width = x.axis.x.innerSize();
+  const height = x.axis.y.innerSize();
   hookAddRectI(
     width,
     height,
     r,
     x.axis.x.paddingStart(),
     x.axis.y.paddingStart()
-  )
+  );
 }

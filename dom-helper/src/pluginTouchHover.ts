@@ -19,7 +19,10 @@ function pluginTouchHover(hover: StoreRef<boolean>) {
       }, stayTime);
     };
 
-    element.addEventListener('touchstart', handleTouchStart, { capture: false, passive: true });
+    element.addEventListener('touchstart', handleTouchStart, {
+      capture: false,
+      passive: true,
+    });
     element.addEventListener('touchend', handleTouchEnd, false);
 
     // 注册清理函数

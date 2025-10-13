@@ -1,4 +1,3 @@
-
 import { EmptyFun, run, ValueOrGet } from 'wy-helper';
 import { renderTextContent, renderHtmlContent } from 'mve-dom';
 import { GetChild } from 'wy-dom-helper';
@@ -8,7 +7,7 @@ export function renderTNode(
   children: TNode | undefined,
   whenText?: (children: ValueOrGet<string | number>) => void,
   whenDefault: (children: EmptyFun) => void = run,
-  whenHtml?: (children: ValueOrGet<string | number>) => void,
+  whenHtml?: (children: ValueOrGet<string | number>) => void
 ) {
   whenHtml = whenText || renderHtmlContent;
   whenText = whenText || renderTextContent;

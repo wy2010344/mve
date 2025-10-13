@@ -45,7 +45,7 @@ dom
 
 ## fdom.xx/fsvg.xx - 扁平参数风格（推荐）
 
-属性转换规则：`style.xxx` → `s_xxx`(如`style.backgroundColor` → `s_backgroundColor`)，`data-xxx` → `data_xxx`, ，`--xxx` → `css_xxx`，`aria-xxx` → `aria_xxx`
+属性转换规则：`style.xxx` → `s_xxx`(如`style.backgroundColor` → `s_backgroundColor`)，`data-xxx` → `data_xxx`, ，`--xxx-cc` → `css_xxx-cc`，`aria-xxx` → `aria_xxx`
 
 ```typescript
 fdom.div({
@@ -115,12 +115,12 @@ fdom.div({
 })
 ```
 
-## mdom.xx/msvg.xx - 减少重复依赖(相对 fdom)
+## zdom.xx/zsvg.xx - 减少重复依赖(相对 fdom)
 
 当多个属性依赖相同信号时，减少 trackSignal 建立：
 
 ```typescript
-mdom.div({
+zdom.div({
   attrs(m) {
     if (isActive.get()) {
       m.s_color = 'red'

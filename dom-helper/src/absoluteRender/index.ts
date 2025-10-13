@@ -1,12 +1,12 @@
-import { hookAddDestroy, addTrackEffect } from 'mve-core'
-import { StyleProps } from 'mve-dom'
-import { hookTrackSignal } from 'mve-helper'
+import { hookAddDestroy, addTrackEffect } from 'mve-core';
+import { StyleProps } from 'mve-dom';
+import { hookTrackSignal } from 'mve-helper';
 import {
   DomElement,
   DomElementType,
   SvgElement,
   SvgElementType,
-} from 'wy-dom-helper'
+} from 'wy-dom-helper';
 import {
   addEffect,
   batchSignalEnd,
@@ -19,9 +19,9 @@ import {
   PointKey,
   SetValue,
   ValueOrGet,
-} from 'wy-helper'
-import { InstanceCallbackOrValue, MDisplayOut } from 'wy-helper'
-import { createLayoutNode, LayoutNode } from 'wy-helper'
+} from 'wy-helper';
+import { InstanceCallbackOrValue, MDisplayOut } from 'wy-helper';
+import { createLayoutNode, LayoutNode } from 'wy-helper';
 
 /**
  * 应该可以细分
@@ -30,31 +30,31 @@ export type ADomAttributes<T> = Omit<
   LayoutNodeConfigure<T, PointKey>,
   'axis'
 > & {
-  x?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>
-  y?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>
+  x?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>;
+  y?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>;
 
-  width?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>
-  height?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>
+  width?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>;
+  height?: InstanceCallbackOrValue<LayoutNode<T, PointKey>>;
 
-  paddingLeft?: ValueOrGet<number>
-  paddingRight?: ValueOrGet<number>
+  paddingLeft?: ValueOrGet<number>;
+  paddingRight?: ValueOrGet<number>;
 
-  paddingTop?: ValueOrGet<number>
-  paddingBottom?: ValueOrGet<number>
-  render(n: LayoutNode<T, PointKey>): T
-}
+  paddingTop?: ValueOrGet<number>;
+  paddingBottom?: ValueOrGet<number>;
+  render(n: LayoutNode<T, PointKey>): T;
+};
 
 const config: LayoutConfig<any, PointKey> = {
   getLayout(m: any) {
-    return m._rect
+    return m._rect;
   },
   getParentLayout(m: any) {
-    return m.parentNode?._rect
+    return m.parentNode?._rect;
   },
   getChildren(m) {
-    return (m as any)._mve_children_?.target() || emptyArray
+    return (m as any)._mve_children_?.target() || emptyArray;
   },
-}
+};
 
 /**
  * 比如style需要设置为
@@ -83,42 +83,42 @@ export function renderALayout<T>(
         paddingEnd: c.paddingBottom,
       },
     },
-  })
-  const target = c.render(n)
-  n.target = target
-  ;(target as any)._rect = n
-  return n
+  });
+  const target = c.render(n);
+  n.target = target;
+  (target as any)._rect = n;
+  return n;
 }
 
 export function hookMeasureSize() {
-  const width = createSignal(0)
-  const height = createSignal(0)
-  const addDestroy = hookAddDestroy()
-  let inited = false
+  const width = createSignal(0);
+  const height = createSignal(0);
+  const addDestroy = hookAddDestroy();
+  let inited = false;
   return {
     width: width.get,
     height: height.get,
     plugin(target: HTMLElement) {
       if (inited) {
-        throw new Error('can not init again')
+        throw new Error('can not init again');
       }
-      inited = true
+      inited = true;
       addEffect(() => {
         const cb = (e?: any) => {
-          width.set(target.offsetWidth)
-          height.set(target.offsetHeight)
+          width.set(target.offsetWidth);
+          height.set(target.offsetHeight);
           if (e) {
-            batchSignalEnd()
+            batchSignalEnd();
           }
-        }
-        cb()
-        const ob = new ResizeObserver(cb)
-        ob.observe(target)
+        };
+        cb();
+        const ob = new ResizeObserver(cb);
+        ob.observe(target);
         addDestroy(() => {
-          ob.disconnect()
-        })
-      }, -2)
-      return target
+          ob.disconnect();
+        });
+      }, -2);
+      return target;
     },
-  }
+  };
 }

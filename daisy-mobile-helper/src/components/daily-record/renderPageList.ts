@@ -1,4 +1,4 @@
-import { fdom } from "mve-dom";
+import { fdom } from 'mve-dom';
 import {
   dateFromYearMonthDay,
   DAYMILLSECONDS,
@@ -6,16 +6,16 @@ import {
   YearMonthDayVirtualView,
   StoreRef,
   Compare,
-} from "wy-helper";
-import { memoArray, renderArray, renderArrayKey } from "mve-helper";
-import { animateSignal } from "wy-dom-helper";
-import renderPage from "./renderPage";
-import { movePage, createSimpleMovePage } from "mve-dom-helper";
+} from 'wy-helper';
+import { memoArray, renderArray, renderArrayKey } from 'mve-helper';
+import { animateSignal } from 'wy-dom-helper';
+import renderPage from './renderPage';
+import { movePage, createSimpleMovePage } from 'mve-dom-helper';
 
 export default function (date: StoreRef<YearMonthDayVirtualView>) {
   const mp = createSimpleMovePage({
     getValue: date.get,
-    direction: "x",
+    direction: 'x',
     compare(d, lastDate) {
       const lastTime = dateFromYearMonthDay(lastDate).valueOf();
       const thisTime = dateFromYearMonthDay(d).valueOf();
@@ -37,11 +37,11 @@ export default function (date: StoreRef<YearMonthDayVirtualView>) {
     },
   });
   fdom.div({
-    className: "flex-1 overflow-hidden",
+    className: 'flex-1 overflow-hidden',
     plugin: mp.plugin,
     children() {
       fdom.div({
-        className: "h-full",
+        className: 'h-full',
         s_transform() {
           return `translateX(${-mp.get()}px)`;
         },
@@ -51,7 +51,7 @@ export default function (date: StoreRef<YearMonthDayVirtualView>) {
               const d = date.get();
               return [d.beforeDay(), d, d.nextDay()];
             },
-            (v) => v.toNumber(),
+            v => v.toNumber(),
             function (w, getIndex) {
               renderPage(w(), getIndex, () => {
                 return mp.onAnimation();

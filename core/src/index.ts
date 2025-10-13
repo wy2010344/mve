@@ -1,63 +1,63 @@
-import { batchSignalEnd, EmptyFun, GetValue } from 'wy-helper'
+import { batchSignalEnd, EmptyFun, GetValue } from 'wy-helper';
 import {
   hookAlterChildren,
   hookAlterStateHolder,
   hookCurrentStateHolder,
-} from './cache'
-import { StateHolder } from './stateHolder'
+} from './cache';
+import { StateHolder } from './stateHolder';
 
-export * from './renderForEach'
+export * from './renderForEach';
 export {
   hookAddResult,
   hookAddDestroy,
   hookAlterChildren,
   hookAlterStateHolder,
   hookCurrentStateHolder,
-} from './cache'
-export { createContext } from './context'
-export type { Context } from './context'
-export * from './hookChildren'
+} from './cache';
+export { createContext } from './context';
+export type { Context } from './context';
+export * from './hookChildren';
 
-const globalHolder = new StateHolder()
+const globalHolder = new StateHolder();
 export function runGlobalHolder(fun: EmptyFun) {
-  const before = hookAlterStateHolder(globalHolder)
-  fun()
-  hookAlterStateHolder(before)
+  const before = hookAlterStateHolder(globalHolder);
+  fun();
+  hookAlterStateHolder(before);
 }
 
 export function destroyGlobalHolder() {
-  globalHolder.destroy()
+  globalHolder.destroy();
 }
 
 export function render(create: EmptyFun) {
-  const stateHolder = new StateHolder(globalHolder)
-  const before = hookAlterStateHolder(stateHolder)
-  create()
-  batchSignalEnd() // 必须放在之前
-  hookAlterStateHolder(before)
+  const stateHolder = new StateHolder(globalHolder);
+  const before = hookAlterStateHolder(stateHolder);
+  create();
+  batchSignalEnd(); // 必须放在之前
+  hookAlterStateHolder(before);
   return function () {
-    stateHolder.removeFromParent()
-  }
+    stateHolder.removeFromParent();
+  };
 }
 
 export function hookIsDestroyed() {
-  return hookCurrentStateHolder()!.destroyed
+  return hookCurrentStateHolder()!.destroyed;
 }
 
 export function renderStateHolder<T>(fun: GetValue<T>) {
-  const c = hookCurrentStateHolder()!
-  const before = hookAlterStateHolder(new StateHolder(c, c.contexts.length))
-  const o = fun()
-  hookAlterStateHolder(before)
-  return o
+  const c = hookCurrentStateHolder()!;
+  const before = hookAlterStateHolder(new StateHolder(c, c.contexts.length));
+  const o = fun();
+  hookAlterStateHolder(before);
+  return o;
 }
 
 export function renderSubOps(fun: EmptyFun) {
-  const children: any[] | undefined = []
-  const beforeChildren = hookAlterChildren(children)
-  fun()
-  hookAlterChildren(beforeChildren)
+  const children: any[] | undefined = [];
+  const beforeChildren = hookAlterChildren(children);
+  fun();
+  hookAlterChildren(beforeChildren);
   return function () {
-    return children
-  }
+    return children;
+  };
 }

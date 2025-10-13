@@ -1,4 +1,4 @@
-import { fdom, fsvg } from 'mve-dom'
+import { fdom, fsvg } from 'mve-dom';
 
 export function ReactiveUpdateFlow() {
   fdom.div({
@@ -7,7 +7,7 @@ export function ReactiveUpdateFlow() {
       fdom.h2({
         className: 'text-2xl font-bold mb-8 text-center',
         children: '⚡ 响应式更新执行机制',
-      })
+      });
 
       fdom.div({
         className: 'flex justify-center',
@@ -28,14 +28,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-red-100 stroke-red-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '125',
                 y: '75',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-gray-800',
                 children: '事件更新信号',
-              })
+              });
 
               // 2. 两种进入方式的分支
               fsvg.rect({
@@ -46,14 +46,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-blue-100 stroke-blue-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '350',
                 y: '42',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-gray-800',
                 children: 'MessageChannel 异步',
-              })
+              });
 
               fsvg.rect({
                 x: '280',
@@ -63,14 +63,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-green-100 stroke-green-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '350',
                 y: '102',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-gray-800',
                 children: '手动立即调用',
-              })
+              });
 
               // 3. batchSignalEnd 统一入口
               fsvg.rect({
@@ -81,14 +81,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-purple-100 stroke-purple-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '575',
                 y: '75',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-gray-800',
                 children: 'batchSignalEnd',
-              })
+              });
 
               // 批量执行阶段
               fsvg.rect({
@@ -99,14 +99,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-gray-50 stroke-gray-300',
                 strokeWidth: '2',
                 rx: '10',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '175',
                 textAnchor: 'middle',
                 className: 'text-base font-bold fill-gray-800',
                 children: '批量执行阶段 (按顺序执行)',
-              })
+              });
 
               // 步骤1: 执行受信号影响的监听
               fsvg.rect({
@@ -117,42 +117,42 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-yellow-50 stroke-yellow-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '225',
                 textAnchor: 'middle',
                 className: 'text-sm font-bold fill-yellow-800',
                 children: '1. 执行受信号影响的监听器',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '245',
                 textAnchor: 'middle',
                 className: 'text-xs fill-yellow-700',
                 children: '设置当前执行环境 → 准备依赖收集',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '260',
                 textAnchor: 'middle',
                 className: 'text-xs fill-yellow-700',
                 children: '执行组件渲染函数 → 调用 children() 函数',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '275',
                 textAnchor: 'middle',
                 className: 'text-xs fill-yellow-700',
                 children: '处理组件生命周期: 创建新组件 / 销毁旧组件',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '290',
                 textAnchor: 'middle',
                 className: 'text-xs fill-yellow-700',
                 children: '可能产生新的依赖关系 → 进入步骤2',
-              })
+              });
 
               // 步骤2: 执行新增加的监听
               fsvg.rect({
@@ -163,35 +163,35 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-blue-50 stroke-blue-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '345',
                 textAnchor: 'middle',
                 className: 'text-sm font-bold fill-blue-800',
                 children: '2. 处理新增的依赖关系',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '365',
                 textAnchor: 'middle',
                 className: 'text-xs fill-blue-700',
                 children: '处理步骤1中新产生的组件依赖',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '380',
                 textAnchor: 'middle',
                 className: 'text-xs fill-blue-700',
                 children: '同样执行组件渲染 → 可能产生更多依赖',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '395',
                 textAnchor: 'middle',
                 className: 'text-xs fill-blue-700',
                 children: '如有新依赖 → 继续处理循环',
-              })
+              });
 
               // 步骤3: 执行Effect
               fsvg.rect({
@@ -202,14 +202,14 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-green-50 stroke-green-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '445',
                 textAnchor: 'middle',
                 className: 'text-sm font-bold fill-green-800',
                 children: '3. 执行 Effect (按 level 层级排序)',
-              })
+              });
 
               // Level -2: DOM 子成员结构
               fsvg.rect({
@@ -220,21 +220,21 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-white stroke-green-500',
                 strokeWidth: '1',
                 rx: '3',
-              })
+              });
               fsvg.text({
                 x: '200',
                 y: '475',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-green-800',
                 children: 'Level -2',
-              })
+              });
               fsvg.text({
                 x: '200',
                 y: '490',
                 textAnchor: 'middle',
                 className: 'text-xs fill-green-700',
                 children: 'DOM 子成员结构',
-              })
+              });
 
               // Level -1: DOM 属性
               fsvg.rect({
@@ -245,21 +245,21 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-white stroke-green-500',
                 strokeWidth: '1',
                 rx: '3',
-              })
+              });
               fsvg.text({
                 x: '420',
                 y: '475',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-green-800',
                 children: 'Level -1',
-              })
+              });
               fsvg.text({
                 x: '420',
                 y: '490',
                 textAnchor: 'middle',
                 className: 'text-xs fill-green-700',
                 children: 'DOM 属性',
-              })
+              });
 
               // Level 0+: 其他副作用
               fsvg.rect({
@@ -270,21 +270,21 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-white stroke-green-500',
                 strokeWidth: '1',
                 rx: '3',
-              })
+              });
               fsvg.text({
                 x: '640',
                 y: '475',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-green-800',
                 children: 'Level 0+',
-              })
+              });
               fsvg.text({
                 x: '640',
                 y: '490',
                 textAnchor: 'middle',
                 className: 'text-xs fill-green-700',
                 children: '其他副作用',
-              })
+              });
 
               // while 循环检查
               fsvg.rect({
@@ -295,21 +295,21 @@ export function ReactiveUpdateFlow() {
                 className: 'fill-red-50 stroke-red-400',
                 strokeWidth: '2',
                 rx: '5',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '540',
                 textAnchor: 'middle',
                 className: 'text-xs font-bold fill-red-800',
                 children: '检查是否需要重复执行',
-              })
+              });
               fsvg.text({
                 x: '450',
                 y: '555',
                 textAnchor: 'middle',
                 className: 'text-xs fill-red-700',
                 children: '如有新的信号变化 → 重新开始整个流程',
-              })
+              });
 
               // 连接线 - 事件到分支
               fsvg.line({
@@ -320,7 +320,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               fsvg.line({
                 x1: '200',
@@ -330,7 +330,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               // 分支到统一入口
               fsvg.line({
@@ -341,7 +341,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               fsvg.line({
                 x1: '420',
@@ -351,7 +351,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               // 进入批量执行
               fsvg.line({
@@ -362,7 +362,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               // 步骤间连接
               fsvg.line({
@@ -373,7 +373,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               fsvg.line({
                 x1: '450',
@@ -383,7 +383,7 @@ export function ReactiveUpdateFlow() {
                 className: 'stroke-gray-600',
                 strokeWidth: '2',
                 markerEnd: 'url(#arrowhead)',
-              })
+              });
 
               // 步骤1和2之间的循环箭头 (表示可能的循环)
               fsvg.path({
@@ -393,7 +393,7 @@ export function ReactiveUpdateFlow() {
                 strokeWidth: '2',
                 strokeDasharray: '3,3',
                 markerEnd: 'url(#arrowhead-orange)',
-              })
+              });
 
               // while 循环箭头
               fsvg.path({
@@ -403,7 +403,7 @@ export function ReactiveUpdateFlow() {
                 strokeWidth: '2',
                 strokeDasharray: '5,5',
                 markerEnd: 'url(#arrowhead-red)',
-              })
+              });
 
               // MessageChannel 说明
               fsvg.text({
@@ -412,7 +412,7 @@ export function ReactiveUpdateFlow() {
                 textAnchor: 'middle',
                 className: 'text-xs fill-gray-600',
                 children: '异步调用 batchSignalEnd',
-              })
+              });
 
               // 箭头标记定义
               fsvg.defs({
@@ -428,9 +428,9 @@ export function ReactiveUpdateFlow() {
                       fsvg.polygon({
                         points: '0 0, 10 3.5, 0 7',
                         className: 'fill-gray-600',
-                      })
+                      });
                     },
-                  })
+                  });
 
                   fsvg.marker({
                     id: 'arrowhead-red',
@@ -443,9 +443,9 @@ export function ReactiveUpdateFlow() {
                       fsvg.polygon({
                         points: '0 0, 10 3.5, 0 7',
                         className: 'fill-red-500',
-                      })
+                      });
                     },
-                  })
+                  });
 
                   fsvg.marker({
                     id: 'arrowhead-orange',
@@ -458,15 +458,15 @@ export function ReactiveUpdateFlow() {
                       fsvg.polygon({
                         points: '0 0, 10 3.5, 0 7',
                         className: 'fill-orange-500',
-                      })
+                      });
                     },
-                  })
+                  });
                 },
-              })
+              });
             },
-          })
+          });
         },
-      })
+      });
     },
-  })
+  });
 }
