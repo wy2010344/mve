@@ -1,6 +1,4 @@
 import { defineConfig } from 'vitepress'
-import { configureDiagramsPlugin } from 'vitepress-plugin-diagrams'
-
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'mve',
@@ -73,6 +71,14 @@ export default defineConfig({
             link: '/animation/exit-animation',
           },
         ],
+      },
+      {
+        text: '布局',
+        link: '/layout',
+      },
+      {
+        text: 'canvas',
+        link: '/canvas',
       },
       {
         text: '最佳实践与常见错误',

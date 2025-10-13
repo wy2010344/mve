@@ -1,7 +1,7 @@
-import { renderForEach } from 'mve-core'
-import { fdom } from 'mve-dom'
-import { hookTrackSignal } from 'mve-helper'
-import { animateSignal, pointerMove } from 'wy-dom-helper'
+import { renderForEach } from 'mve-core';
+import { fdom } from 'mve-dom';
+import { hookTrackSignal } from 'mve-helper';
+import { animateSignal, pointerMove } from 'wy-dom-helper';
 import {
   addEffect,
   circleFindNearst,
@@ -23,38 +23,38 @@ import {
   ValueOrGet,
   valueOrGetToGet,
   WithTimeStampEvent,
-} from 'wy-helper'
+} from 'wy-helper';
 
 export function defaultGetDistanceFromVelocity(
   velocity: number,
   deceleration?: number
 ) {
-  return FrictionalFactory.get(deceleration).getFromVelocity(velocity).distance
+  return FrictionalFactory.get(deceleration).getFromVelocity(velocity).distance;
 }
 
 export type CenterPickerProps = {
-  getDistanceFromVelocity?(velocity: number): number
-  animationConfig?: DeltaXSignalAnimationConfig
-  realTimeValue?: StoreRef<number>
+  getDistanceFromVelocity?(velocity: number): number;
+  animationConfig?: DeltaXSignalAnimationConfig;
+  realTimeValue?: StoreRef<number>;
   /**
    * 如果有总数量,就是循环的,比如12个月,就是12
    * 如果没有总数量,就是无限的
    */
-  count?: ValueOrGet<number>
+  count?: ValueOrGet<number>;
   /**
    * 和0的距离,比如如果是从1开始,就是1
    * 在循环状态下有效
    */
-  baseIndex?: ValueOrGet<number>
+  baseIndex?: ValueOrGet<number>;
 
-  disabled?(i: number): any
-}
+  disabled?(i: number): any;
+};
 
 export type RangePickerProps = {
-  disabled?(i: number): any
-  animationConfig?: DeltaXSignalAnimationConfig
-  getFrictional?(v: number): ScrollHelper
-}
+  disabled?(i: number): any;
+  animationConfig?: DeltaXSignalAnimationConfig;
+  getFrictional?(v: number): ScrollHelper;
+};
 /**
  *
  * @param _cellHeight 行高
@@ -70,21 +70,21 @@ export function rangePicker(
   {
     disabled,
     animationConfig = defaultSpringAnimationConfig,
-    getFrictional = (v) => ClampingScrollFactory.get().getFromVelocity(v),
+    getFrictional = v => ClampingScrollFactory.get().getFromVelocity(v),
   }: RangePickerProps = emptyObject
 ) {
-  const cellHeight = valueOrGetToGet(_cellHeight)
-  const size = valueOrGetToGet(_size)
-  const scrollY = animateSignal(0)
+  const cellHeight = valueOrGetToGet(_cellHeight);
+  const size = valueOrGetToGet(_size);
+  const scrollY = animateSignal(0);
   hookTrackSignal(value.get, function (v) {
     addEffect(() => {
       if (scrollY.onAnimation()) {
-        scrollY.silentChangeTo(v * cellHeight())
+        scrollY.silentChangeTo(v * cellHeight());
       } else {
-        scrollY.changeTo(v * cellHeight(), animationConfig)
+        scrollY.changeTo(v * cellHeight(), animationConfig);
       }
-    })
-  })
+    });
+  });
   return {
     scroll: scrollY.get,
     beginMove<T extends WithTimeStampEvent>(
@@ -93,55 +93,55 @@ export function rangePicker(
       {
         whenMove,
       }: {
-        whenMove?(e: T, inMove: boolean): void
+        whenMove?(e: T, inMove: boolean): void;
       } = emptyObject
     ) {
-      scrollY.stop()
+      scrollY.stop();
       return ScrollFromPage.from(e, {
         getPage,
         scrollDelta(delta, velocity, inMove, e) {
-          whenMove?.(e, inMove)
-          scrollForEdge(scrollY, delta, cellHeight(), size() * cellHeight())
+          whenMove?.(e, inMove);
+          scrollForEdge(scrollY, delta, cellHeight(), size() * cellHeight());
           if (inMove) {
-            return
+            return;
           }
-          const maxScroll = (size() - 1) * cellHeight()
-          const frictional = getFrictional(velocity)
+          const maxScroll = (size() - 1) * cellHeight();
+          const frictional = getFrictional(velocity);
           let idealIndex = Math.round(
             numberBetween(0, scrollY.get() + frictional.distance, maxScroll) /
               cellHeight()
-          )
+          );
           if (disabled) {
-            const dir = Math.sign(delta)
-            let tempIndex = idealIndex
-            const s = size()
+            const dir = Math.sign(delta);
+            let tempIndex = idealIndex;
+            const s = size();
             function satify() {
-              return -1 < tempIndex && tempIndex < s
+              return -1 < tempIndex && tempIndex < s;
             }
             while (disabled(tempIndex) && satify()) {
-              tempIndex = tempIndex + dir
+              tempIndex = tempIndex + dir;
             }
             if (satify()) {
-              idealIndex = tempIndex
+              idealIndex = tempIndex;
             } else {
-              tempIndex = idealIndex - 1
+              tempIndex = idealIndex - 1;
               while (disabled(tempIndex) && satify()) {
-                tempIndex = tempIndex - dir
+                tempIndex = tempIndex - dir;
               }
               if (satify()) {
-                idealIndex = tempIndex
+                idealIndex = tempIndex;
               } else {
-                console.warn('不合法的index', tempIndex)
-                throw `不合法的index, ${tempIndex}`
+                console.warn('不合法的index', tempIndex);
+                throw `不合法的index, ${tempIndex}`;
               }
             }
           }
-          scrollY.changeTo(idealIndex * cellHeight(), animationConfig)
-          value.set(idealIndex)
+          scrollY.changeTo(idealIndex * cellHeight(), animationConfig);
+          value.set(idealIndex);
         },
-      })
+      });
     },
-  }
+  };
 }
 
 export function baseCenterPicker(
@@ -156,44 +156,44 @@ export function baseCenterPicker(
     disabled,
   }: CenterPickerProps = emptyObject
 ) {
-  const cellHeight = valueOrGetToGet(_cellHeight)
-  const scrollY = animateSignal(0)
-  const getCount = valueOrGetToGet(count || 0)
-  const getCircleDiff = valueOrGetToGet(baseIndex || 0)
-  const circle = count
+  const cellHeight = valueOrGetToGet(_cellHeight);
+  const scrollY = animateSignal(0);
+  const getCount = valueOrGetToGet(count || 0);
+  const getCircleDiff = valueOrGetToGet(baseIndex || 0);
+  const circle = count;
   const getRealValue: Quote<number> = circle
     ? (newValue: number) => {
-        const circleDiff = getCircleDiff()
-        return circleFormat(newValue - circleDiff, getCount()) + circleDiff
+        const circleDiff = getCircleDiff();
+        return circleFormat(newValue - circleDiff, getCount()) + circleDiff;
       }
-    : quote
+    : quote;
 
   function addValue(needAdd: number) {
-    const newValue = realTimeValue.get() + needAdd
-    realTimeValue.set(getRealValue(newValue))
+    const newValue = realTimeValue.get() + needAdd;
+    realTimeValue.set(getRealValue(newValue));
   }
   function didChange() {
-    const needAdd = Math.floor(scrollY.get() / cellHeight())
+    const needAdd = Math.floor(scrollY.get() / cellHeight());
     if (needAdd) {
-      scrollY.silentDiff(-needAdd * cellHeight())
-      addValue(needAdd)
+      scrollY.silentDiff(-needAdd * cellHeight());
+      addValue(needAdd);
     }
   }
   hookTrackSignal(value.get, function (v) {
-    let diff = v - realTimeValue.get()
+    let diff = v - realTimeValue.get();
     if (circle) {
-      diff = circleFindNearst(diff, getCount())
+      diff = circleFindNearst(diff, getCount());
     }
     if (diff) {
       /**
        * 这个对于周期的循环并不友好
        */
       addEffect(() => {
-        const snapTarget = diff * cellHeight()
-        scrollY.changeTo(snapTarget, animationConfig, didChange)
-      })
+        const snapTarget = diff * cellHeight();
+        scrollY.changeTo(snapTarget, animationConfig, didChange);
+      });
     }
-  })
+  });
   return {
     realTimeValue: realTimeValue.get,
     beginMove<T extends WithTimeStampEvent>(
@@ -202,43 +202,43 @@ export function baseCenterPicker(
       {
         whenMove,
       }: {
-        whenMove?(e: T, inMove: boolean): void
+        whenMove?(e: T, inMove: boolean): void;
       } = emptyObject
     ) {
-      scrollY.stop()
+      scrollY.stop();
       return ScrollFromPage.from(e, {
         getPage,
         scrollDelta(delta, velocity, inMove, e) {
-          whenMove?.(e, inMove)
-          scrollY.changeDiff(delta)
-          didChange()
+          whenMove?.(e, inMove);
+          scrollY.changeDiff(delta);
+          didChange();
           if (inMove) {
-            return
+            return;
           }
-          const distance = getDistanceFromVelocity(velocity)
-          const targetDis = distance + scrollY.get()
-          let diffValue = Math.round(targetDis / cellHeight())
+          const distance = getDistanceFromVelocity(velocity);
+          const targetDis = distance + scrollY.get();
+          let diffValue = Math.round(targetDis / cellHeight());
           if (disabled) {
-            const dir = Math.sign(delta)
-            const v = realTimeValue.get()
+            const dir = Math.sign(delta);
+            const v = realTimeValue.get();
             if (circle) {
               while (disabled(getRealValue(diffValue + v))) {
-                diffValue = diffValue + dir
+                diffValue = diffValue + dir;
               }
             } else {
               while (disabled(diffValue + v)) {
-                diffValue = diffValue + dir
+                diffValue = diffValue + dir;
               }
             }
           }
           scrollY
             .animateTo(diffValue * cellHeight(), animationConfig, didChange)
             .then(() => {
-              didChange()
-              value.set(realTimeValue.get())
-            })
+              didChange();
+              value.set(realTimeValue.get());
+            });
         },
-      })
+      });
     },
     /**
      * 通常需要一个子容器来承载偏移
@@ -248,49 +248,49 @@ export function baseCenterPicker(
       _height: ValueOrGet<number>,
       renderCell: (i: number, disabled: any) => void
     ) {
-      const height = valueOrGetToGet(_height)
+      const height = valueOrGetToGet(_height);
       renderForEach<number>(
         function (callback) {
-          const v = realTimeValue.get()
+          const v = realTimeValue.get();
           //需要是奇数
-          const length = Math.ceil(height() / cellHeight())
+          const length = Math.ceil(height() / cellHeight());
           //如果是偶数
-          const half = Math.floor(length / 2)
+          const half = Math.floor(length / 2);
           for (let i = v - half; i <= v + half; i++) {
-            const key = getRealValue(i)
-            callback(key, key)
+            const key = getRealValue(i);
+            callback(key, key);
           }
         },
         function (key, et) {
-          renderCell(key, disabled?.(key))
+          renderCell(key, disabled?.(key));
         }
-      )
+      );
     },
-  }
+  };
 }
 
 export function centerPicker(
   args: CenterPickerProps & {
-    cellHeight: ValueOrGet<number>
-    height: ValueOrGet<number>
-    value: StoreRef<number>
-    renderCell(i: number): void
+    cellHeight: ValueOrGet<number>;
+    height: ValueOrGet<number>;
+    value: StoreRef<number>;
+    renderCell(i: number): void;
   }
 ) {
-  const v = baseCenterPicker(args.cellHeight, args.value, args)
+  const v = baseCenterPicker(args.cellHeight, args.value, args);
   return {
     onPointerDown(e: PointerEvent) {
-      pointerMove(v.beginMove(e, eventGetPageY))
+      pointerMove(v.beginMove(e, eventGetPageY));
     },
     children() {
       fdom.div({
         s_transform() {
-          return `translateY(${-v.scroll()}px)`
+          return `translateY(${-v.scroll()}px)`;
         },
         children() {
-          v.renderList(args.height, args.renderCell)
+          v.renderList(args.height, args.renderCell);
         },
-      })
+      });
     },
-  }
+  };
 }

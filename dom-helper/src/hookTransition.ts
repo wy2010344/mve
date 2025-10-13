@@ -1,35 +1,32 @@
-import { hookTrackSignal } from "mve-helper";
-import {  signalEffectForceFlow } from "wy-dom-helper";
-import { createSignal, EmptyFun, GetValue } from "wy-helper";
+import { hookTrackSignal } from 'mve-helper';
+import { signalEffectForceFlow } from 'wy-dom-helper';
+import { createSignal, EmptyFun, GetValue } from 'wy-helper';
 
 export function hookTransition(
   show: GetValue<boolean>,
   //可能需要强制回流
-  beginChange: (
-    afterCall: EmptyFun,
-    show: boolean
-  ) => void,
+  beginChange: (afterCall: EmptyFun, show: boolean) => void,
   set: Set<Element> = new Set()
 ) {
   const didShow = createSignal<boolean | 'active'>(show());
   const setActive = () => didShow.set('active');
-  let first = true
+  let first = true;
   hookTrackSignal(show, function (v) {
     if (first) {
-      first = false
-      return
+      first = false;
+      return;
     }
     if (v) {
       //假变成真
       signalEffectForceFlow(set, () => {
-        didShow.set(v)
-        beginChange(setActive, v)
+        didShow.set(v);
+        beginChange(setActive, v);
       });
     } else {
       //真变成假
       signalEffectForceFlow(set, () => {
-        didShow.set(true)
-        beginChange(() => didShow.set(v), v)
+        didShow.set(true);
+        beginChange(() => didShow.set(v), v);
       });
     }
   });

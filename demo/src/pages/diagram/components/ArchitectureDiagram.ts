@@ -1,10 +1,10 @@
-import { fdom, mdom, fsvg } from 'mve-dom'
-import { createSignal } from 'wy-helper'
-import { renderOne } from 'mve-helper'
+import { fdom, zdom, fsvg } from 'mve-dom';
+import { createSignal } from 'wy-helper';
+import { renderOne } from 'mve-helper';
 
 export function ArchitectureDiagram() {
-  const selectedLayer = createSignal('core')
-  const hoveredComponent = createSignal<string | null>(null)
+  const selectedLayer = createSignal('core');
+  const hoveredComponent = createSignal<string | null>(null);
 
   const architectureLayers = [
     {
@@ -33,9 +33,9 @@ export function ArchitectureDiagram() {
       name: 'mve-dom',
       title: 'DOM 桥接层',
       color: '#96ceb4',
-      components: ['dom.xx', 'fdom.xx', 'mdom.xx'],
+      components: ['dom.xx', 'fdom.xx', 'zdom.xx'],
     },
-  ]
+  ];
 
   function getComponentDescription(component: string) {
     const descriptions: Record<string, string> = {
@@ -52,9 +52,9 @@ export function ArchitectureDiagram() {
       hookPromise: '异步状态管理',
       'dom.xx': '链式调用 DOM API',
       'fdom.xx': '扁平参数 DOM API',
-      'mdom.xx': '性能优化 DOM API',
-    }
-    return descriptions[component] || '核心功能组件'
+      'zdom.xx': '性能优化 DOM API',
+    };
+    return descriptions[component] || '核心功能组件';
   }
 
   fdom.div({
@@ -63,41 +63,41 @@ export function ArchitectureDiagram() {
       fdom.h2({
         className: 'text-2xl font-bold mb-8 text-center',
         children: '🏗️ 整体架构层次图',
-      })
+      });
 
       // 层次选择器
       fdom.div({
         className: 'flex gap-4 mb-8 justify-center flex-wrap',
         children() {
-          architectureLayers.forEach((layer) => {
-            const hover = createSignal(false)
-            mdom.button({
+          architectureLayers.forEach(layer => {
+            const hover = createSignal(false);
+            zdom.button({
               attrs(m) {
-                const selected = selectedLayer.get() === layer.id
-                const isHover = hover.get()
-                
+                const selected = selectedLayer.get() === layer.id;
+                const isHover = hover.get();
+
                 m.className = `px-4 py-2 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
                   selected
                     ? 'text-white shadow-lg'
                     : 'bg-white hover:shadow-md hover:-translate-y-1'
-                }`
-                m.s_borderColor = layer.color
-                m.s_backgroundColor = selected ? layer.color : 'white'
-                m.s_color = selected ? 'white' : layer.color
-                
+                }`;
+                m.s_borderColor = layer.color;
+                m.s_backgroundColor = selected ? layer.color : 'white';
+                m.s_color = selected ? 'white' : layer.color;
+
                 if (isHover && !selected) {
-                  m.s_transform = 'translateY(-2px)'
-                  m.s_boxShadow = '0 4px 8px rgba(0,0,0,0.1)'
+                  m.s_transform = 'translateY(-2px)';
+                  m.s_boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
                 }
               },
               onClick: () => selectedLayer.set(layer.id),
               onMouseEnter: () => hover.set(true),
               onMouseLeave: () => hover.set(false),
               children: layer.name,
-            })
-          })
+            });
+          });
         },
-      })
+      });
 
       // SVG 架构图
       fdom.div({
@@ -107,7 +107,8 @@ export function ArchitectureDiagram() {
             width: '800',
             height: '500',
             viewBox: '0 0 800 500',
-            className: 'w-full max-w-4xl border border-gray-300 rounded-lg bg-white',
+            className:
+              'w-full max-w-4xl border border-gray-300 rounded-lg bg-white',
             children() {
               // 背景框架
               fsvg.rect({
@@ -118,7 +119,7 @@ export function ArchitectureDiagram() {
                 className: 'fill-none stroke-gray-300',
                 strokeWidth: '2',
                 rx: '10',
-              })
+              });
 
               fsvg.text({
                 x: '400',
@@ -126,7 +127,7 @@ export function ArchitectureDiagram() {
                 textAnchor: 'middle',
                 className: 'text-lg font-bold fill-gray-800',
                 children: 'MVE 框架架构',
-              })
+              });
 
               // 架构层次
               architectureLayers.forEach(function (layer, index) {
@@ -140,17 +141,17 @@ export function ArchitectureDiagram() {
                       height: '70',
                       fill() {
                         return selectedLayer.get() === layer.id
-                          ? layer.color + '20'
-                          : '#f8f9fa'
+                          ? `${layer.color}20`
+                          : '#f8f9fa';
                       },
                       stroke: layer.color,
                       strokeWidth() {
-                        return selectedLayer.get() === layer.id ? '3' : '1'
+                        return selectedLayer.get() === layer.id ? '3' : '1';
                       },
                       rx: '5',
                       className: 'cursor-pointer',
                       onClick: () => selectedLayer.set(layer.id),
-                    })
+                    });
 
                     // 层次标题
                     fsvg.text({
@@ -159,7 +160,7 @@ export function ArchitectureDiagram() {
                       className: 'text-sm font-bold',
                       fill: layer.color,
                       children: `${layer.title} (${layer.name})`,
-                    })
+                    });
 
                     // 组件列表
                     layer.components.forEach(function (component, compIndex) {
@@ -172,15 +173,15 @@ export function ArchitectureDiagram() {
                             height: '25',
                             fill() {
                               return hoveredComponent.get() === component
-                                ? layer.color + '40'
-                                : layer.color + '10'
+                                ? `${layer.color}40`
+                                : `${layer.color}10`;
                             },
                             stroke: layer.color,
                             strokeWidth: '1',
                             rx: '3',
                             onMouseEnter: () => hoveredComponent.set(component),
                             onMouseLeave: () => hoveredComponent.set(null),
-                          })
+                          });
 
                           fsvg.text({
                             x: () => (160 + compIndex * 150).toString(),
@@ -188,10 +189,10 @@ export function ArchitectureDiagram() {
                             textAnchor: 'middle',
                             className: 'text-xs fill-gray-800',
                             children: component,
-                          })
+                          });
                         },
-                      })
-                    })
+                      });
+                    });
 
                     // 连接线
                     if (index < architectureLayers.length - 1) {
@@ -203,11 +204,11 @@ export function ArchitectureDiagram() {
                         stroke: layer.color,
                         strokeWidth: '2',
                         markerEnd: 'url(#arrowhead)',
-                      })
+                      });
                     }
                   },
-                })
-              })
+                });
+              });
 
               // 箭头标记
               fsvg.defs({
@@ -223,22 +224,22 @@ export function ArchitectureDiagram() {
                       fsvg.polygon({
                         points: '0 0, 10 3.5, 0 7',
                         className: 'fill-gray-600',
-                      })
+                      });
                     },
-                  })
+                  });
                 },
-              })
+              });
             },
-          })
+          });
         },
-      })
+      });
 
       // 选中层次的详细信息
       renderOne(selectedLayer.get, function () {
         const currentLayer = architectureLayers.find(
-          (l) => l.id === selectedLayer.get()
-        )
-        if (!currentLayer) return
+          l => l.id === selectedLayer.get()
+        );
+        if (!currentLayer) return;
 
         fdom.div({
           className: 'p-6 bg-white rounded-lg border border-gray-200 shadow-sm',
@@ -247,33 +248,34 @@ export function ArchitectureDiagram() {
               className: 'text-xl font-bold mb-4',
               s_color: currentLayer.color,
               children: currentLayer.title,
-            })
+            });
 
             fdom.div({
               className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4',
               children() {
                 currentLayer.components.forEach(function (component) {
                   fdom.div({
-                    className: 'p-4 border border-gray-200 rounded-lg bg-gray-50 hover:shadow-md transition-shadow',
+                    className:
+                      'p-4 border border-gray-200 rounded-lg bg-gray-50 hover:shadow-md transition-shadow',
                     children() {
                       fdom.div({
                         className: 'font-bold mb-2',
                         s_color: currentLayer.color,
                         children: component,
-                      })
+                      });
 
                       fdom.div({
                         className: 'text-sm text-gray-600',
                         children: getComponentDescription(component),
-                      })
+                      });
                     },
-                  })
-                })
+                  });
+                });
               },
-            })
+            });
           },
-        })
-      })
+        });
+      });
     },
-  })
+  });
 }

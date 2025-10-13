@@ -1,5 +1,3 @@
-
-
 /**
  
  使用方式:
@@ -27,93 +25,97 @@ declare namespace JSX {
 使用Better.renderChild(...)来hook到fiber上去
  */
 
-import { fdom, fsvg, renderChildren, renderTextContent } from "mve-dom";
-import { isSVG } from "wy-dom-helper";
-import { GetValue } from "wy-helper";
+import { fdom, fsvg, renderChildren, renderTextContent } from 'mve-dom';
+import { isSVG } from 'wy-dom-helper';
+import { GetValue } from 'wy-helper';
 
 type ConvertMapToUnion<T> = {
   [K in keyof T]: { type: K; props?: T[K] };
 }[keyof T];
-export type FC<T> = (arg: T & {
-}) => void
-type NodeElement<T = Record<string, any>> = {
-  type: FC<T>
-  props: T
-  children: mve.ChildrenElement
-} | ConvertMapToUnion<mve.IntrinsicElements>
+export type FC<T> = (arg: T & {}) => void;
+type NodeElement<T = Record<string, any>> =
+  | {
+      type: FC<T>;
+      props: T;
+      children: mve.ChildrenElement;
+    }
+  | ConvertMapToUnion<mve.IntrinsicElements>;
 
-type PureValue = null | undefined | string | boolean | number | void
-type BElement = NodeElement | PureValue | GetValue<PureValue>
+type PureValue = null | undefined | string | boolean | number | void;
+type BElement = NodeElement | PureValue | GetValue<PureValue>;
 
 export namespace mve {
   export type IntrinsicElements = {
-    [key in import("wy-dom-helper").DomElementType]: import("mve-dom").FPDomAttributes<key> & {
-      children?: mve.ChildrenElement
-    }
+    [key in import('wy-dom-helper').DomElementType]: import('mve-dom').FPDomAttributes<key> & {
+      children?: mve.ChildrenElement;
+    };
   } & {
-    [key in import("wy-dom-helper").SvgElementType]: import("mve-dom").FPSvgAttributes<key> & {
-      children?: mve.ChildrenElement
-    }
-  }
+    [key in import('wy-dom-helper').SvgElementType]: import('mve-dom').FPSvgAttributes<key> & {
+      children?: mve.ChildrenElement;
+    };
+  };
 
-
-  export type Element = BElement
+  export type Element = BElement;
   /**
    * 约束默认的children类型
    */
   export interface ElementChildrenAttribute {
-    children?: ChildrenElement // specify children name to use
+    children?: ChildrenElement; // specify children name to use
   }
 
   export type ChildrenElement = BElement | ChildrenElement[];
 
-  export function createElement(type: any, props: Record<string, any>, ...children: BElement[]) {
+  export function createElement(
+    type: any,
+    props: Record<string, any>,
+    ...children: BElement[]
+  ) {
     if (!props) {
-      props = {}
+      props = {};
     }
     return {
       type,
       props,
-      children
-    }
+      children,
+    };
   }
 
   export function renderChild(child: ChildrenElement) {
     if (Array.isArray(child)) {
       //map类型
-      child.forEach(renderChild)
-      return
+      child.forEach(renderChild);
+      return;
     }
     if (child) {
-      const tpc = typeof child
+      const tpc = typeof child;
       if (tpc == 'object') {
-        const { type, props, children } = child as any
+        const { type, props, children } = child as any;
         if (typeof type == 'string') {
-          let node: any
-          delete props.children
+          let node: any;
+          delete props.children;
           if (isSVG(type)) {
-            node = fsvg[type as 'svg'](props)
+            node = fsvg[type as 'svg'](props);
           } else {
-            node = fdom[type as 'div'](props)
+            node = fdom[type as 'div'](props);
           }
           renderChildren(node, function () {
-            children?.forEach(renderChild)
-          })
+            children?.forEach(renderChild);
+          });
         } else {
-          props.children = children
-          const out = type(props)
-          renderChild(out)
+          props.children = children;
+          const out = type(props);
+          renderChild(out);
         }
       } else {
-        renderTextContent(child as any)
+        renderTextContent(child as any);
       }
     } else {
       if (typeof child == 'number') {
-        renderTextContent(child)
+        renderTextContent(child);
       }
     }
   }
   export function Fragment({ children }: any) {
-    renderChild(children)
+    renderChild(children);
   }
 }

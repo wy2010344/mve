@@ -1,22 +1,22 @@
-import { hookTrackSignal, renderOne } from 'mve-helper'
+import { hookTrackSignal, renderOne } from 'mve-helper';
 import {
   ContentEditableModel,
   EditRecord,
   fixScroll,
   getCurrentEditRecord,
-} from 'wy-dom-helper/contentEditable'
+} from 'wy-dom-helper/contentEditable';
 import {
   addEffect,
   emptyFun,
   GetValue,
   ValueOrGet,
   valueOrGetToGet,
-} from 'wy-helper'
+} from 'wy-helper';
 
 export function useContentEditable(getValue: GetValue<ContentEditableModel>) {
   function current() {
-    const v = getValue()
-    return getCurrentEditRecord(v)
+    const v = getValue();
+    return getCurrentEditRecord(v);
   }
   return {
     current,
@@ -25,24 +25,24 @@ export function useContentEditable(getValue: GetValue<ContentEditableModel>) {
       noFocus,
       children,
     }: {
-      noFocus?: ValueOrGet<boolean>
-      children(value: string): HTMLElement
+      noFocus?: ValueOrGet<boolean>;
+      children(value: string): HTMLElement;
     }) {
-      const nF = valueOrGetToGet(noFocus)
+      const nF = valueOrGetToGet(noFocus);
       renderOne(
         () => current().value,
         function (value) {
-          const div = children(value)
+          const div = children(value);
           hookTrackSignal(() => {
             if (nF()) {
-              return
+              return;
             }
             addEffect(() => {
-              fixScroll(div, current())
-            })
-          })
+              fixScroll(div, current());
+            });
+          });
         }
-      )
+      );
     },
-  }
+  };
 }

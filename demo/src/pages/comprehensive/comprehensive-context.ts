@@ -1,5 +1,5 @@
-import { createContext } from "mve-core";
-import { GetValue } from "wy-helper";
+import { createContext } from 'mve-core';
+import { GetValue } from 'wy-helper';
 
 interface User {
   id: number;
@@ -12,8 +12,8 @@ interface Task {
   id: number;
   title: string;
   description: string;
-  status: "todo" | "doing" | "done";
-  priority: "low" | "medium" | "high";
+  status: 'todo' | 'doing' | 'done';
+  priority: 'low' | 'medium' | 'high';
   assignee: number;
   createdAt: Date;
   updatedAt: Date;
@@ -26,7 +26,7 @@ const comprehensiveContext = createContext<{
   getTasksData: GetValue<any>;
   tasksLoading: GetValue<boolean>;
   getTasks: () => Task[];
-  updateTaskStatus: (taskId: number, newStatus: Task["status"]) => void;
+  updateTaskStatus: (taskId: number, newStatus: Task['status']) => void;
   taskStats: () => {
     total: number;
     todo: number;
@@ -34,6 +34,6 @@ const comprehensiveContext = createContext<{
     done: number;
     highPriority: number;
   };
-}>(undefined!)
+}>(undefined!);
 
-export default comprehensiveContext
+export default comprehensiveContext;

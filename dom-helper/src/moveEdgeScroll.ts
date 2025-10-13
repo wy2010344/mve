@@ -1,45 +1,51 @@
-import { hookDestroy, hookTrackSignal } from "mve-helper"
-import { moveEdgeScroll, subscribeEventListener } from "wy-dom-helper"
-import { EdgeScrollConfig, EmptyFun, emptyFun, GetValue, PointKey } from "wy-helper"
+import { hookDestroy, hookTrackSignal } from 'mve-helper';
+import { moveEdgeScroll, subscribeEventListener } from 'wy-dom-helper';
+import {
+  EdgeScrollConfig,
+  EmptyFun,
+  emptyFun,
+  GetValue,
+  PointKey,
+} from 'wy-helper';
 
 export function pluginEdgeScroll({
   shouldMeasure,
   direction,
   multi,
-  config
+  config,
 }: {
-  shouldMeasure: GetValue<any>,
-  direction: PointKey,
-  multi?: number
-  config?: EdgeScrollConfig
+  shouldMeasure: GetValue<any>;
+  direction: PointKey;
+  multi?: number;
+  config?: EdgeScrollConfig;
 }) {
   return function (container: HTMLElement) {
-    let mes: ReturnType<typeof moveEdgeScroll> | undefined = undefined
-    let destroy: EmptyFun = emptyFun
+    let mes: ReturnType<typeof moveEdgeScroll> | undefined = undefined;
+    let destroy: EmptyFun = emptyFun;
     hookDestroy(() => {
-      mes?.destroy()
-      destroy()
-    })
+      mes?.destroy();
+      destroy();
+    });
     hookTrackSignal(shouldMeasure, function (bool) {
       if (bool) {
-        destroy = subscribeEventListener(window, "pointermove", function (e) {
-          const point = direction == 'x' ? e.pageX : e.pageY
+        destroy = subscribeEventListener(window, 'pointermove', function (e) {
+          const point = direction == 'x' ? e.pageX : e.pageY;
           if (mes) {
-            mes.changePoint(point)
+            mes.changePoint(point);
           } else {
             mes = moveEdgeScroll(container, {
               point,
               config,
               direction,
-              multi
-            })
+              multi,
+            });
           }
-        })
+        });
       } else {
-        mes?.destroy()
-        mes = undefined
-        destroy()
+        mes?.destroy();
+        mes = undefined;
+        destroy();
       }
-    })
-  }
+    });
+  };
 }
