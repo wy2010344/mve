@@ -32,10 +32,11 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "tsdown": "latest",
     "@repo/eslint-config": "workspace:*",
     "@repo/prettier-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "lint-staged": "^16.2.4",
+    "tsdown": "latest"
   },
   "peerDependencies": {
     "mve-core": "workspace:*",

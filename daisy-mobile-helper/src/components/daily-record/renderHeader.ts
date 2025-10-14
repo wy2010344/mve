@@ -24,6 +24,7 @@ import {
   hookTrackSignal,
   memoArray,
   renderArray,
+  renderArrayKey,
   renderIf,
 } from 'mve-helper';
 import { animateSignal, cns, pointerMoveDir } from 'wy-dom-helper';
@@ -36,7 +37,6 @@ import { movePage } from 'mve-dom-helper';
 import { animate } from 'motion';
 import renderWeekday from './renderWeekday';
 import { selectShadowCell } from './renderCell';
-import { renderArrayKey } from '../../../../helper/src/renderMap';
 
 export default function (date: StoreRef<YearMonthDayVirtualView>) {
   const {

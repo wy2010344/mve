@@ -1,3 +1,3 @@
-import config from '@repo/eslint-config/node';
+import config from '@repo/eslint-config/dom';
 
 export default config;

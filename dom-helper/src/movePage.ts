@@ -1,24 +1,16 @@
 import { animateSignal, pointerMoveDir } from 'wy-dom-helper';
 import {
   addEffect,
-  alawaysFalse,
-  AnimateSignal,
   batchSignalEnd,
   DeltaXSignalAnimationConfig,
   emptyObject,
   eventGetPageX,
   eventGetPageY,
-  FalseType,
   GetValue,
   memo,
   PointKey,
-  Quote,
   ScrollFromPage,
   spring,
-  ScrollDelta,
-  StoreRef,
-  valueOrGetToGet,
-  PagePoint,
 } from 'wy-helper';
 import { defaultGetDistanceFromVelocity } from './centerPicker';
 
