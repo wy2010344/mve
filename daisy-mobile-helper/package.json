@@ -1,6 +1,24 @@
 {
   "name": "daisy-mobile-helper",
   "version": "1.0.0",
+  "description": "Mobile UI components and helpers using DaisyUI and MVE framework",
+  "keywords": [
+    "mve",
+    "mobile",
+    "daisyui",
+    "ui",
+    "components"
+  ],
+  "author": "wy2010344",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wy2010344/mve.git"
+  },
+  "homepage": "https://github.com/wy2010344/mve#readme",
+  "bugs": {
+    "url": "https://github.com/wy2010344/mve/issues"
+  },
   "files": [
     "src",
     "dist"

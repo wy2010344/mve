@@ -1,29 +1,81 @@
 # mve-helper
 
+Helper utilities for MVE framework providing additional functionality and convenience methods.
 
-
-## 安装
+## Installation
 
 ```bash
 npm install mve-helper
-# 或
+# or
 pnpm add mve-helper
-# 或
+# or
 yarn add mve-helper
 ```
 
-## 使用
+## Peer Dependencies
+
+- `mve-core` (workspace dependency)
+- `wy-helper` (workspace dependency)
+
+## Features
+
+- **State Management Helpers** - Utilities for managing complex state
+- **Component Utilities** - Helper functions for component development
+- **Reactive Utilities** - Additional reactive programming helpers
+- **Performance Optimizations** - Tools for optimizing MVE applications
+
+## Usage
 
 ```typescript
-import { } from 'mve-helper';
+import { createStore, useSignal, batch, createResource } from 'mve-helper';
 
-// 使用示例
+// Create a store for complex state management
+const store = createStore({
+  count: 0,
+  user: { name: 'John', age: 30 },
+});
+
+// Use helper hooks
+const [value, setValue] = useSignal(0);
+
+// Batch multiple updates
+batch(() => {
+  setValue(1);
+  store.count = 10;
+});
+
+// Create async resources
+const [data] = createResource(() => fetch('/api/data'));
 ```
 
-## API 文档
+## Helper Categories
 
-详细的 API 文档请查看 [在线文档](../../docs)。
+### State Management
 
-## 许可证
+- `createStore` - Create reactive stores
+- `useSignal` - Signal hook utility
+- `batch` - Batch multiple updates
+
+### Component Helpers
+
+- `createComponent` - Component creation utilities
+- `createContext` - Context management
+- `useContext` - Context consumption
+
+### Performance
+
+- `memo` - Memoization utilities
+- `lazy` - Lazy loading helpers
+- `suspense` - Suspense utilities
+
+## API Documentation
+
+For detailed API documentation, visit [online docs](https://wy2010344.github.io/mve).
+
+## Development
+
+See the [main README](../README.md) for development setup instructions.
+
+## License
 
 MIT

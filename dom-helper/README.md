@@ -1,29 +1,79 @@
 # mve-dom-helper
 
+DOM-specific helper utilities for MVE framework, providing advanced DOM manipulation and utility
+functions.
 
-
-## 安装
+## Installation
 
 ```bash
 npm install mve-dom-helper
-# 或
+# or
 pnpm add mve-dom-helper
-# 或
+# or
 yarn add mve-dom-helper
 ```
 
-## 使用
+## Peer Dependencies
+
+- `history` ^5.3.0
+- `mve-core` (workspace dependency)
+- `mve-dom` (workspace dependency)
+- `mve-helper` (workspace dependency)
+- `wy-dom-helper` (workspace dependency)
+- `wy-helper` (workspace dependency)
+
+## Features
+
+- **Canvas Rendering** - Canvas-based rendering utilities
+- **History Management** - Browser history integration
+- **DOM Utilities** - Advanced DOM manipulation helpers
+- **Animation Support** - Animation and transition utilities
+- **Layout Helpers** - Layout calculation and management tools
+
+## Submodule Exports
+
+- `mve-dom-helper/canvasRender` - Canvas rendering functionality
+- `mve-dom-helper/history` - History management utilities
+
+## Usage
 
 ```typescript
-import { } from 'mve-dom-helper';
+// Import from main module
+import {} from /* DOM helper utilities */ 'mve-dom-helper';
 
-// 使用示例
+// Import specific modules
+import {} from /* canvas utilities */ 'mve-dom-helper/canvasRender';
+import {} from /* history utilities */ 'mve-dom-helper/history';
 ```
 
-## API 文档
+## Canvas Rendering
 
-详细的 API 文档请查看 [在线文档](../../docs)。
+```typescript
+import { createCanvasRenderer } from 'mve-dom-helper/canvasRender';
 
-## 许可证
+const renderer = createCanvasRenderer(canvas);
+renderer.drawRect(0, 0, 100, 100, { fill: 'red' });
+```
+
+## History Management
+
+```typescript
+import { createRouter } from 'mve-dom-helper/history';
+
+const router = createRouter({
+  '/': () => import('./pages/Home'),
+  '/about': () => import('./pages/About'),
+});
+```
+
+## API Documentation
+
+For detailed API documentation, visit [online docs](https://wy2010344.github.io/mve).
+
+## Development
+
+See the [main README](../README.md) for development setup instructions.
+
+## License
 
 MIT
