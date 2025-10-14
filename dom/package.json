@@ -2,6 +2,15 @@
   "name": "mve-dom",
   "version": "3.0.0",
   "type": "module",
+  "description": "DOM renderer for MVE framework",
+  "keywords": [
+    "mve",
+    "dom",
+    "renderer",
+    "ui"
+  ],
+  "author": "wy2010344",
+  "license": "MIT",
   "files": [
     "dist"
   ],
@@ -10,8 +19,11 @@
   "module": "./dist/index.mjs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wy2010344/mve.git",
-    "directory": "mve"
+    "url": "git+https://github.com/wy2010344/mve.git"
+  },
+  "homepage": "https://github.com/wy2010344/mve#readme",
+  "bugs": {
+    "url": "https://github.com/wy2010344/mve/issues"
   },
   "exports": {
     ".": {
