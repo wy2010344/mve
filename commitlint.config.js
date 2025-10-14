@@ -10,11 +10,14 @@ export default {
         'helper',
         'dom-helper',
         'daisy-mobile-helper',
+        'demo',
+        'website',
         'api',
         'types',
         'utils',
         'deps',
+        'workspace',
       ],
     ],
   },
-};
+}

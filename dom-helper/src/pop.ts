@@ -1,11 +1,9 @@
-import { closeSync } from 'fs';
 import { hookAddResult } from 'mve-core';
 import { fdom } from 'mve-dom';
 import { hookDestroy, renderArray } from 'mve-helper';
 import { cns } from 'wy-dom-helper';
 import {
   addEffect,
-  circleFindNearst,
   circleFormat,
   createSignal,
   emptyArray,

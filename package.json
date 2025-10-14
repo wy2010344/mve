@@ -1,0 +1,33 @@
+{
+  "name": "@mve/workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "mve workspace root with Git hooks and commit standards",
+  "scripts": {
+    "commit": "cz",
+    "prepare": "husky install",
+    "lint": "cd core && pnpm run lint && cd ../dom && pnpm run lint && cd ../helper && pnpm run lint && cd ../dom-helper && pnpm run lint && cd ../daisy-mobile-helper && pnpm run lint",
+    "lint:check": "cd core && pnpm run lint:check && cd ../dom && pnpm run lint:check && cd ../helper && pnpm run lint:check && cd ../dom-helper && pnpm run lint:check && cd ../daisy-mobile-helper && pnpm run lint:check",
+    "format": "cd core && pnpm run format && cd ../dom && pnpm run format && cd ../helper && pnpm run format && cd ../dom-helper && pnpm run format && cd ../daisy-mobile-helper && pnpm run format",
+    "format:check": "cd core && pnpm run format:check && cd ../dom && pnpm run format:check && cd ../helper && pnpm run format:check && cd ../dom-helper && pnpm run format:check && cd ../daisy-mobile-helper && pnpm run format:check",
+    "type-check": "cd core && pnpm run type-check && cd ../dom && pnpm run type-check && cd ../helper && pnpm run type-check && cd ../dom-helper && pnpm run type-check && cd ../daisy-mobile-helper && pnpm run type-check",
+    "build": "cd core && pnpm run build && cd ../dom && pnpm run build && cd ../helper && pnpm run build && cd ../dom-helper && pnpm run build && cd ../daisy-mobile-helper && pnpm run build"
+  },
+  "devDependencies": {
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/prettier-config": "workspace:*",
+    "eslint": "^9.37.0",
+    "prettier": "^3.6.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
+}

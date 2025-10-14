@@ -1,0 +1,44 @@
+echo "🚀 Running pre-commit checks for mve workspace..."
+
+# 检查子包变更并运行对应的 lint-staged
+if git diff --cached --name-only | grep "core/" > /dev/null; then
+  echo "📦 Running lint-staged for mve-core package..."
+  cd core
+  npx lint-staged
+  pnpm run type-check
+  cd ..
+fi
+
+if git diff --cached --name-only | grep "dom/" > /dev/null; then
+  echo "📦 Running lint-staged for mve-dom package..."
+  cd dom
+  npx lint-staged
+  pnpm run type-check
+  cd ..
+fi
+
+if git diff --cached --name-only | grep "helper/" > /dev/null; then
+  echo "📦 Running lint-staged for mve-helper package..."
+  cd helper
+  npx lint-staged
+  pnpm run type-check
+  cd ..
+fi
+
+if git diff --cached --name-only | grep "dom-helper/" > /dev/null; then
+  echo "📦 Running lint-staged for mve-dom-helper package..."
+  cd dom-helper
+  npx lint-staged
+  pnpm run type-check
+  cd ..
+fi
+
+if git diff --cached --name-only | grep "daisy-mobile-helper/" > /dev/null; then
+  echo "📦 Running lint-staged for daisy-mobile-helper package..."
+  cd daisy-mobile-helper
+  npx lint-staged
+  pnpm run type-check
+  cd ..
+fi
+
+echo "✅ Pre-commit checks completed!"
