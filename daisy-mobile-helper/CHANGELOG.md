@@ -1,5 +1,13 @@
 # daisy-mobile-helper
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - mve-dom@3.0.1
+  - mve-dom-helper@3.0.1
+
 ## 1.0.0
 
 ### Patch Changes

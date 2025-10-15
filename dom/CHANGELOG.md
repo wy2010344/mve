@@ -1,5 +1,11 @@
 # mve-dom
 
+## 3.0.1
+
+### Patch Changes
+
+- some package format fix
+
 ## 3.0.0
 
 ### Major Changes
