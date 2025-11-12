@@ -1,0 +1,110 @@
+/* 导航组件样式 - Material Design 3 */
+
+.ds-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.ds-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.ds-nav-item:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  transform: translateX(2px);
+}
+
+.ds-nav-item--active {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  border: 1px solid var(--primary);
+}
+
+.ds-nav-item__icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.ds-nav-item__text {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* 面包屑导航 */
+.ds-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 14px;
+}
+
+.ds-breadcrumb__item {
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ds-breadcrumb__item:hover {
+  color: var(--on-surface);
+}
+
+.ds-breadcrumb__item--current {
+  color: var(--on-surface);
+  font-weight: 500;
+}
+
+.ds-breadcrumb__separator {
+  color: var(--on-surface-variant);
+}
+
+/* 标签页 */
+.ds-tabs {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ds-tabs__list {
+  display: flex;
+  background: var(--surface-container);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.ds-tab {
+  padding: var(--space-md) var(--space-lg);
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.ds-tab:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.ds-tab--active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: var(--surface-container-high);
+}
+
+.ds-tabs__content {
+  padding: var(--space-lg);
+  background: var(--surface);
+}

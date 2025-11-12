@@ -1,0 +1,233 @@
+/* Material Design 3.0 动态颜色系统变量 */
+
+.theme-container {
+  /* Material Design 3.0 系统颜色令牌 */
+  /* 这些变量将由动态颜色系统自动生成和更新 */
+
+  /* Primary colors */
+  --md-sys-color-primary: rgb(208 188 254);
+  --md-sys-color-on-primary: rgb(56 30 114);
+  --md-sys-color-primary-container: rgb(79 55 139);
+  --md-sys-color-on-primary-container: rgb(234 221 255);
+
+  /* Secondary colors */
+  --md-sys-color-secondary: rgb(204 194 220);
+  --md-sys-color-on-secondary: rgb(51 45 65);
+  --md-sys-color-secondary-container: rgb(74 68 88);
+  --md-sys-color-on-secondary-container: rgb(232 222 248);
+
+  /* Tertiary colors */
+  --md-sys-color-tertiary: rgb(239 184 200);
+  --md-sys-color-on-tertiary: rgb(73 37 50);
+  --md-sys-color-tertiary-container: rgb(99 59 72);
+  --md-sys-color-on-tertiary-container: rgb(255 216 228);
+
+  /* Error colors */
+  --md-sys-color-error: rgb(242 184 181);
+  --md-sys-color-on-error: rgb(105 0 5);
+  --md-sys-color-error-container: rgb(147 0 10);
+  --md-sys-color-on-error-container: rgb(255 218 214);
+
+  /* Surface colors */
+  --md-sys-color-surface: rgb(16 14 19);
+  --md-sys-color-on-surface: rgb(230 224 233);
+  --md-sys-color-surface-variant: rgb(73 69 78);
+  --md-sys-color-on-surface-variant: rgb(202 196 208);
+  --md-sys-color-surface-dim: rgb(16 14 19);
+  --md-sys-color-surface-bright: rgb(54 52 59);
+  --md-sys-color-surface-container-lowest: rgb(11 9 14);
+  --md-sys-color-surface-container-low: rgb(24 22 27);
+  --md-sys-color-surface-container: rgb(29 27 32);
+  --md-sys-color-surface-container-high: rgb(39 37 42);
+  --md-sys-color-surface-container-highest: rgb(50 47 53);
+
+  /* Background colors */
+  --md-sys-color-background: rgb(16 14 19);
+  --md-sys-color-on-background: rgb(230 224 233);
+
+  /* Outline colors */
+  --md-sys-color-outline: rgb(148 142 153);
+  --md-sys-color-outline-variant: rgb(73 69 78);
+
+  /* Other colors */
+  --md-sys-color-shadow: rgb(0 0 0);
+  --md-sys-color-scrim: rgb(0 0 0);
+  --md-sys-color-inverse-surface: rgb(230 224 233);
+  --md-sys-color-inverse-on-surface: rgb(49 47 52);
+  --md-sys-color-inverse-primary: rgb(103 80 164);
+
+  /* 语义化别名 - 直接映射Material Design令牌 */
+  --primary: var(--md-sys-color-primary);
+  --on-primary: var(--md-sys-color-on-primary);
+  --primary-container: var(--md-sys-color-primary-container);
+  --on-primary-container: var(--md-sys-color-on-primary-container);
+
+  --secondary: var(--md-sys-color-secondary);
+  --on-secondary: var(--md-sys-color-on-secondary);
+  --secondary-container: var(--md-sys-color-secondary-container);
+  --on-secondary-container: var(--md-sys-color-on-secondary-container);
+
+  --tertiary: var(--md-sys-color-tertiary);
+  --on-tertiary: var(--md-sys-color-on-tertiary);
+  --tertiary-container: var(--md-sys-color-tertiary-container);
+  --on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+
+  --error: var(--md-sys-color-error);
+  --on-error: var(--md-sys-color-on-error);
+  --error-container: var(--md-sys-color-error-container);
+  --on-error-container: var(--md-sys-color-on-error-container);
+
+  --surface: var(--md-sys-color-surface);
+  --on-surface: var(--md-sys-color-on-surface);
+  --surface-variant: var(--md-sys-color-surface-variant);
+  --on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --surface-container: var(--md-sys-color-surface-container);
+  --surface-container-low: var(--md-sys-color-surface-container-low);
+  --surface-container-high: var(--md-sys-color-surface-container-high);
+  --surface-container-highest: var(--md-sys-color-surface-container-highest);
+
+  --background: var(--md-sys-color-background);
+  --on-background: var(--md-sys-color-on-background);
+
+  --outline: var(--md-sys-color-outline);
+  --outline-variant: var(--md-sys-color-outline-variant);
+
+  /* 文本颜色 - 使用Material Design语义 */
+  --text-primary: var(--on-surface);
+  --text-secondary: var(--on-surface-variant);
+  --text-tertiary: color-mix(in srgb, var(--on-surface) 70%, transparent);
+  --text-disabled: color-mix(in srgb, var(--on-surface) 38%, transparent);
+
+  /* 边框颜色 - 使用Material Design outline */
+  --border-subtle: var(--outline-variant);
+  --border-normal: var(--outline);
+  --border-strong: color-mix(in srgb, var(--outline) 150%, var(--on-surface));
+
+  /* 毛玻璃效果 - 基于Material Design surface */
+  --glass-bg: color-mix(in srgb, var(--surface-container) 80%, transparent);
+  --glass-blur: blur(16px) saturate(150%);
+  --surface-glass: var(--glass-bg);
+
+  /* 扩展语义颜色 - 基于Material Design 3调色板系统 */
+  /* Success 颜色系统 - 使用tertiary调色板 (绿色系) */
+  --md-sys-color-success: var(--md-sys-color-tertiary);
+  --md-sys-color-on-success: var(--md-sys-color-on-tertiary);
+  --md-sys-color-success-container: var(--md-sys-color-tertiary-container);
+  --md-sys-color-on-success-container: var(
+    --md-sys-color-on-tertiary-container
+  );
+
+  /* Warning 颜色系统 - 使用secondary调色板的变体 */
+  --md-sys-color-warning: var(--md-sys-color-secondary);
+  --md-sys-color-on-warning: var(--md-sys-color-on-secondary);
+  --md-sys-color-warning-container: var(--md-sys-color-secondary-container);
+  --md-sys-color-on-warning-container: var(
+    --md-sys-color-on-secondary-container
+  );
+
+  /* 语义颜色别名 - 保持向后兼容 */
+  --success: var(--md-sys-color-success);
+  --on-success: var(--md-sys-color-on-success);
+  --success-container: var(--md-sys-color-success-container);
+  --on-success-container: var(--md-sys-color-on-success-container);
+
+  --warning: var(--md-sys-color-warning);
+  --on-warning: var(--md-sys-color-on-warning);
+  --warning-container: var(--md-sys-color-warning-container);
+  --on-warning-container: var(--md-sys-color-on-warning-container);
+
+  --danger: var(--md-sys-color-error);
+  --on-danger: var(--md-sys-color-on-error);
+  --danger-container: var(--md-sys-color-error-container);
+  --on-danger-container: var(--md-sys-color-on-error-container);
+
+  /* Material Design 3.0 设计令牌 */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+
+  /* 圆角别名 */
+  --radius-xs: var(--md-sys-shape-corner-none);
+  --radius-sm: var(--md-sys-shape-corner-extra-small);
+  --radius-md: var(--md-sys-shape-corner-small);
+  --radius-lg: var(--md-sys-shape-corner-medium);
+  --radius-xl: var(--md-sys-shape-corner-large);
+  --radius-2xl: 20px;
+  --radius-3xl: var(--md-sys-shape-corner-extra-large);
+
+  /* Material Design 3.0 间距令牌 */
+  --md-sys-spacing-0: 0px;
+  --md-sys-spacing-1: 4px;
+  --md-sys-spacing-2: 8px;
+  --md-sys-spacing-3: 12px;
+  --md-sys-spacing-4: 16px;
+  --md-sys-spacing-5: 20px;
+  --md-sys-spacing-6: 24px;
+  --md-sys-spacing-7: 28px;
+  --md-sys-spacing-8: 32px;
+  --md-sys-spacing-10: 40px;
+  --md-sys-spacing-12: 48px;
+  --md-sys-spacing-16: 64px;
+
+  /* 间距别名 */
+  --space-xs: var(--md-sys-spacing-1);
+  --space-sm: var(--md-sys-spacing-2);
+  --space-md: var(--md-sys-spacing-4);
+  --space-lg: var(--md-sys-spacing-6);
+  --space-xl: var(--md-sys-spacing-8);
+  --space-2xl: var(--md-sys-spacing-12);
+  --space-3xl: var(--md-sys-spacing-16);
+
+  /* Material Design 3.0 阴影令牌 */
+  --md-sys-elevation-0: none;
+  --md-sys-elevation-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+    0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3),
+    0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-4: 0px 6px 10px 4px rgba(0, 0, 0, 0.15),
+    0px 2px 3px 0px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-5: 0px 8px 12px 6px rgba(0, 0, 0, 0.15),
+    0px 4px 4px 0px rgba(0, 0, 0, 0.3);
+
+  /* 阴影别名 */
+  --shadow-sm: var(--md-sys-elevation-1);
+  --shadow-md: var(--md-sys-elevation-2);
+  --shadow-lg: var(--md-sys-elevation-3);
+  --shadow-xl: var(--md-sys-elevation-4);
+
+  /* Material Design 3.0 动画令牌 */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+
+  --md-sys-motion-easing-linear: cubic-bezier(0, 0, 1, 1);
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+
+  /* 动画别名 */
+  --transition-fast: var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+  --transition-normal: var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
+  --transition-slow: var(--md-sys-motion-duration-long2)
+    var(--md-sys-motion-easing-emphasized);
+}
+/* 主题工具类已移至 theme-utilities.css，保持变量文件的纯净性 */

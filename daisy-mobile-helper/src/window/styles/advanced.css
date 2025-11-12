@@ -1,0 +1,327 @@
+/* 高级组件样式 - Material Design 3 */
+
+/* 开关组件 */
+.ds-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.ds-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ds-switch__slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--surface-container-high);
+  border: 1px solid var(--outline);
+  transition: var(--transition-normal);
+  border-radius: 12px;
+}
+
+.ds-switch__slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--on-surface);
+  transition: var(--transition-normal);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-switch input:checked + .ds-switch__slider {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ds-switch input:checked + .ds-switch__slider:before {
+  background: var(--on-primary);
+  transform: translateX(20px);
+}
+
+/* 标签组件 */
+.ds-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  transition: all var(--transition-fast);
+}
+
+.ds-tag:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+  border-color: var(--outline);
+  transform: translateY(-1px);
+}
+
+.ds-tag--primary {
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--on-primary-container);
+}
+
+.ds-tag--secondary {
+  background: var(--secondary-container);
+  border-color: var(--secondary);
+  color: var(--on-secondary-container);
+}
+
+.ds-tag--tertiary {
+  background: var(--tertiary-container);
+  border-color: var(--tertiary);
+  color: var(--on-tertiary-container);
+}
+
+.ds-tag--success {
+  background: color-mix(in srgb, var(--success) 20%, var(--surface));
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.ds-tag--warning {
+  background: color-mix(in srgb, var(--warning) 20%, var(--surface));
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.ds-tag--error {
+  background: var(--error-container);
+  border-color: var(--error);
+  color: var(--on-error-container);
+}
+
+.ds-tag__close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+
+.ds-tag__close:hover {
+  background: color-mix(in srgb, var(--on-surface) 20%, transparent);
+}
+
+/* 头像组件 */
+.ds-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-container);
+  border: 2px solid var(--outline-variant);
+  color: var(--on-surface);
+  font-weight: 600;
+  overflow: hidden;
+  position: relative;
+}
+
+.ds-avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.ds-avatar--md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.ds-avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+
+.ds-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ds-avatar--online::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--success);
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+}
+
+/* 评分组件 */
+.ds-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.ds-rating__star {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  transition: all var(--transition-fast);
+}
+
+.ds-rating__star:hover,
+.ds-rating__star--active {
+  color: var(--warning);
+  transform: scale(1.1);
+}
+
+.ds-rating__star--filled {
+  color: var(--warning);
+}
+
+/* 骨架屏组件 */
+.ds-skeleton {
+  background: var(--surface-container);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--on-surface) 10%, transparent),
+    transparent
+  );
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.ds-skeleton--text {
+  height: 16px;
+  margin-bottom: var(--space-xs);
+}
+
+.ds-skeleton--title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: var(--space-sm);
+}
+
+.ds-skeleton--avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.ds-skeleton--button {
+  height: 36px;
+  width: 100px;
+}
+
+/* 加载状态组件 */
+.ds-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.ds-loading__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--outline-variant);
+  border-top: 2px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.ds-loading--lg .ds-loading__spinner {
+  width: 24px;
+  height: 24px;
+}
+
+.ds-loading__text {
+  color: var(--on-surface-variant);
+  font-size: 14px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 空状态组件 */
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  text-align: center;
+}
+
+.ds-empty__icon {
+  font-size: 48px;
+  margin-bottom: var(--space-md);
+  opacity: 0.5;
+}
+
+.ds-empty__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.ds-empty__description {
+  color: var(--on-surface-variant);
+  margin: 0 0 var(--space-lg) 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.ds-empty__action {
+  margin-top: var(--space-md);
+}

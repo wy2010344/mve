@@ -1,0 +1,373 @@
+/* 基础组件样式 - Material Design 3 */
+
+/* 窗口和容器 */
+.ds-window {
+  background: var(--surface-container);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  transition: border-color, transform var(--transition-normal);
+}
+
+.ds-window:hover {
+  border-color: var(--outline);
+  transform: translateY(-1px);
+}
+
+.ds-window--primary {
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--on-primary-container);
+}
+
+.ds-window--secondary {
+  background: var(--secondary-container);
+  border-color: var(--secondary);
+  color: var(--on-secondary-container);
+}
+
+.ds-window--tertiary {
+  background: var(--tertiary-container);
+  border-color: var(--tertiary);
+  color: var(--on-tertiary-container);
+}
+
+.ds-window--error {
+  background: var(--error-container);
+  border-color: var(--error);
+  color: var(--on-error-container);
+}
+
+/* 标题栏 */
+.ds-titlebar {
+  height: 40px;
+  background: var(--surface-container-high);
+  border-bottom: 1px solid var(--outline-variant);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-md);
+  cursor: grab;
+}
+
+.ds-titlebar:active {
+  cursor: grabbing;
+}
+
+.ds-titlebar__content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.ds-titlebar__icon {
+  font-size: 18px;
+}
+
+.ds-titlebar__title {
+  color: var(--on-surface);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.ds-titlebar__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* 窗口控制按钮 */
+.ds-control {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ds-control:hover {
+  transform: scale(1.2);
+}
+
+.ds-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.ds-control--close {
+  background: var(--error);
+  color: var(--on-error);
+}
+
+.ds-control--close:hover {
+  background: color-mix(in srgb, var(--error) 80%, var(--on-error));
+}
+
+.ds-control--clone,
+.ds-control--success {
+  background: var(--tertiary);
+  color: var(--on-tertiary);
+}
+
+.ds-control--clone:hover,
+.ds-control--success:hover {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+}
+
+.ds-control--close,
+.ds-control--danger {
+  background: var(--error);
+  color: var(--on-error);
+}
+
+.ds-control--close:hover,
+.ds-control--danger:hover {
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+
+.ds-control--minimize {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
+.ds-control--minimize:hover {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+/* 窗口动画 */
+.ds-animate-appear {
+  animation: window-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ds-animate-disappear {
+  animation: window-disappear 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+@keyframes window-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes window-disappear {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+}
+
+/* 调整大小手柄 */
+.ds-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+}
+
+.ds-resize-handle:hover {
+  background: rgba(208, 188, 254, 0.3);
+}
+
+/* 右下角调整手柄 */
+.ds-resize-handle--se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+}
+
+.ds-resize-handle--se::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(
+    -45deg,
+    transparent 30%,
+    var(--outline) 30%,
+    var(--outline) 35%,
+    transparent 35%,
+    transparent 65%,
+    var(--outline) 65%,
+    var(--outline) 70%,
+    transparent 70%
+  );
+}
+
+/* 底部调整手柄 */
+.ds-resize-handle--s {
+  bottom: 0;
+  left: 0;
+  right: 12px;
+  height: 4px;
+  cursor: s-resize;
+}
+
+/* 右侧调整手柄 */
+.ds-resize-handle--e {
+  top: 0;
+  right: 0;
+  bottom: 12px;
+  width: 4px;
+  cursor: e-resize;
+}
+
+/* 窗口浮动效果 */
+.ds-window.ds-animate-float {
+  animation: window-float 4s ease-in-out infinite;
+}
+
+@keyframes window-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+/* 重复的窗口控制按钮样式已合并到上方，避免重复定义 */
+/* 类型卡片组件 */
+.ds-type-card {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  margin-bottom: var(--space-sm);
+}
+
+.ds-type-card:hover {
+  border-color: var(--outline);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.ds-type-card--primary {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  border-color: var(--primary);
+}
+
+.ds-type-card--secondary {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  border-color: var(--secondary);
+}
+
+.ds-type-card--tertiary {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  border-color: var(--tertiary);
+}
+
+.ds-type-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.ds-type-card__title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ds-type-card__count {
+  background: var(--surface-variant);
+  color: var(--on-surface-variant);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ds-type-card__description {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 颜色选择器标签 */
+.ds-color-picker-label {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--outline);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-color-picker-label:hover {
+  border-color: var(--primary);
+}
+
+.ds-color-picker-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 状态指示器 */
+.ds-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.ds-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ds-status-dot--success {
+  background: var(--tertiary);
+}
+
+.ds-status-dot--warning {
+  background: var(--secondary);
+}
+
+.ds-status-dot--error {
+  background: var(--error);
+}
+
+.ds-status-dot--info {
+  background: var(--primary);
+}
+
+.ds-status-label {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}

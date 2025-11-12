@@ -1,6 +1,6 @@
 {
   "name": "mve-dom-helper",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "description": "DOM helper utilities for MVE framework",
   "keywords": [
     "mve",
@@ -30,13 +30,13 @@
     },
     "./canvasRender": {
       "development": "./src/canvasRender/index.ts",
-      "types": "./dist/canvasRender/index.d.ts",
+      "types": "./dist/canvasRender.d.ts",
       "import": "./dist/canvasRender.mjs",
       "require": "./dist/canvasRender.js"
     },
     "./history": {
       "development": "./src/history/index.ts",
-      "types": "./dist/history/index.d.ts",
+      "types": "./dist/history.d.ts",
       "import": "./dist/history.mjs",
       "require": "./dist/history.js"
     },

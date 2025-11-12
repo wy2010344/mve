@@ -1,0 +1,65 @@
+/* Infix-O IDE Design System - Material Design 3 */
+
+/* 导入核心样式 */
+@import './variables.css';
+
+/* 导入组件模块 */
+@import './base.css';
+@import './buttons.css';
+@import './forms.css';
+@import './cards.css';
+@import './navigation.css';
+@import './advanced.css';
+@import './feedback.css';
+@import './data.css';
+
+/* 导入工具模块 */
+@import './utilities.css';
+@import './theme-utilities.css';
+@import './showcase.css';
+@import './responsive.css';
+
+/* 全局基础样式 */
+* {
+  box-sizing: border-box;
+}
+
+.theme-container {
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background);
+  color: var(--on-background);
+  line-height: 1.5;
+
+  /* 选择文本样式 */
+  & ::selection {
+    background-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    color: var(--on-surface);
+  }
+
+  /* 焦点样式 */
+  & :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+/* 浮动粒子动画 */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(120deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(240deg);
+  }
+}
+
+.floating-particle {
+  animation: float 6s ease-in-out infinite;
+}

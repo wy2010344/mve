@@ -1,6 +1,11 @@
-import { hookDestroy } from 'mve-helper';
-import { observerAnimateSignal } from 'wy-dom-helper';
-import { AnimateFrameSignalConfig, GetValue } from 'wy-helper';
+import { hookDestroy, hookTrackSignalSkipFirst } from 'mve-helper';
+import { observerAnimateSignal, subscribeEventListener } from 'wy-dom-helper';
+import {
+  AnimateFrameSignalConfig,
+  createSignal,
+  GetValue,
+  memo,
+} from 'wy-helper';
 export * from './canvasRender';
 export * from './absoluteRender';
 export * from './renderInput';
@@ -29,4 +34,43 @@ export function hookAnimateSignal(
   const [ret, destroy] = observerAnimateSignal(get, config);
   hookDestroy(destroy);
   return ret;
+}
+
+export function hookStorageSignal<V>(
+  key: string,
+  defValue: V,
+  storage: Storage = localStorage,
+  json = defValue && typeof defValue != 'string'
+) {
+  const value = createSignal(localStorage.getItem(key));
+  hookDestroy(
+    subscribeEventListener(window, 'storage', e => {
+      if (e.storageArea == storage && e.key == key) {
+        value.set(e.newValue);
+      }
+    })
+  );
+  return {
+    get: json
+      ? memo(() => {
+          const v = value.get();
+          if (v == null) {
+            return defValue;
+          }
+          try {
+            return JSON.parse(v);
+          } catch {
+            console.warn('not a valid storage for ' + key);
+            return defValue;
+          }
+        })
+      : () => value.get() ?? defValue,
+    set: json
+      ? (v: V) => {
+          localStorage.setItem(key, JSON.stringify(v));
+        }
+      : (v: V) => {
+          localStorage.setItem(key, v as any);
+        },
+  };
 }

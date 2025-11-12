@@ -1,0 +1,105 @@
+/* 卡片组件样式 - Material Design 3 */
+
+.ds-card {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all var(--transition-fast);
+}
+
+.ds-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--outline);
+}
+
+.ds-card--elevated {
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-container-high);
+}
+
+.ds-card--elevated:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+.ds-card--outlined {
+  border: 2px solid var(--outline);
+}
+
+.ds-card__header {
+  margin-bottom: var(--space-md);
+}
+
+.ds-card__title {
+  color: var(--on-surface);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.ds-card__subtitle {
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  margin: 0;
+}
+
+.ds-card__body {
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+}
+
+.ds-card__footer {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--outline-variant);
+}
+
+/* 徽章 */
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-xs);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--outline-variant);
+}
+
+.ds-badge--primary {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  border-color: var(--primary);
+}
+
+.ds-badge--secondary {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+  border-color: var(--secondary);
+}
+
+.ds-badge--tertiary {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary-container);
+  border-color: var(--tertiary);
+}
+
+.ds-badge--success {
+  background: color-mix(in srgb, var(--success) 20%, var(--surface));
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.ds-badge--warning {
+  background: color-mix(in srgb, var(--warning) 20%, var(--surface));
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.ds-badge--error {
+  background: var(--error-container);
+  color: var(--on-error-container);
+  border-color: var(--error);
+}

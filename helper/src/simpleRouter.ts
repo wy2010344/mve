@@ -4,6 +4,7 @@ import {
   PairNode,
   PairNotfound,
   TreeRoute,
+  AliasMap,
 } from 'wy-helper/router';
 import { renderOne } from './renderIf';
 import {
@@ -98,15 +99,18 @@ export function getBranchKey(n: Branch) {
 export function createTreeRoute({
   treeArg = emptyObject,
   pages,
+  aliasMap = emptyObject,
   prefix,
   renderError,
 }: {
   treeArg?: Record<string, (n: string) => any>;
   pages: Record<string, any>;
+  aliasMap?: AliasMap;
   prefix: string;
   renderError?: SetValue<any>;
 }) {
   const tree = new TreeRoute<BranchLoader, LeafLoader, NotfoundLoader>(treeArg);
+  tree.buildFromAlias(aliasMap);
   tree.buildFromMap(pages, prefix);
   tree.finishBuild();
   //渲染某一个分支,不考虑key

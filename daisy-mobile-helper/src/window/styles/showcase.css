@@ -1,0 +1,62 @@
+/* 组件展示页面样式 - Material Design 3 */
+
+/* 展示区域布局 */
+.ds-showcase-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.ds-showcase-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--on-surface);
+  margin: 0 0 var(--space-lg) 0;
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid var(--outline-variant);
+}
+
+.ds-showcase-group {
+  margin-bottom: var(--space-xl);
+}
+
+.ds-showcase-group__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0 0 var(--space-md) 0;
+}
+
+.ds-showcase-group__content {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+/* 展示网格 */
+.ds-showcase-grid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.ds-showcase-grid--vertical {
+  grid-template-columns: 1fr;
+}
+
+.ds-showcase-grid--cards {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.ds-showcase-grid--stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* 导航样式已移至 navigation.css，避免重复定义 */
+
+/* 提示框样式已移至 feedback.css，避免重复定义 */
+
+/* 进度条样式已移至 feedback.css，避免重复定义 */
+
+/* 表格和统计卡片样式已移至 data.css，避免重复定义 */
+
+/* 其他组件样式保持Material Design 3规范... */

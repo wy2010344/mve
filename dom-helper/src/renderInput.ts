@@ -1,3 +1,4 @@
+import { fdom } from 'mve-dom';
 import { hookTrackSignal, useVersion } from 'mve-helper';
 import {
   ComponentValueCache,
@@ -15,6 +16,7 @@ import {
   EmptyFun,
   GetValue,
   SetValue,
+  StoreRef,
   StoreTransform,
   ValueOrGet,
   valueOrGetToGet,
@@ -228,4 +230,33 @@ export function renderInputBool(
     input,
     anyStoreTransform as StoreTransform<boolean, boolean>
   );
+}
+
+export function renderInputStrEnum<T extends string>(
+  value: StoreRef<T>,
+  node: HTMLInputElement
+) {
+  const key = node.value as T;
+  if (!(node.type == 'radio' || node.type == 'checkbox')) {
+    throw 'only support radio or checkbox';
+  }
+  return renderInputBoolTrans(value.get, value.set, node, {
+    toComponentValue(n: T): boolean {
+      return n == key;
+    },
+    fromComponent(n: boolean, setValue: SetValue<T>): void {
+      if (n) {
+        setValue(key);
+      }
+    },
+    shouldChange(a: T, b: boolean): boolean {
+      if (a == key && !b) {
+        return true;
+      }
+      if (a != key && b) {
+        return true;
+      }
+      return false;
+    },
+  });
 }

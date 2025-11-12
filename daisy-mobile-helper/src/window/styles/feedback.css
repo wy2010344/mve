@@ -1,0 +1,474 @@
+/* 反馈组件样式 - Material Design 3 */
+
+/* 通知组件 */
+.ds-notification {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-notification::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary);
+}
+
+.ds-notification--success::before {
+  background: var(--success);
+}
+
+.ds-notification--warning::before {
+  background: var(--warning);
+}
+
+.ds-notification--error::before {
+  background: var(--error);
+}
+
+.ds-notification__icon {
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.ds-notification--success .ds-notification__icon {
+  color: var(--success);
+}
+
+.ds-notification--warning .ds-notification__icon {
+  color: var(--warning);
+}
+
+.ds-notification--error .ds-notification__icon {
+  color: var(--error);
+}
+
+.ds-notification__content {
+  flex: 1;
+}
+
+.ds-notification__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.ds-notification__message {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.ds-notification__close {
+  background: none;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.ds-notification__close:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+/* 状态指示器 */
+.ds-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ds-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ds-status--online {
+  background: color-mix(in srgb, var(--success) 15%, var(--surface));
+  color: var(--success);
+}
+
+.ds-status--online .ds-status__dot {
+  background: var(--success);
+}
+
+.ds-status--busy {
+  background: color-mix(in srgb, var(--warning) 15%, var(--surface));
+  color: var(--warning);
+}
+
+.ds-status--busy .ds-status__dot {
+  background: var(--warning);
+}
+
+.ds-status--offline {
+  background: color-mix(in srgb, var(--on-surface-variant) 15%, var(--surface));
+  color: var(--on-surface-variant);
+}
+
+.ds-status--offline .ds-status__dot {
+  background: var(--on-surface-variant);
+}
+
+/* 提示框 */
+.ds-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+}
+
+.ds-alert--info {
+  background: var(--primary-container);
+  border-color: var(--primary);
+  color: var(--on-primary-container);
+}
+
+.ds-alert--success {
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.ds-alert--warning {
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.ds-alert--error {
+  background: var(--error-container);
+  border-color: var(--error);
+  color: var(--on-error-container);
+}
+
+.ds-alert__icon {
+  font-size: 16px;
+}
+
+.ds-alert__text {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* 进度条 */
+.ds-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-container);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ds-progress__bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-normal);
+}
+
+.ds-progress--success .ds-progress__bar {
+  background: var(--success);
+}
+
+/* 代码块组件 */
+.ds-code-block {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ds-code-block__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--surface-container-high);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.ds-code-block__title {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+.ds-code-block__copy {
+  background: none;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.ds-code-block__copy:hover {
+  background: var(--surface-container);
+  color: var(--on-surface);
+}
+
+.ds-code-block__content {
+  padding: var(--space-md);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--on-surface);
+  overflow-x: auto;
+}
+/* 模态框组件 */
+.ds-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-overlay-appear 0.2s ease-out;
+}
+
+.ds-modal {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modal-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ds-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.ds-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.ds-modal__close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.ds-modal__close:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.ds-modal__body {
+  padding: var(--space-lg);
+  color: var(--on-surface-variant);
+}
+
+.ds-modal__footer {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  padding: var(--space-lg);
+  border-top: 1px solid var(--outline-variant);
+}
+
+@keyframes modal-overlay-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 工具提示 */
+.ds-tooltip {
+  position: absolute;
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  border: 1px solid var(--outline-variant);
+  box-shadow: var(--shadow-lg);
+  animation: tooltip-appear 0.2s ease-out;
+}
+
+.ds-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.ds-tooltip--top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: var(--space-xs);
+}
+
+.ds-tooltip--top::before {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px 4px 0 4px;
+  border-color: var(--surface-container-highest) transparent transparent
+    transparent;
+}
+
+.ds-tooltip--bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: var(--space-xs);
+}
+
+.ds-tooltip--bottom::before {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 4px 4px 4px;
+  border-color: transparent transparent var(--surface-container-highest)
+    transparent;
+}
+
+@keyframes tooltip-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* 下拉菜单 */
+.ds-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.ds-dropdown__menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-fast);
+  z-index: 1000;
+  animation: dropdown-appear 0.2s ease-out;
+}
+
+.ds-dropdown--open .ds-dropdown__menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ds-dropdown__item {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: 0;
+}
+
+.ds-dropdown__item:first-child {
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.ds-dropdown__item:last-child {
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.ds-dropdown__item:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.ds-dropdown__divider {
+  margin: var(--space-xs) 0;
+  border: none;
+  height: 1px;
+  background: var(--outline-variant);
+}
+
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
