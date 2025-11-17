@@ -12,7 +12,7 @@ import {
   StyleVariants,
   StyleVariantsMap,
 } from 'wy-dom-helper';
-import { memo } from 'wy-helper';
+import { addEffect, emptyObject, memo } from 'wy-helper';
 
 import {
   DesignTokens,
@@ -46,12 +46,12 @@ export function hookTheme<T extends StyleConfigMap>(
     return data.getId(theme.prefix, theme.tokens);
   });
   hookTrackSignal(getId, function (old) {
-    return old.effect();
+    return old.effect(addEffect);
   });
   return function <K extends keyof T & string>(
     name: K,
     a?: Partial<StyleVariantsMap<T>[K]>
   ) {
-    return data.getClassName(getId(), name, a);
+    return data.getClassName(getId(), name, a || emptyObject);
   };
 }

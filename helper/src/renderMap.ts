@@ -55,6 +55,27 @@ export function renderArray<T>(
   );
 }
 
+export function renderRecord<T, K extends string | number | symbol = any>(
+  getRecord: GetValue<Readonly<Record<K, T>>>,
+  render: (key: K, item: GetValue<T>, getIndex: GetValue<number>) => void
+) {
+  renderForEach<T, K>(
+    function (callback) {
+      const o = getRecord();
+      for (const key in o) {
+        callback(key, o[key]);
+      }
+    },
+    function (key, et) {
+      render(key, et.getValue, et.getIndex);
+    },
+    {
+      bindIndex: true,
+      bindValue: true,
+    }
+  );
+}
+
 export function renderSet<T>(
   getSet: GetValue<{
     forEach(callback: SetValue<T>): void;

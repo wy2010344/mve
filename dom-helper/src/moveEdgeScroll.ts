@@ -1,51 +1,58 @@
-import { hookDestroy, hookTrackSignal } from 'mve-helper';
+import { hookTrackSignal } from 'mve-helper';
 import { moveEdgeScroll, subscribeEventListener } from 'wy-dom-helper';
 import {
   EdgeScrollConfig,
-  EmptyFun,
-  emptyFun,
   GetValue,
   PointKey,
+  ValueOrGet,
+  valueOrGetToGet,
 } from 'wy-helper';
 
-export function pluginEdgeScroll({
-  shouldMeasure,
-  direction,
-  multi,
-  config,
-}: {
-  shouldMeasure: GetValue<any>;
-  direction: PointKey;
-  multi?: number;
-  config?: EdgeScrollConfig;
-}) {
-  return function (container: HTMLElement) {
-    let mes: ReturnType<typeof moveEdgeScroll> | undefined = undefined;
-    let destroy: EmptyFun = emptyFun;
-    hookDestroy(() => {
-      mes?.destroy();
-      destroy();
-    });
-    hookTrackSignal(shouldMeasure, function (bool) {
-      if (bool) {
-        destroy = subscribeEventListener(window, 'pointermove', function (e) {
-          const point = direction == 'x' ? e.pageX : e.pageY;
+/**
+ * 不是太好，应该是拖拽触发，而不是观察状态
+ * 不对，不只与当前容器有关，其实与所有容器都有关
+ * @param container
+ * @param param1
+ */
+export function setEdgeScroll(
+  container: HTMLElement,
+  {
+    shouldMeasure,
+    direction,
+    getSpeed,
+    config,
+  }: {
+    shouldMeasure: GetValue<any>;
+    direction: ValueOrGet<PointKey>;
+    getSpeed?(n: number): number;
+    config?: EdgeScrollConfig;
+  }
+) {
+  let mes: ReturnType<typeof moveEdgeScroll> | undefined = undefined;
+  const getDirection = valueOrGetToGet(direction);
+  hookTrackSignal(shouldMeasure, function (bool) {
+    if (bool) {
+      const destroy = subscribeEventListener(
+        window,
+        'pointermove',
+        function (e) {
           if (mes) {
-            mes.changePoint(point);
+            mes.changePoint(e);
           } else {
             mes = moveEdgeScroll(container, {
-              point,
+              point: e,
               config,
-              direction,
-              multi,
+              direction: getDirection,
+              getSpeed,
             });
           }
-        });
-      } else {
+        }
+      );
+      return function () {
+        destroy();
         mes?.destroy();
         mes = undefined;
-        destroy();
-      }
-    });
-  };
+      };
+    }
+  });
 }

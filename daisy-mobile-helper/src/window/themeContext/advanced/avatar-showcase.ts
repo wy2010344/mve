@@ -1,22 +1,19 @@
 import { fdom } from "mve-dom";
-import { createSignal } from "wy-helper";
-import { Switch } from ".";
+import { Avatar } from ".";
 
 export default function () {
-  // Switch 示例
+  // Avatar 示例
   fdom.div({
     className: 'mb-8',
     children() {
       fdom.h3({
         className: 'text-lg font-semibold mb-4',
-        children: 'Switch 开关',
+        children: 'Avatar 头像',
       });
 
       fdom.div({
         className: 'space-y-4',
         children() {
-          const switchValue = createSignal(true);
-
           fdom.div({
             className: 'flex items-center gap-4',
             children() {
@@ -24,9 +21,9 @@ export default function () {
                 className: 'text-sm text-gray-600',
                 children: '不同尺寸：',
               });
-              Switch({ size: 'sm', checked: true });
-              Switch({ size: 'md', checked: true });
-              Switch({ size: 'lg', checked: true });
+              Avatar({ size: 'sm', children: 'S' });
+              Avatar({ size: 'md', children: 'M' });
+              Avatar({ size: 'lg', children: 'L' });
             },
           });
 
@@ -35,20 +32,10 @@ export default function () {
             children() {
               fdom.span({
                 className: 'text-sm text-gray-600',
-                children: '交互式：',
+                children: '在线状态：',
               });
-              Switch({
-                checked: switchValue,
-                onChange: value => {
-                  console.log('Switch changed:', value);
-                },
-              });
-              fdom.span({
-                className: 'text-sm',
-                children() {
-                  return switchValue.get() ? '开启' : '关闭';
-                },
-              });
+              Avatar({ status: 'online', children: 'ON' });
+              Avatar({ status: 'offline', children: 'OFF' });
             },
           });
 
@@ -57,14 +44,16 @@ export default function () {
             children() {
               fdom.span({
                 className: 'text-sm text-gray-600',
-                children: '禁用状态：',
+                children: '文字头像：',
               });
-              Switch({ disabled: true, checked: false });
-              Switch({ disabled: true, checked: true });
+              Avatar({ children: 'A' });
+              Avatar({ children: 'AB' });
+              Avatar({ children: '张' });
             },
           });
         },
       });
     },
   });
+
 }
