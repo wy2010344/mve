@@ -17,11 +17,13 @@ import {
 export function setEdgeScroll(
   container: HTMLElement,
   {
+    getPoint,
     shouldMeasure,
     direction,
     getSpeed,
     config,
   }: {
+    getPoint?(n: PointerEvent, dir: PointKey): number;
     shouldMeasure: GetValue<any>;
     direction: ValueOrGet<PointKey>;
     getSpeed?(n: number): number;
@@ -42,6 +44,7 @@ export function setEdgeScroll(
             mes = moveEdgeScroll(container, {
               point: e,
               config,
+              getPoint,
               direction: getDirection,
               getSpeed,
             });
