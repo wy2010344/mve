@@ -27,6 +27,8 @@ export * from './hookTouch';
 export * from './pluginTouchHover';
 export * from './renderNode';
 export * from './button';
+export * from './layoutIndex';
+export * from './pointerDrag';
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig

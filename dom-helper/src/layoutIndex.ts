@@ -1,21 +1,28 @@
-import { animate, AnimationOptions } from 'motion';
 import { hookTrackSignal } from 'mve-helper';
 import {
   addEffect,
+  emptyFun,
   GetValue,
   PointKey,
   ValueOrGet,
   valueOrGetToGet,
 } from 'wy-helper';
 
-export function setLayoutIndex(
-  div: HTMLElement,
+export type LayoutAnimateFun<T extends Element = Element> = (
+  div: T,
+  direction: PointKey,
+  from: number
+) => void;
+export function setLayoutIndex<T extends HTMLElement>(
+  div: T,
   getIndex: GetValue<number>,
   direction: ValueOrGet<PointKey>,
-  config?: AnimationOptions
+  /**
+   * 将div在direction从from动画到0
+   */
+  animate: LayoutAnimateFun<T> = emptyFun
 ) {
   const getDirection = valueOrGetToGet(direction);
-
   let before = -1;
   hookTrackSignal(getIndex, function (index) {
     addEffect(() => {
@@ -26,13 +33,7 @@ export function setLayoutIndex(
         if (!diff) {
           return;
         }
-        animate(
-          div,
-          {
-            [direction]: [diff, 0],
-          },
-          config
-        );
+        animate(div, direction, diff);
       }
       before = div[offsetKey];
     });

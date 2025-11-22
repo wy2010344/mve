@@ -9,6 +9,5 @@ export * from './components/renderLayoutPage';
 export * from './components/daily-record';
 export * from './components/hookTrackLayout';
 export * from './components/firstDayOfWeek';
-export * from './components/layoutIndex';
 export * from './components/renderNavPage';
 export * from './window';
