@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'MVE',
   description: 'MVE, a signal-driven front-end framework',
-  outDir: '../docs',
+  // outDir: '../docs',
   base: '/mve/',
   // 使用vitepress内置的搜索功能，无需额外插件
   // 启用国际化
