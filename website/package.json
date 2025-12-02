@@ -12,7 +12,8 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "vitepress": "^2.0.0-alpha.12",
+    "crypto-browserify": "^3.12.0",
+    "vitepress": "^2.0.0-alpha.15",
     "vitepress-plugin-diagrams": "^1.0.0"
   }
 }
