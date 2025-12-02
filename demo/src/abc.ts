@@ -27,6 +27,10 @@ requests = [0, 0, 0.3, 0.8, 1.4, 1.5, 1.6, 2];
 
 */
 
+import { createContext } from 'mve-core';
+import { fdom } from 'mve-dom';
+import { createSignal } from 'wy-helper';
+
 function demo(capacity: number, rate: number, requests: number[]) {
   let bulk = capacity;
   const per = 1 / rate;

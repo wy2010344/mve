@@ -11,7 +11,8 @@ export interface ButtonProps {
     | 'warning'
     | 'danger'
     | 'error'
-    | 'ghost';
+    | 'ghost'
+    | 'outline';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   children?: string | (() => void);
@@ -46,7 +47,16 @@ export function Button(props: ButtonProps = {}) {
 }
 
 export interface IconButtonProps {
-  variant?: 'primary' | 'secondary';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'tertiary'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'error'
+    | 'ghost'
+    | 'outline';
   icon: string;
   disabled?: boolean;
   onClick?: (event: MouseEvent) => void;
@@ -68,7 +78,8 @@ export function IconButton(props: IconButtonProps) {
   fdom.button({
     className() {
       return getCls('button', {
-        variant,
+        variant: variant as any,
+        size: 'md',
         iconOnly: true,
         className,
       });

@@ -6,7 +6,7 @@ import {
   SetValue,
 } from 'wy-helper';
 import { hookDestroy } from 'mve-helper';
-import { createPop } from 'mve-dom-helper';
+import { createPop } from 'mve-helper';
 import { hookAddResult } from 'mve-core';
 import {
   animate,

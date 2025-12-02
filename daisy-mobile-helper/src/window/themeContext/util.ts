@@ -4,21 +4,15 @@
  *
  */
 import { createContext } from 'mve-core';
-import { hookTrackSignal } from 'mve-helper';
-import {
-  CreateStyle,
-  StyleConfig,
-  StyleConfigMap,
-  StyleVariants,
-  StyleVariantsMap,
-} from 'wy-dom-helper';
-import { addEffect, emptyObject, memo } from 'wy-helper';
+import { CreateStyle, StyleConfigMap, StyleVariantsMap } from 'wy-dom-helper';
+import { createGetId, emptyObject, memo } from 'wy-helper';
 
 import {
   DesignTokens,
   ThemeData,
   defaultTokens,
 } from 'wy-dom-helper/window-theme';
+import { hookDestroy } from 'mve-helper';
 const themeContext = createContext<() => ThemeData>(
   memo(() => {
     return {
@@ -37,17 +31,25 @@ export function hookRewriteTheme(callback: (old: ThemeData) => ThemeData) {
   );
 }
 
+const hookId = createGetId({
+  flag: 'M',
+  min: 0,
+});
 export function hookTheme<T extends StyleConfigMap>(
   data: CreateStyle<T, DesignTokens>
 ) {
+  const id = hookId();
   const get = themeContext.consume();
   const getId = memo(() => {
     const theme = get();
-    return data.getId(theme.prefix, theme.tokens);
+    return data.getId(theme.prefix, theme.tokens, id);
   });
-  hookTrackSignal(getId, function (old) {
-    return old.effect(addEffect);
+  hookDestroy(() => {
+    getId().hookDestroy(id);
   });
+  // hookTrackSignal(getId, function (old) {
+  //   return old.effect(addEffect);
+  // });
   return function <K extends keyof T & string>(
     name: K,
     a?: Partial<StyleVariantsMap<T>[K]>

@@ -21,6 +21,13 @@ const { renderBranch, getBranch, preLoad } = createTreeRoute({
   },
   pages,
   prefix: './pages/',
+  aliasMap: {
+    //路由映射功能，有以下两种格式
+    '/nest-route-demo/[x]/bb'(args) {
+      return `/nest-route-demo/bb-${args.x}`;
+    },
+    'bbb-[x]':'xxx-[x]-bbb'
+  },
   renderError(err) {
     console.error('路由错误:', err);
   }
@@ -41,49 +48,33 @@ createRoot(app, () => {
 
 ## 目录结构
 
-### 基础路由
+### 路由结构
 
 ```
 src/pages/
-├── index.ts          # /
-├── about.ts          # /about
-├── contact/
-│   └── index.ts      # /contact
-└── user/
-    ├── index.ts      # /user
-    └── profile.ts    # /user/profile
-```
-
-### 动态路由
-
-```
-src/pages/
+├── 1.bb-[a-number]
+│   └── index.ts  
+├── 2.bb-[a]
+│   └── index.ts  
 ├── user/
+│   ├── index.ts                    # /user
 │   └── [id]/
-│       └── index.ts  # /user/:id
+│       └── index.ts                # /user/:id
 ├── group/
 │   └── [id]/
-│       ├── index.ts  # /group/:id
-│       └── edit.ts   # /group/:id/edit
+│       ├── index.ts                # /group/:id
+│       └── edit
+|           └── index.ts            # /group/:id/edit
 └── blog/
-    └── [year]/
-        └── [month]/
-            └── index.ts  # /blog/:year/:month
+    └── [year-number]/
+        ├── default.ts              # /blog/下没有找到的路由节点，都转到这里，也享有layout.ts
+        ├── layout.ts               # /blog/:year及后缀路由节点共享的布局
+        ├── index.ts                # /blog/:year
+        └── [month-number]/
+            └── index.ts            # /blog/:year/:month 其中year与month的参数需要经过注入的number函数校验，成功才能进入
 ```
 
-### 嵌套布局
-
-```
-src/pages/
-├── layout.ts         # 根布局
-├── home/
-│   ├── layout.ts     # /home/* 布局
-│   ├── index.ts      # /home
-│   ├── dashboard.ts  # /home/dashboard
-│   └── settings/
-│       ├── index.ts  # /home/settings
-│       └── profile.ts # /home/settings/profile
-```
+上述中，`1.bb-[a-number]`对应bb-98这种路由，当路由节点使用`1.`,`2.`这样开头时，表示使用前面的数字从小到大排序。
 
 ## 页面组件
 
@@ -130,6 +121,18 @@ export default function(param: BranchLoaderParam) {
 }
 ```
 
+### 默认页面(Default)
+未找到的路由跳转处
+```ts
+import { dom } from 'mve-dom';
+import { NotfoundLoaderParam } from 'mve-helper';
+
+export default function (a: NotfoundLoaderParam) {
+  dom.div({})
+    .renderText`${() => JSON.stringify(a.getQuery())} -- ${() => a.get().nodes.slice(a.get().index).join('/')}`;
+}
+```
+
 ### 动态路由参数
 
 ```typescript
@@ -138,25 +141,18 @@ import { GetValue } from 'wy-helper';
 import { LeafLoaderParam } from 'mve-helper';
 
 export default function(param: LeafLoaderParam<{ id: string }>) {
-  const userId = param.getQuery().id;
-  
-  fdom.div({
-    children() {
-      fdom.h1({ children: `用户 ID: ${userId}` });
-    }
-  });
-}
-
-// 或者使用参数函数
-export default function(getArg: GetValue<{ id: string }>) {
   fdom.div({
     children() {
       fdom.h1({ 
-        children: () => `用户 ID: ${getArg().id}` 
+        childrenType:'text',
+        children(){
+          return `用户 ID: ${param.getQuery().id}` 
+        }
       });
     }
   });
 }
+
 ```
 
 ## 路由导航
@@ -203,6 +199,9 @@ export default function() {
   });
 }
 ```
+
+这里，router通常是调用history这个npm包生成的history
+
 
 ### 相对路径导航
 
@@ -257,8 +256,14 @@ export default function(param: LeafLoaderParam) {
   
   fdom.div({
     children() {
-      fdom.p({ children: `搜索关键词: ${query.q}` });
-      fdom.p({ children: `页码: ${query.page}` });
+      fdom.p({
+        childrenType:'text',
+        children:()=> `搜索关键词: ${param.getQuery().q}`
+      });
+      fdom.p({ 
+        childrenType:'text',
+        children:()=> `页码: ${param.getQuery().page}` 
+      });
     }
   });
 }

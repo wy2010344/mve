@@ -1,27 +1,10 @@
+import { addEffect, createSignal, GetValue } from 'wy-helper';
 import {
-  addEffect,
-  createSignal,
-  GetValue,
-  SetValue,
-  StoreRef,
-  ValueOrGet,
-} from 'wy-helper';
-import { useContentEditable } from './useContentEditable';
-import {
-  redo,
-  undo,
-  appendRecord,
-  contentDelete,
   ContentEditableModel,
-  contentEnter,
-  contentTab,
-  getCurrentRecord,
   initContentEditableModel,
-  mb,
   getCurrentEditRecord,
   MbRange,
 } from 'wy-dom-helper/contentEditable';
-import { React } from 'wy-dom-helper';
 import { hookTrackSignal } from 'mve-helper';
 
 /**

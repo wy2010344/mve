@@ -19,10 +19,11 @@ export type { Context } from './context';
 export * from './hookChildren';
 
 const globalHolder = new StateHolder();
-export function runGlobalHolder(fun: EmptyFun) {
+export function runGlobalHolder<T>(fun: () => T) {
   const before = hookAlterStateHolder(globalHolder);
-  fun();
+  const o = fun();
   hookAlterStateHolder(before);
+  return o;
 }
 
 export function destroyGlobalHolder() {

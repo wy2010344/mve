@@ -9,3 +9,4 @@ export * from './form-group';
 export * from './card';
 export * from './layout';
 export * from './showcase';
+export * from './showcase-layout';

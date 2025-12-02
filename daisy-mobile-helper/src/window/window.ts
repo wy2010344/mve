@@ -1,9 +1,5 @@
 import { fdom, FPDomAttributes } from 'mve-dom';
-import {
-  cns,
-  createPopListWithRearrange,
-  PopWithRearrange,
-} from 'mve-dom-helper';
+import { cns } from 'mve-dom-helper';
 import {
   delay,
   EmptyFun,
@@ -16,11 +12,14 @@ import {
   OneSetStoreRef,
   DragMoveStep,
   doMoveAcc,
+  getValueOrGet,
+  MovePanelResizeAuto,
 } from 'wy-helper';
 import { pointerMove } from 'wy-dom-helper';
 import { hookCurrentParent, hookIsDestroyed } from 'mve-core';
 import { windowStyle, scrollbar, statusBar } from 'wy-dom-helper/window-theme';
 import { hookTheme } from './themeContext/util';
+import { createPopListWithRearrange, PopWithRearrange } from 'mve-helper';
 
 export const { renderPop: renderWindows, createPop: createWindow } =
   createPopListWithRearrange();
@@ -75,6 +74,65 @@ export function cacheCreater<K>(
   };
 }
 
+export function getWindowMoveInfo(
+  {
+    width = 600,
+    height = 400,
+    x: _x,
+    y: _y,
+    minHeight,
+    minWidth,
+  }: {
+    x?: OneSetStoreRef<number> | number;
+    y?: OneSetStoreRef<number> | number;
+    width?: OneSetStoreRef<number> | number;
+    height?: OneSetStoreRef<number> | number;
+    minWidth?: number;
+    minHeight?: number;
+  },
+  parent: HTMLElement
+) {
+  const e = lastClientEvnet;
+  const x = movePanelResizeAuto({
+    size: width,
+    direction: 'x',
+    position: _x ?? e?.pageX ?? 0,
+    minSize: minWidth,
+    getMaxSize() {
+      return parent.clientWidth;
+    },
+  });
+  const y = movePanelResizeAuto({
+    size: height,
+    direction: 'y',
+    position: _y ?? e?.pageY ?? 0,
+    minSize: minHeight,
+    getMaxSize() {
+      return parent.clientHeight;
+    },
+  });
+  function beginStep(
+    e: DragMoveStep & {
+      point: PointerEvent;
+    }
+  ) {
+    const moveX = doMoveAcc(x.onMove(e));
+    const moveY = doMoveAcc(y.onMove(e));
+    let lastE = e.point;
+    document.body.style.userSelect = 'none';
+    pointerMove({
+      onMove(e) {
+        moveX(e.pageX - lastE.pageX);
+        moveY(e.pageY - lastE.pageY);
+        lastE = e;
+      },
+      onEnd(e) {
+        document.body.style.userSelect = '';
+      },
+    });
+  }
+  return { x, y, beginStep };
+}
 export const panel = instanceWithCopy<
   [
     (info: PopWithRearrange<any>) => {
@@ -100,66 +158,18 @@ export const panel = instanceWithCopy<
     },
     panel(info) {
       const parent = hookCurrentParent() as HTMLDivElement;
-      const isDestroyed = hookIsDestroyed();
-      const e = lastClientEvnet;
       const {
         title,
         typeIcon,
-        width,
-        height,
-        x: _x,
-        y: _y,
-        minHeight,
-        minWidth,
         children,
         className,
         noCopy,
         titleControls,
         ...args
       } = callback(info);
-
-      const x = movePanelResizeAuto({
-        size: width,
-        direction: 'x',
-        position: _x ?? e?.pageX ?? 0,
-        minSize: minWidth,
-        getMaxSize() {
-          return parent.clientWidth;
-        },
-      });
-      const y = movePanelResizeAuto({
-        size: height,
-        direction: 'y',
-        position: _y ?? e?.pageY ?? 0,
-        minSize: minHeight,
-        getMaxSize() {
-          return parent.clientHeight;
-        },
-      });
-      function beginStep(
-        e: DragMoveStep & {
-          point: PointerEvent;
-        }
-      ) {
-        const moveX = doMoveAcc(x.onMove(e));
-        const moveY = doMoveAcc(y.onMove(e));
-        let lastE = e.point;
-        document.body.style.userSelect = 'none';
-
-        pointerMove({
-          onMove(e) {
-            moveX(e.pageX - lastE.pageX);
-            moveY(e.pageY - lastE.pageY);
-            lastE = e;
-          },
-          onEnd(e) {
-            document.body.style.userSelect = '';
-          },
-        });
-      }
-
+      const { x, y, beginStep } = getWindowMoveInfo(args, parent);
       const getWindowCls = hookTheme(windowStyle);
-
+      const isDestroyed = hookIsDestroyed();
       fdom.div({
         ...args,
         onPointerDown(e) {
@@ -169,14 +179,22 @@ export const panel = instanceWithCopy<
           info.setIndex(-1);
         },
         willRemove(node) {
-          node.classList.remove('ds-animate-appear');
-          node.classList.add('ds-animate-disappear');
+          node.className = getValueOrGet(
+            cns(
+              className,
+              getWindowCls('container', {
+                state: 'disappearing',
+              })
+            )
+          );
+          console.log('className', node.className);
           return delay(300);
         },
         className: cns(
           className,
-          getWindowCls('container', {}),
-          'ds-animate-appear'
+          getWindowCls('container', {
+            state: 'appearing',
+          })
         ),
         s_left() {
           return `${x.position()}px`;
@@ -194,17 +212,25 @@ export const panel = instanceWithCopy<
         children() {
           // 窗口标题栏
           fdom.div({
-            className: getWindowCls('title'),
+            className() {
+              return getWindowCls('title');
+            },
             children() {
               fdom.div({
-                className: getWindowCls('titleBarContent', {}),
+                className() {
+                  return getWindowCls('titleBarContent', {});
+                },
                 children() {
                   fdom.span({
-                    className: getWindowCls('titleBarIcon', {}),
+                    className() {
+                      return getWindowCls('titleBarIcon', {});
+                    },
                     children: typeIcon,
                   });
                   fdom.span({
-                    className: getWindowCls('titleBarTitle', {}),
+                    className() {
+                      return getWindowCls('titleBarTitle', {});
+                    },
                     children: title,
                   });
                 },
@@ -218,7 +244,9 @@ export const panel = instanceWithCopy<
 
               // 窗口控制按钮
               fdom.div({
-                className: getWindowCls('titleBarControls', {}),
+                className() {
+                  return getWindowCls('titleBarControls', {});
+                },
                 children() {
                   titleControls?.();
 
@@ -245,9 +273,11 @@ export const panel = instanceWithCopy<
                     });
                   }
                   fdom.button({
-                    className: getWindowCls('control', {
-                      variant: 'danger',
-                    }),
+                    className() {
+                      return getWindowCls('control', {
+                        variant: 'danger',
+                      });
+                    },
                     children: '×',
                     title: '关闭',
                     onClick: info.closeIt,
@@ -261,9 +291,11 @@ export const panel = instanceWithCopy<
 
           // 调整大小手柄
           fdom.div({
-            className: getWindowCls('resizeHandle', {
-              direction: 'se',
-            }),
+            className() {
+              return getWindowCls('resizeHandle', {
+                direction: 'se',
+              });
+            },
             onPointerDown(e: PointerEvent) {
               beginStep({
                 action: 'drag',
@@ -275,9 +307,11 @@ export const panel = instanceWithCopy<
           });
           // 边缘调整手柄
           fdom.div({
-            className: getWindowCls('resizeHandle', {
-              direction: 's',
-            }),
+            className() {
+              return getWindowCls('resizeHandle', {
+                direction: 's',
+              });
+            },
             onPointerDown(e: PointerEvent) {
               beginStep({
                 action: 'drag',
@@ -288,9 +322,11 @@ export const panel = instanceWithCopy<
           });
 
           fdom.div({
-            className: getWindowCls('resizeHandle', {
-              direction: 'e',
-            }),
+            className() {
+              return getWindowCls('resizeHandle', {
+                direction: 'e',
+              });
+            },
             onPointerDown(e: PointerEvent) {
               beginStep({
                 action: 'drag',

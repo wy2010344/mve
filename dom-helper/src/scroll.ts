@@ -43,9 +43,14 @@ export interface OnScrollI {
   targetSnap?: (n: number) => number;
   /**获得强制吸附的位置 */
   getForceStop?: (current: number, idealTarget: number) => number;
+  /**在force下的吸附动画 */
+  getForceAnimationConfig?(
+    distance: number,
+    frictional: ScrollHelper
+  ): AnimateSignalConfig;
+
   onProcess?: SetValue<number>;
   onOutProcess?: SetValue<number>;
-
   onDragBegin?(): void;
 }
 

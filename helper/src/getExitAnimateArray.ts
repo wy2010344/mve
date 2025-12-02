@@ -11,10 +11,8 @@ import {
   getOutResolvePromise,
   GetValue,
   memo,
-  NoInsertArrayHelper,
   objectFreezeThrow,
   quote,
-  SetValue,
   ValueOrGet,
   valueOrGetToGet,
 } from 'wy-helper';

@@ -130,8 +130,7 @@ export function buildContainer<DragData, DragType, K = any>({
   getMeasurePositionDiff,
   getDragX,
   getDragY,
-  setDragX,
-  setDragY,
+  setDragTo,
   getActiveContainer,
   setActiveContainer,
   getDropped,
@@ -146,10 +145,8 @@ export function buildContainer<DragData, DragType, K = any>({
   getMeasurePositionDiff(d: DragData, dir: PointKey): number;
   getDragY(x: DragData): number;
   getDragX(x: DragData): number;
-  setDragY(x: DragData, n: number): void;
-  setDragX(x: DragData, n: number): void;
+  setDragTo(x: DragData, n: PointerEventBase): void;
   getDragId(x: DragData): K;
-  // getDragId(n: DragData): K;
   //是否已经停止拖拽
   getDropped(n: DragData): any;
   getActiveContainer: GetActiveContainer<DragData>;
@@ -167,34 +164,21 @@ export function buildContainer<DragData, DragType, K = any>({
     getDragData,
     getActiveContainer
   );
-  function onPointerDown(
-    e: PointerEventBase,
-    createDragData: () => DragData,
-    container: Element
-  ) {
+  function onPointerDown(createDragData: () => DragData, container: Element) {
     if (getDragData()) {
       console.log('正在拖拽中。。。');
       return;
     }
     const d = createDragData();
     setDragData(d);
-    setDragX(d, e.pageX);
-    setDragY(d, e.pageY);
     setActiveContainer(d, container);
-    let lastE = e as unknown as PointerEvent;
     document.body.style.userSelect = 'none';
     pointerMove({
       onMove(moveE) {
-        const diffX = moveE.pageX - lastE.pageX;
-        const diffY = moveE.pageY - lastE.pageY;
-        setDragX(d, getDragX(d) + diffX);
-        setDragY(d, getDragY(d) + diffY);
-        lastE = moveE;
+        setDragTo(d, moveE);
         //要从preview的上一层开始
-
         const dx = getMeasurePositionDiff(d, 'x');
         const dy = getMeasurePositionDiff(d, 'y');
-
         let place =
           dx || dy
             ? document.elementFromPoint(getDragX(d) + dx, getDragY(d) + dy)
@@ -227,7 +211,6 @@ export function buildContainer<DragData, DragType, K = any>({
     const map = new Map<K, HTMLElement>();
     const scrollTop = createSignal(0);
     const scrollLeft = createSignal(0);
-    // let container: HTMLElement;
     function index() {
       const dragD = getDragData();
       if (!dragD) {
@@ -352,13 +335,9 @@ export function buildContainer<DragData, DragType, K = any>({
                   }
                 },
                 onPointerDown(e, target) {
-                  onPointerDown(
-                    e,
-                    () => {
-                      return createDragData(e, key, target);
-                    },
-                    n.container!
-                  );
+                  onPointerDown(() => {
+                    return createDragData(e, key, target);
+                  }, n.container!);
                 },
               });
             }
@@ -424,6 +403,7 @@ export function getClickPosition(
 }
 
 export type SimpleDragData<K> = {
+  // readonly startEvent: PointerEventBase;
   readonly id: K;
   //鼠标点相对拖拽块的位置
   readonly x: number;
@@ -444,7 +424,6 @@ function alaways0() {
   return 0;
 }
 export function simpleDragContainer<
-  T,
   DragData extends SimpleDragData<K>,
   DragType,
   K = any,
@@ -478,14 +457,12 @@ export function simpleDragContainer<
     getDragX(n) {
       return n.dragX.get();
     },
-    setDragX(x, n) {
-      x.dragX.set(n);
+    setDragTo(x, n) {
+      x.dragX.set(n.pageX);
+      x.dragY.set(n.pageY);
     },
     getDragY(n) {
       return n.dragY.get();
-    },
-    setDragY(x, n) {
-      x.dragY.set(n);
     },
     getDropped(n) {
       return n.onDropEnd.get();

@@ -1,10 +1,13 @@
+import { runGlobalHolder } from 'mve-core';
 import { hookDestroy, hookTrackSignalSkipFirst } from 'mve-helper';
 import { observerAnimateSignal, subscribeEventListener } from 'wy-dom-helper';
 import {
   AnimateFrameSignalConfig,
   createSignal,
+  emptyObject,
   GetValue,
   memo,
+  StoreRef,
 } from 'wy-helper';
 export * from './canvasRender';
 export * from './absoluteRender';
@@ -38,13 +41,27 @@ export function hookAnimateSignal(
   return ret;
 }
 
+export type StorageSignalArg = {
+  storage?: Storage;
+  json?: boolean;
+};
+/**
+ * 这个必须在内部
+ * @param key
+ * @param defValue
+ * @param storage
+ * @param json
+ * @returns
+ */
 export function hookStorageSignal<V>(
   key: string,
   defValue: V,
-  storage: Storage = localStorage,
-  json = defValue && typeof defValue != 'string'
-) {
-  const value = createSignal(localStorage.getItem(key));
+  {
+    storage = localStorage,
+    json = defValue && typeof defValue != 'string',
+  }: StorageSignalArg = emptyObject
+): StoreRef<V> {
+  const value = createSignal(storage.getItem(key));
   hookDestroy(
     subscribeEventListener(window, 'storage', e => {
       if (e.storageArea == storage && e.key == key) {
@@ -53,7 +70,7 @@ export function hookStorageSignal<V>(
     })
   );
   return {
-    get: json
+    get: (json
       ? memo(() => {
           const v = value.get();
           if (v == null) {
@@ -66,13 +83,27 @@ export function hookStorageSignal<V>(
             return defValue;
           }
         })
-      : () => value.get() ?? defValue,
+      : () => value.get() ?? defValue) as GetValue<V>,
     set: json
       ? (v: V) => {
-          localStorage.setItem(key, JSON.stringify(v));
+          //因为
+          const vs = JSON.stringify(v);
+          storage.setItem(key, vs);
+          value.set(vs);
+          return v;
         }
       : (v: V) => {
-          localStorage.setItem(key, v as any);
+          storage.setItem(key, v as any);
+          value.set(v as any);
+          return v;
         },
   };
+}
+
+export function globalStorageSignal<V>(
+  key: string,
+  defValue: V,
+  args?: StorageSignalArg
+) {
+  return runGlobalHolder(() => hookStorageSignal(key, defValue, args));
 }

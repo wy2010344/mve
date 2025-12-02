@@ -11,6 +11,9 @@ import {
   memo,
   extrapolationCombine,
   extrapolationExtend,
+  tween,
+  easeFns,
+  tweenAnimationConfigNoEnd,
 } from 'wy-helper';
 import renderHeader from './renderHeader';
 import renderPageList from './renderPageList';
@@ -49,6 +52,9 @@ export function dailyRecord(arg: {
       return calendarOpenHeight() + scrollYearMonthOpenHeight();
     },
     opposite: true,
+    getForceAnimationConfig(distance, frictional) {
+      return tween(300, easeFns.circ)(distance);
+    },
     targetSnap: memoFun(function () {
       return dragSnapWithList([
         {

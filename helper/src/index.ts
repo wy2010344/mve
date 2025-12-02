@@ -7,3 +7,4 @@ export * from './getExitAnimateArray';
 export * from './virtualList';
 export * from './simpleRouter';
 export * from './bridgeExitAnimate';
+export * from './pop';

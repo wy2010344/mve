@@ -285,8 +285,8 @@ export function ComponentShowcase() {
                 children: '蓝色',
                 onClick: () =>
                   switchTheme('blue-', {
-                    primary: '#3b82f6',
-                    onPrimary: '#ffffff',
+                    colorPrimary: '#3b82f6',
+                    colorOnPrimary: '#ffffff',
                   }),
               });
 
@@ -296,8 +296,8 @@ export function ComponentShowcase() {
                 children: '绿色',
                 onClick: () =>
                   switchTheme('green-', {
-                    primary: '#10b981',
-                    onPrimary: '#ffffff',
+                    colorPrimary: '#10b981',
+                    colorOnPrimary: '#ffffff',
                   }),
               });
             },
@@ -471,10 +471,9 @@ export function ComponentShowcase() {
           className: 'space-y-6',
           children() {
             const out = promiseSignal(activeComp.showcase());
-            renderOrKey(out.get, 'type', function (type, get) {
+            renderOrKey(out.get, 'type', function (type: any, get: any) {
               if (type == 'success') {
                 get().value.default();
-              } else {
               }
             });
           },
