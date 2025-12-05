@@ -16,7 +16,7 @@ import {
   readArraySlice,
   valueOrGetToGet,
 } from 'wy-helper';
-import { setEdgeScroll } from './moveEdgeScroll';
+import { setEdgeScroll, setEdgeScrollPoint } from './moveEdgeScroll';
 import { LayoutAnimateFun, setLayoutIndex } from './layoutIndex';
 
 /**
@@ -164,17 +164,24 @@ export function buildContainer<DragData, DragType, K = any>({
     getDragData,
     getActiveContainer
   );
-  function onPointerDown(createDragData: () => DragData, container: Element) {
+  const dragPointer = createSignal<PointerEventBase | undefined>(undefined);
+  function onPointerDown(
+    e: PointerEventBase,
+    createDragData: () => DragData,
+    container: Element
+  ) {
     if (getDragData()) {
       console.log('正在拖拽中。。。');
       return;
     }
+    dragPointer.set(e);
     const d = createDragData();
     setDragData(d);
     setActiveContainer(d, container);
     document.body.style.userSelect = 'none';
     pointerMove({
       onMove(moveE) {
+        dragPointer.set(moveE);
         setDragTo(d, moveE);
         //要从preview的上一层开始
         const dx = getMeasurePositionDiff(d, 'x');
@@ -194,6 +201,7 @@ export function buildContainer<DragData, DragType, K = any>({
       onEnd(e) {
         document.body.style.userSelect = '';
         onDragFinish(d, getAccept());
+        dragPointer.set(undefined);
       },
     });
   }
@@ -287,7 +295,7 @@ export function buildContainer<DragData, DragType, K = any>({
           scrollTop.set(div.scrollTop);
           scrollLeft.set(div.scrollLeft);
         });
-        setEdgeScroll(div, {
+        setEdgeScrollPoint(div, {
           getPoint(n, dir) {
             const dragData = getDragData();
             const diff = dragData ? getMeasurePositionDiff(dragData, dir) : 0;
@@ -296,9 +304,11 @@ export function buildContainer<DragData, DragType, K = any>({
             }
             return n.pageY + diff;
           },
-          shouldMeasure() {
+          movePoint() {
             //其实是一停止拖拽，就需要停止
-            return getTasksWithPreview().length != getList().length;
+            if (getTasksWithPreview().length != getList().length) {
+              return dragPointer.get();
+            }
           },
           direction: getDirection,
         });
@@ -335,9 +345,13 @@ export function buildContainer<DragData, DragType, K = any>({
                   }
                 },
                 onPointerDown(e, target) {
-                  onPointerDown(() => {
-                    return createDragData(e, key, target);
-                  }, n.container!);
+                  onPointerDown(
+                    e,
+                    () => {
+                      return createDragData(e, key, target);
+                    },
+                    n.container!
+                  );
                 },
               });
             }

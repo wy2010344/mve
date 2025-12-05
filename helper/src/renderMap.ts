@@ -203,14 +203,14 @@ export function renderArrayToMap<T, O, K = T>(
   getVs: GetValue<ReadArray<T>>,
   render: (key: K, et: EachTime<T>) => O,
   getKey: (v: T, i: number) => K = quote as any,
-  arg: RenderForEachArg = emptyObject
+  arg: RenderForEachArg<K> = emptyObject
 ): GetValue<RMap<K, GetValue<O>>> {
-  const createMap = arg.createMap || normalMapCreater;
+  const createMap = arg.createMap || (normalMapCreater as <V>() => RMap<K, V>);
   let gets: RMap<K, GetValue<O>>;
   const getSignal = renderForEach<T, K, O>(
     function (callback) {
       const vs = getVs();
-      gets = createMap<K, GetValue<O>>();
+      gets = createMap<GetValue<O>>();
       for (let i = 0; i < vs.length; i++) {
         const v = vs[i];
         const key = getKey(v, i);
@@ -231,7 +231,7 @@ export function renderArrayKey<T, K>(
   getVs: GetValue<ReadArray<T>>,
   getKey: (v: T, i: number) => K,
   render: (getValue: GetValue<T>, getIndex: GetValue<number>, key: K) => void,
-  createMap?: <K, V>() => RMap<K, V>
+  createMap?: <V>() => RMap<K, V>
 ) {
   renderForEach<T, K, void>(
     function (callback) {

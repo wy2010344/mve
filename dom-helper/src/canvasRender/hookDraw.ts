@@ -1,5 +1,5 @@
 import {
-  AppendList,
+  createAppendList,
   hookAddDestroy,
   hookAddResult,
   hookCurrentParent,
@@ -55,7 +55,7 @@ export type CMNode = NodeParent & {
 
 class CNode implements CMNode {
   readonly ext: Record<string, any>;
-  private appendList = new AppendList<CNode, CNode>(this, list => {
+  private appendList = createAppendList<CNode, CNode>(this, list => {
     list.forEach((row, index) => {
       row._index = index;
     });
@@ -155,7 +155,7 @@ export type CanvasMouseEvent<T> = {
 function doToEvent(
   _ctx: CanvasRenderingContext2D,
   original: any,
-  children: CNode[],
+  children: readonly CNode[],
   x: number,
   y: number,
   cs: CanvasMouseEvent<undefined>[],
@@ -232,7 +232,7 @@ function doToEvent(
 function doEvent(
   _ctx: CanvasRenderingContext2D,
   e: any,
-  children: CNode[],
+  children: readonly CNode[],
   x: number,
   y: number,
   captureEventKey: 'onClickCapture',
@@ -317,7 +317,7 @@ export function renderCanvas(
       return 0;
     },
   };
-  const appendList = new AppendList<CNode, NodeParent>(rootParent, list => {
+  const appendList = createAppendList<CNode, NodeParent>(rootParent, list => {
     list.forEach((row, index) => {
       row._index = index;
     });
@@ -326,7 +326,7 @@ export function renderCanvas(
   const getChildren = appendList.target;
   rootParent.children = getChildren;
   let _ctx: CanvasRenderingContext2D;
-  let _children: CNode[];
+  let _children: readonly CNode[];
   mouseEvents.forEach(me => {
     canvas.addEventListener(me.name as 'click', e => {
       doEvent(
@@ -360,7 +360,7 @@ export function renderCanvas(
     mHeight.get();
     const beforeCtx = m._mve_canvas_render_ctx;
     m._mve_canvas_render_ctx = ctx;
-    function draw(children: CNode[]) {
+    function draw(children: readonly CNode[]) {
       children.forEach(child => {
         child.didDraw = false;
         if (child.configure.skipDraw?.()) {

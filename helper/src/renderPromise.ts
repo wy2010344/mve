@@ -1,20 +1,28 @@
 import {
+  AbortPromiseResult,
   AutoLoadMoreCore,
   batchSignalEnd,
   Compare,
+  createLateSignal,
   createSignal,
+  emptyArray,
+  emptyObject,
   FalseType,
   GetValue,
+  OneSetStoreRef,
   PromiseResult,
+  Quote,
   signalSerialAbortPromise,
   signalSerialAbortPromiseLoadMore,
+  StoreRef,
 } from 'wy-helper';
 import { hookDestroy } from './hookTrackSignal';
 
 export function hookPromiseSignal<T>(
-  getPromise: GetValue<GetValue<Promise<T>> | FalseType>
+  getPromise: GetValue<GetValue<Promise<T>> | FalseType>,
+  signal?: OneSetStoreRef<AbortPromiseResult<T> | undefined>
 ) {
-  const { destroy, ...args } = signalSerialAbortPromise(getPromise);
+  const { destroy, ...args } = signalSerialAbortPromise(getPromise, signal);
   hookDestroy(destroy);
   return args;
 }
@@ -27,21 +35,35 @@ export function hookPromiseSignalLoadMore<T, K, M = {}>(
       }
     | FalseType
   >,
-  equals?: Compare<T>
+  arg?: {
+    equals?: Compare<T>;
+    signal?: OneSetStoreRef<
+      AbortPromiseResult<AutoLoadMoreCore<T, K> & M> | undefined
+    >;
+  }
 ) {
   const { destroy, ...args } = signalSerialAbortPromiseLoadMore(
     getPromise,
-    equals
+    arg
   );
   hookDestroy(destroy);
   return args;
 }
 
-export function promiseSignal<T>(promise: Promise<T>, flush?: boolean) {
-  const signal = createSignal<PromiseResult<T> | undefined>(undefined);
+export function promiseSignal<T>(
+  promise: Promise<T>,
+  {
+    flush,
+    signal = createLateSignal<PromiseResult<T> | undefined>(undefined),
+  }: {
+    flush?: boolean;
+    signal?: OneSetStoreRef<PromiseResult<T> | undefined>;
+  } = emptyObject
+) {
+  const setSignal = signal.getOnlySet();
   promise
     .then(value => {
-      signal.set({
+      setSignal({
         type: 'success',
         promise,
         value,
@@ -51,7 +73,7 @@ export function promiseSignal<T>(promise: Promise<T>, flush?: boolean) {
       }
     })
     .catch(err => {
-      signal.set({
+      setSignal({
         type: 'error',
         promise,
         value: err,
@@ -60,5 +82,19 @@ export function promiseSignal<T>(promise: Promise<T>, flush?: boolean) {
         batchSignalEnd();
       }
     });
-  return signal;
+
+  return {
+    get: signal.get,
+    reduceSet(n: Quote<T>) {
+      const o = signal.get();
+      if (o?.type == 'success') {
+        setSignal({
+          ...o,
+          value: n(o.value),
+        });
+        return true;
+      }
+      return false;
+    },
+  };
 }

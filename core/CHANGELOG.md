@@ -1,5 +1,16 @@
 # mve-core
 
+## 4.0.0
+
+### Minor Changes
+
+- little change for performance
+
+### Patch Changes
+
+- Updated dependencies []:
+  - wy-helper@1.1.0
+
 ## 3.0.1
 
 ### Patch Changes

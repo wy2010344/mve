@@ -1,4 +1,4 @@
-import { addTrackEffect, hookTrackAttr } from 'mve-core';
+import { addTrackEffect, CollectObject, hookTrackAttr } from 'mve-core';
 import {
   AlignSelfFun,
   createLayoutNode,
@@ -14,7 +14,7 @@ import {
 type XNode = {
   _layout: any;
   parent?: XNode;
-  _children?(): XNode[];
+  _children?: CollectObject<any, any>;
 };
 
 export type ThreeKey = PointKey | 'z';
@@ -53,7 +53,7 @@ const config: LayoutConfig<XNode, ThreeKey> = {
     return m.parent?._layout;
   },
   getChildren(m): readonly XNode[] {
-    return m._children?.() || emptyArray;
+    return m._children?.target() || emptyArray;
   },
 };
 

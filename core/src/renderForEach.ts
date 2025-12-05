@@ -16,9 +16,9 @@ import { StateHolder } from './stateHolder';
 
 export function cloneMap<K, T>(
   map: RMap<K, T[]>,
-  creater: <K, V>() => RMap<K, V>
+  creater: <V>() => RMap<K, V>
 ) {
-  const newMap = creater<K, T[]>();
+  const newMap = creater<T[]>();
   map.forEach(function (v, k) {
     newMap.set(k, v.slice());
   });
@@ -31,7 +31,7 @@ export interface EachTime<T> {
 }
 class EachTimeI<T, K, O> implements EachTime<T> {
   constructor(
-    arg: RenderForEachArg,
+    arg: RenderForEachArg<K>,
     private createSignal: GetValue<any>,
     private it: EachValue<T, K, O>
   ) {
@@ -55,7 +55,7 @@ class EachTimeI<T, K, O> implements EachTime<T> {
 class EachValue<T, K, O> {
   constructor(
     readonly key: K,
-    readonly arg: RenderForEachArg,
+    readonly arg: RenderForEachArg<K>,
     readonly creater: Creater<T, K, O>,
     readonly createSignal: MemoFun<RMap<K, EachValue<T, K, O>[]>>,
     private stateHolder: StateHolder
@@ -88,11 +88,11 @@ class EachValue<T, K, O> {
 }
 
 type Creater<T, K, O> = (key: K, eachTime: EachTime<T>) => O;
-export type RenderForEachArg = {
+export type RenderForEachArg<K> = {
   bindIndex?: any;
   bindValue?: any;
   bindOut?: any;
-  createMap?: <K, V>() => RMap<K, V>;
+  createMap?: <V>() => RMap<K, V>;
   duplicateInfo?: 'ignore' | 'warn' | 'throw';
 };
 export class DuplicateError extends Error {
@@ -106,11 +106,11 @@ export class DuplicateError extends Error {
 export function renderForEach<T, K = T, O = void>(
   forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
   creater: Creater<T, K, O>,
-  arg: RenderForEachArg = emptyObject
+  arg: RenderForEachArg<K> = emptyObject
 ) {
   const duplicateInfo = arg.duplicateInfo ?? 'warn';
-  const createMap: <K, V>() => RMap<K, V> = arg.createMap || normalMapCreater;
-  let cacheMap = createMap<K, EachValue<T, K, O>[]>();
+  const createMap: <V>() => RMap<K, V> = arg.createMap || normalMapCreater;
+  let cacheMap = createMap<EachValue<T, K, O>[]>();
   let oldMap!: RMap<K, EachValue<T, K, O>[]>;
   let newMap!: RMap<K, EachValue<T, K, O>[]>;
   const thisTimeAdd: EachValue<T, K, O>[] = [];

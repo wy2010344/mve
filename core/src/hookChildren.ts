@@ -14,6 +14,8 @@ import {
   collectSignal,
   diffMove,
   RenderChildrenOperante,
+  DiffMoveFun,
+  ReadSet,
 } from 'wy-helper';
 import {
   createContext,
@@ -100,10 +102,38 @@ function getRenderChildrenList<T>(list: HookChild<T>[], after: SetValue<T[]>) {
   return get;
 }
 
+function purifySet<T>(children: HookChild<T>[], list: Set<T>) {
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (typeof child == 'function') {
+      purifySet((child as any)(), list);
+    } else {
+      list.add(child);
+    }
+  }
+}
+
+function getRenderChildrenSet<T>(
+  list: HookChild<T>[],
+  after: SetValue<Set<T>>
+) {
+  const get = memo(function () {
+    objectFreeze(list);
+    const newList = new Set<T>();
+    purifySet(list, newList);
+    return newList;
+  }, after);
+  return get;
+}
+
+export interface CollectObject<N, F> {
+  collect<T = void>(fun: (n: N) => T): T;
+  target: GetValue<F>;
+}
 /**
  * 这个可以在canvas中实践
  */
-export class AppendList<T, N> {
+class AppendList<T, N> implements CollectObject<N, readonly T[]> {
   private list: HookChild<T>[] = [];
   constructor(
     public readonly node: N,
@@ -111,9 +141,7 @@ export class AppendList<T, N> {
   ) {
     this.target = getRenderChildrenList(this.list, this.after);
   }
-
-  readonly target: MemoFun<T[]>;
-
+  readonly target;
   collect<T = void>(fun: (n: N) => T) {
     const beforeList = hookAlterChildren(this.list);
     const o = renderStateHolder(() => {
@@ -125,64 +153,97 @@ export class AppendList<T, N> {
   }
 }
 
+export function createAppendList<T, N>(
+  node: N,
+  after?: SetValue<readonly T[]>
+): CollectObject<N, readonly T[]> {
+  return new AppendList(node, after);
+}
+
+export class AppendSet<T, N> implements CollectObject<N, ReadSet<T>> {
+  private list: HookChild<T>[] = [];
+  constructor(
+    public readonly node: N,
+    private readonly after: SetValue<Set<T>> = emptyFun
+  ) {
+    this.target = getRenderChildrenSet(this.list, this.after);
+  }
+  readonly target;
+  collect<T = void>(fun: (n: N) => T) {
+    const beforeList = hookAlterChildren(this.list);
+    const o = renderStateHolder(() => {
+      parentCtx.provide(this.node);
+      return fun(this.node);
+    });
+    hookAlterChildren(beforeList);
+    return o;
+  }
+}
+
+export function createAppendSet<T, N>(
+  node: N,
+  after?: SetValue<ReadSet<T>>
+): CollectObject<N, ReadSet<T>> {
+  return new AppendSet(node, after);
+}
+
 const parentCtx = createContext<any>(undefined!);
 
 export function hookCurrentParent<T>() {
   return parentCtx.consume() as T;
 }
 
-export function createRenderChildren<T>(arg: RenderChildrenOperante<T>) {
+export function createRenderChildren<T, F>(
+  move: DiffMoveFun<T, F>,
+  createCollect: (p: T) => CollectObject<T, F>
+) {
   return {
     renderPortal(pNode: T, fun: SetValue<T>) {
-      const list = storeRef<T[]>(emptyArray as T[]);
+      const list = storeRef<F>(move.empty);
       const addDestroy = hookAddDestroy();
-      const appendList = new AppendList(pNode);
+      const appendList = createCollect(pNode);
       appendList.collect(fun);
-      hookChangeChildren(pNode, appendList.target, arg, list);
+      hookChangeChildren(pNode, appendList.target, move, list);
       addDestroy(() => {
         addEffect(() => {
-          list.get().forEach(function (node) {
-            arg.removeChild(pNode, node);
-          });
-          list.get().length = 0;
-          list.set(emptyArray);
+          move.clear(pNode, list.get());
+          list.set(move.empty);
         }, -2);
       });
       return appendList;
     },
     renderChildren(node: T, fun: SetValue<T>) {
-      const appendList = new AppendList(node);
+      const appendList = createCollect(node);
       appendList.collect(fun);
-      hookChangeChildren(node, appendList.target, arg);
+      hookChangeChildren(node, appendList.target, move);
       return appendList;
     },
   };
 }
 
-function hookChangeChildren<Node>(
+function hookChangeChildren<Node, F>(
   pNode: Node,
-  getChildren: GetValue<readonly Node[]>,
-  arg: // lastChild,
-  RenderChildrenOperante<Node>,
-  listRef?: StoreRef<readonly Node[]>
+  getChildren: GetValue<F>,
+  move: DiffMoveFun<Node, F>,
+  listRef?: StoreRef<F>
 ) {
   const autoClear = !listRef;
-  listRef = listRef || storeRef<readonly Node[]>(emptyArray);
+  listRef = listRef || storeRef<F>(move.empty);
   const isDestroyed = hookIsDestroyed();
   const effect: {
     (): void;
-    newList: readonly Node[];
+    newList: F;
   } = function () {
     if (isDestroyed()) {
       if (autoClear) {
-        listRef.set(emptyArray);
+        listRef.set(move.empty);
       }
       return;
     }
     const newList = effect.newList;
     //在-2时进行布局的重新整理
     const oldList = listRef.get();
-    diffMove(arg, pNode, oldList, newList);
+    move.move(pNode, oldList, newList);
     listRef.set(newList);
   } as any;
   addTrackEffect(

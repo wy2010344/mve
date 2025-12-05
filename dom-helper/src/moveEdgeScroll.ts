@@ -1,8 +1,9 @@
-import { hookTrackSignal } from 'mve-helper';
+import { hookDestroy, hookTrackSignal } from 'mve-helper';
 import { moveEdgeScroll, subscribeEventListener } from 'wy-dom-helper';
 import {
   EdgeScrollConfig,
   GetValue,
+  PagePoint,
   PointKey,
   ValueOrGet,
   valueOrGetToGet,
@@ -56,6 +57,48 @@ export function setEdgeScroll(
         mes?.destroy();
         mes = undefined;
       };
+    }
+  });
+}
+
+export function setEdgeScrollPoint<T extends PagePoint>(
+  container: HTMLElement,
+  {
+    getPoint,
+    movePoint,
+    direction,
+    getSpeed,
+    config,
+  }: {
+    getPoint?(n: T, dir: PointKey): number;
+    movePoint: GetValue<T | void>;
+    direction: ValueOrGet<PointKey>;
+    getSpeed?(n: number): number;
+    config?: EdgeScrollConfig;
+  }
+) {
+  let mes: ReturnType<typeof moveEdgeScroll> | undefined = undefined;
+  const getDirection = valueOrGetToGet(direction);
+  hookDestroy(() => {
+    mes?.destroy();
+    mes = undefined;
+  });
+  hookTrackSignal(movePoint, function (e) {
+    if (e) {
+      if (mes) {
+        mes.changePoint(e);
+      } else {
+        mes = moveEdgeScroll(container, {
+          point: e,
+          config,
+          getPoint,
+          direction: getDirection,
+          getSpeed,
+        });
+      }
+    } else {
+      mes?.destroy();
+      mes = undefined;
     }
   });
 }
