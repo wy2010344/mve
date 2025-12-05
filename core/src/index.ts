@@ -53,12 +53,12 @@ export function renderStateHolder<T>(fun: GetValue<T>) {
   return o;
 }
 
-// export function renderSubOps(fun: EmptyFun) {
-//   const children: any[] | undefined = [];
-//   const beforeChildren = hookAlterChildren(children);
-//   fun();
-//   hookAlterChildren(beforeChildren);
-//   return function () {
-//     return children;
-//   };
-// }
+export function renderSubOps(fun: EmptyFun) {
+  const children: any[] | undefined = [];
+  const beforeChildren = hookAlterChildren(children);
+  fun();
+  hookAlterChildren(beforeChildren);
+  return function () {
+    return children;
+  };
+}
