@@ -118,6 +118,7 @@ export function measureMaxScroll(direction: PointKey) {
       ob.observe(container);
       ob.observe(content);
       hookDestroy(() => {
+        inited = false;
         ob.disconnect();
       });
     },

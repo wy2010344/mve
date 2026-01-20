@@ -11,6 +11,7 @@
   "author": "wy2010344",
   "license": "MIT",
   "files": [
+    "src",
     "dist"
   ],
   "main": "./dist/index.js",

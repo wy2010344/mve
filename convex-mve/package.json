@@ -1,0 +1,31 @@
+{
+  "name": "convex-mve",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "A simple example library built by tsdown",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "convex": ">=1.24.0",
+    "mve-core": "workspace:*",
+    "mve-helper": "workspace:*",
+    "wy-dom-helper": "workspace:*",
+    "wy-helper": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "devDependencies": {
+    "tsdown": "^0.17.0"
+  },
+  "packageManager": "pnpm@10.18.2+sha512.9fb969fa749b3ade6035e0f109f0b8a60b5d08a1a87fdf72e337da90dcc93336e2280ca4e44f2358a649b83c17959e9993e777c2080879f3801e6f0d999ad3dd"
+}
