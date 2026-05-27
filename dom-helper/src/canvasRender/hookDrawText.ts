@@ -19,6 +19,7 @@ import {
   OCanvasTextDrawingStyles,
   MeasuredTextWrapOut,
   setDrawingStyle,
+  makeCurrentDefaultFont,
 } from 'wy-dom-helper/canvas';
 import { CMNode, getOneCtx } from './hookDraw';
 import { DrawArgRect, DrawRectConfig, hookDrawRect } from './hookDrawRect';
@@ -35,26 +36,12 @@ export type DrawTextConfig = Omit<
 > & {
   text: string;
 };
-
-let currentDefaultFont: CSSStyleDeclaration = undefined as any;
-
 export type MeasuredTextOut = DrawTextConfig & {
   textBaseline?: CanvasTextBaseline;
   measure: TextMetrics;
   height: number;
   lineDiffStart: number;
 };
-function makeCurrentDefaultFont(out: any) {
-  if (!currentDefaultFont) {
-    currentDefaultFont = getComputedStyle(document.body);
-  }
-  const def = currentDefaultFont;
-  out.fontFamily = out.fontFamily || def.fontFamily;
-  out.fontSize = out.fontSize || def.fontSize;
-  out.fontStyle = out.fontStyle || def.fontStyle;
-  out.fontWeight = out.fontWeight || def.fontWeight;
-}
-type DrawTextOut = Omit<DrawTextExt, 'y' | 'x'>;
 export type DrawRectText = LayoutNode<CMNode, keyof Point<number>> & {
   measureOut(): MeasuredTextOut;
 };
@@ -62,7 +49,7 @@ export type DrawRectText = LayoutNode<CMNode, keyof Point<number>> & {
 /**
  * 宽度使用自容器的宽度
  */
-export class CtxTextWrapHelper {
+class CtxTextWrapHelper {
   rect!: LayoutNode<CMNode, keyof Point<number>>;
   readonly getConfig: GetValue<TextWrapConfig>;
   /**
@@ -112,7 +99,7 @@ type Glyph = {
   w: number;
 };
 
-export class DrawTextWrapWithSelect {
+class DrawTextWrapWithSelect {
   readonly selectStart: GetValue<number>;
   readonly selectEnd: GetValue<number>;
   readonly memoGraphs: GetValue<{

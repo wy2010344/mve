@@ -90,10 +90,6 @@ export interface LocationState {
   search: ReadURLSearchParam;
 }
 
-export function currentHref() {
-  return location.hash.slice(1);
-}
-
 export function fLink(
   props: FDomAttributes<'a'> & {
     replace?: boolean;

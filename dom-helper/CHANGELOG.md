@@ -1,5 +1,31 @@
 # mve-dom-helper
 
+## 4.0.2
+
+### Patch Changes
+
+- version update
+
+- Updated dependencies []:
+  - mve-core@4.0.2
+  - mve-dom@4.0.2
+  - mve-helper@4.0.2
+  - wy-dom-helper@2.0.2
+  - wy-helper@1.1.2
+
+## 4.0.1
+
+### Patch Changes
+
+- update
+
+- Updated dependencies []:
+  - mve-core@4.0.1
+  - mve-dom@4.0.1
+  - mve-helper@4.0.1
+  - wy-dom-helper@2.0.1
+  - wy-helper@1.1.1
+
 ## 4.0.0
 
 ### Minor Changes

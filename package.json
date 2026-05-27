@@ -14,16 +14,16 @@
     "build": "cd core && pnpm run build && cd ../dom && pnpm run build && cd ../helper && pnpm run build && cd ../dom-helper && pnpm run build && cd ../daisy-mobile-helper && pnpm run build"
   },
   "devDependencies": {
-    "commitizen": "^4.3.1",
-    "cz-conventional-changelog": "^3.3.0",
-    "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.5.2",
+    "commitizen": "catalog:",
+    "cz-conventional-changelog": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
     "@repo/eslint-config": "workspace:*",
     "@repo/prettier-config": "workspace:*",
-    "eslint": "^9.37.0",
-    "prettier": "^3.6.2"
+    "eslint": "catalog:",
+    "prettier": "catalog:"
   },
   "config": {
     "commitizen": {

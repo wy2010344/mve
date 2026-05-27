@@ -1,5 +1,6 @@
 import { emptyFun, EmptyFun, GetValue } from 'wy-helper';
 import { renderArray, renderArrayKey } from './renderMap';
+import { renderForEach } from 'mve-core';
 
 export function renderIfP(
   get: any,
@@ -45,6 +46,31 @@ export function renderOneP<K>(get: GetValue<K> | K, render: (v: K) => void) {
 }
 export function renderOne<K>(get: GetValue<K>, render: (v: K) => void) {
   renderArray(() => [get()], render);
+}
+
+export function renderOkeKeyGet<T, K, M = void>(
+  get: GetValue<T>,
+  getKey: (v: T) => K,
+  render: (v: K, get: GetValue<T>) => M
+) {
+  let getO: GetValue<M>;
+  const getSignal = renderForEach<T, K, M>(
+    function (callback) {
+      const value = get();
+      getO = callback(getKey(value), value);
+    },
+    function (key, et) {
+      return render(key, et.getValue);
+    },
+    {
+      bindOut: true,
+      bindValue: true,
+    }
+  );
+  return function () {
+    getSignal();
+    return getO();
+  };
 }
 
 export function renderOneKey<T, K>(

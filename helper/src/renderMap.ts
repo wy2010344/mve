@@ -3,6 +3,7 @@ import {
   arrayEqual,
   arrayNotEqualOrOne,
   asLazy,
+  BaseRMap,
   Compare,
   emptyArray,
   emptyObject,
@@ -204,9 +205,9 @@ export function renderArrayToMap<T, O, K = T>(
   render: (key: K, et: EachTime<T>) => O,
   getKey: (v: T, i: number) => K = quote as any,
   arg: RenderForEachArg<K> = emptyObject
-): GetValue<RMap<K, GetValue<O>>> {
+): GetValue<BaseRMap<K, GetValue<O>>> {
   const createMap = arg.createMap || (normalMapCreater as <V>() => RMap<K, V>);
-  let gets: RMap<K, GetValue<O>>;
+  let gets: BaseRMap<K, GetValue<O>>;
   const getSignal = renderForEach<T, K, O>(
     function (callback) {
       const vs = getVs();
@@ -281,6 +282,6 @@ export function renderArrayToArray<T, O>(
   );
   return function () {
     getSignal();
-    return gets.flatMap(run);
+    return gets.map(run);
   };
 }

@@ -12,7 +12,7 @@ import {
 } from 'mve-helper';
 import { routerProvide } from 'mve-dom-helper/history';
 import { createBrowserHistory } from 'history';
-import { renderPop } from 'mve-dom-helper';
+import { renderPop } from 'mve-helper';
 import { gContext, ThemeType, Notification } from './pages/gContext';
 import { createSignal, memo } from 'wy-helper';
 import renderNotification from './pages/render-notification';

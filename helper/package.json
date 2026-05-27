@@ -1,6 +1,6 @@
 {
   "name": "mve-helper",
-  "version": "4.0.0",
+  "version": "4.0.2",
   "description": "Helper utilities for MVE framework",
   "keywords": [
     "mve",
@@ -10,6 +10,9 @@
   ],
   "author": "wy2010344",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
   "main": "dist/index.js",
@@ -47,12 +50,11 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/prettier-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "lint-staged": "^16.2.4",
-    "tsdown": "latest"
+    "lint-staged": "catalog:",
+    "tsdown": "catalog:"
   },
   "peerDependencies": {
     "mve-core": "workspace:*",
     "wy-helper": "workspace:*"
-  },
-  "packageManager": "pnpm@10.18.2+sha512.9fb969fa749b3ade6035e0f109f0b8a60b5d08a1a87fdf72e337da90dcc93336e2280ca4e44f2358a649b83c17959e9993e777c2080879f3801e6f0d999ad3dd"
+  }
 }

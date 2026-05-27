@@ -1,6 +1,6 @@
 import {
   GetValue,
-  RMap,
+  BaseRMap,
   normalMapCreater,
   memo,
   MemoFun,
@@ -15,8 +15,8 @@ import {
 import { StateHolder } from './stateHolder';
 
 export function cloneMap<K, T>(
-  map: RMap<K, T[]>,
-  creater: <V>() => RMap<K, V>
+  map: BaseRMap<K, T[]>,
+  creater: <V>() => BaseRMap<K, V>
 ) {
   const newMap = creater<T[]>();
   map.forEach(function (v, k) {
@@ -57,7 +57,7 @@ class EachValue<T, K, O> {
     readonly key: K,
     readonly arg: RenderForEachArg<K>,
     readonly creater: Creater<T, K, O>,
-    readonly createSignal: MemoFun<RMap<K, EachValue<T, K, O>[]>>,
+    readonly createSignal: MemoFun<BaseRMap<K, EachValue<T, K, O>[]>>,
     private stateHolder: StateHolder
   ) {
     if (arg.bindOut) {
@@ -92,7 +92,7 @@ export type RenderForEachArg<K> = {
   bindIndex?: any;
   bindValue?: any;
   bindOut?: any;
-  createMap?: <V>() => RMap<K, V>;
+  createMap?: <V>() => BaseRMap<K, V>;
   duplicateInfo?: 'ignore' | 'warn' | 'throw';
 };
 export class DuplicateError extends Error {
@@ -109,10 +109,10 @@ export function renderForEach<T, K = T, O = void>(
   arg: RenderForEachArg<K> = emptyObject
 ) {
   const duplicateInfo = arg.duplicateInfo ?? 'warn';
-  const createMap: <V>() => RMap<K, V> = arg.createMap || normalMapCreater;
+  const createMap: <V>() => BaseRMap<K, V> = arg.createMap || normalMapCreater;
   let cacheMap = createMap<EachValue<T, K, O>[]>();
-  let oldMap!: RMap<K, EachValue<T, K, O>[]>;
-  let newMap!: RMap<K, EachValue<T, K, O>[]>;
+  let oldMap!: BaseRMap<K, EachValue<T, K, O>[]>;
+  let newMap!: BaseRMap<K, EachValue<T, K, O>[]>;
   const thisTimeAdd: EachValue<T, K, O>[] = [];
   const thisChildren: EachValue<T, K, O>[] = [];
   const stateHolder = hookCurrentStateHolder();

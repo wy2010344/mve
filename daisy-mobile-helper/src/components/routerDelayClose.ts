@@ -7,7 +7,7 @@ import {
   delay as delayFun,
 } from 'wy-helper';
 import { fakeRoute } from 'mve-dom-helper';
-import { currentHref, routerConsume } from 'mve-dom-helper/history';
+import { routerConsume } from 'mve-dom-helper/history';
 export function routerDelayClose({
   afterClose = emptyFun,
   delay = 300,
@@ -28,7 +28,7 @@ export function routerDelayClose({
       await delayFun(delay);
       afterClose();
     });
-    router.push(currentHref());
+    router.push(router.location);
   }, initDelay);
   return {
     close() {
