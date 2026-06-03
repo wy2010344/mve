@@ -36,15 +36,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: latest
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
 
       - name: Install dependencies
+        run: npm ci
         working-directory: website
-        run: pnpm install
 
       - name: Build docs
         working-directory: website
