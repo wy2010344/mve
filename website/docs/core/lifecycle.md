@@ -1,14 +1,16 @@
-# 🔧 生命周期管理
+# 生命周期管理
+
+MVE 组件的主函数只执行一次（不像 React 会反复 render），因此生命周期管理集中在**构造时注册**和**销毁时清理**。
+
+## 构造与销毁
 
 ```typescript
 function TimerComponent() {
   const time = createSignal(new Date().toLocaleTimeString())
 
-  //主函数只执行一次,不像 react 在反复 render
-
-  //如果需要在构造结束后执行,可以添加 addEffect
+  // 构造完成后执行（类似于 useLayoutEffect）
   addEffect(() => {
-    //全部构造完成后执行
+    // 全部 DOM 构造完成后执行
   })
 
   // 创建定时器
@@ -16,10 +18,13 @@ function TimerComponent() {
     time.set(new Date().toLocaleTimeString())
   }, 1000)
 
-  // 注册清理函数
+  // 注册清理函数（组件销毁时自动调用）
   hookDestroy(() => {
     clearInterval(timer)
-    //如果此处要更新signal,亦需要在 addEffect 里去执行
+    // 如果需要在销毁时更新 Signal，需放在 addEffect 中
+    addEffect(() => {
+      signal.set(value)
+    })
   })
 
   fdom.div({
@@ -35,26 +40,33 @@ function TimerComponent() {
 }
 ```
 
-## 过程
+## 批量更新流程
 
 ```
-事件更新信号
-  messageChannel 异步
-  batchSignalEnd 手动立即
-    批量执行
+事件触发信号更新
+  │
+  ├─ messageChannel 异步批量
+  └─ batchSignalEnd 手动立即
 
-进入批量执行:
-  1. 执行受信号影响的监听
-    重复(a)
-  2. 执行新增加的监听
-    观察属性计算依赖了哪些信号(a)
-      1. 依赖的 memo 缓存被触发
-        根据memo列表,初始化构造组件与销毁组件(hookDestroy函数执行)
-      2. 将自身注入相应的信号中,等待信号通知
-  3. 执行effect
-    1. 更新dom子成员结构(-2)
-    2. 更新dom属性(-1)
-    3. 其它副作用
-检查是否重复执行执行
-
+进入批量执行：
+  1. 执行受信号影响的监听（trackSignal）
+     重复步骤 1 直到无新监听
+  2. 执行新增的监听（递归处理）：
+     a. 依赖的 memo 缓存被触发
+        → 根据 memo 列表初始化或销毁组件
+        → 将自身注入对应信号等待下次通知
+  3. 执行 effect（按 level 排序）：
+     - level -2: 更新 DOM 子结构
+     - level -1: 更新 DOM 属性
+     - level ≥0: 用户自定义副作用
+  4. 检查是否有新的信号变更，如有则重复
 ```
+
+`addEffect` 的 `level` 控制执行顺序：
+
+| level | 用途 |
+|-------|------|
+| -2 | 框架内部：更新子节点结构 |
+| -1 | 框架内部：更新 DOM 属性 |
+| 0 | 默认级别 |
+| >0 | 用户自定义（需在 DOM 更新后执行） |

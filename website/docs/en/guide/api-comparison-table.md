@@ -2,7 +2,7 @@
 
 Quickly find the MVE equivalents for Vue/React APIs.
 
-## 🔄 Reactive State
+## Reactive State
 
 | Feature       | Vue 3                             | React                               | MVE                           |
 | ---------- | --------------------------------- | ----------------------------------- | ----------------------------- |
@@ -11,7 +11,7 @@ Quickly find the MVE equivalents for Vue/React APIs.
 | Set Value     | `count.value = 1`                 | `setCount(1)`                       | `count.set(1)`                |
 | Computed Property   | `computed(() => count.value * 2)` | `useMemo(() => count * 2, [count])` | `memo(() => count.get() * 2)` |
 
-## 👀 Watching and Side Effects
+## Watching and Side Effects
 
 | Feature     | Vue 3                                         | React                                          | MVE                                                         |
 | -------- | --------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------- |
@@ -19,7 +19,7 @@ Quickly find the MVE equivalents for Vue/React APIs.
 | Side Effects   | `nextTick(() => {})`                          | `useEffect(() => {})`                          | `addEffect(() => {})`                                       |
 | Cleanup Resources | `onUnmounted(() => {})`                       | `useEffect(() => () => {}, [])`                | `hookDestroy(() => {})`                                     |
 
-## 🎨 Rendering
+## Rendering
 
 | Feature     | Vue 3                                       | React                                     | MVE                                                                            |
 | -------- | ------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------ |
@@ -28,7 +28,7 @@ Quickly find the MVE equivalents for Vue/React APIs.
 | Dynamic Class Names | `:class="{ active: isActive }"`             | `className={isActive ? 'active' : ''}`    | `className() { return isActive.get() ? 'active' : '' }`                        |
 | Dynamic Styles | `:style="{ color: textColor }"`             | `style={ { color: textColor }}`           | `s_color() { return textColor.get() }`                                         |
 
-## 🎣 Hooks Comparison
+## Hooks Comparison
 
 | Feature   | Vue 3                                             | React                                               | MVE                                           |
 | ------ | ------------------------------------------------- | --------------------------------------------------- | --------------------------------------------- |
@@ -39,7 +39,7 @@ Quickly find the MVE equivalents for Vue/React APIs.
 | Callback   | Not needed                                            | `const fn = useCallback(() => {}, [deps])`          | Direct function (MVE automatically optimizes)                      |
 | Context | `inject('key')`                                   | `useContext(Context)`                               | `Context.consume()`                           |
 
-## 🏗️ Component Patterns
+## Component Patterns
 
 ### Vue Component → MVE Component
 

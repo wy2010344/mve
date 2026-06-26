@@ -336,7 +336,6 @@ export function hookDrawText(
       if (args.draw) {
         const ee = e as DrawArgText;
         ee.draw = draw;
-        args.draw!(ee);
         args.draw(ee);
       } else {
         draw();

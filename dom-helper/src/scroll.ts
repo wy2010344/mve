@@ -33,6 +33,7 @@ export interface OnScrollI {
   factory?: ClampingScrollFactory;
   // nextScroll?: OnScroll
   edgeSlow?: number;
+  maxEdgeOverscroll?: number;
 
   opposite?: boolean;
 
@@ -134,6 +135,7 @@ export function getWheelDetailY(e: WheelEvent) {
 
 export class OnScroll {
   private edgeSlow: number;
+  private maxEdgeOverscroll: number;
   readonly scrollFactory: ClampingScrollFactory;
   readonly get: GetValue<number>;
   readonly onAnimation: GetValue<boolean>;
@@ -176,6 +178,7 @@ export class OnScroll {
   ) {
     this.scrollFactory = config?.factory || ClampingScrollFactory.get();
     this.edgeSlow = this.config.edgeSlow || 3;
+    this.maxEdgeOverscroll = this.config.maxEdgeOverscroll ?? 100;
     if (this.direction == 'x') {
       this.getWheelDetail = getWheelDetailX;
       this.getPage = eventGetPageX;
@@ -215,13 +218,23 @@ export class OnScroll {
     this.onAnimation = this.scroll.onAnimation;
     const that = this;
 
-    let lastTime = performance.now();
     const a = this.config.opposite ? -1 : 1;
-    this.wheelEventListener = function (e: WheelEvent) {
-      const duration = e.timeStamp - lastTime;
-      const detail = that.getWheelDetail(e) * a;
-      that.drag(detail, detail / duration);
-      lastTime = e.timeStamp;
+    this.wheelEventListener = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = that.getWheelDetail(e) * a;
+      const v = this.scroll.get();
+      const tempV = v + delta;
+      const minScroll = this.getMinScroll();
+      const maxScroll = this.getMaxScroll();
+      if (tempV < minScroll || tempV > maxScroll) {
+        if (tempV < minScroll) {
+          this.scroll.set(minScroll + this.edgeOverscroll(v, delta, minScroll));
+        } else {
+          this.scroll.set(maxScroll + this.edgeOverscroll(v, delta, maxScroll));
+        }
+      } else {
+        this.scroll.set(tempV);
+      }
     };
     /**
      * 代理问题挺多
@@ -269,6 +282,13 @@ export class OnScroll {
     return n;
   }
 
+  private edgeOverscroll(v: number, delta: number, boundary: number): number {
+    const rawOverscroll = v + delta - boundary;
+    const damped = rawOverscroll / this.edgeSlow;
+    const sign = Math.sign(damped);
+    return sign * Math.min(Math.abs(damped), this.maxEdgeOverscroll);
+  }
+
   private drag = (delta: number, velocity: number, inMove?: boolean): void => {
     const v = this.scroll.get();
     const tempV = v + delta;
@@ -284,9 +304,9 @@ export class OnScroll {
         return this.maxNextScroll.drag(tempV - maxScroll, velocity, inMove);
       }
       if (tempV < minScroll) {
-        this.scroll.set(v + delta / this.edgeSlow);
+        this.scroll.set(minScroll + this.edgeOverscroll(v, delta, minScroll));
       } else {
-        this.scroll.set(v + delta / this.edgeSlow);
+        this.scroll.set(maxScroll + this.edgeOverscroll(v, delta, maxScroll));
       }
     } else {
       this.scroll.set(tempV);

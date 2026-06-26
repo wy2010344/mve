@@ -11,6 +11,7 @@ import {
   createSignal,
   EmptyFun,
   emptyObject,
+  getGlobalThis,
   GetValue,
   PointKey,
   removeEqual,
@@ -356,7 +357,7 @@ export function renderCanvas(
   const ctx = canvas.getContext('2d')!;
   ctxs.push(ctx);
   hookTrackSignal(() => {
-    mHeight.get();
+    mWidth.get();
     mHeight.get();
     const beforeCtx = m._mve_canvas_render_ctx;
     m._mve_canvas_render_ctx = ctx;
@@ -411,7 +412,7 @@ export function renderCanvas(
   return appendList;
 }
 
-const m = globalThis as {
+const m = getGlobalThis() as {
   _mve_canvas_render_ctx?: CanvaRenderCtx;
   _mve_canvas_render_current_Node?: CNode;
 };

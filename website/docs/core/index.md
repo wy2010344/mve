@@ -1,6 +1,6 @@
-# 🔧 响应式系统
+# 响应式系统
 
-此部分在 wy-helper 里
+MVE 的响应式核心来自基础库 `wy-helper`，提供了 Signal、memo、依赖追踪等基础设施。
 
 ## createSignal 原子信号
 

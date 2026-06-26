@@ -77,9 +77,7 @@ my-mve-app/
 
 ## Configure Tailwind CSS
 
-Omitted, refer to Tailwind CSS configuration in Vite projects.
-
-Update `vite.config.ts`:
+After installing the Tailwind CSS Vite plugin, add it to `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -89,3 +87,18 @@ export default defineConfig({
   plugins: [tailwindcss()],
 });
 ```
+
+Then create `src/style.css` with Tailwind imports:
+
+```css
+@import "tailwindcss";
+@plugin "daisyui";
+```
+
+Import the stylesheet in `main.ts`:
+
+```typescript
+import './style.css'
+```
+
+> See [Tailwind CSS docs](https://tailwindcss.com/docs) and [DaisyUI docs](https://daisyui.com/docs/) for customization.

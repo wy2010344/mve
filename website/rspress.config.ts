@@ -84,6 +84,7 @@ export default defineConfig({
               text: '🔍 核心概念',
               collapsed: false,
               items: [
+                { text: '⚛️ 响应式系统', link: '/core/' },
                 { text: '🏗️ Context 系统', link: '/core/context' },
                 { text: '🔧 生命周期管理', link: '/core/lifecycle' },
                 { text: '🎨 渲染系统', link: '/core/dynamic' },
@@ -131,6 +132,25 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Core',
+            items: [
+              { text: 'Reactive System', link: '/en/core/' },
+              { text: 'Context', link: '/en/core/context' },
+              { text: 'DOM API', link: '/en/core/dom' },
+              { text: 'Lifecycle', link: '/en/core/lifecycle' },
+              { text: 'Rendering', link: '/en/core/dynamic' },
+            ],
+          },
+          {
+            text: 'Advanced',
+            items: [
+              { text: 'Animation', link: '/en/animation/' },
+              { text: 'Router', link: '/en/router' },
+              { text: 'Canvas', link: '/en/canvas' },
+              { text: 'Best Practices', link: '/en/best-practices' },
+            ],
+          },
+          {
             text: 'Language',
             items: [
               { text: '中文', link: '/' },
@@ -141,11 +161,46 @@ export default defineConfig({
         sidebar: {
           '/en/': [
             {
-              text: '🚀 Getting Started',
+              text: 'Getting Started',
               items: [
                 { text: 'Quick Start', link: '/en/guide/getting-started' },
                 { text: 'Architecture Overview', link: '/en/guide/architecture-overview' },
                 { text: 'API Comparison Table', link: '/en/guide/api-comparison-table' },
+              ],
+            },
+            {
+              text: 'Core Concepts',
+              collapsed: false,
+              items: [
+                { text: 'Reactive System', link: '/en/core/' },
+                { text: 'Context', link: '/en/core/context' },
+                { text: 'Lifecycle', link: '/en/core/lifecycle' },
+                { text: 'Rendering', link: '/en/core/dynamic' },
+                { text: 'DOM APIs', link: '/en/core/dom' },
+              ],
+            },
+            {
+              text: 'Modules',
+              collapsed: false,
+              items: [
+                { text: 'Async Signals', link: '/en/promise-signal' },
+                { text: 'Router', link: '/en/router' },
+                {
+                  text: 'Animation',
+                  link: '/en/animation/',
+                  items: [
+                    { text: 'CSS Transition', link: '/en/animation/css-transition' },
+                    { text: 'Exit Animation', link: '/en/animation/exit-animation' },
+                  ],
+                },
+                { text: 'Canvas', link: '/en/canvas' },
+              ],
+            },
+            {
+              text: 'Resources',
+              collapsed: true,
+              items: [
+                { text: 'Best Practices', link: '/en/best-practices' },
               ],
             },
           ],

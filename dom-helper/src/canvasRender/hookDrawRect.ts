@@ -1,10 +1,10 @@
 import {
   AlignSelfFun,
+  getGlobalThis,
   InstanceCallbackOrValue,
   LayoutConfig,
   Point,
   PointKey,
-  ValueOrGet,
 } from 'wy-helper';
 import { LayoutNodeConfigure, LayoutNode, createLayoutNode } from 'wy-helper';
 import {
@@ -129,7 +129,7 @@ export function hookDrawRect(n: DrawRectConfig) {
   return x;
 }
 
-const m = globalThis as unknown as {
+const m = getGlobalThis() as unknown as {
   _mve_canvas_render_current_rect: LayoutNode<CMNode, keyof Point<number>>;
 };
 

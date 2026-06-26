@@ -1,43 +1,47 @@
 # 动画
 
+MVE 提供了三种动画方案，按需选择：
+
+1. **信号值动画** — 对 Signal 数值做平滑过渡，用于驱动样式、位置等
+2. **CSS 过渡动画** — 类似 Vue 的 `<Transition>`，控制元素的进入/离开
+3. **视图切换动画** — 列表项进入/退出时的精细化动画控制
+
 ## 信号值动画
 
-主要是`wy-dom-helper`包里定义的`animateSignal(0)`
-
-调用
+`wy-dom-helper` 提供了 `animateSignal`，对数值型 Signal 做平滑过渡：
 
 ```ts
+import { animateSignal } from 'wy-dom-helper'
 
-const a=animateSignal(0)
-scale.animateTo(1,tween(200,easeFns.circ));
+const scale = animateSignal(0)
 
-```
-其中tween是表示tween动画，参数1是时间微秒，参数2是动画曲线。
-内置的有经典的tween曲线。
-此外还可以用
-```ts
-scale.animateTo(1,spring({
-  config?: {
-    /**自由振荡角频率,默认8 */
-    omega0?: number;
-    /**阻尼比:0~1~无穷,0~1是欠阻尼,即会来回,1~无穷不会来回*/
-    zta?: number;
-  };
-  /**初始速度 v0 (可选) */
-  initialVelocity?: number;
-  displacementThreshold?: number;
-  velocityThreshold?: number;   
+// 匀速过渡
+scale.animateTo(1, tween(200)) // 200ms
+
+// 缓动曲线
+scale.animateTo(1, tween(300, easeFns.circ))
+
+// 弹簧动画
+scale.animateTo(1, spring({
+  omega0: 8,        // 角频率，默认 8
+  zta: 0.4,         // 阻尼比: <1 欠阻尼(会回弹), >=1 临界/过阻尼
 }))
 ```
 
-## dom 元素动画
+驱动 DOM 元素：
 
-推荐使用`motion`库
+```ts
+fdom.div({
+  s_transform() {
+    return `scale(${scale.get()})`
+  }
+})
+```
 
-## css 过渡动画
+## CSS 过渡动画
 
-基于 CSS 的进入/退出动画,类似 vue 的`<Transition>`,`<TransitionGroup>`,主要是类定义命名结构与之类似,但 js 的 api 有一些不同.
+使用 `hookTransition` 实现类似 Vue `<Transition>` 的进入/离开动画，详见 [CSS 过渡动画](./css-transition)。
 
 ## 视图切换动画
 
-主要处理视图离场的动画,兼处理入场动画
+使用 `getExitAnimateArray` 控制列表项的进入/退出动画，详见 [视图切换动画](./exit-animation)。

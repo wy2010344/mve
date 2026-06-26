@@ -1,4 +1,4 @@
-# 🔄 常用异步信号
+# 常用异步信号
 
 ## hookPromiseSignal - 异步数据处理
 

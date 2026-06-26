@@ -1,8 +1,8 @@
 # MVE Framework Architecture Overview
 
-Based on your detailed explanation, the MVE framework architecture can be divided into the following core layers:
+The MVE framework architecture can be divided into the following core layers:
 
-## 🏗️ Architecture Layers
+## Architecture Layers
 
 ### 1. Core Reactive System (wy-helper/signal.ts)
 

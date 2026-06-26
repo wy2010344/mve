@@ -1,8 +1,8 @@
-import { EmptyFun, GetValue, SetValue, trackSignal } from 'wy-helper';
+import { EmptyFun, GetValue, SetValue, getGlobalThis } from 'wy-helper';
 import { StateHolder } from './stateHolder';
 
 const mve_global_key = 'mve_global_key';
-const gt = globalThis as any;
+const gt = getGlobalThis() as any;
 
 const mveGlobal = (gt[mve_global_key] || {}) as {
   currentChildren?: any[];

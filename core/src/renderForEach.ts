@@ -14,17 +14,6 @@ import {
 } from './cache';
 import { StateHolder } from './stateHolder';
 
-export function cloneMap<K, T>(
-  map: BaseRMap<K, T[]>,
-  creater: <V>() => BaseRMap<K, V>
-) {
-  const newMap = creater<T[]>();
-  map.forEach(function (v, k) {
-    newMap.set(k, v.slice());
-  });
-  return newMap;
-}
-
 export interface EachTime<T> {
   getIndex(): number;
   getValue(): T;
@@ -71,12 +60,12 @@ class EachValue<T, K, O> {
   getOut() {
     return this.out;
   }
-  create(createSignal: GetValue<any>) {
+  create() {
     const before = hookAlterStateHolder(this.stateHolder);
     const beforeChildren = hookAlterChildren(this.children);
     this.out = this.creater(
       this.key,
-      new EachTimeI(this.arg, createSignal, this)
+      new EachTimeI(this.arg, this.createSignal, this)
     );
     hookAlterChildren(beforeChildren);
     hookAlterStateHolder(before);
@@ -111,7 +100,6 @@ export function renderForEach<T, K = T, O = void>(
   const duplicateInfo = arg.duplicateInfo ?? 'warn';
   const createMap: <V>() => BaseRMap<K, V> = arg.createMap || normalMapCreater;
   let cacheMap = createMap<EachValue<T, K, O>[]>();
-  let oldMap!: BaseRMap<K, EachValue<T, K, O>[]>;
   let newMap!: BaseRMap<K, EachValue<T, K, O>[]>;
   const thisTimeAdd: EachValue<T, K, O>[] = [];
   const thisChildren: EachValue<T, K, O>[] = [];
@@ -121,13 +109,12 @@ export function renderForEach<T, K = T, O = void>(
   }
   const contextIndex = stateHolder.contexts.length;
   const createSignal = memo(() => {
-    oldMap = cloneMap(cacheMap, createMap);
     newMap = createMap();
     thisTimeAdd.length = 0;
     thisChildren.length = 0;
     let index = 0;
     forEach((key, value) => {
-      const holders = oldMap.get(key);
+      const holders = cacheMap.get(key);
       let x: EachValue<T, K, O>;
       if (holders?.length) {
         x = holders.shift()!;
@@ -165,7 +152,7 @@ export function renderForEach<T, K = T, O = void>(
   // })
   function afterWork() {
     //清理、销毁事件
-    oldMap.forEach(oldRemoveStateHolders);
+    cacheMap.forEach(oldRemoveStateHolders);
     //构造新的
     thisTimeAdd.forEach(thisTimeAddEach);
     //重新生成
@@ -179,7 +166,7 @@ export function renderForEach<T, K = T, O = void>(
 }
 
 function thisTimeAddEach<T, K, O>(add: EachValue<T, K, O>) {
-  add.create(add.createSignal);
+  add.create();
 }
 
 function oldRemoveStateHolders<T, K, O>(children: EachValue<T, K, O>[]) {

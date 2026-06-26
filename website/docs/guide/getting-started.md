@@ -77,9 +77,7 @@ my-mve-app/
 
 ## 配置 Tailwind CSS
 
-略,参照 tailwindcss 配置在 vite 项目中.
-
-更新 `vite.config.ts`：
+安装 Tailwind CSS Vite 插件后，在 `vite.config.ts` 中添加插件：
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -89,3 +87,18 @@ export default defineConfig({
   plugins: [tailwindcss()],
 });
 ```
+
+然后创建 `src/style.css` 引入 Tailwind：
+
+```css
+@import "tailwindcss";
+@plugin "daisyui";
+```
+
+在 `main.ts` 中导入样式：
+
+```typescript
+import './style.css'
+```
+
+> 如需自定义 Tailwind 配置，参见 [Tailwind CSS 官方文档](https://tailwindcss.com/docs)。DaisyUI 的组件用法参见 [DaisyUI 文档](https://daisyui.com/docs/)。

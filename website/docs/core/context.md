@@ -1,8 +1,8 @@
-# 🏗️ Context 系统
+# Context 系统
 
-类似于 react 的 context.
+类似于 React 的 Context，基于调用栈的上下文传递。
 
-基于调用栈的上下文传递.
+函数组件在调用时可以隐式携带上下文，子组件通过 `consume` 获取上层提供的数据，无需层层 props 传递。
 
 ```typescript
 import { createContext } from 'mve-core';
@@ -55,9 +55,8 @@ function Header() {
 
 ```
 
-显然,由于只构造一次,并不是像 react 的 context 一样动态变化参数.如何动态变化的参数,一般需要传递 signal与事件,即函数.很少有传常量值。
-
+与 React Context 不同，MVE 组件只构造一次，不会反复渲染。因此 Context 值不是"动态变化后自动通知"，而是要传递 Signal 的 getter 函数，让消费方在属性函数中按需取值。
 
 ## 其它
 
-比如同一层级注入了两个相向的context，取用是向上寻找最新的一个。
+如果在同一层级注入了两个相同 key 的 context，取用时向上寻找最近的一个。
