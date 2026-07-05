@@ -46,7 +46,7 @@ class EachValue<T, K, O> {
     readonly key: K,
     readonly arg: RenderForEachArg<K>,
     readonly creater: Creater<T, K, O>,
-    readonly createSignal: MemoFun<BaseRMap<K, EachValue<T, K, O>[]>>,
+    readonly createSignal: GetValue<any>,
     private stateHolder: StateHolder
   ) {
     if (arg.bindOut) {
@@ -99,68 +99,72 @@ export function renderForEach<T, K = T, O = void>(
 ) {
   const duplicateInfo = arg.duplicateInfo ?? 'warn';
   const createMap: <V>() => BaseRMap<K, V> = arg.createMap || normalMapCreater;
-  let cacheMap = createMap<EachValue<T, K, O>[]>();
-  let newMap!: BaseRMap<K, EachValue<T, K, O>[]>;
-  const thisTimeAdd: EachValue<T, K, O>[] = [];
-  const thisChildren: EachValue<T, K, O>[] = [];
   const stateHolder = hookCurrentStateHolder();
   if (!stateHolder) {
     throw '需要在stateHolder里面';
   }
   const contextIndex = stateHolder.contexts.length;
-  const createSignal = memo(() => {
-    newMap = createMap();
-    thisTimeAdd.length = 0;
-    thisChildren.length = 0;
-    let index = 0;
-    forEach((key, value) => {
-      const holders = cacheMap.get(key);
-      let x: EachValue<T, K, O>;
-      if (holders?.length) {
-        x = holders.shift()!;
-      } else {
-        x = new EachValue(
-          key,
-          arg,
-          creater,
-          createSignal,
-          new StateHolder(stateHolder, contextIndex)
-        );
-        thisTimeAdd.push(x);
-      }
-      x.index = index++;
-      x.value = value;
-      let newEnvs = newMap.get(key);
-      if (newEnvs) {
-        newEnvs.push(x);
-        if (duplicateInfo == 'warn') {
-          console.warn(`重复的key`, key, `出现第${newEnvs.length}次`);
-        } else if (duplicateInfo == 'throw') {
-          throw new DuplicateError(`重复的key出现第${newEnvs.length}次`, key);
+  const createSignal = memo<{
+    newMap: BaseRMap<K, EachValue<T, K, O>[]>;
+    thisChildren: EachValue<T, K, O>[];
+    thisTimeAdd: EachValue<T, K, O>[];
+    cacheMap: BaseRMap<K, EachValue<T, K, O>[]>;
+  }>(
+    old => {
+      const newMap = createMap<EachValue<T, K, O>[]>();
+      const cacheMap = old?.newMap || createMap<EachValue<T, K, O>[]>();
+
+      const thisTimeAdd: EachValue<T, K, O>[] = [];
+      const thisChildren: EachValue<T, K, O>[] = [];
+      let index = 0;
+      forEach((key, value) => {
+        const holders = cacheMap.get(key);
+        let x: EachValue<T, K, O>;
+        if (holders?.length) {
+          x = holders.shift()!;
+        } else {
+          x = new EachValue(
+            key,
+            arg,
+            creater,
+            createSignal,
+            new StateHolder(stateHolder, contextIndex)
+          );
+          thisTimeAdd.push(x);
         }
-      } else {
-        newEnvs = [x];
-      }
-      newMap.set(key, newEnvs);
-      thisChildren.push(x);
-      return x.getOut;
-    });
-    return newMap;
-  }, afterWork);
-  //  newMap => {
-  //   memoKeep(afterWork)
-  // })
-  function afterWork() {
-    //清理、销毁事件
-    cacheMap.forEach(oldRemoveStateHolders);
-    //构造新的
-    thisTimeAdd.forEach(thisTimeAddEach);
-    //重新生成
-    cacheMap = newMap;
-  }
+        x.index = index++;
+        x.value = value;
+        let newEnvs = newMap.get(key);
+        if (newEnvs) {
+          newEnvs.push(x);
+          if (duplicateInfo == 'warn') {
+            console.warn(`重复的key`, key, `出现第${newEnvs.length}次`);
+          } else if (duplicateInfo == 'throw') {
+            throw new DuplicateError(`重复的key出现第${newEnvs.length}次`, key);
+          }
+        } else {
+          newEnvs = [x];
+        }
+        newMap.set(key, newEnvs);
+        thisChildren.push(x);
+        return x.getOut;
+      });
+      return {
+        newMap,
+        thisChildren,
+        cacheMap,
+        thisTimeAdd,
+      };
+    },
+    function (it) {
+      //清理、销毁事件
+      it.cacheMap.forEach(oldRemoveStateHolders);
+      //构造新的
+      it.thisTimeAdd.forEach(thisTimeAddEach);
+    }
+  );
   hookAddResult(() => {
-    createSignal();
-    return thisChildren.flatMap(getChildren);
+    return createSignal().thisChildren.flatMap(getChildren);
   });
   return createSignal;
 }
