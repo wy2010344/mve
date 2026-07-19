@@ -15,8 +15,7 @@ import {
   GDomAttribute,
   renderGDomAttr,
 } from 'wy-dom-helper';
-import { createOrProxy ,OneOrArray} from 'wy-helper';
-import { hookAddResult } from 'mve-core';
+import { createOrProxy, OneOrArray } from 'wy-helper';
 import {
   addWillRemove,
   mergeValue,
@@ -25,10 +24,11 @@ import {
   addPlugin,
 } from './renderNode';
 import { renderChildren } from './hookChildren';
+import { hookAddResult } from 'mve-core';
 
 export type ZDomAttributes<T extends DomElementType> = {
   attrsNoObserver?: boolean;
-  attrs?(m: FDomAttribute<T>):void
+  attrs?(m: FDomAttribute<T>): void;
 } & BDomEvent<T> &
   Plugin<DomElement<T>> &
   FGetChildAttr<DomElement<T>> &
@@ -66,7 +66,7 @@ export function renderGDom<T extends DomElementType>(
 
 export type ZSvgAttributes<T extends SvgElementType> = {
   attrsNoObserver?: boolean;
-  attrs?(m: FSvgAttribute<T>):void
+  attrs?(m: FSvgAttribute<T>): void;
 } & BSvgEvent<T> &
   Plugin<SvgElement<T>> &
   FGetChildAttr<SvgElement<T>> &

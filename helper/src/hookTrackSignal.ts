@@ -1,4 +1,4 @@
-import { hookAddDestroy } from 'mve-core';
+import { hookCurrentStateHolder } from 'mve-core';
 import {
   EmptyFun,
   MemoGet,
@@ -11,8 +11,12 @@ export function hookTrackSignal<T>(get: MemoGet<T>, set?: TrackSignalSet<T>) {
   hookDestroy(trackSignal(get, set));
 }
 
+/**
+ * 对未在stateHolder也要支持，全局的。
+ * @param fun
+ */
 export function hookDestroy(fun: EmptyFun) {
-  hookAddDestroy()(fun);
+  hookCurrentStateHolder()?.addDestroy(fun);
 }
 
 export function hookTrackSignalSkipFirst<T>(

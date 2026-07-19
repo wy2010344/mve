@@ -15,7 +15,12 @@ import {
   React,
   UpdateProp,
 } from 'wy-dom-helper';
-import { hookAddResult, hookTrackAttr, OrFun } from 'mve-core';
+import {
+  hookAddResult,
+  hookCurrentStateHolder,
+  hookTrackAttr,
+  OrFun,
+} from 'mve-core';
 import { renderChildren } from './hookChildren';
 
 export type StyleProps = {

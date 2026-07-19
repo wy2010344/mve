@@ -1,47 +1,26 @@
 import { hookCurrentStateHolder } from './cache';
-import { StateHolder } from './stateHolder';
 
 export interface Context<T> {
   provide(v: T): T;
   consume(): T;
 }
 
-export function createContext<T>(v: T): Context<T> {
-  return new ContextFactory(v);
-}
-
-class ContextFactory<T> implements Context<T> {
-  constructor(public readonly defaultValue: T) {}
-
+export class ContextI<T> implements Context<T> {
+  constructor(readonly value: T) {}
   provide(v: T): T {
-    const holder = hookCurrentStateHolder()!;
-    holder.contexts.push({
-      key: this,
-      value: v,
-    });
+    const stateHolder = hookCurrentStateHolder();
+    stateHolder?.provide(this, v);
     return v;
   }
-  consume(): T {
-    const holder = hookCurrentStateHolder()!;
-    const provider = this.findProviderStateHoder(holder);
-    if (provider) {
-      return provider.value;
-    }
-    return this.defaultValue;
-  }
 
-  private findProviderStateHoder(holder: StateHolder) {
-    let begin = holder.contexts.length;
-    while (holder) {
-      const providers = holder.contexts;
-      for (let i = begin - 1; i > -1; i--) {
-        const provider = providers[i];
-        if (provider.key == this) {
-          return provider;
-        }
-      }
-      begin = holder.parentContextIndex;
-      holder = holder.parent!;
-    }
+  consume(): T {
+    const stateHolder = hookCurrentStateHolder();
+    return stateHolder?.consume(this) ?? this.value;
   }
+}
+
+export const parentContext = new ContextI<unknown>(undefined);
+
+export function createContext<T>(v: T): Context<T> {
+  return new ContextI<T>(v);
 }

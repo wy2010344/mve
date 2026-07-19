@@ -1,64 +1,26 @@
-import { batchSignalEnd, EmptyFun, GetValue } from 'wy-helper';
-import {
-  hookAlterChildren,
-  hookAlterStateHolder,
-  hookCurrentStateHolder,
-} from './cache';
-import { StateHolder } from './stateHolder';
+import { emptyObject, GetValue } from 'wy-helper';
+import { Creater, RenderForEachArg } from './state-holder';
+import { hookCurrentStateHolder } from './cache';
+import { EachTime } from './each-value';
+export type { EachTime, RenderForEachArg };
 
-export * from './renderForEach';
-export {
-  hookAddResult,
-  hookAddDestroy,
-  hookAlterChildren,
-  hookAlterStateHolder,
-  hookCurrentStateHolder,
-} from './cache';
-export { createContext } from './context';
 export type { Context } from './context';
-export * from './hookChildren';
+export { purifyList } from './value-or-get-list';
+export type { ValueOrGetList } from './value-or-get-list';
+export { createContext } from './context';
+export { renderRoot } from './target-state-holder';
+export * from './hook-children';
+export { hookCurrentStateHolder } from './cache';
+export type { StateHolder, StateHolderWithNode } from './state-holder';
 
-const globalHolder = new StateHolder();
-export function runGlobalHolder<T>(fun: () => T) {
-  const before = hookAlterStateHolder(globalHolder);
-  const o = fun();
-  hookAlterStateHolder(before);
-  return o;
+export function renderForEach<T, K = T, O = void>(
+  forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
+  creater: Creater<any, T, K, O>,
+  arg: RenderForEachArg<K> = emptyObject
+) {
+  return hookCurrentStateHolder(true).renderForEach(forEach, creater, arg);
 }
 
-export function destroyGlobalHolder() {
-  globalHolder.destroy();
-}
-
-export function render(create: EmptyFun) {
-  const stateHolder = new StateHolder(globalHolder);
-  const before = hookAlterStateHolder(stateHolder);
-  create();
-  batchSignalEnd(); // 必须放在之前
-  hookAlterStateHolder(before);
-  return function () {
-    stateHolder.removeFromParent();
-  };
-}
-
-export function hookIsDestroyed() {
-  return hookCurrentStateHolder()!.destroyed;
-}
-
-export function renderStateHolder<T>(fun: GetValue<T>) {
-  const c = hookCurrentStateHolder()!;
-  const before = hookAlterStateHolder(new StateHolder(c, c.contexts.length));
-  const o = fun();
-  hookAlterStateHolder(before);
-  return o;
-}
-
-export function renderSubOps(fun: EmptyFun) {
-  const children: any[] | undefined = [];
-  const beforeChildren = hookAlterChildren(children);
-  fun();
-  hookAlterChildren(beforeChildren);
-  return function () {
-    return children;
-  };
+export function hookAddResult(o: any) {
+  return hookCurrentStateHolder(true).addNode(o);
 }

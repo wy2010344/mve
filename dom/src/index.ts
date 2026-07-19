@@ -1,4 +1,4 @@
-import { hookAddResult, hookTrackAttr, render, renderForEach } from 'mve-core';
+import { hookAddResult, hookCurrentStateHolder, hookTrackAttr } from 'mve-core';
 import {
   EmptyFun,
   genTemplateStringS1,
@@ -17,9 +17,9 @@ export * from './attrInOne';
 export * from './hookChildren';
 
 export function createRoot(node: Node, create: EmptyFun) {
-  return render(() => {
+  return () => {
     renderPortal(node, create);
-  });
+  };
 }
 
 export function renderTextContent(value: ValueOrGet<string | number>) {
@@ -50,6 +50,7 @@ export function renderText(ts: TemplateStringsArray, ...vs: VType[]) {
     node.textContent = genTemplateStringS1(ts, vs as any);
   }
   hookAddResult(node);
+
   return node;
 }
 

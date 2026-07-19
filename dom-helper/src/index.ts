@@ -1,4 +1,3 @@
-import { runGlobalHolder } from 'mve-core';
 import { hookDestroy, hookTrackSignalSkipFirst } from 'mve-helper';
 import { observerAnimateSignal, subscribeEventListener } from 'wy-dom-helper';
 import {
@@ -105,5 +104,5 @@ export function globalStorageSignal<V>(
   defValue: V,
   args?: StorageSignalArg
 ) {
-  return runGlobalHolder(() => hookStorageSignal(key, defValue, args));
+  return hookStorageSignal(key, defValue, args);
 }

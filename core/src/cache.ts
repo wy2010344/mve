@@ -1,54 +1,26 @@
-import { EmptyFun, GetValue, SetValue, getGlobalThis } from 'wy-helper';
-import { StateHolder } from './stateHolder';
-
+import { EmptyFun, getGlobalThis } from 'wy-helper';
+import { StateHolder } from './state-holder';
 const mve_global_key = 'mve_global_key';
 const gt = getGlobalThis() as any;
 
 const mveGlobal = (gt[mve_global_key] || {}) as {
-  currentChildren?: any[];
-  stateHolder?: StateHolder;
+  stateHolder?: StateHolder<any>;
 };
 
-export function hookAlterChildren(vs?: any[]) {
-  const before = mveGlobal.currentChildren;
-  mveGlobal.currentChildren = vs;
-  return before;
-}
-
-export function hookAddResult<T>(node: T) {
-  const children = mveGlobal.currentChildren;
-  if (children) {
-    children.push(node);
-    return node;
-  } else {
-    throw '不在render执行添加到children';
-  }
-}
-
-export function hookAddDestroy() {
-  const stateHolder = mveGlobal.stateHolder;
-  if (stateHolder) {
-    return stateHolder.addDestroy;
-  } else {
-    throw '不在render中获得Destroy';
-  }
-}
-
-// export function hookDestroy(fun: EmptyFun) {
-//   const stateHolder = mveGlobal.stateHolder
-//   if (stateHolder) {
-//     return stateHolder.addDestroy(fun)
-//   } else {
-//     throw '不在render执行添加到Destroy'
-//   }
-// }
-
-export function hookAlterStateHolder(stateHolder?: StateHolder) {
+export function hookAlterStateHolder(stateHolder?: StateHolder<any>) {
   const before = mveGlobal.stateHolder;
   mveGlobal.stateHolder = stateHolder;
   return before;
 }
 
-export function hookCurrentStateHolder() {
-  return mveGlobal.stateHolder;
+export function hookCurrentStateHolder(orThrow: true): StateHolder<any>;
+export function hookCurrentStateHolder(
+  orThrow?: boolean
+): StateHolder<any> | void;
+export function hookCurrentStateHolder(orThrow?: boolean) {
+  const s = mveGlobal.stateHolder;
+  if (!s && orThrow) {
+    throw new Error('需要在StateHolder里执行');
+  }
+  return s;
 }
