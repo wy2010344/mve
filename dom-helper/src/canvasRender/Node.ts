@@ -1,16 +1,8 @@
-import { StateHolderWithNode } from 'mve-core';
-import { NodeI } from './NodeI';
-import { RectNode } from './RectNode';
-
-export enum Direction {
-  x = 'x',
-  y = 'y',
-}
-
-export const DirectionOpposite: Record<Direction, Direction> = {
-  [Direction.x]: Direction.y,
-  [Direction.y]: Direction.x,
-};
+import { StateHolder, StateHolderWithNode } from 'mve-core';
+import { type RectNode } from './RectNode';
+import { emptyArray, PointKey, ValueOrGet, valueOrGetToGet } from 'wy-helper';
+import { MouseEvent } from './MouseEvent';
+import { type LayoutNode } from './LayoutNode';
 
 export interface NodeWithPosition {
   node: Node;
@@ -19,21 +11,94 @@ export interface NodeWithPosition {
   next: NodeWithPosition | null;
 }
 
-export interface Node {
-  parent: Node | null;
-  children(): Node[];
-  index(): number;
-  position(d: Direction): number;
-  acceptHit(x: number, y: number): boolean;
+export interface NodeArg<T = Node> {
+  position?: ValueOrGet<number, T, [PointKey]>;
+  x?: ValueOrGet<number, T>;
+  y?: ValueOrGet<number, T>;
+  draw?(this: T, ctx: CanvasRenderingContext2D): void;
+  children?(this: StateHolderWithNode<Node, readonly Node[]>): void;
 
-  mouseClick(e: import('./MouseEvent').MouseEvent): void;
-  mouseClickCapture(e: import('./MouseEvent').MouseEvent): void;
-  mouseDown(e: import('./MouseEvent').MouseEvent): void;
-  mouseDownCapture(e: import('./MouseEvent').MouseEvent): void;
-  mouseUp(e: import('./MouseEvent').MouseEvent): void;
-  mouseUpCapture(e: import('./MouseEvent').MouseEvent): void;
-  draw(canvas: CanvasRenderingContext2D): void;
-  drawSelf(canvas: CanvasRenderingContext2D): void;
+  mouseClick?(this: T, e: MouseEvent): void;
+  mouseClickCapture?(this: T, e: MouseEvent): void;
+  mouseDown?(this: T, e: MouseEvent): void;
+  mouseUp?(this: T, e: MouseEvent): void;
+  mouseDownCapture?(this: T, e: MouseEvent): void;
+  mouseUpCapture?(this: T, e: MouseEvent): void;
+}
+export class Node {
+  isLayout(): this is LayoutNode {
+    return false;
+  }
+  constructor(
+    context: StateHolder<Node> | void,
+    args: NodeArg<Node>,
+    parent?: Node
+  ) {
+    this.mouseClick = args.mouseClick || this.mouseClick;
+    this.mouseClickCapture = args.mouseClickCapture || this.mouseClickCapture;
+    this.mouseDown = args.mouseDown || this.mouseDown;
+    this.mouseUp = args.mouseUp || this.mouseUp;
+    this.mouseDownCapture = args.mouseDownCapture || this.mouseDownCapture;
+    this.mouseUpCapture = args.mouseUpCapture || this.mouseUpCapture;
+
+    this.argChildren = args.children || this.argChildren;
+    this.argPosition = valueOrGetToGet(args.position, this.argPosition);
+    this.x = valueOrGetToGet(args.x, this.x);
+    this.y = valueOrGetToGet(args.y, this.y);
+    this.draw = args.draw || this.draw;
+    if (context) {
+      this.parent = context.getParent();
+      if (!this.parent) throw new Error('需要找到父节点才行');
+      this.children = context.renderListNode(
+        this,
+        collectIndex,
+        this.argChildren
+      );
+    } else {
+      this.parent = parent;
+    }
+  }
+
+  argChildren(this: StateHolderWithNode<Node, readonly Node[]>) {}
+  argPosition(d: PointKey): number {
+    return 0;
+  }
+  x() {
+    return this.argPosition('x');
+  }
+  y() {
+    return this.argPosition('y');
+  }
+  children(): readonly Node[] {
+    return emptyArray;
+  }
+  readonly parent: Node | undefined;
+
+  _index = 0;
+
+  index() {
+    this.parent?.children();
+    return this._index;
+  }
+
+  acceptHit(x: number, y: number): boolean {
+    return false;
+  }
+
+  mouseClick(e: MouseEvent): void {}
+  mouseClickCapture(e: MouseEvent): void {}
+  mouseDown(e: MouseEvent): void {}
+  mouseDownCapture(e: MouseEvent): void {}
+  mouseUp(e: MouseEvent): void {}
+  mouseUpCapture(e: MouseEvent): void {}
+  draw(canvas: CanvasRenderingContext2D): void {
+    this.children().forEach(child => {
+      canvas.save();
+      canvas.translate(child.x(), child.y());
+      child.draw(canvas);
+      canvas.restore();
+    });
+  }
 }
 
 export function hitest(
@@ -41,8 +106,8 @@ export function hitest(
   x: number,
   y: number
 ): NodeWithPosition | null {
-  const rx = x - node.position(Direction.x);
-  const ry = y - node.position(Direction.y);
+  const rx = x - node.x();
+  const ry = y - node.y();
   const children = node.children();
   for (let i = children.length - 1; i >= 0; i--) {
     const found = hitest(children[i], rx, ry);
@@ -56,21 +121,28 @@ export function hitest(
   return null;
 }
 
-export function absolutePosition(node: Node, d: Direction): number {
-  let n = node.position(d);
-  let p = node.parent;
+function position(this: Node, d: PointKey) {
+  if (d == 'x') {
+    return this.x();
+  }
+  return this.y();
+}
+
+export function absolutePosition(this: Node, d: PointKey): number {
+  let n = position.call(this, d);
+  let p = this.parent;
   while (p) {
-    n += p.position(d);
+    n += position.call(p, d);
     p = p.parent;
   }
   return n;
 }
 
-export function collectIndex(list: Node[]): void {
+export function collectIndex(list: readonly Node[]): void {
   let index = 0;
   let layoutIndex = 0;
   for (const node of list) {
-    if (node instanceof NodeI) node._index = index++;
-    if (node instanceof RectNode) node._layoutIndex = layoutIndex++;
+    node._index = index++;
+    if (node.isLayout()) node._layoutIndex = layoutIndex++;
   }
 }

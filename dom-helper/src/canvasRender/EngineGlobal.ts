@@ -12,7 +12,8 @@ export type MouseCallback = (e: GlobalMouseEvent) => void;
 export interface GlobalWheelEvent {
   x: number;
   y: number;
-  delta: number;
+  deltaX: number;
+  deltaY: number;
   destroy: EmptyFun;
 }
 

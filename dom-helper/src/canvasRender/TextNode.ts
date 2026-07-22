@@ -2,7 +2,7 @@ import { createSignal, memo } from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import { Direction, Node } from './Node';
 import { RectNode } from './RectNode';
-import { layoutSize, LayoutSize } from './layout/LayoutNode';
+import { layoutSize, LayoutSize } from './LayoutNode';
 import { MouseEvent } from './MouseEvent';
 import { absolutePosition } from './Node';
 import { ColorInt, rgba, colorToCSS } from './Draw';

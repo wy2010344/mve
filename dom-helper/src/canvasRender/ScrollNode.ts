@@ -1,14 +1,15 @@
-import { createSignal, memo, LayoutFun } from 'wy-helper';
+import { createSignal, memo, LayoutFun, PointKey } from 'wy-helper';
 import { StateHolder } from 'mve-core';
-import { Direction, Node, absolutePosition } from './Node';
-import { RectNode } from './RectNode';
+import { Node, absolutePosition } from './Node';
+import { RectNode, RectNodeArg } from './RectNode';
 import {
   LayoutSize,
   StartEnd,
   LayoutNode,
-  absoluteLayout,
-  sizeFromParent,
-} from './layout/LayoutNode';
+  outerSize,
+  innerSize,
+  paddingStart,
+} from './LayoutNode';
 import { engineGlobalContext } from './EngineGlobal';
 import { inRange } from './util';
 
@@ -29,183 +30,130 @@ export class ScrollBarCalculate {
   }
 }
 
-abstract class ContentClass extends RectNode {}
+export interface ScrollContentArg<T = ScrollContent> extends RectNodeArg<T> {}
+export class ScrollContent extends RectNode {
+  scrollNode: ScrollNode;
+  constructor(context: StateHolder<Node>, args: ScrollContentArg) {
+    super(context, args as any);
+    if (this.parent instanceof ScrollNode) {
+      this.scrollNode = this.parent;
+    } else {
+      throw new Error('父节点必须是ScrollNode');
+    }
+  }
 
+  x(): number {
+    return -this.scrollNode.getScrollX();
+  }
+  y(): number {
+    return -this.scrollNode.getScrollY();
+  }
+}
+
+export interface ScrollNodeArg<T = ScrollNode> extends RectNodeArg<T> {}
 export class ScrollNode extends RectNode {
-  private scrollX = createSignal(0);
-  private scrollY = createSignal(0);
+  signalScrollX = createSignal(0);
+  signalScrollY = createSignal(0);
 
-  scroll(direction: Direction): number {
-    return direction === Direction.x ? this.scrollX.get() : this.scrollY.get();
-  }
-
-  override layout(_d: Direction): LayoutFun<LayoutNode> {
-    return absoluteLayout();
-  }
-
-  override size(direction: Direction): LayoutSize {
-    const lp = this.layoutParent();
-    if (lp) {
-      try {
-        const v = lp.layoutValue(direction).childSize(this.layoutIndex());
-        return sizeFromParent(v, false);
-      } catch (_e) {}
-    }
-    return sizeFromParent(0, false);
-  }
-
-  contentSize(direction: Direction): number {
-    for (const child of this.children()) {
-      if (child instanceof ContentClass) {
-        return child.outerSize(direction);
-      }
-    }
-    return 0;
-  }
-
-  maxScroll(direction: Direction): number {
-    return this.contentSize(direction) - this.innerSize(direction);
-  }
+  getScrollX = this.signalScrollX.get;
+  getScrollY = this.signalScrollY.get;
+  setScrollX = this.signalScrollX.set;
+  setScrollY = this.signalScrollY.set;
 
   override draw(canvas: CanvasRenderingContext2D): void {
-    this.drawSelf(canvas);
     for (const child of this.children()) {
       canvas.save();
-      if (child instanceof ContentClass) {
+      if (child instanceof ScrollContent) {
         canvas.beginPath();
         canvas.rect(
-          this.padding(Direction.x, StartEnd.start),
-          this.padding(Direction.y, StartEnd.start),
-          this.innerSize(Direction.x),
-          this.innerSize(Direction.y)
+          this.paddingInlineStart(),
+          this.paddingBlockStart(),
+          innerSize.call(this, 'x'),
+          innerSize.call(this, 'y')
         );
         canvas.clip();
       }
-      canvas.translate(
-        child.position(Direction.x),
-        child.position(Direction.y)
-      );
+      canvas.translate(child.x(), child.y());
       child.draw(canvas);
       canvas.restore();
     }
   }
 
-  scrollBarSize(
-    direction: Direction,
-    length: number = 0
-  ): ScrollBarCalculate | null {
-    const len = length > 0 ? length : this.innerSize(direction);
-    const v = this.innerSize(direction);
-    const c = this.contentSize(direction);
-    const m = this.maxScroll(direction);
-    if (m > 0) {
-      const thumb = Math.max(20, (len * v) / c);
-      const maxOffset = len - thumb;
-      const move = (maxOffset * this.scroll(direction)) / m;
-      return new ScrollBarCalculate(thumb, move, m, maxOffset);
-    }
-    return null;
-  }
-
-  private absX(): number {
-    return absolutePosition(this, Direction.x);
-  }
-
-  private absY(): number {
-    return absolutePosition(this, Direction.y);
-  }
-
-  scrollDelta(delta: number): number {
+  scrollDelta(delta: number, d: PointKey): number {
     const next = Math.min(
-      Math.max(this.scrollY.get() + delta, 0),
-      this.maxScroll(Direction.y)
+      Math.max(getScroll.call(this, d) + delta, 0),
+      maxScroll.call(this, 'y')
     );
-    const realDelta = next - this.scrollY.get();
-    this.scrollY.set(next);
+    const realDelta = next - getScroll.call(this, d);
+    setScroll.call(this, d, next);
     return realDelta;
   }
 
-  constructor(context: StateHolder<Node>, args: Partial<ScrollNode>) {
-    super(context, args);
+  constructor(context: StateHolder<Node>, args: ScrollNodeArg) {
+    super(context, args as any);
     const engineGlobal = context.consume(engineGlobalContext)!;
     const d0 = engineGlobal.registerMouseWheel(
       (e: import('./EngineGlobal').GlobalWheelEvent) => {
         if (
           inRange(
-            this.absX() + this.innerStart(Direction.x),
+            absolutePosition.call(this, 'x') + paddingStart.call(this, 'x'),
             e.x,
-            this.innerSize(Direction.x)
+            innerSize.call(this, 'x')
           ) &&
           inRange(
-            this.absY() + this.innerStart(Direction.y),
+            absolutePosition.call(this, 'y') + paddingStart.call(this, 'y'),
             e.y,
-            this.innerSize(Direction.y)
+            innerSize.call(this, 'y')
           )
         ) {
-          this.scrollDelta(e.delta);
+          this.scrollDelta(e.deltaX, 'x');
+          this.scrollDelta(e.deltaY, 'y');
         }
       }
     );
     context.addDestroy(d0);
   }
+}
 
-  provideContentSize(_direction: Direction): LayoutSize | null {
-    return null;
+function getScroll(this: ScrollNode, d: PointKey) {
+  if (d == 'x') {
+    return this.getScrollX();
   }
-
-  contentLayout(_direction: Direction): LayoutFun<LayoutNode> {
-    return absoluteLayout();
+  return this.getScrollY();
+}
+function setScroll(this: ScrollNode, d: PointKey, v: number) {
+  if (d == 'x') {
+    return this.setScrollX(v);
   }
-
-  contentPadding(_direction: Direction, _startEnd: StartEnd): number {
-    return 0;
+  return this.setScrollY(v);
+}
+export function scrollBarSize(
+  this: ScrollNode,
+  direction: PointKey,
+  length: number = 0
+): ScrollBarCalculate | null {
+  const len = length > 0 ? length : innerSize.call(this, direction);
+  const v = innerSize.call(this, direction);
+  const c = contentSize.call(this, direction);
+  const m = maxScroll.call(this, direction);
+  if (m > 0) {
+    const thumb = Math.max(20, (len * v) / c);
+    const maxOffset = len - thumb;
+    const move = (maxOffset * getScroll.call(this, direction)) / m;
+    return new ScrollBarCalculate(thumb, move, m, maxOffset);
   }
+  return null;
+}
 
-  protected buildContentChildren(): void {}
-
-  override buildChildren(): void {
-    this.buildScrollNode();
-  }
-
-  private callTime = 0;
-
-  private buildScrollNode(): void {
-    if (this.callTime > 0) {
-      throw new Error('只允许调用一次');
+function contentSize(this: ScrollNode, direction: PointKey): number {
+  for (const child of this.children()) {
+    if (child instanceof ScrollContent) {
+      return outerSize.call(child, direction);
     }
-    this.callTime = 1;
-    const self = this;
-    const context = this.context;
-
-    // Create ContentClass as a child of this ScrollNode
-    // The ContentClass constructor calls context.renderNode, adding it as a child
-    new (class extends ContentClass {
-      override layout(direction: Direction): LayoutFun<LayoutNode> {
-        return self.contentLayout(direction);
-      }
-
-      override padding(direction: Direction, startEnd: StartEnd): number {
-        return self.contentPadding(direction, startEnd);
-      }
-
-      override position(d: Direction): number {
-        return (
-          self.innerStart(d) +
-          (d === Direction.x
-            ? -self.scroll(Direction.x)
-            : -self.scroll(Direction.y))
-        );
-      }
-
-      override size(direction: Direction): LayoutSize {
-        return (
-          self.provideContentSize(direction) ?? self.sizeFromChildren(direction)
-        );
-      }
-
-      override buildChildren(): void {
-        self.buildContentChildren();
-      }
-    })(context);
   }
+  return 0;
+}
+
+function maxScroll(this: ScrollNode, direction: PointKey): number {
+  return contentSize.call(this, direction) - innerSize.call(this, direction);
 }

@@ -1,20 +1,16 @@
 import {
   addEffect,
   EmptyFun,
-  emptyFun,
   GetValue,
-  memo,
-  objectFreeze,
   SetValue,
   StoreRef,
   storeRef,
   trackSignal,
   collectSignal,
   DiffMoveFun,
-  ReadSet,
 } from 'wy-helper';
 import { hookCurrentStateHolder } from './cache';
-import { StateHolder, StateHolderWithNode } from './state-holder';
+import { RootReturn, StateHolderWithNode } from './state-holder';
 
 export function addTrackEffect<T>(
   get: GetValue<T>,
@@ -32,7 +28,7 @@ export function addTrackEffect<T>(
 
 export function hookEffectCollect<V>(
   get: GetValue<V>,
-  set: SetValue<V>,
+  set: SetValue<V, void, any[]>,
   level = 0,
   a?: any,
   b?: any,
@@ -74,11 +70,22 @@ export function createRenderChildren<T, F>(
   move: DiffMoveFun<T, F>,
   createCollect: (
     p: T,
-    callback: (s: StateHolderWithNode<T>) => void
-  ) => GetValue<F>
+    callback: (this: StateHolderWithNode<T, F>) => void
+  ) => GetValue<F>,
+  createRoot: (
+    p: T,
+    callback: (this: StateHolderWithNode<T, F>) => void
+  ) => RootReturn<T, F>
 ) {
   return {
-    renderPortal(pNode: T, fun: (s: StateHolderWithNode<T>) => void) {
+    createRoot(node: T, fun: (this: StateHolderWithNode<T, F>) => void) {
+      const o = createRoot(node, function () {
+        fun.apply(this);
+        hookChangeChildren(node, this.target, move);
+      });
+      return o.destroy;
+    },
+    renderPortal(pNode: T, fun: (this: StateHolderWithNode<T, F>) => void) {
       const list = storeRef<F>(move.empty);
       const stateHolder = hookCurrentStateHolder(true);
       const get = createCollect(pNode, fun);
@@ -90,7 +97,7 @@ export function createRenderChildren<T, F>(
         }, -2);
       });
     },
-    renderChildren(node: T, fun: SetValue<StateHolderWithNode<T>>) {
+    renderChildren(node: T, fun: (this: StateHolderWithNode<T, F>) => void) {
       const get = createCollect(node, fun);
       hookChangeChildren(node, get, move);
     },

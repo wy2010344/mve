@@ -8,7 +8,7 @@ export type { Context } from './context';
 export { purifyList } from './value-or-get-list';
 export type { ValueOrGetList } from './value-or-get-list';
 export { createContext } from './context';
-export { renderRoot } from './target-state-holder';
+export { renderSetRoot, renderListRoot } from './target-state-holder';
 export * from './hook-children';
 export { hookCurrentStateHolder } from './cache';
 export type { StateHolder, StateHolderWithNode } from './state-holder';

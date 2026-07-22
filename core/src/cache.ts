@@ -1,4 +1,4 @@
-import { EmptyFun, getGlobalThis } from 'wy-helper';
+import { getGlobalThis } from 'wy-helper';
 import { StateHolder } from './state-holder';
 const mve_global_key = 'mve_global_key';
 const gt = getGlobalThis() as any;
@@ -6,6 +6,7 @@ const gt = getGlobalThis() as any;
 const mveGlobal = (gt[mve_global_key] || {}) as {
   stateHolder?: StateHolder<any>;
 };
+gt[mve_global_key] = mveGlobal;
 
 export function hookAlterStateHolder(stateHolder?: StateHolder<any>) {
   const before = mveGlobal.stateHolder;

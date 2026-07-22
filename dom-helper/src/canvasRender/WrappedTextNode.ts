@@ -8,7 +8,7 @@ import {
   LayoutNode,
   absoluteLayout,
   sizeFromParent,
-} from './layout/LayoutNode';
+} from './LayoutNode';
 import { MouseEvent } from './MouseEvent';
 import { ColorInt, rgba, colorToCSS } from './Draw';
 import { engineGlobalContext } from './EngineGlobal';
@@ -331,12 +331,7 @@ export class WrappedTextNode extends RectNode {
             this.fontWeight,
             this.fontSize
           );
-          canvas.fillRect(
-            leftX,
-            li * h,
-            rightX - leftX,
-            h
-          );
+          canvas.fillRect(leftX, li * h, rightX - leftX, h);
         }
       }
     }
@@ -347,11 +342,7 @@ export class WrappedTextNode extends RectNode {
       const line = lineList[li];
       const lineText = this.text.substring(line.start, line.end);
       if (lineText.length > 0) {
-        canvas.fillText(
-          lineText,
-          0,
-          li * h + this.fontSize
-        );
+        canvas.fillText(lineText, 0, li * h + this.fontSize);
       }
     }
   }

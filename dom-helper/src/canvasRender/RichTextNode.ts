@@ -2,7 +2,7 @@ import { createSignal, memo } from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import { Direction, Node, absolutePosition } from './Node';
 import { RectNode } from './RectNode';
-import { layoutSize, LayoutSize } from './layout/LayoutNode';
+import { layoutSize, LayoutSize } from './LayoutNode';
 import { MouseEvent } from './MouseEvent';
 import { ColorInt, rgba, colorToCSS } from './Draw';
 import { engineGlobalContext } from './EngineGlobal';
@@ -366,11 +366,7 @@ export class RichTextNode extends RectNode {
         if (segText.length > 0) {
           canvas.font = `${sr.fontWeight} ${sr.fontSize}px ${sr.fontFamily ?? 'sans-serif'}`;
           canvas.fillStyle = colorToCSS(sr.color);
-          canvas.fillText(
-            segText,
-            x,
-            info.y + sr.fontSize
-          );
+          canvas.fillText(segText, x, info.y + sr.fontSize);
           x += this.measureRichRange(i, segEnd);
         }
         i = segEnd;

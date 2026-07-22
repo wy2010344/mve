@@ -11,6 +11,7 @@ import {
   memo,
   MemoFun,
   normalMapCreater,
+  ReadSet,
   run,
   SetValue,
 } from 'wy-helper';
@@ -22,9 +23,12 @@ import {
   StateHolderWithNode,
 } from './state-holder';
 import { ValueOrGetList } from './value-or-get-list';
-import { TargetStateHolder } from './target-state-holder';
-import { EachValue } from './each-value';
+import {
+  ListTargetStateHolder,
+  SetTargetStateHolder,
+} from './target-state-holder';
 import { hookAlterStateHolder } from './cache';
+import { EachTime } from './each-value';
 
 // ---------------------------------------------------------------------------
 // ForEachModal
@@ -221,19 +225,77 @@ export class StateHolderI<Node> implements StateHolder<Node> {
 
   // -- renderNode -----------------------------------------------------------
 
-  renderNode(
+  renderListNode(
     node: Node,
-    after: SetValue<Node[]>,
-    callback: (holder: StateHolderWithNode<Node>) => void
-  ): GetValue<Node[]> {
+    after: SetValue<readonly Node[]>,
+    callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
+  ): GetValue<readonly Node[]> {
     this.addNode(node);
-    const child = new TargetStateHolder(node, after, callback, this);
+    const child = new ListTargetStateHolder(node, after, callback, this);
+    child.create();
+    return child.target;
+  }
+
+  renderSetNode(
+    node: Node,
+    after: SetValue<ReadSet<Node>>,
+    callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
+  ): GetValue<ReadSet<Node>> {
+    this.addNode(node);
+    const child = new SetTargetStateHolder(node, after, callback, this);
     child.create();
     return child.target;
   }
 
   getParent(): Node | undefined {
     return this.consume(parentContext) as Node | undefined;
+  }
+}
+
+export class EachValue<Node, T, K, O>
+  extends StateHolderI<Node>
+  implements EachTime<T>
+{
+  value: T = null as T;
+  index: number = 0;
+  private _out!: O;
+
+  constructor(
+    readonly getSignal: GetValue<unknown>,
+    parent: StateHolderI<Node>,
+    parentContextIndex: number,
+    private readonly _creater: Creater<Node, T, K, O>,
+    private readonly _key: K,
+    arg: RenderForEachArg<K>
+  ) {
+    super(parent, parentContextIndex);
+    if (arg.bindIndex) {
+      this.getIndex = this.getIndex.bind(this);
+    }
+    if (arg.bindOut) {
+      this.invoke = this.invoke.bind(this);
+    }
+    if (arg.bindValue) {
+      this.getValue = this.getValue.bind(this);
+    }
+  }
+
+  getValue(): T {
+    this.getSignal();
+    return this.value;
+  }
+
+  getIndex(): number {
+    this.getSignal();
+    return this.index;
+  }
+
+  invoke(): O {
+    return this._out;
+  }
+
+  override buildChildren(): void {
+    this._out = this._creater(this._key, this);
   }
 }
 

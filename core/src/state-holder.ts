@@ -1,6 +1,13 @@
-import { EmptyFun, GetValue, MemoFun, SetValue, BaseRMap } from 'wy-helper';
-import { Context, ContextI } from './context';
-import { EachTime, EachValue } from './each-value';
+import {
+  EmptyFun,
+  GetValue,
+  MemoFun,
+  SetValue,
+  BaseRMap,
+  ReadSet,
+} from 'wy-helper';
+import { Context } from './context';
+import { EachTime } from './each-value';
 
 // ---------------------------------------------------------------------------
 // 基础类型
@@ -36,15 +43,27 @@ export interface StateHolder<Node> {
     arg?: RenderForEachArg<K>
   ): MemoFun<any>;
 
-  renderNode(
+  renderListNode(
     node: Node,
-    after: SetValue<Node[]>,
-    callback: (this: StateHolderWithNode<Node>) => void
-  ): GetValue<Node[]>;
+    after: SetValue<readonly Node[]>,
+    callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
+  ): GetValue<readonly Node[]>;
+
+  renderSetNode(
+    node: Node,
+    after: SetValue<ReadSet<Node>>,
+    callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
+  ): GetValue<ReadSet<Node>>;
 
   getParent(): Node | undefined;
 }
 
-export interface StateHolderWithNode<Node> extends StateHolder<Node> {
+export interface StateHolderWithNode<Node, T> extends StateHolder<Node> {
   readonly node: Node;
+  readonly target: GetValue<T>;
+}
+
+export interface RootReturn<Node, F> {
+  destroy(): void;
+  readonly target: GetValue<F>;
 }

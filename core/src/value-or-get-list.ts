@@ -9,3 +9,16 @@ export function purifyList<T>(children: ValueOrGetList<T>[], list: T[]): void {
     }
   }
 }
+
+export function purifySet<T>(
+  children: ValueOrGetList<T>[],
+  list: Set<T>
+): void {
+  for (const child of children) {
+    if (typeof child == 'function') {
+      purifySet((child as () => ValueOrGetList<T>[])(), list);
+    } else {
+      list.add(child);
+    }
+  }
+}

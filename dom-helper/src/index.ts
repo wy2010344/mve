@@ -31,6 +31,7 @@ export * from './renderNode';
 export * from './button';
 export * from './layoutIndex';
 export * from './pointerDrag';
+export * from './hookMeasureSize';
 export function hookAnimateSignal(
   get: GetValue<number>,
   config?: AnimateFrameSignalConfig

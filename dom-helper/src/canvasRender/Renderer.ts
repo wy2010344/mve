@@ -1,150 +1,36 @@
+import { collectSignal, EmptyFun } from 'wy-helper';
+import { renderListRoot } from 'mve-core';
+import { Node, collectIndex, hitest, NodeWithPosition } from './Node';
+import { LayoutNode, LayoutNodeArg, outerSize } from './LayoutNode';
 import {
-  absoluteLayoutFun,
-  AlignSelfFun,
-  EmptyFun,
-  GetValue,
-  Layout,
-  LayoutFun,
-  memo,
-} from 'wy-helper';
-import { StateHolder, renderRoot } from 'mve-core';
-import {
-  Node,
-  Direction,
-  collectIndex,
-  hitest,
-  NodeWithPosition,
-} from './Node';
-import {
-  LayoutNode,
-  StartEnd,
-  LayoutSize,
-  layoutSize,
-  commonLayoutNode,
-  createLayout,
-} from './layout/LayoutNode';
-import {
-  EngineGlobal,
   MouseCallback,
   WheelCallback,
   engineGlobalContext,
 } from './EngineGlobal';
 import { MouseEvent } from './MouseEvent';
-import { rgba } from './Draw';
-import { RectNode } from './RectNode';
 
 function register<K>(map: Map<K, EmptyFun>, key: K): EmptyFun {
   const destroy: EmptyFun = () => map.delete(key);
   map.set(key, destroy);
   return destroy;
 }
-
-export class Renderer implements Node, LayoutNode {
-  outerSize(d: Direction): number {
-    return commonLayoutNode.outerSize(this, d);
-  }
-  innerSize(d: Direction): number {
-    return commonLayoutNode.innerSize(this, d);
-  }
-  constructor(arg: Partial<Renderer>) {
-    Object.assign(this, arg);
-    this.state = renderRoot(
-      this,
-      collectIndex as any,
-      (holder: StateHolder<Node>) => {
-        this._holder = holder;
-        holder.provide(engineGlobalContext, {
-          registerMouseMove: cb => register(this.moveList, cb),
-          registerMouseUp: cb => register(this.upList, cb),
-          registerMouseWheel: cb => register(this.wheelList, cb),
-        } as EngineGlobal);
-        this.buildChildren();
-      }
-    );
+export interface RendererArgs<T = Renderer> extends LayoutNodeArg<T> {
+  frameCallback(): void;
+}
+export class Renderer extends LayoutNode {
+  constructor(args: RendererArgs) {
+    super(undefined, args as any);
+    this.frameCallback = args.frameCallback;
+    const that = this;
+    this.state = renderListRoot(this, collectIndex, function () {
+      this.provide(engineGlobalContext, {
+        registerMouseMove: cb => register(that.moveList, cb),
+        registerMouseUp: cb => register(that.upList, cb),
+        registerMouseWheel: cb => register(that.wheelList, cb),
+      });
+      that.argChildren.apply(this);
+    });
     this.children = this.state.target;
-  }
-  readonly parent: Node | null = null;
-  _holder!: StateHolder<Node>;
-  index(): number {
-    return 0;
-  }
-  width() {
-    return 0;
-  }
-  height() {
-    return 0;
-  }
-  grow(): number {
-    return 0;
-  }
-  align(): AlignSelfFun | void {}
-  layoutIndex(): number {
-    return 0;
-  }
-  layoutParent() {}
-
-  size(d: Direction): LayoutSize {
-    return layoutSize(d === Direction.x ? this.width() : this.height(), false);
-  }
-
-  layoutValue(d: Direction): Layout {
-    return d === Direction.x ? this.layoutX() : this.layoutY();
-  }
-
-  padding(_d: Direction, _se: StartEnd): number {
-    return 0;
-  }
-  innerStart(d: Direction): number {
-    return this.padding(d, StartEnd.start);
-  }
-
-  readonly layoutChildren = memo(() => {
-    return this.children().filter(
-      c => c instanceof RectNode
-    ) as unknown as LayoutNode[];
-  });
-
-  sizeFromParent(d: Direction): LayoutSize {
-    return this.size(d);
-  }
-  sizeFromChildren(d: Direction): LayoutSize {
-    return layoutSize(this.layoutValue(d).sizeFromChildren(), true);
-  }
-
-  readonly layoutX: GetValue<Layout> = createLayout(this, Direction.x);
-  readonly layoutY: GetValue<Layout> = createLayout(this, Direction.y);
-
-  layout(_d: Direction): LayoutFun<LayoutNode> {
-    return absoluteLayoutFun;
-  }
-
-  position(_d: Direction): number {
-    return 0;
-  }
-  acceptHit(_x: number, _y: number): boolean {
-    return false;
-  }
-
-  // Node interface methods (no-ops for Renderer itself)
-  mouseClick(_e: MouseEvent) {}
-  mouseClickCapture(_e: MouseEvent) {}
-  mouseDown(_e: MouseEvent) {}
-  mouseDownCapture(_e: MouseEvent) {}
-  mouseUp(_e: MouseEvent) {}
-  mouseUpCapture(_e: MouseEvent) {}
-
-  drawSelf(_canvas: CanvasRenderingContext2D) {}
-
-  draw(canvas: CanvasRenderingContext2D): void {
-    this.drawSelf(canvas);
-    for (const child of this.children()) {
-      canvas.save();
-      const x = child.position(Direction.x);
-      const y = child.position(Direction.y);
-      canvas.translate(x, y);
-      child.draw(canvas);
-      canvas.restore();
-    }
   }
 
   // -- EngineGlobal registration --
@@ -152,15 +38,13 @@ export class Renderer implements Node, LayoutNode {
   private readonly upList = new Map<MouseCallback, EmptyFun>();
   private readonly wheelList = new Map<WheelCallback, EmptyFun>();
 
-  private readonly state: ReturnType<typeof renderRoot<Node>>;
+  private readonly state: ReturnType<typeof renderListRoot<Node>>;
   frameCallback() {}
 
   scheduled = false;
-  private readonly signal = {
-    collect: (fn: () => void) => {
-      fn();
-    },
-  };
+  private readonly signal = collectSignal(() => {
+    this.frameCallback();
+  });
 
   destroy(): void {
     this.moveList.clear();
@@ -169,17 +53,16 @@ export class Renderer implements Node, LayoutNode {
     this.state.destroy();
   }
 
-  children: GetValue<Node[]>;
-
-  buildChildren() {}
-
   render(canvas: CanvasRenderingContext2D): void {
     this.scheduled = true;
     try {
-      canvas.clearRect(0, 0, this.width(), this.height());
       this.signal.collect(() => {
-        void this.width();
-        void this.height();
+        canvas.clearRect(
+          0,
+          0,
+          outerSize.call(this, 'x'),
+          outerSize.call(this, 'y')
+        );
         this.draw(canvas);
       });
     } catch (err) {
@@ -206,7 +89,6 @@ export class Renderer implements Node, LayoutNode {
         const it = list[i];
         const e = new MouseEvent(it.x, it.y, x, y);
         this.sendMouseEvent(it.node, type, e, false);
-        it.node.mouseClick(e);
         if (e.stoppedProgression) return;
       }
     } catch (e) {
@@ -261,10 +143,15 @@ export class Renderer implements Node, LayoutNode {
     }
   }
 
-  dispatchMouseWheel(x: number, y: number, delta: number): void {
+  dispatchMouseWheel(
+    x: number,
+    y: number,
+    deltaX: number,
+    deltaY: number
+  ): void {
     try {
       for (const [cb, destroy] of this.wheelList) {
-        cb({ x, y, delta, destroy });
+        cb({ x, y, deltaX, deltaY, destroy });
       }
     } catch (e) {
       console.error('全局mousewheel事件出错', e);

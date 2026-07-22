@@ -7,22 +7,26 @@ import {
   FlexChildConvert,
   StackChildConvert,
   LayoutFun,
+  ValueOrGet,
+  PointKey,
+  valueOrGetToGet,
+  toOpposite,
 } from 'wy-helper';
-import { Direction, DirectionOpposite } from '../Node';
-import { LayoutNode } from './LayoutNode';
+import { LayoutNode, outerSize } from '../LayoutNode';
 
 export function flex(arg: {
-  direction(): Direction;
-  alignItem(): AlignItem;
-  alignFix(): boolean;
-  directionJustify(): DirectionJustify;
-  reverse(): boolean;
-  gap(): number;
-  directionFixBetweenWhenOne(): DirectionFixBetweenWhenOne;
+  direction?: ValueOrGet<PointKey>;
+  alignItem?: ValueOrGet<AlignItem>;
+  alignFix?: ValueOrGet<boolean>;
+  directionJustify?: ValueOrGet<DirectionJustify>;
+  reverse?: ValueOrGet<boolean>;
+  gap?: ValueOrGet<number>;
+  directionFixBetweenWhenOne?: ValueOrGet<DirectionFixBetweenWhenOne>;
 }) {
+  const direction = valueOrGetToGet(arg.direction ?? 'y');
   const main: LayoutFun<LayoutNode> & FlexChildConvert<LayoutNode> = {
     outerSize(n) {
-      return n.outerSize(arg.direction());
+      return outerSize.call(n, direction());
     },
     index(n) {
       return n.layoutIndex();
@@ -39,16 +43,18 @@ export function flex(arg: {
       return n.align();
     },
     outerSize(n) {
-      return n.outerSize(DirectionOpposite[arg.direction()]);
+      return outerSize.call(n, toOpposite(direction()));
     },
     createLayout(o) {
       return new StackLayout(arg, o, this);
     },
   };
-  return function (direction: Direction): LayoutFun<LayoutNode> {
-    if (direction == arg.direction()) {
-      return main;
-    }
-    return cross;
+  return {
+    layout(n: PointKey) {
+      if (direction() == n) {
+        return main;
+      }
+      return cross;
+    },
   };
 }

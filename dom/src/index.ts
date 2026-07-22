@@ -1,26 +1,18 @@
-import { hookAddResult, hookCurrentStateHolder, hookTrackAttr } from 'mve-core';
+import { hookAddResult, hookTrackAttr } from 'mve-core';
 import {
-  EmptyFun,
   genTemplateStringS1,
   genTemplateStringS2,
   ValueOrGet,
   VType,
   vTypeisGetValue,
 } from 'wy-helper';
-import { renderPortal } from './hookChildren';
-import { renderArray, renderOne } from 'mve-helper';
+import { renderArray } from 'mve-helper';
 export { dom } from './dom';
 export { svg } from './svg';
 export type { StyleProps } from './node';
 export * from './renderNode';
 export * from './attrInOne';
 export * from './hookChildren';
-
-export function createRoot(node: Node, create: EmptyFun) {
-  return () => {
-    renderPortal(node, create);
-  };
-}
 
 export function renderTextContent(value: ValueOrGet<string | number>) {
   const node = document.createTextNode('');
