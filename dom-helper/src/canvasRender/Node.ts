@@ -16,7 +16,7 @@ export interface NodeArg<T = Node> {
   x?: ValueOrGet<number, T>;
   y?: ValueOrGet<number, T>;
   draw?(this: T, ctx: CanvasRenderingContext2D): void;
-  children?(this: StateHolderWithNode<Node, readonly Node[]>): void;
+  children?(this: StateHolderWithNode<T, readonly Node[]>): void;
 
   mouseClick?(this: T, e: MouseEvent): void;
   mouseClickCapture?(this: T, e: MouseEvent): void;
@@ -26,14 +26,7 @@ export interface NodeArg<T = Node> {
   mouseUpCapture?(this: T, e: MouseEvent): void;
 }
 export class Node {
-  isLayout(): this is LayoutNode {
-    return false;
-  }
-  constructor(
-    context: StateHolder<Node> | void,
-    args: NodeArg<Node>,
-    parent?: Node
-  ) {
+  constructor(context: StateHolder<Node> | void, args: NodeArg<Node>) {
     this.mouseClick = args.mouseClick || this.mouseClick;
     this.mouseClickCapture = args.mouseClickCapture || this.mouseClickCapture;
     this.mouseDown = args.mouseDown || this.mouseDown;
@@ -47,15 +40,22 @@ export class Node {
     this.y = valueOrGetToGet(args.y, this.y);
     this.draw = args.draw || this.draw;
     if (context) {
-      this.parent = context.getParent();
-      if (!this.parent) throw new Error('需要找到父节点才行');
+      const p = context.getParent();
+      if (p instanceof Node) {
+        this.parent = p;
+        context.addNode(this);
+      } else if (p) {
+        this.parent = undefined;
+      } else {
+        throw new Error('需要找到父节点才行');
+      }
       this.children = context.renderListNode(
         this,
         collectIndex,
         this.argChildren
       );
     } else {
-      this.parent = parent;
+      this.parent = undefined;
     }
   }
 
@@ -140,9 +140,7 @@ export function absolutePosition(this: Node, d: PointKey): number {
 
 export function collectIndex(list: readonly Node[]): void {
   let index = 0;
-  let layoutIndex = 0;
   for (const node of list) {
     node._index = index++;
-    if (node.isLayout()) node._layoutIndex = layoutIndex++;
   }
 }

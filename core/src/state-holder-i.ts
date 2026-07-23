@@ -230,7 +230,6 @@ export class StateHolderI<Node> implements StateHolder<Node> {
     after: SetValue<readonly Node[]>,
     callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
   ): GetValue<readonly Node[]> {
-    this.addNode(node);
     const child = new ListTargetStateHolder(node, after, callback, this);
     child.create();
     return child.target;
@@ -241,14 +240,13 @@ export class StateHolderI<Node> implements StateHolder<Node> {
     after: SetValue<ReadSet<Node>>,
     callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
   ): GetValue<ReadSet<Node>> {
-    this.addNode(node);
     const child = new SetTargetStateHolder(node, after, callback, this);
     child.create();
     return child.target;
   }
 
-  getParent(): Node | undefined {
-    return this.consume(parentContext) as Node | undefined;
+  getParent(): unknown {
+    return this.consume(parentContext);
   }
 }
 

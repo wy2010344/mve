@@ -1,16 +1,9 @@
-import { createSignal, memo, LayoutFun, PointKey } from 'wy-helper';
+import { createSignal, PointKey } from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import { Node, absolutePosition } from './Node';
 import { RectNode, RectNodeArg } from './RectNode';
-import {
-  LayoutSize,
-  StartEnd,
-  LayoutNode,
-  outerSize,
-  innerSize,
-  paddingStart,
-} from './LayoutNode';
-import { engineGlobalContext } from './EngineGlobal';
+import { outerSize, innerSize, paddingStart } from './LayoutNode';
+import { engineGlobalContext, GlobalWheelEvent } from './EngineGlobal';
 import { inRange } from './util';
 
 export class ScrollBarCalculate {
@@ -82,7 +75,7 @@ export class ScrollNode extends RectNode {
   scrollDelta(delta: number, d: PointKey): number {
     const next = Math.min(
       Math.max(getScroll.call(this, d) + delta, 0),
-      maxScroll.call(this, 'y')
+      maxScroll.call(this, d)
     );
     const realDelta = next - getScroll.call(this, d);
     setScroll.call(this, d, next);
@@ -92,25 +85,23 @@ export class ScrollNode extends RectNode {
   constructor(context: StateHolder<Node>, args: ScrollNodeArg) {
     super(context, args as any);
     const engineGlobal = context.consume(engineGlobalContext)!;
-    const d0 = engineGlobal.registerMouseWheel(
-      (e: import('./EngineGlobal').GlobalWheelEvent) => {
-        if (
-          inRange(
-            absolutePosition.call(this, 'x') + paddingStart.call(this, 'x'),
-            e.x,
-            innerSize.call(this, 'x')
-          ) &&
-          inRange(
-            absolutePosition.call(this, 'y') + paddingStart.call(this, 'y'),
-            e.y,
-            innerSize.call(this, 'y')
-          )
-        ) {
-          this.scrollDelta(e.deltaX, 'x');
-          this.scrollDelta(e.deltaY, 'y');
-        }
+    const d0 = engineGlobal.registerMouseWheel((e: GlobalWheelEvent) => {
+      if (
+        inRange(
+          absolutePosition.call(this, 'x') + paddingStart.call(this, 'x'),
+          e.x,
+          innerSize.call(this, 'x')
+        ) &&
+        inRange(
+          absolutePosition.call(this, 'y') + paddingStart.call(this, 'y'),
+          e.y,
+          innerSize.call(this, 'y')
+        )
+      ) {
+        this.scrollDelta(e.deltaX, 'x');
+        this.scrollDelta(e.deltaY, 'y');
       }
-    );
+    });
     context.addDestroy(d0);
   }
 }
@@ -131,7 +122,7 @@ export function scrollBarSize(
   this: ScrollNode,
   direction: PointKey,
   length: number = 0
-): ScrollBarCalculate | null {
+): ScrollBarCalculate | void {
   const len = length > 0 ? length : innerSize.call(this, direction);
   const v = innerSize.call(this, direction);
   const c = contentSize.call(this, direction);
@@ -142,7 +133,6 @@ export function scrollBarSize(
     const move = (maxOffset * getScroll.call(this, direction)) / m;
     return new ScrollBarCalculate(thumb, move, m, maxOffset);
   }
-  return null;
 }
 
 function contentSize(this: ScrollNode, direction: PointKey): number {
@@ -155,5 +145,8 @@ function contentSize(this: ScrollNode, direction: PointKey): number {
 }
 
 function maxScroll(this: ScrollNode, direction: PointKey): number {
-  return contentSize.call(this, direction) - innerSize.call(this, direction);
+  return Math.max(
+    0,
+    contentSize.call(this, direction) - innerSize.call(this, direction)
+  );
 }

@@ -55,7 +55,7 @@ export interface StateHolder<Node> {
     callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
   ): GetValue<ReadSet<Node>>;
 
-  getParent(): Node | undefined;
+  getParent(): unknown;
 }
 
 export interface StateHolderWithNode<Node, T> extends StateHolder<Node> {

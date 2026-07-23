@@ -8,11 +8,9 @@ import { renderChildrenOperate } from 'wy-dom-helper';
 const a = createRenderChildren(
   diffMove(renderChildrenOperate),
   function (node, callback) {
-    return hookCurrentStateHolder(true).renderListNode(
-      node,
-      emptyFun,
-      callback
-    );
+    const state = hookCurrentStateHolder(true);
+    state.addNode(node);
+    return state.renderListNode(node, emptyFun, callback);
   },
   function (node, callback) {
     return renderListRoot(node, emptyFun, callback);

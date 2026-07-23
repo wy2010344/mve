@@ -1,24 +1,10 @@
-import {
-  absoluteLayoutFun,
-  absoluteLayoutObject,
-  AlignSelfFun,
-  emptyObject,
-  GetValue,
-  Layout,
-  LayoutError,
-  LayoutFun,
-  LayoutInsideObject,
-  memo,
-  PointKey,
-} from 'wy-helper';
+import { LayoutError, PointKey } from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import {
   LayoutNode,
   LayoutNodeArg,
-  layoutSize,
   LayoutSize,
   layoutValue,
-  StartEnd,
 } from './LayoutNode';
 import { Node } from './Node';
 
@@ -29,7 +15,7 @@ export class RectNode extends LayoutNode {
 
     let p: Node | undefined = this.parent;
     while (p && !this.layoutParent) {
-      if (p.isLayout()) {
+      if (p instanceof LayoutNode) {
         this.layoutParent = p;
       }
       p = p.parent;

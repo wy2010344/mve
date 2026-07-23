@@ -9,6 +9,7 @@ import {
   ScrollNode,
   ScrollNodeArg,
 } from './ScrollNode';
+import { Node, NodeArg } from './Node';
 
 // Core types
 export type { ColorInt } from './Draw';
@@ -48,7 +49,8 @@ export type {
   Layout,
   LayoutFun,
 } from './LayoutNode';
-
+export * from './LayoutNode';
+export * from './ScrollNode';
 // Helpers
 export { drag } from './helper/drag';
 export * from './layout/FlexLayout';
@@ -71,14 +73,17 @@ export function renderCanvas(
     ob.disconnect();
   });
 
-  const render = new Renderer({
-    ...args,
-    width: w.get,
-    height: h.get,
-    frameCallback() {
-      debounceRequestBatchAnimationFrame(redraw);
+  const render = new Renderer(
+    {
+      ...args,
+      width: w.get,
+      height: h.get,
+      frameCallback() {
+        debounceRequestBatchAnimationFrame(redraw);
+      },
     },
-  });
+    stateHolder
+  );
 
   const ctx = canvas.getContext('2d')!;
   function redraw() {
@@ -103,6 +108,9 @@ export function renderCanvas(
   return render;
 }
 
+export function renderNode(args: NodeArg) {
+  return new Node(hookCurrentStateHolder(true), args);
+}
 export function renderRect(args: RectNodeArg) {
   return new RectNode(hookCurrentStateHolder(true), args);
 }

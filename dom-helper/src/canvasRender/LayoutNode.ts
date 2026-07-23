@@ -38,15 +38,8 @@ export interface LayoutNodeArg<T = LayoutNode> extends NodeArg<T> {
   align?: ValueOrGet<AlignSelfFun, T>;
 }
 export class LayoutNode extends Node {
-  isLayout(): this is LayoutNode {
-    return true;
-  }
-  constructor(
-    context: StateHolder<Node> | void,
-    args: LayoutNodeArg,
-    parent?: Node
-  ) {
-    super(context, args as any, parent);
+  constructor(context: StateHolder<Node> | void, args: LayoutNodeArg) {
+    super(context, args as any);
 
     this.argPadding = valueOrGetToGet(args.padding, this.argPadding);
     this.argPaddingBlock = valueOrGetToGet(
@@ -116,7 +109,7 @@ export class LayoutNode extends Node {
     return this.argSize('x');
   }
   argHeight() {
-    return this.argSize('x');
+    return this.argSize('y');
   }
 
   layout: LayoutDirection = {
@@ -129,9 +122,19 @@ export class LayoutNode extends Node {
   }
   align(): AlignSelfFun | void {}
   layoutParent: LayoutNode | void = undefined;
-  layoutChildren = memo<readonly LayoutNode[]>(() => {
-    return this.children().filter(n => n.isLayout());
-  });
+  layoutChildren = memo<readonly LayoutNode[]>(
+    () => {
+      const list: LayoutNode[] = [];
+      findLayoutChildren(this, list);
+      return list;
+    },
+    list => {
+      let i = 0;
+      list.forEach(row => {
+        row._layoutIndex = i++;
+      });
+    }
+  );
   _layoutIndex = 0;
   layoutIndex(): number {
     this.layoutParent?.layoutChildren();
@@ -218,4 +221,34 @@ export function innerSize(this: LayoutNode, d: PointKey) {
     return n.value;
   }
   return n.value - paddingStart.call(this, d) - paddingEnd.call(this, d);
+}
+function findLayoutChildren(n: Node, list: LayoutNode[]) {
+  n.children().forEach(x => {
+    if (x instanceof LayoutNode) {
+      list.push(x);
+    } else {
+      findLayoutChildren(x, list);
+    }
+  });
+}
+
+export function drawRect(
+  this: LayoutNode,
+  ctx: CanvasRenderingContext2D,
+  stroke: boolean = false,
+  inner: boolean = false
+) {
+  const rect: [number, number, number, number] = inner
+    ? [
+        this.paddingInlineStart(),
+        this.paddingBlockStart(),
+        innerSize.call(this, 'x'),
+        innerSize.call(this, 'y'),
+      ]
+    : [0, 0, outerSize.call(this, 'x'), outerSize.call(this, 'y')];
+  if (stroke) {
+    ctx.strokeRect.apply(ctx, rect);
+  } else {
+    ctx.fillRect.apply(ctx, rect);
+  }
 }

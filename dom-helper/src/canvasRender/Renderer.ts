@@ -1,5 +1,5 @@
-import { collectSignal, EmptyFun } from 'wy-helper';
-import { renderListRoot } from 'mve-core';
+import { collectSignal, emptyFun, EmptyFun } from 'wy-helper';
+import { renderListRoot, StateHolder } from 'mve-core';
 import { Node, collectIndex, hitest, NodeWithPosition } from './Node';
 import { LayoutNode, LayoutNodeArg, outerSize } from './LayoutNode';
 import {
@@ -17,28 +17,62 @@ function register<K>(map: Map<K, EmptyFun>, key: K): EmptyFun {
 export interface RendererArgs<T = Renderer> extends LayoutNodeArg<T> {
   frameCallback(): void;
 }
-export class Renderer extends LayoutNode {
-  constructor(args: RendererArgs) {
-    super(undefined, args as any);
-    this.frameCallback = args.frameCallback;
-    const that = this;
-    this.state = renderListRoot(this, collectIndex, function () {
-      this.provide(engineGlobalContext, {
-        registerMouseMove: cb => register(that.moveList, cb),
-        registerMouseUp: cb => register(that.upList, cb),
-        registerMouseWheel: cb => register(that.wheelList, cb),
-      });
-      that.argChildren.apply(this);
-    });
-    this.children = this.state.target;
-  }
 
+class Register {
+  dispatchMouseWheel(x: number, y: number, deltaX: number, deltaY: number) {
+    for (const [cb, destroy] of this.wheelList) {
+      cb({ x, y, deltaX, deltaY, destroy });
+    }
+  }
+  dispatchMouseUp(x: number, y: number) {
+    for (const [cb, destroy] of this.upList) {
+      cb({ x, y, destroy });
+    }
+  }
+  dispatchMouseMove(x: number, y: number) {
+    for (const [cb, destroy] of this.moveList) {
+      cb({ x, y, destroy });
+    }
+  }
   // -- EngineGlobal registration --
   private readonly moveList = new Map<MouseCallback, EmptyFun>();
   private readonly upList = new Map<MouseCallback, EmptyFun>();
   private readonly wheelList = new Map<WheelCallback, EmptyFun>();
+  provide(context: StateHolder<Node>) {
+    context.provide(engineGlobalContext, {
+      registerMouseMove: cb => register(this.moveList, cb),
+      registerMouseUp: cb => register(this.upList, cb),
+      registerMouseWheel: cb => register(this.wheelList, cb),
+    });
+  }
+  destroy() {
+    this.moveList.clear();
+    this.upList.clear();
+    this.wheelList.clear();
+  }
+}
+export class Renderer extends LayoutNode {
+  private register: Register;
+  private destroyState: () => void = emptyFun;
+  constructor(args: RendererArgs, context?: StateHolder<Node>) {
+    const register = new Register();
+    if (context) {
+      register.provide(context);
+    }
+    super(context, args as any);
+    this.register = register;
+    this.frameCallback = args.frameCallback;
+    if (!context) {
+      const that = this;
+      const state = renderListRoot(this, collectIndex, function () {
+        register.provide(this);
+        that.argChildren.apply(this);
+      });
+      this.destroyState = state.destroy;
+      this.children = state.target;
+    }
+  }
 
-  private readonly state: ReturnType<typeof renderListRoot<Node>>;
   frameCallback() {}
 
   scheduled = false;
@@ -47,10 +81,8 @@ export class Renderer extends LayoutNode {
   });
 
   destroy(): void {
-    this.moveList.clear();
-    this.upList.clear();
-    this.wheelList.clear();
-    this.state.destroy();
+    this.register.destroy();
+    this.destroyState();
   }
 
   render(canvas: CanvasRenderingContext2D): void {
@@ -125,9 +157,7 @@ export class Renderer extends LayoutNode {
   dispatchMouseUp(x: number, y: number): void {
     try {
       this.mouseEventOf(x, y, 'up');
-      for (const [cb, destroy] of this.upList) {
-        cb({ x, y, destroy });
-      }
+      this.register.dispatchMouseUp(x, y);
     } catch (e) {
       console.error('全局mouseup事件出错', e);
     }
@@ -135,9 +165,7 @@ export class Renderer extends LayoutNode {
 
   dispatchMouseMove(x: number, y: number): void {
     try {
-      for (const [cb, destroy] of this.moveList) {
-        cb({ x, y, destroy });
-      }
+      this.register.dispatchMouseMove(x, y);
     } catch (e) {
       console.error('全局mousemove事件出错', e);
     }
@@ -150,9 +178,7 @@ export class Renderer extends LayoutNode {
     deltaY: number
   ): void {
     try {
-      for (const [cb, destroy] of this.wheelList) {
-        cb({ x, y, deltaX, deltaY, destroy });
-      }
+      this.register.dispatchMouseWheel(x, y, deltaX, deltaY);
     } catch (e) {
       console.error('全局mousewheel事件出错', e);
     }
