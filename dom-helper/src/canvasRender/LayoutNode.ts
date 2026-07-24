@@ -34,8 +34,8 @@ export interface LayoutNodeArg<T = LayoutNode> extends NodeArg<T> {
   width?: ValueOrGet<LayoutSize, T>;
   height?: ValueOrGet<LayoutSize, T>;
   layout?: ValueOrGet<LayoutDirection, T>;
-  grow?: ValueOrGet<number, T>;
-  align?: ValueOrGet<AlignSelfFun, T>;
+  // grow?: ValueOrGet<number, T>;
+  // align?: ValueOrGet<AlignSelfFun, T>;
 }
 export class LayoutNode extends Node {
   constructor(context: StateHolder<Node> | void, args: LayoutNodeArg) {
@@ -70,8 +70,8 @@ export class LayoutNode extends Node {
     this.argSize = valueOrGetToGet(args.size, this.argSize);
     this.argWidth = valueOrGetToGet(args.width, this.argWidth);
     this.argHeight = valueOrGetToGet(args.height, this.argHeight);
-    this.grow = valueOrGetToGet(args.grow, this.grow);
-    this.align = valueOrGetToGet(args.align, this.align);
+    // this.grow = valueOrGetToGet(args.grow, this.grow);
+    // this.align = valueOrGetToGet(args.align, this.align);
     if (args.layout) {
       if (typeof args.layout == 'function') {
         this.layout = args.layout.call(this);
@@ -117,10 +117,10 @@ export class LayoutNode extends Node {
       return absoluteLayoutFun;
     },
   };
-  grow(): number {
-    return 0;
-  }
-  align(): AlignSelfFun | void {}
+  // grow(): number {
+  //   return 0;
+  // }
+  // align(): AlignSelfFun | void {}
   layoutParent: LayoutNode | void = undefined;
   layoutChildren = memo<readonly LayoutNode[]>(
     () => {

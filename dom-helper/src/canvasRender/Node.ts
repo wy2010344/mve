@@ -12,6 +12,7 @@ export interface NodeWithPosition {
 }
 
 export interface NodeArg<T = Node> {
+  exts?: ((this: T) => readonly any[]) | readonly any[];
   position?: ValueOrGet<number, T, [PointKey]>;
   x?: ValueOrGet<number, T>;
   y?: ValueOrGet<number, T>;
@@ -26,6 +27,10 @@ export interface NodeArg<T = Node> {
   mouseUpCapture?(this: T, e: MouseEvent): void;
 }
 export class Node {
+  private readonly exts: readonly any[];
+  findExt<T>(c: new (...vs: any[]) => T): T | undefined {
+    return this.exts.find(x => x instanceof c);
+  }
   constructor(context: StateHolder<Node> | void, args: NodeArg<Node>) {
     this.mouseClick = args.mouseClick || this.mouseClick;
     this.mouseClickCapture = args.mouseClickCapture || this.mouseClickCapture;
@@ -39,6 +44,17 @@ export class Node {
     this.x = valueOrGetToGet(args.x, this.x);
     this.y = valueOrGetToGet(args.y, this.y);
     this.draw = args.draw || this.draw;
+
+    const e = args.exts;
+    if (e) {
+      if (Array.isArray(e)) {
+        this.exts = e;
+      } else {
+        this.exts = (e as any).call(this);
+      }
+    } else {
+      this.exts = emptyArray;
+    }
     if (context) {
       const p = context.getParent();
       if (p instanceof Node) {

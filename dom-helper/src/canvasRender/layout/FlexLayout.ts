@@ -11,6 +11,7 @@ import {
   PointKey,
   valueOrGetToGet,
   toOpposite,
+  AlignSelfFun,
 } from 'wy-helper';
 import { LayoutNode, outerSize } from '../LayoutNode';
 
@@ -32,7 +33,14 @@ export function flex(arg: {
       return n.layoutIndex();
     },
     grow(n) {
-      return n.grow();
+      const grow = n.findExt(GrowChild);
+      if (grow) {
+        if (direction() == 'x') {
+          return grow.growX();
+        }
+        return grow.growY();
+      }
+      return 0;
     },
     createLayout(o) {
       return new FlexLayout(arg, o, this);
@@ -40,7 +48,13 @@ export function flex(arg: {
   };
   const cross: LayoutFun<LayoutNode> & StackChildConvert<LayoutNode> = {
     align(n) {
-      return n.align();
+      const align = n.findExt(AlignChild);
+      if (align) {
+        if (direction() == 'x') {
+          return align.alignY();
+        }
+        return align.alignX();
+      }
     },
     outerSize(n) {
       return outerSize.call(n, toOpposite(direction()));
@@ -57,4 +71,51 @@ export function flex(arg: {
       return cross;
     },
   };
+}
+
+export class GrowChild {
+  argGrow(n: PointKey): number {
+    return 0;
+  }
+  growX() {
+    return this.argGrow('x');
+  }
+  growY() {
+    return this.argGrow('y');
+  }
+}
+
+export function grow(args: {
+  argGrow?: ValueOrGet<number, GrowChild, [PointKey]>;
+  growX?: ValueOrGet<number, GrowChild>;
+  growY?: ValueOrGet<number, GrowChild>;
+}) {
+  const gc = new GrowChild();
+  gc.argGrow = valueOrGetToGet(args.argGrow, gc.argGrow);
+  gc.growX = valueOrGetToGet(args.growX, gc.growX);
+  gc.growY = valueOrGetToGet(args.growY, gc.growY);
+  return gc;
+}
+
+export class AlignChild {
+  argAlign(n: PointKey): AlignSelfFun | void {}
+
+  alignX() {
+    return this.argAlign('x');
+  }
+  alignY() {
+    return this.argAlign('y');
+  }
+}
+
+export function align(args: {
+  argAlign?: ValueOrGet<AlignSelfFun | void, AlignChild, [PointKey]>;
+  alignX?: ValueOrGet<AlignSelfFun | void, AlignChild>;
+  alignY?: ValueOrGet<AlignSelfFun | void, AlignChild>;
+}) {
+  const ac = new AlignChild();
+  ac.argAlign = valueOrGetToGet(args.argAlign, ac.argAlign);
+  ac.alignX = valueOrGetToGet(args.alignX, ac.alignX);
+  ac.alignY = valueOrGetToGet(args.alignY, ac.alignY);
+  return ac;
 }
