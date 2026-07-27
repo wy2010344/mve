@@ -16,10 +16,10 @@ import {
   MovePanelResizeAuto,
 } from 'wy-helper';
 import { pointerMove } from 'wy-dom-helper';
-import { hookCurrentParent, hookIsDestroyed } from 'mve-core';
 import { windowStyle, scrollbar, statusBar } from 'wy-dom-helper/window-theme';
 import { hookTheme } from './themeContext/util';
 import { createPopListWithRearrange, PopWithRearrange } from 'mve-helper';
+import { hookCurrentStateHolder } from 'mve-core';
 
 export const { renderPop: renderWindows, createPop: createWindow } =
   createPopListWithRearrange();
@@ -157,7 +157,7 @@ export const panel = instanceWithCopy<
       closeList.forEach(run);
     },
     panel(info) {
-      const parent = hookCurrentParent() as HTMLDivElement;
+      const stateHolder = hookCurrentStateHolder(true);
       const {
         title,
         typeIcon,
@@ -167,13 +167,15 @@ export const panel = instanceWithCopy<
         titleControls,
         ...args
       } = callback(info);
-      const { x, y, beginStep } = getWindowMoveInfo(args, parent);
+      const { x, y, beginStep } = getWindowMoveInfo(
+        args,
+        stateHolder.getParent() as HTMLElement
+      );
       const getWindowCls = hookTheme(windowStyle);
-      const isDestroyed = hookIsDestroyed();
       fdom.div({
         ...args,
         onPointerDown(e) {
-          if (isDestroyed()) {
+          if (stateHolder.destroyed()) {
             return;
           }
           info.setIndex(-1);
