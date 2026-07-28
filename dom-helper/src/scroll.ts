@@ -5,7 +5,6 @@ import {
   AnimateSignal,
   AnimateSignalConfig,
   ClampingScrollFactory,
-  createLateSignal,
   createSignal,
   DeltaXSignalAnimationConfig,
   destinationWithMargin,
@@ -22,6 +21,9 @@ import {
   ValueOrGet,
   valueOrGetToGet,
 } from 'wy-helper';
+
+import { hookEffectCollect } from 'mve-core';
+
 export interface OnScrollI {
   value?: number | OneSetStoreRef<number>;
 
@@ -186,27 +188,32 @@ export class OnScroll {
     }
     this.getMinScroll = valueOrGetToGet(config.minScroll || 0);
     this.getMaxScroll = valueOrGetToGet(config.maxScroll);
+    if (typeof config.minScroll == 'function') {
+      hookEffectCollect(this.getMinScroll, v => {
+        v = Math.max(0, v);
+        if (this.scroll.getTarget() < v) {
+          this.scroll.silentChangeTo(v);
+        }
+      });
+    }
+    if (typeof config.maxScroll == 'function') {
+      hookEffectCollect(this.getMaxScroll, v => {
+        v = Math.max(v, 0);
+        if (this.scroll.getTarget() > v) {
+          this.scroll.silentChangeTo(v);
+        }
+      });
+    }
     const init = this.config.value;
-    let scroll: OneSetStoreRef<number>;
     if (typeof init == 'number') {
-      scroll = createLateSignal(
+      this.scroll = animateSignal(
         numberBetween(this.getMinScroll(), init, this.getMaxScroll())
       );
     } else if (typeof init == 'undefined') {
-      scroll = createLateSignal(this.getMinScroll());
+      this.scroll = animateSignal(this.getMinScroll());
     } else {
-      scroll = init;
+      this.scroll = animateSignal(init);
     }
-    this.scroll = animateSignal({
-      ...scroll,
-      get: () => {
-        return numberBetween(
-          this.getMinScroll(),
-          scroll.get(),
-          this.getMaxScroll()
-        );
-      },
-    });
     this.get = this.scroll.get;
     this.onAnimation = this.scroll.onAnimation;
     const that = this;
