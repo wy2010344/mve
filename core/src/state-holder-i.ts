@@ -11,22 +11,18 @@ import {
   memo,
   MemoFun,
   normalMapCreater,
-  ReadSet,
   run,
-  SetValue,
 } from 'wy-helper';
 import { ContextI, parentContext } from './context';
 import {
   Creater,
   RenderForEachArg,
+  ShareConfig,
   StateHolder,
   StateHolderWithNode,
 } from './state-holder';
 import { ValueOrGetList } from './value-or-get-list';
-import {
-  ListTargetStateHolder,
-  SetTargetStateHolder,
-} from './target-state-holder';
+import { TargetStateHolder } from './target-state-holder';
 import { hookAlterStateHolder } from './cache';
 import { EachTime } from './each-value';
 
@@ -34,11 +30,11 @@ import { EachTime } from './each-value';
 // ForEachModal
 // ---------------------------------------------------------------------------
 
-export interface ForEachModal<Node, T, K, O> {
-  readonly cacheMap: BaseRMap<K, EachValue<Node, T, K, O>[]>;
-  readonly newMap: BaseRMap<K, EachValue<Node, T, K, O>[]>;
-  readonly thisTimeAdd: EachValue<Node, T, K, O>[];
-  readonly thisChildren: EachValue<Node, T, K, O>[];
+export interface ForEachModal<Node, Target, T, K, O> {
+  readonly cacheMap: BaseRMap<K, EachValue<Node, Target, T, K, O>[]>;
+  readonly newMap: BaseRMap<K, EachValue<Node, Target, T, K, O>[]>;
+  readonly thisTimeAdd: EachValue<Node, Target, T, K, O>[];
+  readonly thisChildren: EachValue<Node, Target, T, K, O>[];
 }
 export class DuplicateError extends Error {
   constructor(
@@ -49,17 +45,18 @@ export class DuplicateError extends Error {
   }
 }
 
-export class StateHolderI<Node> implements StateHolder<Node> {
+export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
   readonly nodes: ValueOrGetList<Node>[] = [];
   readonly contexts: [ContextI<unknown>, unknown][] = [];
 
-  private readonly _children = new Set<StateHolderI<Node>>();
+  private readonly _children = new Set<StateHolderI<Node, unknown>>();
   private readonly _destroyList: EmptyFun[] = [];
   private _destroyed = false;
   private _endBuild = false;
 
   constructor(
-    readonly parent?: StateHolderI<Node>,
+    readonly config: ShareConfig<Node, Target>,
+    readonly parent?: StateHolderI<Node, unknown>,
     readonly parentContextIndex: number = parent?.contexts.length ?? 0
   ) {
     this.parent?._children.add(this);
@@ -109,7 +106,7 @@ export class StateHolderI<Node> implements StateHolder<Node> {
     this.parent?.removeChild(this);
   }
 
-  private removeChild(child: StateHolderI<Node>): void {
+  private removeChild(child: StateHolderI<Node, unknown>): void {
     if (this._children.delete(child)) {
       child.destroy();
     }
@@ -135,7 +132,7 @@ export class StateHolderI<Node> implements StateHolder<Node> {
   private findProvider<T>(
     context: ContextI<T>
   ): [ContextI<unknown>, unknown] | undefined {
-    let holder: StateHolderI<Node> | undefined = this;
+    let holder: StateHolderI<Node, unknown> | undefined = this;
     let begin = holder.contexts.length;
     while (holder) {
       for (let i = begin - 1; i > -1; i--) {
@@ -154,7 +151,7 @@ export class StateHolderI<Node> implements StateHolder<Node> {
 
   renderForEach<T, K, O>(
     forEach: (callback: (key: K, value: T) => GetValue<O>) => void,
-    creater: Creater<Node, T, K, O>,
+    creater: Creater<Node, Target, T, K, O>,
     arg: RenderForEachArg<K> = emptyObject
   ): MemoFun<any> {
     if (this._endBuild) {
@@ -164,22 +161,24 @@ export class StateHolderI<Node> implements StateHolder<Node> {
       arg.createMap || normalMapCreater;
     const duplicateInfo = arg.duplicateInfo ?? 'warn';
     const contextIndex = this.contexts.length;
-    const forEachSignal = memo<ForEachModal<Node, T, K, O>>(
+    const forEachSignal = memo<ForEachModal<Node, Target, T, K, O>>(
       old => {
-        const cacheMap = old?.newMap ?? createMap<EachValue<Node, T, K, O>[]>();
-        const newMap = createMap<EachValue<Node, T, K, O>[]>();
-        const thisTimeAdd: EachValue<Node, T, K, O>[] = [];
-        const thisChildren: EachValue<Node, T, K, O>[] = [];
+        const cacheMap =
+          old?.newMap ?? createMap<EachValue<Node, Target, T, K, O>[]>();
+        const newMap = createMap<EachValue<Node, Target, T, K, O>[]>();
+        const thisTimeAdd: EachValue<Node, Target, T, K, O>[] = [];
+        const thisChildren: EachValue<Node, Target, T, K, O>[] = [];
         let index = 0;
 
         forEach((key, value) => {
           const holders = cacheMap.get(key);
-          let ev: EachValue<Node, T, K, O>;
+          let ev: EachValue<Node, Target, T, K, O>;
 
           if (holders?.length) {
             ev = holders.shift()!;
           } else {
             ev = new EachValue(
+              this.config,
               forEachSignal,
               this,
               contextIndex,
@@ -225,33 +224,38 @@ export class StateHolderI<Node> implements StateHolder<Node> {
 
   // -- renderNode -----------------------------------------------------------
 
-  renderListNode(
+  // renderListNode(
+  //   node: Node,
+  //   after: SetValue<readonly Node[]>,
+  //   callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
+  // ): GetValue<readonly Node[]> {
+  // }
+  renderNode(
     node: Node,
-    after: SetValue<readonly Node[]>,
-    callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
-  ): GetValue<readonly Node[]> {
-    const child = new ListTargetStateHolder(node, after, callback, this);
+    callback: (this: StateHolderWithNode<Node, Target>) => void
+  ): GetValue<Target> {
+    const child = new TargetStateHolder(this.config, node, callback, this);
     child.create();
     return child.target;
   }
 
-  renderSetNode(
-    node: Node,
-    after: SetValue<ReadSet<Node>>,
-    callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
-  ): GetValue<ReadSet<Node>> {
-    const child = new SetTargetStateHolder(node, after, callback, this);
-    child.create();
-    return child.target;
-  }
+  // renderSetNode(
+  //   node: Node,
+  //   after: SetValue<ReadSet<Node>>,
+  //   callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
+  // ): GetValue<ReadSet<Node>> {
+  //   const child = new SetTargetStateHolder(node, after, callback, this);
+  //   child.create();
+  //   return child.target;
+  // }
 
   getParent(): unknown {
     return this.consume(parentContext);
   }
 }
 
-export class EachValue<Node, T, K, O>
-  extends StateHolderI<Node>
+export class EachValue<Node, Target, T, K, O>
+  extends StateHolderI<Node, Target>
   implements EachTime<T>
 {
   value: T = null as T;
@@ -259,14 +263,15 @@ export class EachValue<Node, T, K, O>
   private _out!: O;
 
   constructor(
+    config: ShareConfig<Node, Target>,
     readonly getSignal: GetValue<unknown>,
-    parent: StateHolderI<Node>,
+    parent: StateHolderI<Node, unknown>,
     parentContextIndex: number,
-    private readonly _creater: Creater<Node, T, K, O>,
+    private readonly _creater: Creater<Node, Target, T, K, O>,
     private readonly _key: K,
     arg: RenderForEachArg<K>
   ) {
-    super(parent, parentContextIndex);
+    super(config, parent, parentContextIndex);
     if (arg.bindIndex) {
       this.getIndex = this.getIndex.bind(this);
     }
@@ -301,20 +306,24 @@ export class EachValue<Node, T, K, O>
 // internal
 // ---------------------------------------------------------------------------
 
-function destroyHolder(stateHolder: StateHolderI<any>): void {
+function destroyHolder(stateHolder: StateHolderI<any, any>): void {
   stateHolder.destroy();
 }
 
-function oldRemoveStateHolders<Node, T, K, O>(
-  children: EachValue<Node, T, K, O>[]
+function oldRemoveStateHolders<Node, Target, T, K, O>(
+  children: EachValue<Node, Target, T, K, O>[]
 ) {
   children.forEach(removeStateHolder);
 }
 
-function removeStateHolder<Node, T, K, O>(child: EachValue<Node, T, K, O>) {
+function removeStateHolder<Node, Target, T, K, O>(
+  child: EachValue<Node, Target, T, K, O>
+) {
   child.destroy();
 }
 
-function thisTimeAddEach<Node, T, K, O>(add: EachValue<Node, T, K, O>) {
+function thisTimeAddEach<Node, Target, T, K, O>(
+  add: EachValue<Node, Target, T, K, O>
+) {
   add.create();
 }

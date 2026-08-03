@@ -10,16 +10,8 @@ import { Node } from './Node';
 
 export interface RectNodeArg<T = RectNode> extends LayoutNodeArg<T> {}
 export class RectNode extends LayoutNode {
-  constructor(context: StateHolder<Node>, arg: RectNodeArg) {
+  constructor(context: StateHolder<Node, readonly Node[]>, arg: RectNodeArg) {
     super(context, arg as any);
-
-    let p: Node | undefined = this.parent;
-    while (p && !this.layoutParent) {
-      if (p instanceof LayoutNode) {
-        this.layoutParent = p;
-      }
-      p = p.parent;
-    }
   }
   argPosition(d: PointKey): number {
     try {

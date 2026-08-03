@@ -4,7 +4,7 @@ import { Node } from '../Node';
 import { GlobalMouseEvent, engineGlobalContext } from '../EngineGlobal';
 
 export function drag(
-  context: StateHolder<Node>,
+  context: StateHolder<Node, readonly Node[]>,
   change: (e: GlobalMouseEvent) => void
 ): void {
   const g = context.consume(engineGlobalContext)!;

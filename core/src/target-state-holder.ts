@@ -4,32 +4,31 @@
 
 import { GetValue, memo, MemoFun, ReadSet, SetValue } from 'wy-helper';
 import { StateHolderI } from './state-holder-i';
-import { RootReturn, StateHolderWithNode } from './state-holder';
+import { RootReturn, ShareConfig, StateHolderWithNode } from './state-holder';
 import { purifyList, purifySet } from './value-or-get-list';
 import { ContextI, parentContext } from './context';
 
-export class ListTargetStateHolder<Node>
-  extends StateHolderI<Node>
-  implements
-    RootReturn<Node, readonly Node[]>,
-    StateHolderWithNode<Node, readonly Node[]>
+export class TargetStateHolder<Node, Target>
+  extends StateHolderI<Node, Target>
+  implements RootReturn<Target>, StateHolderWithNode<Node, Target>
 {
-  readonly target: MemoFun<readonly Node[]>;
+  readonly target: MemoFun<Target>;
 
   constructor(
+    config: ShareConfig<Node, Target>,
     readonly node: Node,
-    after: SetValue<readonly Node[]> | undefined,
     private readonly callback: (
-      this: StateHolderWithNode<Node, readonly Node[]>
+      this: StateHolderWithNode<Node, Target>
     ) => void,
-    parent?: StateHolderI<Node>
+    parent?: StateHolderI<Node, unknown>
   ) {
-    super(parent);
-    this.target = memo<readonly Node[]>(_old => {
-      const newList: Node[] = [];
-      purifyList(this.nodes, newList);
-      return newList;
-    }, after);
+    super(config, parent);
+    this.target = memo(_old => {
+      return this.config.purifyList(this.nodes);
+      // const newList: Node[] = [];
+      // purifyList(this.nodes, newList);
+      // return newList;
+    }, this.config.after);
   }
 
   protected override buildChildren(): void {
@@ -46,60 +45,12 @@ export class ListTargetStateHolder<Node>
 // renderRoot — 入口函数
 // ---------------------------------------------------------------------------
 
-export function renderListRoot<Node>(
+export function renderRoot<Node, Target>(
   node: Node,
-  after: SetValue<readonly Node[]>,
-  callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
-): RootReturn<Node, readonly Node[]> {
-  const holder = new ListTargetStateHolder(node, after, callback);
-  holder.create();
-  return holder;
-}
-
-export class SetTargetStateHolder<Node>
-  extends StateHolderI<Node>
-  implements
-    RootReturn<Node, ReadSet<Node>>,
-    StateHolderWithNode<Node, ReadSet<Node>>
-{
-  readonly target: MemoFun<ReadSet<Node>>;
-
-  constructor(
-    readonly node: Node,
-    after: SetValue<ReadSet<Node>> | undefined,
-    private readonly callback: (
-      this: StateHolderWithNode<Node, ReadSet<Node>>
-    ) => void,
-    parent?: StateHolderI<Node>
-  ) {
-    super(parent);
-    this.target = memo<ReadSet<Node>>(_old => {
-      const newList = new Set<Node>();
-      purifySet(this.nodes, newList);
-      return newList;
-    }, after);
-  }
-
-  protected override buildChildren(): void {
-    this.provide(parentContext as ContextI<Node>, this.node);
-    this.callback();
-  }
-
-  toString(): string {
-    return 'list-render';
-  }
-}
-
-// ---------------------------------------------------------------------------
-// renderRoot — 入口函数
-// ---------------------------------------------------------------------------
-
-export function renderSetRoot<Node>(
-  node: Node,
-  after: SetValue<ReadSet<Node>>,
-  callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
-): RootReturn<Node, ReadSet<Node>> {
-  const holder = new SetTargetStateHolder(node, after, callback);
+  config: ShareConfig<Node, Target>,
+  callback: (this: StateHolderWithNode<Node, Target>) => void
+): RootReturn<Target> {
+  const holder = new TargetStateHolder(config, node, callback);
   holder.create();
   return holder;
 }

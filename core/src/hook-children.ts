@@ -75,7 +75,7 @@ export function createRenderChildren<T, F>(
   createRoot: (
     p: T,
     callback: (this: StateHolderWithNode<T, F>) => void
-  ) => RootReturn<T, F>
+  ) => RootReturn<F>
 ) {
   return {
     createRoot(node: T, fun: (this: StateHolderWithNode<T, F>) => void) {

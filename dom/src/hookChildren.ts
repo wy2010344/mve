@@ -1,19 +1,29 @@
 import {
   createRenderChildren,
   hookCurrentStateHolder,
-  renderListRoot,
+  purifyList,
+  renderRoot,
+  ShareConfig,
 } from 'mve-core';
-import { diffMove, emptyFun, SetValue } from 'wy-helper';
+import { alawaysFalse, diffMove, SetValue } from 'wy-helper';
 import { renderChildrenOperate } from 'wy-dom-helper';
+const config: ShareConfig<Node, readonly Node[]> = {
+  purifyList(list) {
+    const newList: Node[] = [];
+    purifyList(list, newList, alawaysFalse);
+    return newList;
+  },
+  after(a) {},
+};
 const a = createRenderChildren(
   diffMove(renderChildrenOperate),
   function (node, callback) {
     const state = hookCurrentStateHolder(true);
     state.addNode(node);
-    return state.renderListNode(node, emptyFun, callback);
+    return state.renderNode(node, callback);
   },
   function (node, callback) {
-    return renderListRoot(node, emptyFun, callback);
+    return renderRoot(node, config, callback);
   }
 );
 
