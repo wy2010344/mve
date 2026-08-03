@@ -5,7 +5,7 @@ import { EachTime } from './each-value';
 export type { EachTime, RenderForEachArg };
 
 export type { Context } from './context';
-export { purifyList } from './value-or-get-list';
+export { purifyList, purifySet } from './value-or-get-list';
 export type { ValueOrGetList } from './value-or-get-list';
 export { createContext } from './context';
 export { renderRoot } from './target-state-holder';

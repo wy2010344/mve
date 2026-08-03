@@ -28,10 +28,13 @@ export function getActiveEditor(): EditableTextNode | null {
   return activeEditor;
 }
 
-export interface EditableTextNodeArg<T = EditableTextNode> extends WrappedTextNodeArg<T> {
+export interface EditableTextNodeArg<
+  T = EditableTextNode,
+> extends WrappedTextNodeArg<T> {
   maxHistorySize?: number;
   cursorColor?: ColorInt;
   cursorWidth?: number;
+  setText?(v: string): string;
   composingBackgroundColor?: ColorInt;
   composingUnderlineColor?: ColorInt;
 }
@@ -77,13 +80,23 @@ export class EditableTextNode extends WrappedTextNode {
     return rgba(0, 0, 0, 140);
   }
 
-  constructor(context: StateHolder<Node, readonly Node[]>, args: EditableTextNodeArg = {}) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]>,
+    args: EditableTextNodeArg = {}
+  ) {
     super(context, args as WrappedTextNodeArg);
+    this.setText = args.setText || this.setText;
     this.undoRedo = new UndoRedo(args.maxHistorySize ?? 100);
     this.cursorColor = valueOrGetToGet(args.cursorColor, this.cursorColor);
     this.cursorWidth = valueOrGetToGet(args.cursorWidth, this.cursorWidth);
-    this.composingBackgroundColor = valueOrGetToGet(args.composingBackgroundColor, this.composingBackgroundColor);
-    this.composingUnderlineColor = valueOrGetToGet(args.composingUnderlineColor, this.composingUnderlineColor);
+    this.composingBackgroundColor = valueOrGetToGet(
+      args.composingBackgroundColor,
+      this.composingBackgroundColor
+    );
+    this.composingUnderlineColor = valueOrGetToGet(
+      args.composingUnderlineColor,
+      this.composingUnderlineColor
+    );
 
     this.g = context.consume(engineGlobalContext)!;
     if (!keyRouterRegistered) {
@@ -103,10 +116,7 @@ export class EditableTextNode extends WrappedTextNode {
             ed.cancelComposition();
             return;
           }
-          ed.onComposing('', t, 0);
-          const caret = Math.min(Math.max(p, 0), ed.text().length);
-          ed.anchorIndex.set(caret);
-          ed.focusIndex.set(caret);
+          ed.onComposing('', t, p);
         }
       });
     }
@@ -142,7 +152,7 @@ export class EditableTextNode extends WrappedTextNode {
     }
     const pos = this.cursor();
     this.undoRedo.push(new InsertTextAction(pos, inserted));
-    this.textSignal.set(insert(this.text(), pos, inserted));
+    this.setText(insert(this.text(), pos, inserted));
     this.setCursor(pos + inserted.length);
   }
 
@@ -155,7 +165,7 @@ export class EditableTextNode extends WrappedTextNode {
     if (pos <= 0) return;
     const deleted = this.text().substring(pos - 1, pos);
     this.undoRedo.push(new DeleteTextAction(pos - 1, deleted, true));
-    this.textSignal.set(removeRange(this.text(), pos - 1, pos));
+    this.setText(removeRange(this.text(), pos - 1, pos));
     this.setCursor(pos - 1);
   }
 
@@ -168,7 +178,7 @@ export class EditableTextNode extends WrappedTextNode {
     if (pos >= this.text().length) return;
     const deleted = this.text().substring(pos, pos + 1);
     this.undoRedo.push(new DeleteTextAction(pos, deleted, false));
-    this.textSignal.set(removeRange(this.text(), pos, pos + 1));
+    this.setText(removeRange(this.text(), pos, pos + 1));
     this.setCursor(pos);
   }
 
@@ -197,7 +207,8 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   selectLeft(): void {
-    const a = this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
+    const a =
+      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
     const f = Math.min(Math.max(this.focusIndex.get(), 0), this.text().length);
     if (f > 0) {
       this.anchorIndex.set(a);
@@ -206,7 +217,8 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   selectRight(): void {
-    const a = this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
+    const a =
+      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
     const f = Math.min(Math.max(this.focusIndex.get(), 0), this.text().length);
     if (f < this.text().length) {
       this.anchorIndex.set(a);
@@ -215,61 +227,31 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   moveUp(): void {
-    const p = this.paragraph();
-    if (!p) return;
-    const rects = this.cursorRect();
-    if (rects.length == 0) {
-      this.setCursor(0);
-      return;
-    }
-    const r = rects[0];
-    if (isNaN(this.preferredX)) this.preferredX = r.left + (r.right - r.left) / 2;
-    const step = r.bottom - r.top;
-    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, r.top - step);
-    this.setCursor(Math.min(Math.max(newPos, 0), this.text().length));
+    const newPos = this.verticalMove(-1);
+    if (newPos != null) this.setCursor(newPos);
   }
 
   moveDown(): void {
-    const p = this.paragraph();
-    if (!p) return;
-    const rects = this.cursorRect();
-    if (rects.length == 0) {
-      this.setCursor(this.text().length);
-      return;
-    }
-    const r = rects[0];
-    if (isNaN(this.preferredX)) this.preferredX = r.left + (r.right - r.left) / 2;
-    const step = r.bottom - r.top;
-    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, r.bottom + step);
-    this.setCursor(Math.min(Math.max(newPos, 0), this.text().length));
+    const newPos = this.verticalMove(1);
+    if (newPos != null) this.setCursor(newPos);
   }
 
   selectUp(): void {
-    const p = this.paragraph();
-    if (!p) return;
-    const rects = this.cursorRect();
-    if (rects.length == 0) return;
-    const r = rects[0];
-    if (isNaN(this.preferredX)) this.preferredX = r.left + (r.right - r.left) / 2;
-    const a = this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
-    const step = r.bottom - r.top;
-    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, r.top - step);
+    const newPos = this.verticalMove(-1);
+    if (newPos == null) return;
+    const a =
+      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
     this.anchorIndex.set(a);
-    this.focusIndex.set(Math.min(Math.max(newPos, 0), this.text().length));
+    this.focusIndex.set(newPos);
   }
 
   selectDown(): void {
-    const p = this.paragraph();
-    if (!p) return;
-    const rects = this.cursorRect();
-    if (rects.length == 0) return;
-    const r = rects[0];
-    if (isNaN(this.preferredX)) this.preferredX = r.left + (r.right - r.left) / 2;
-    const a = this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
-    const step = r.bottom - r.top;
-    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, r.bottom + step);
+    const newPos = this.verticalMove(1);
+    if (newPos == null) return;
+    const a =
+      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
     this.anchorIndex.set(a);
-    this.focusIndex.set(Math.min(Math.max(newPos, 0), this.text().length));
+    this.focusIndex.set(newPos);
   }
 
   mouseDownCapture(e: MouseEvent): void {
@@ -297,8 +279,11 @@ export class EditableTextNode extends WrappedTextNode {
     const len = this.composingLength.get();
     const base = this.compositionBase;
     if (base && len > 0) {
-      const restored = this.text().substring(0, start) + base[1] + this.text().substring(start + len);
-      if (restored != this.text()) this.textSignal.set(restored);
+      const restored =
+        this.text().substring(0, start) +
+        base[1] +
+        this.text().substring(start + len);
+      if (restored != this.text()) this.setText(restored);
       this.setCursor(Math.min(Math.max(base[0], 0), restored.length));
     }
     this.composingStart.set(0);
@@ -325,7 +310,11 @@ export class EditableTextNode extends WrappedTextNode {
     this.onComposing(committed, '', 0);
   }
 
-  protected onComposing(committed: string, composing: string, cursorInComposing: number): void {
+  protected onComposing(
+    committed: string,
+    composing: string,
+    cursorInComposing: number
+  ): void {
     if (committed.length == 0 && composing.length == 0) {
       this.cancelComposition();
       return;
@@ -334,19 +323,27 @@ export class EditableTextNode extends WrappedTextNode {
       const [start, oldLen] = this.hasSel()
         ? [this.selStart(), this.selEnd() - this.selStart()]
         : [Math.min(Math.max(this.cursor(), 0), this.text().length), 0];
-      this.compositionBase = [start, this.text().substring(start, start + oldLen)];
+      this.compositionBase = [
+        start,
+        this.text().substring(start, start + oldLen),
+      ];
       this.composingStart.set(start);
     }
     const inserted = committed + composing;
     const start = this.composingStart.get();
     const oldLen = this.composingLength.get();
     if (inserted.length > 0 || oldLen > 0) {
-      const newText = this.text().substring(0, start) + inserted + this.text().substring(start + oldLen);
-      if (newText != this.text()) this.textSignal.set(newText);
+      const newText =
+        this.text().substring(0, start) +
+        inserted +
+        this.text().substring(start + oldLen);
+      if (newText != this.text()) this.setText(newText);
     }
     this.composingStart.set(start + committed.length);
     this.composingLength.set(composing.length);
-    const caret = this.composingStart.get() + Math.min(Math.max(cursorInComposing, 0), composing.length);
+    const caret =
+      this.composingStart.get() +
+      Math.min(Math.max(cursorInComposing, 0), composing.length);
     this.anchorIndex.set(caret);
     this.focusIndex.set(caret);
     this.preferredX = NaN;
@@ -364,7 +361,9 @@ export class EditableTextNode extends WrappedTextNode {
     }
     const orig = this.text().substring(s, e);
     this.undoRedo.push(new ReplaceSelectionAction(s, orig, replacement));
-    this.textSignal.set(this.text().substring(0, s) + replacement + this.text().substring(e));
+    this.setText(
+      this.text().substring(0, s) + replacement + this.text().substring(e)
+    );
     this.setCursor(s + replacement.length);
   }
 
@@ -374,12 +373,12 @@ export class EditableTextNode extends WrappedTextNode {
     const e = this.selEnd();
     const deleted = this.text().substring(s, e);
     this.undoRedo.push(new DeleteTextAction(s, deleted, true));
-    this.textSignal.set(removeRange(this.text(), s, e));
+    this.setText(removeRange(this.text(), s, e));
     this.setCursor(s);
   }
 
   private applyState(state: TextState): void {
-    this.textSignal.set(state.text);
+    this.setText(state.text);
     this.setCursor(state.cursor);
   }
 
@@ -468,12 +467,16 @@ export class EditableTextNode extends WrappedTextNode {
 
   private copy(): void {
     if (!this.hasSel()) return;
-    void clipboardSetText(this.text().substring(this.selStart(), this.selEnd()));
+    void clipboardSetText(
+      this.text().substring(this.selStart(), this.selEnd())
+    );
   }
 
   private cut(): void {
     if (!this.hasSel()) return;
-    void clipboardSetText(this.text().substring(this.selStart(), this.selEnd()));
+    void clipboardSetText(
+      this.text().substring(this.selStart(), this.selEnd())
+    );
     this.delSel();
   }
 
@@ -490,7 +493,10 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   private selEnd(): number {
-    return Math.min(Math.max(this.anchorIndex.get(), this.focusIndex.get()), this.text().length);
+    return Math.min(
+      Math.max(this.anchorIndex.get(), this.focusIndex.get()),
+      this.text().length
+    );
   }
 
   private hasSel(): boolean {
@@ -530,6 +536,33 @@ export class EditableTextNode extends WrappedTextNode {
     if (list.length > 0) return list;
     if (pos > 0) return p.getRectsForRange(pos - 1, pos, RectStyle.TIGHT);
     return [];
+  }
+
+  private verticalMove(dir: 1 | -1): number | null {
+    const p = this.paragraph();
+    if (!p) return null;
+    const rects = this.cursorRect();
+    if (rects.length == 0) return null;
+    const r = rects[0];
+    if (isNaN(this.preferredX))
+      this.preferredX = r.left + (r.right - r.left) / 2;
+
+    const lines = p.getLineMetrics();
+    if (lines.length <= 1) return null;
+
+    const cy = r.top + (r.bottom - r.top) / 2;
+    let i = 0;
+    for (; i < lines.length; i++) {
+      if (cy >= lines[i].top && cy < lines[i].bottom) break;
+    }
+    if (i >= lines.length) return null;
+    const j = i + dir;
+    if (j < 0 || j >= lines.length) return null;
+
+    const target = lines[j];
+    const y = (target.top + target.bottom) / 2;
+    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, y);
+    return Math.min(Math.max(newPos, 0), this.text().length);
   }
 
   private overlayOrigin(): [number, number] {
@@ -602,12 +635,22 @@ export class EditableTextNode extends WrappedTextNode {
     const list = p.getRectsForRange(pos, pos + 1, RectStyle.TIGHT);
     if (list.length > 0) {
       const r = list[0];
-      ctx.fillRect(r.left + px, r.top + py, this.cursorWidth(), r.bottom - r.top);
+      ctx.fillRect(
+        r.left + px,
+        r.top + py,
+        this.cursorWidth(),
+        r.bottom - r.top
+      );
     } else if (pos > 0) {
       const list2 = p.getRectsForRange(pos - 1, pos, RectStyle.TIGHT);
       if (list2.length > 0) {
         const r = list2[0];
-        ctx.fillRect(r.right - this.cursorWidth() + px, r.top + py, this.cursorWidth(), r.bottom - r.top);
+        ctx.fillRect(
+          r.right - this.cursorWidth() + px,
+          r.top + py,
+          this.cursorWidth(),
+          r.bottom - r.top
+        );
       }
     }
   }
@@ -622,9 +665,19 @@ export class EditableTextNode extends WrappedTextNode {
     const e = s + this.composingLength.get();
     for (const rect of p.getRectsForRange(s, e, RectStyle.TIGHT)) {
       ctx.fillStyle = colorToCSS(this.composingBackgroundColor());
-      ctx.fillRect(rect.left + px, rect.top + py, rect.right - rect.left, rect.bottom - rect.top);
+      ctx.fillRect(
+        rect.left + px,
+        rect.top + py,
+        rect.right - rect.left,
+        rect.bottom - rect.top
+      );
       ctx.fillStyle = colorToCSS(this.composingUnderlineColor());
-      ctx.fillRect(rect.left + px, rect.bottom - 2 + py, rect.right - rect.left, 2);
+      ctx.fillRect(
+        rect.left + px,
+        rect.bottom - 2 + py,
+        rect.right - rect.left,
+        2
+      );
     }
   }
 }

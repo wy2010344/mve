@@ -2,10 +2,9 @@
 // TargetStateHolder — 继承 StateHolderI，提供 target memo
 // ---------------------------------------------------------------------------
 
-import { GetValue, memo, MemoFun, ReadSet, SetValue } from 'wy-helper';
+import { memo, MemoFun } from 'wy-helper';
 import { StateHolderI } from './state-holder-i';
 import { RootReturn, ShareConfig, StateHolderWithNode } from './state-holder';
-import { purifyList, purifySet } from './value-or-get-list';
 import { ContextI, parentContext } from './context';
 
 export class TargetStateHolder<Node, Target>
@@ -20,7 +19,7 @@ export class TargetStateHolder<Node, Target>
     private readonly callback: (
       this: StateHolderWithNode<Node, Target>
     ) => void,
-    parent?: StateHolderI<Node, unknown>
+    parent?: StateHolderI<unknown, unknown>
   ) {
     super(config, parent);
     this.target = memo(_old => {

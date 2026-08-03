@@ -56,7 +56,7 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
 
   constructor(
     readonly config: ShareConfig<Node, Target>,
-    readonly parent?: StateHolderI<Node, unknown>,
+    readonly parent?: StateHolderI<unknown, unknown>,
     readonly parentContextIndex: number = parent?.contexts.length ?? 0
   ) {
     this.parent?._children.add(this);
@@ -132,7 +132,7 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
   private findProvider<T>(
     context: ContextI<T>
   ): [ContextI<unknown>, unknown] | undefined {
-    let holder: StateHolderI<Node, unknown> | undefined = this;
+    let holder: StateHolderI<unknown, unknown> | undefined = this;
     let begin = holder.contexts.length;
     while (holder) {
       for (let i = begin - 1; i > -1; i--) {
@@ -224,30 +224,29 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
 
   // -- renderNode -----------------------------------------------------------
 
-  // renderListNode(
-  //   node: Node,
-  //   after: SetValue<readonly Node[]>,
-  //   callback: (this: StateHolderWithNode<Node, readonly Node[]>) => void
-  // ): GetValue<readonly Node[]> {
-  // }
+  renderNode<Node, Target>(
+    node: Node,
+    callback: (this: StateHolderWithNode<Node, Target>) => void,
+    config: ShareConfig<Node, Target>
+  ): GetValue<Target>;
   renderNode(
     node: Node,
     callback: (this: StateHolderWithNode<Node, Target>) => void
-  ): GetValue<Target> {
-    const child = new TargetStateHolder(this.config, node, callback, this);
+  ): GetValue<Target>;
+  renderNode(
+    node: unknown,
+    callback: unknown,
+    config?: unknown
+  ): GetValue<unknown> {
+    const child = new TargetStateHolder<unknown, unknown>(
+      (config || this.config) as any,
+      node,
+      callback as any,
+      this
+    );
     child.create();
     return child.target;
   }
-
-  // renderSetNode(
-  //   node: Node,
-  //   after: SetValue<ReadSet<Node>>,
-  //   callback: (this: StateHolderWithNode<Node, ReadSet<Node>>) => void
-  // ): GetValue<ReadSet<Node>> {
-  //   const child = new SetTargetStateHolder(node, after, callback, this);
-  //   child.create();
-  //   return child.target;
-  // }
 
   getParent(): unknown {
     return this.consume(parentContext);
@@ -265,7 +264,7 @@ export class EachValue<Node, Target, T, K, O>
   constructor(
     config: ShareConfig<Node, Target>,
     readonly getSignal: GetValue<unknown>,
-    parent: StateHolderI<Node, unknown>,
+    parent: StateHolderI<unknown, unknown>,
     parentContextIndex: number,
     private readonly _creater: Creater<Node, Target, T, K, O>,
     private readonly _key: K,

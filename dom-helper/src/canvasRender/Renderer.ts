@@ -1,12 +1,6 @@
 import { collectSignal, createSignal, emptyFun, EmptyFun } from 'wy-helper';
 import { renderRoot, StateHolder } from 'mve-core';
-import {
-  Node,
-  nodeConfig,
-  hitest,
-  NodeWithPosition,
-  last,
-} from './Node';
+import { Node, nodeConfig, hitest, NodeWithPosition, last } from './Node';
 import { LayoutNode, LayoutNodeArg, outerSize } from './LayoutNode';
 import {
   ComposingTextCallback,
@@ -52,7 +46,13 @@ class Register {
   private lastCursor: CursorType | null = null;
 
   setOverlayHandler(
-    show: (x: number, y: number, w: number, h: number, fontSize: number) => void,
+    show: (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      fontSize: number
+    ) => void,
     hide: () => void
   ) {
     this.overlayShow = show;
@@ -162,7 +162,11 @@ class Register {
 export class Renderer extends LayoutNode {
   private register: Register;
   private destroyState: () => void = emptyFun;
-  constructor(args: RendererArgs, context?: StateHolder<Node, readonly Node[]>) {
+  constructor(
+    args: RendererArgs,
+    context?: StateHolder<Node, readonly Node[]>
+  ) {
+    console.log('have context', context);
     const register = new Register();
     if (context) {
       register.provide(context);
@@ -189,7 +193,13 @@ export class Renderer extends LayoutNode {
   });
 
   setInputOverlayHandler(
-    show: (x: number, y: number, w: number, h: number, fontSize: number) => void,
+    show: (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      fontSize: number
+    ) => void,
     hide: () => void
   ) {
     this.register.setOverlayHandler(show, hide);
@@ -236,7 +246,11 @@ export class Renderer extends LayoutNode {
     }
     this.children().forEach(collect);
     if (result.some(it => it.focusOrder() != null)) {
-      result.sort((a, b) => (a.focusOrder() ?? Number.MAX_SAFE_INTEGER) - (b.focusOrder() ?? Number.MAX_SAFE_INTEGER));
+      result.sort(
+        (a, b) =>
+          (a.focusOrder() ?? Number.MAX_SAFE_INTEGER) -
+          (b.focusOrder() ?? Number.MAX_SAFE_INTEGER)
+      );
     }
     return result;
   }
@@ -247,7 +261,13 @@ export class Renderer extends LayoutNode {
     const current = this.register.focused.get();
     const index = nodes.findIndex(it => it === current);
     const targetIndex =
-      index < 0 ? (next ? 0 : nodes.length - 1) : next ? (index + 1) % nodes.length : (index - 1 + nodes.length) % nodes.length;
+      index < 0
+        ? next
+          ? 0
+          : nodes.length - 1
+        : next
+          ? (index + 1) % nodes.length
+          : (index - 1 + nodes.length) % nodes.length;
     this.setFocused(nodes[targetIndex]);
   }
 
@@ -349,14 +369,22 @@ export class Renderer extends LayoutNode {
     }
   }
 
-  dispatchMouseWheel(x: number, y: number, deltaX: number, deltaY: number): void {
+  dispatchMouseWheel(
+    x: number,
+    y: number,
+    deltaX: number,
+    deltaY: number
+  ): void {
     this.mouseWheel(x, y, deltaX, deltaY);
   }
 }
 
 type MouseEventType = 'click' | 'down' | 'up' | 'move';
 
-function mouseEventOf(nodeWithPosition: NodeWithPosition, type: MouseEventType) {
+function mouseEventOf(
+  nodeWithPosition: NodeWithPosition,
+  type: MouseEventType
+) {
   const root = nodeWithPosition;
   let nwp: NodeWithPosition | null = nodeWithPosition;
   const list: NodeWithPosition[] = [];
@@ -380,7 +408,12 @@ function mouseEventOf(nodeWithPosition: NodeWithPosition, type: MouseEventType) 
   }
 }
 
-function sendMouseEvent(node: Node, type: MouseEventType, e: MouseEvent, capture: boolean) {
+function sendMouseEvent(
+  node: Node,
+  type: MouseEventType,
+  e: MouseEvent,
+  capture: boolean
+) {
   switch (type) {
     case 'click':
       if (capture) node.mouseClickCapture(e);

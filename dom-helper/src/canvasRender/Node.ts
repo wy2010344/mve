@@ -97,7 +97,10 @@ export class Node {
 
   readonly engineGlobal: EngineGlobal | null;
 
-  constructor(context: StateHolder<Node, readonly Node[]> | void, args: NodeArg<Node>) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]> | void,
+    args: NodeArg<Node>
+  ) {
     this.mouseClick = args.mouseClick || this.mouseClick;
     this.mouseClickCapture = args.mouseClickCapture || this.mouseClickCapture;
     this.mouseDown = args.mouseDown || this.mouseDown;
@@ -146,7 +149,7 @@ export class Node {
       } else {
         throw new Error('需要找到父节点才行');
       }
-      this.children = context.renderNode(this, this.argChildren);
+      this.children = context.renderNode(this, this.argChildren, nodeConfig);
     } else {
       this.parent = undefined;
     }

@@ -44,6 +44,11 @@ export interface StateHolder<Node, Target> {
     arg?: RenderForEachArg<K>
   ): MemoFun<any>;
 
+  renderNode<Node, Target>(
+    node: Node,
+    callback: (this: StateHolderWithNode<Node, Target>) => void,
+    config: ShareConfig<Node, Target>
+  ): GetValue<Target>;
   renderNode(
     node: Node,
     // after: SetValue<readonly Node[]>,

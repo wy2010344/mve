@@ -5,7 +5,7 @@ import type {
   ParagraphStyle,
   TextStyle,
 } from 'canvaskit-wasm';
-import { getCanvasKit } from './CanvasKitLoader';
+import { getCanvasKit } from './CanvasKit';
 import type { ColorInt } from './Draw';
 
 export interface RichTextStyle {
@@ -54,7 +54,9 @@ const DEFAULT_STYLE: RichTextStyle = {
   lineHeightMultiplier: null,
 };
 
-function normalizeStyle(style: RichTextStyle = {}): Required<Omit<RichTextStyle, 'fontFamily' | 'lineHeightMultiplier'>> & {
+function normalizeStyle(style: RichTextStyle = {}): Required<
+  Omit<RichTextStyle, 'fontFamily' | 'lineHeightMultiplier'>
+> & {
   fontFamily: string | null;
   lineHeightMultiplier: number | null;
 } {
@@ -75,14 +77,20 @@ let collection: FontCollection | null = null;
 
 function toArrayBuffer(bytes: ArrayBuffer | Uint8Array): ArrayBuffer {
   if (bytes instanceof ArrayBuffer) return bytes;
-  return (bytes.buffer as ArrayBuffer).slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  return (bytes.buffer as ArrayBuffer).slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  );
 }
 
 /**
  * 注册自定义字体，供后续 buildParagraph 使用（family 作为文本样式中的 fontFamily）。
  * 可在 CanvasKit 加载前后调用；重复注册同族会替换并重建字体集合。
  */
-export function registerFont(family: string, bytes: ArrayBuffer | Uint8Array): void {
+export function registerFont(
+  family: string,
+  bytes: ArrayBuffer | Uint8Array
+): void {
   pendingFonts.set(family, toArrayBuffer(bytes));
   collection?.delete();
   collection = null;
@@ -194,14 +202,27 @@ export class PlatformParagraph {
   getRectsForRange(start: number, end: number, style: RectStyle): TextRect[] {
     if (start >= end) return [];
     const ck = getCanvasKit();
+    if (!ck) return [];
     const [hStyle, wStyle] =
       style == RectStyle.TIGHT
         ? [ck.RectHeightStyle.Tight, ck.RectWidthStyle.Tight]
         : [ck.RectHeightStyle.Max, ck.RectWidthStyle.Max];
-    return this.paragraph.getRectsForRange(start, end, hStyle, wStyle).map(it => {
-      const r = it.rect;
-      return { left: r[0], top: r[1], right: r[2], bottom: r[3] };
-    });
+    return this.paragraph
+      .getRectsForRange(start, end, hStyle, wStyle)
+      .map(it => {
+        const r = it.rect;
+        return { left: r[0], top: r[1], right: r[2], bottom: r[3] };
+      });
+  }
+
+  /** 布局层行边界（与 getGlyphPositionAtCoordinate 的行判定一致）。 */
+  getLineMetrics(): TextRect[] {
+    return this.paragraph.getLineMetrics().map(m => ({
+      left: m.left,
+      top: m.baseline - m.ascent,
+      right: m.left + m.width,
+      bottom: m.baseline + m.descent,
+    }));
   }
 
   delete(): void {
@@ -215,15 +236,21 @@ export function buildParagraph(
   maxLines: number = INT_MAX_VALUE,
   ellipsis: string = '\u2026',
   textAlign: TextAlign = TextAlign.START
-): PlatformParagraph {
+): PlatformParagraph | null {
   const ck = getCanvasKit();
+  if (!ck) {
+    return null;
+  }
   const ps = new ck.ParagraphStyle({
     textAlign: toTextAlign(ck, textAlign),
     textStyle: makeTextStyle(ck),
     maxLines: maxLines !== INT_MAX_VALUE ? maxLines : undefined,
     ellipsis: maxLines !== INT_MAX_VALUE ? ellipsis : undefined,
   });
-  const builder = ck.ParagraphBuilder.MakeFromFontCollection(ps, getFontCollection(ck));
+  const builder = ck.ParagraphBuilder.MakeFromFontCollection(
+    ps,
+    getFontCollection(ck)
+  );
   for (const span of spans) {
     if (!span.text) continue;
     builder.pushStyle(new ck.TextStyle(makeTextStyle(ck, span.style)));

@@ -15,7 +15,11 @@ import {
 } from './Scroll';
 import { EditableTextNode, EditableTextNodeArg } from './EditableTextNode';
 import { RichTextNode, RichTextNodeArg } from './RichTextNode';
-import { WrappedTextNode, WrappedTextNodeArg, WordBreak } from './WrappedTextNode';
+import {
+  WrappedTextNode,
+  WrappedTextNodeArg,
+  WordBreak,
+} from './WrappedTextNode';
 import { ImageNode, ImageNodeArg } from './ImageNode';
 import { decodeImage } from './PlatformImage';
 import { SimpleScrollBar } from './helper/SimpleScrollBar';
@@ -52,7 +56,14 @@ export { EditableTextNode, getActiveEditor } from './EditableTextNode';
 export type { EditableTextNodeArg } from './EditableTextNode';
 
 // Scroll
-export { Scroll, ScrollBarCalculate, ScrollContent, registerScroll, contentSize, maxScroll } from './Scroll';
+export {
+  Scroll,
+  ScrollBarCalculate,
+  ScrollContent,
+  registerScroll,
+  contentSize,
+  maxScroll,
+} from './Scroll';
 export type { ScrollContentArg } from './Scroll';
 
 // Image
@@ -60,8 +71,7 @@ export { ImageNode } from './ImageNode';
 export type { ImageNodeArg } from './ImageNode';
 export { decodeImage } from './PlatformImage';
 export type { PlatformImage } from './PlatformImage';
-export { configureCanvasKit, loadCanvasKit } from './CanvasKitLoader';
-export type { CanvasKitConfig } from './CanvasKitLoader';
+export { getCanvasKit, loadCanvasKit } from './CanvasKit';
 export { registerFont } from './PlatformParagraph';
 
 // Undo / Redo
@@ -101,10 +111,15 @@ export function renderCanvas(
 
   const w = createSignal(canvas.clientWidth);
   const h = createSignal(canvas.clientHeight);
-  const ob = new ResizeObserver(() => {
-    w.set(canvas.clientWidth);
-    h.set(canvas.clientHeight);
+  function syncSize() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    w.set(canvas.width);
+    h.set(canvas.height);
     batchSignalEnd();
+  }
+  const ob = new ResizeObserver(() => {
+    syncSize();
   });
   ob.observe(canvas);
   stateHolder.addDestroy(() => {
