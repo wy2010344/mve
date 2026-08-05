@@ -1,6 +1,6 @@
 {
   "name": "mve-core",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "description": "Core framework for MVE (Model-View-Effect) architecture",
   "keywords": [
     "mve",
