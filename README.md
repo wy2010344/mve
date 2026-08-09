@@ -9,6 +9,7 @@ A signal-based frontend framework for building reactive user interfaces.
 - **mve-dom** - DOM renderer for MVE framework
 - **mve-dom-helper** - DOM-specific helper utilities
 - **daisy-mobile-helper** - Mobile UI components using DaisyUI
+- **mve-three** - Three.js view renderer and helpers
 
 ## Documentation
 
