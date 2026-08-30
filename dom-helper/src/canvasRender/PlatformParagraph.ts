@@ -184,6 +184,13 @@ function makeTextStyle(ck: CanvasKit, style: RichTextStyle = {}): TextStyle {
   return ts;
 }
 
+export interface LineRect extends TextRect {
+  /** 行起点（文本缓冲索引，不含行首软换行符）。 */
+  start: number;
+  /** 行终点（文本缓冲索引，不含换行符）。 */
+  end: number;
+}
+
 export class PlatformParagraph {
   constructor(readonly paragraph: Paragraph) {}
 
@@ -216,12 +223,14 @@ export class PlatformParagraph {
   }
 
   /** 布局层行边界（与 getGlyphPositionAtCoordinate 的行判定一致）。 */
-  getLineMetrics(): TextRect[] {
+  getLineMetrics(): LineRect[] {
     return this.paragraph.getLineMetrics().map(m => ({
       left: m.left,
       top: m.baseline - m.ascent,
       right: m.left + m.width,
       bottom: m.baseline + m.descent,
+      start: m.startIndex,
+      end: m.endIndex,
     }));
   }
 

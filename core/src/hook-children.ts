@@ -70,7 +70,8 @@ export function createRenderChildren<T, F>(
   move: DiffMoveFun<T, F>,
   createCollect: (
     p: T,
-    callback: (this: StateHolderWithNode<T, F>) => void
+    callback: (this: StateHolderWithNode<T, F>) => void,
+    didAdd?: boolean
   ) => GetValue<F>,
   createRoot: (
     p: T,
@@ -98,7 +99,7 @@ export function createRenderChildren<T, F>(
       });
     },
     renderChildren(node: T, fun: (this: StateHolderWithNode<T, F>) => void) {
-      const get = createCollect(node, fun);
+      const get = createCollect(node, fun, true);
       hookChangeChildren(node, get, move);
     },
   };

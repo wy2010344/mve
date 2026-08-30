@@ -29,6 +29,8 @@ export enum KeyCode {
   End = 'End',
   Up = 'Up',
   Down = 'Down',
+  PageUp = 'PageUp',
+  PageDown = 'PageDown',
   Enter = 'Enter',
   Tab = 'Tab',
   Escape = 'Escape',

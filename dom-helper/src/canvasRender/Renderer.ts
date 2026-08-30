@@ -236,7 +236,7 @@ export class Renderer extends LayoutNode {
     this.register.focused.set(node);
   }
 
-  private focusableNodes(): Node[] {
+  private collectFocusable(root: Node): Node[] {
     const result: Node[] = [];
     function collect(node: Node) {
       if (node.focusable() && !node.hide()) {
@@ -244,7 +244,7 @@ export class Renderer extends LayoutNode {
       }
       node.children().forEach(collect);
     }
-    this.children().forEach(collect);
+    collect(root);
     if (result.some(it => it.focusOrder() != null)) {
       result.sort(
         (a, b) =>
@@ -255,8 +255,25 @@ export class Renderer extends LayoutNode {
     return result;
   }
 
+  private focusableNodes(): Node[] {
+    return this.collectFocusable(this);
+  }
+
+  private findFocusTrap(focused: Node | null): Node | null {
+    let cur = focused;
+    while (cur) {
+      if (cur.focusTrap()) {
+        return cur;
+      }
+      cur = cur.parent ?? null;
+    }
+    return null;
+  }
+
   private moveFocus(next: boolean) {
-    const nodes = this.focusableNodes();
+    // 焦点在当前弹出层（focusTrap）内时，只在圈定子树内遍历；否则全局遍历
+    const trap = this.findFocusTrap(this.register.focused.get());
+    const nodes = trap ? this.collectFocusable(trap) : this.focusableNodes();
     if (nodes.length == 0) return;
     const current = this.register.focused.get();
     const index = nodes.findIndex(it => it === current);

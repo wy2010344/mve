@@ -54,7 +54,10 @@ export interface NodeArg<T = Node> {
   hide?: ValueOrGet<boolean, T>;
   focusable?: ValueOrGet<boolean, T>;
   focusOrder?: ValueOrGet<number | void, T>;
+  focusTrap?: ValueOrGet<boolean, T>;
+  skipDraw?: ValueOrGet<boolean, T>;
   draw?(this: T, ctx: CanvasRenderingContext2D): void;
+  drawAtParent?(this: T, ctx: CanvasRenderingContext2D): void;
   children?(this: StateHolderWithNode<Node, readonly Node[]>): void;
 
   acceptHit?(this: T, x: number, y: number): boolean;
@@ -117,7 +120,10 @@ export class Node {
     this.hide = valueOrGetToGet(args.hide, this.hide);
     this.focusable = valueOrGetToGet(args.focusable, this.focusable);
     this.focusOrder = valueOrGetToGet(args.focusOrder, this.focusOrder);
+    this.focusTrap = valueOrGetToGet(args.focusTrap, this.focusTrap);
+    this.skipDraw = valueOrGetToGet(args.skipDraw, this.skipDraw);
     this.draw = args.draw || this.draw;
+    this.drawAtParent = args.drawAtParent || this.drawAtParent;
 
     if (args.acceptHit) {
       this.acceptHit = args.acceptHit.bind(this);
@@ -172,6 +178,13 @@ export class Node {
     return false;
   }
   focusOrder(): number | void {}
+  focusTrap(): boolean {
+    return false;
+  }
+  skipDraw(): boolean {
+    return false;
+  }
+  drawAtParent(ctx: CanvasRenderingContext2D): void {}
   isFocused(): boolean {
     return this.engineGlobal?.focused() === this;
   }
@@ -212,6 +225,9 @@ export class Node {
 
   draw(ctx: CanvasRenderingContext2D): void {
     for (const child of this.children()) {
+      if (child.skipDraw()) {
+        continue;
+      }
       ctx.save();
       const sc = child as ScrollContentLike;
       if (sc.isScrollContent) {
@@ -222,6 +238,7 @@ export class Node {
         ctx.rect(x, y, p.innerWidth(), p.innerHeight());
         ctx.clip();
       }
+      child.drawAtParent(ctx);
       ctx.translate(child.x(), child.y());
       child.draw(ctx);
       ctx.restore();

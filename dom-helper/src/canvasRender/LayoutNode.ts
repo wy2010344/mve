@@ -34,6 +34,7 @@ export interface LayoutNodeArg<T = LayoutNode> extends NodeArg<T> {
   width?: ValueOrGet<LayoutSize, T>;
   height?: ValueOrGet<LayoutSize, T>;
   layout?: ValueOrGet<LayoutDirection, T>;
+  notInLayout?: ValueOrGet<boolean, T>;
 }
 export class LayoutNode extends Node {
   constructor(context: StateHolder<Node, readonly Node[]> | void, args: LayoutNodeArg) {
@@ -50,6 +51,7 @@ export class LayoutNode extends Node {
     this.argSize = valueOrGetToGet(args.size, this.argSize);
     this.argWidth = valueOrGetToGet(args.width, this.argWidth);
     this.argHeight = valueOrGetToGet(args.height, this.argHeight);
+    this.notInLayout = valueOrGetToGet(args.notInLayout, this.notInLayout);
     if (args.layout) {
       if (typeof args.layout == 'function') {
         this.layout = (args.layout as any).call(this);
@@ -119,9 +121,15 @@ export class LayoutNode extends Node {
     }
   );
   _layoutIndex = 0;
+  notInLayout(): boolean {
+    return false;
+  }
   layoutIndex(): number {
     if (this.hide()) {
       throw new Error('已经隐藏不再显示');
+    }
+    if (this.notInLayout()) {
+      throw new Error('当前节点不在Layout中');
     }
     this.layoutParent?.layoutChildren();
     return this._layoutIndex;
@@ -254,7 +262,9 @@ export function innerSize(this: LayoutNode, d: PointKey) {
 function findLayoutChildren(n: Node, list: LayoutNode[]) {
   n.children().forEach(x => {
     if (x instanceof LayoutNode) {
-      list.push(x);
+      if (!x.notInLayout()) {
+        list.push(x);
+      }
     } else {
       findLayoutChildren(x, list);
     }

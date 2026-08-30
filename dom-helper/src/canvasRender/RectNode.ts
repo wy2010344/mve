@@ -5,6 +5,7 @@ import {
   LayoutNodeArg,
   LayoutSize,
   layoutValue,
+  padding,
 } from './LayoutNode';
 import { Node } from './Node';
 
@@ -14,17 +15,21 @@ export class RectNode extends LayoutNode {
     super(context, arg as any);
   }
   argPosition(d: PointKey): number {
+    const lp = this.layoutParent;
+    if (!lp) {
+      return super.argPosition(d);
+    }
     try {
-      return layoutValue
-        .call(this.layoutParent!, d)
-        .childPosition(this.layoutIndex());
+      return (
+        layoutValue.call(lp, d).childPosition(this.layoutIndex()) +
+        padding.call(lp, d, 'start')
+      );
     } catch (e) {
       if (e instanceof LayoutError) {
-      } else {
-        throw e;
+        return padding.call(lp, d, 'start');
       }
+      throw e;
     }
-    return super.argPosition(d);
   }
 
   argSize(d: PointKey): LayoutSize {

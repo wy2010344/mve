@@ -17,9 +17,11 @@ const config: ShareConfig<Node, readonly Node[]> = {
 };
 const a = createRenderChildren(
   diffMove(renderChildrenOperate),
-  function (node, callback) {
+  function (node, callback, didAdd) {
     const state = hookCurrentStateHolder(true);
-    state.addNode(node);
+    if (didAdd) {
+      state.addNode(node);
+    }
     return state.renderNode(node, callback);
   },
   function (node, callback) {

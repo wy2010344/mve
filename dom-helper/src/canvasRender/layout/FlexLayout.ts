@@ -42,6 +42,10 @@ export function flex(arg: {
       }
       return 0;
     },
+    ignore(n) {
+      const it = n.findExt(IgnoreFlexChild);
+      return it ? it.ignore() : false;
+    },
     createLayout(o) {
       return new FlexLayout(arg, o, this);
     },
@@ -58,6 +62,10 @@ export function flex(arg: {
     },
     outerSize(n) {
       return outerSize.call(n, toOpposite(direction()));
+    },
+    ignore(n) {
+      const it = n.findExt(IgnoreFlexChild);
+      return it ? it.ignore() : false;
     },
     createLayout(o) {
       return new StackLayout(arg, o, this);
@@ -118,4 +126,19 @@ export function align(args: {
   ac.alignX = valueOrGetToGet(args.alignX, ac.alignX);
   ac.alignY = valueOrGetToGet(args.alignY, ac.alignY);
   return ac;
+}
+
+export class IgnoreFlexChild {
+  argIgnore(): boolean {
+    return false;
+  }
+  ignore() {
+    return this.argIgnore();
+  }
+}
+
+export function ignoreFlex(args: { ignore?: ValueOrGet<boolean, IgnoreFlexChild> }) {
+  const fc = new IgnoreFlexChild();
+  fc.argIgnore = valueOrGetToGet(args.ignore, fc.argIgnore);
+  return fc;
 }

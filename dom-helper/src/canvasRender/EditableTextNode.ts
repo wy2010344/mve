@@ -20,6 +20,8 @@ import {
   TextState,
   UndoRedo,
 } from './UndoRedo';
+import * as Graphemes from './Graphemes';
+import * as Words from './Words';
 
 let activeEditor: EditableTextNode | null = null;
 let keyRouterRegistered = false;
@@ -140,6 +142,7 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   redo(): void {
+    if (this.inComposing()) return;
     const current = new TextState(this.text(), this.cursor());
     const next = this.undoRedo.redo(current);
     if (next) this.applyState(next);
@@ -163,10 +166,12 @@ export class EditableTextNode extends WrappedTextNode {
     }
     const pos = this.cursor();
     if (pos <= 0) return;
-    const deleted = this.text().substring(pos - 1, pos);
-    this.undoRedo.push(new DeleteTextAction(pos - 1, deleted, true));
-    this.setText(removeRange(this.text(), pos - 1, pos));
-    this.setCursor(pos - 1);
+    const start = Graphemes.prevBoundary(this.text(), pos);
+    if (start >= pos) return;
+    const deleted = this.text().substring(start, pos);
+    this.undoRedo.push(new DeleteTextAction(start, deleted, true));
+    this.setText(removeRange(this.text(), start, pos));
+    this.setCursor(start);
   }
 
   delete(): void {
@@ -176,30 +181,62 @@ export class EditableTextNode extends WrappedTextNode {
     }
     const pos = this.cursor();
     if (pos >= this.text().length) return;
-    const deleted = this.text().substring(pos, pos + 1);
+    const end = Graphemes.nextBoundary(this.text(), pos);
+    if (end <= pos) return;
+    const deleted = this.text().substring(pos, end);
     this.undoRedo.push(new DeleteTextAction(pos, deleted, false));
-    this.setText(removeRange(this.text(), pos, pos + 1));
+    this.setText(removeRange(this.text(), pos, end));
     this.setCursor(pos);
   }
 
   moveLeft(): void {
     const p = this.cursor();
-    if (p > 0) this.setCursor(p - 1);
+    if (p > 0) this.setCursor(Graphemes.prevBoundary(this.text(), p));
   }
 
   moveRight(): void {
     const p = this.cursor();
-    if (p < this.text().length) this.setCursor(p + 1);
+    if (p < this.text().length) this.setCursor(Graphemes.nextBoundary(this.text(), p));
   }
 
   moveHome(): void {
-    this.setCursor(0);
     this.preferredX = NaN;
+    this.setCursor(this.lineStart(this.cursor()));
   }
 
   moveEnd(): void {
-    this.setCursor(this.text().length);
     this.preferredX = NaN;
+    this.setCursor(this.lineEnd(this.cursor()));
+  }
+
+  selectHome(): void {
+    this.preferredX = NaN;
+    this.extendTo(this.lineStart(this.focusIndex.get()));
+  }
+
+  selectEnd(): void {
+    this.preferredX = NaN;
+    this.extendTo(this.lineEnd(this.focusIndex.get()));
+  }
+
+  moveDocStart(): void {
+    this.preferredX = NaN;
+    this.setCursor(0);
+  }
+
+  moveDocEnd(): void {
+    this.preferredX = NaN;
+    this.setCursor(this.text().length);
+  }
+
+  selectDocStart(): void {
+    this.preferredX = NaN;
+    this.extendTo(0);
+  }
+
+  selectDocEnd(): void {
+    this.preferredX = NaN;
+    this.extendTo(this.text().length);
   }
 
   selectAll(): void {
@@ -212,7 +249,7 @@ export class EditableTextNode extends WrappedTextNode {
     const f = Math.min(Math.max(this.focusIndex.get(), 0), this.text().length);
     if (f > 0) {
       this.anchorIndex.set(a);
-      this.focusIndex.set(f - 1);
+      this.focusIndex.set(Graphemes.prevBoundary(this.text(), f));
     }
   }
 
@@ -222,8 +259,76 @@ export class EditableTextNode extends WrappedTextNode {
     const f = Math.min(Math.max(this.focusIndex.get(), 0), this.text().length);
     if (f < this.text().length) {
       this.anchorIndex.set(a);
-      this.focusIndex.set(f + 1);
+      this.focusIndex.set(Graphemes.nextBoundary(this.text(), f));
     }
+  }
+
+  movePrevWord(): void {
+    this.preferredX = NaN;
+    this.setCursor(
+      Words.prevBoundary(this.text(), this.cursor())
+    );
+  }
+
+  moveNextWord(): void {
+    this.preferredX = NaN;
+    this.setCursor(
+      Words.nextBoundary(this.text(), this.cursor())
+    );
+  }
+
+  selectPrevWord(): void {
+    this.preferredX = NaN;
+    this.extendTo(
+      Words.prevBoundary(
+        this.text(),
+        Math.min(Math.max(this.focusIndex.get(), 0), this.text().length)
+      )
+    );
+  }
+
+  selectNextWord(): void {
+    this.preferredX = NaN;
+    this.extendTo(
+      Words.nextBoundary(
+        this.text(),
+        Math.min(Math.max(this.focusIndex.get(), 0), this.text().length)
+      )
+    );
+  }
+
+  deleteWordBackward(): void {
+    if (this.hasSel()) {
+      this.delSel();
+      return;
+    }
+    const pos = this.cursor();
+    if (pos <= 0) return;
+    const start = Words.prevBoundary(this.text(), pos);
+    if (start >= pos) return;
+    this.undoRedo.push(
+      new DeleteTextAction(start, this.text().substring(start, pos), true)
+    );
+    this.setText(removeRange(this.text(), start, pos));
+    this.setCursor(start);
+    this.preferredX = NaN;
+  }
+
+  deleteWordForward(): void {
+    if (this.hasSel()) {
+      this.delSel();
+      return;
+    }
+    const pos = this.cursor();
+    if (pos >= this.text().length) return;
+    const end = Words.nextBoundary(this.text(), pos);
+    if (end <= pos) return;
+    this.undoRedo.push(
+      new DeleteTextAction(pos, this.text().substring(pos, end), false)
+    );
+    this.setText(removeRange(this.text(), pos, end));
+    this.setCursor(pos);
+    this.preferredX = NaN;
   }
 
   moveUp(): void {
@@ -238,20 +343,69 @@ export class EditableTextNode extends WrappedTextNode {
 
   selectUp(): void {
     const newPos = this.verticalMove(-1);
-    if (newPos == null) return;
-    const a =
-      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
-    this.anchorIndex.set(a);
-    this.focusIndex.set(newPos);
+    if (newPos != null) this.extendTo(newPos);
   }
 
   selectDown(): void {
     const newPos = this.verticalMove(1);
-    if (newPos == null) return;
-    const a =
-      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
-    this.anchorIndex.set(a);
-    this.focusIndex.set(newPos);
+    if (newPos != null) this.extendTo(newPos);
+  }
+
+  movePageUp(): void {
+    this.jumpLines(-this.pageLines());
+  }
+
+  movePageDown(): void {
+    this.jumpLines(this.pageLines());
+  }
+
+  selectPageUp(): void {
+    this.jumpLines(-this.pageLines(), true);
+  }
+
+  selectPageDown(): void {
+    this.jumpLines(this.pageLines(), true);
+  }
+
+  /** PageUp/PageDown 一次跳动的行数。 */
+  private pageLines(): number {
+    return 12;
+  }
+
+  /**
+   * 垂直跳 [count] 行（负上正下），保持 preferredX 视觉列；
+   * [extend] 时保持锚点只移动焦点。
+   */
+  private jumpLines(count: number, extend = false): void {
+    const p = this.paragraph();
+    if (!p) return;
+    const rects = this.cursorRect();
+    if (rects.length == 0) {
+      if (!extend) this.setCursor(count < 0 ? 0 : this.text().length);
+      return;
+    }
+    const r = rects[0];
+    if (isNaN(this.preferredX))
+      this.preferredX = r.left + (r.right - r.left) / 2;
+
+    const lines = p.getLineMetrics();
+    if (lines.length <= 1) return;
+
+    const cy = r.top + (r.bottom - r.top) / 2;
+    let i = 0;
+    for (; i < lines.length; i++) {
+      if (cy >= lines[i].top && cy < lines[i].bottom) break;
+    }
+    if (i >= lines.length) return;
+    const j = Math.min(Math.max(i + count, 0), lines.length - 1);
+    if (j == i) return;
+
+    const target = lines[j];
+    const y = (target.top + target.bottom) / 2;
+    const newPos = p.getGlyphPositionAtCoordinate(this.preferredX, y);
+    const clamped = Math.min(Math.max(newPos, 0), this.text().length);
+    if (extend) this.extendTo(clamped);
+    else this.setCursor(clamped);
   }
 
   mouseDownCapture(e: MouseEvent): void {
@@ -383,48 +537,57 @@ export class EditableTextNode extends WrappedTextNode {
   }
 
   private handleKey(e: KeyEvent): void {
-    if (e.ctrl && e.key == 'z') {
+    // 快捷键匹配对大小写归一：CapsLock 开启或 Shift 参与时平台上报大写（'Z'/'Y'）
+    const key = e.key.toLowerCase();
+    const alt = e.alt;
+    if (e.ctrl && !e.shift && key == 'z') {
       this.undo();
       return;
     }
-    if (e.ctrl && e.key == 'y') {
+    if ((e.ctrl && key == 'y') || (e.ctrl && e.shift && key == 'z')) {
       this.redo();
       return;
     }
-    if (e.ctrl && e.key == 'a') {
+    if (e.ctrl && key == 'a') {
       this.selectAll();
       return;
     }
-    if (e.ctrl && e.key == 'c') {
+    if (e.ctrl && key == 'c') {
       this.copy();
       return;
     }
-    if (e.ctrl && e.key == 'v') {
+    if (e.ctrl && key == 'v') {
       void this.paste();
       return;
     }
-    if (e.ctrl && e.key == 'x') {
+    if (e.ctrl && key == 'x') {
       this.cut();
       return;
     }
     if (e.code == KeyCode.Backspace) {
-      this.backspace();
+      if (e.ctrl || alt) this.deleteWordBackward();
+      else this.backspace();
       this.preferredX = NaN;
       return;
     }
     if (e.code == KeyCode.Delete) {
-      this.delete();
+      if (e.ctrl || alt) this.deleteWordForward();
+      else this.delete();
       this.preferredX = NaN;
       return;
     }
     if (e.code == KeyCode.Left) {
-      if (e.shift) this.selectLeft();
+      if (e.ctrl && e.shift) this.selectPrevWord();
+      else if (e.ctrl) this.movePrevWord();
+      else if (e.shift) this.selectLeft();
       else this.moveLeft();
       this.preferredX = NaN;
       return;
     }
     if (e.code == KeyCode.Right) {
-      if (e.shift) this.selectRight();
+      if (e.ctrl && e.shift) this.selectNextWord();
+      else if (e.ctrl) this.moveNextWord();
+      else if (e.shift) this.selectRight();
       else this.moveRight();
       this.preferredX = NaN;
       return;
@@ -439,12 +602,28 @@ export class EditableTextNode extends WrappedTextNode {
       else this.moveDown();
       return;
     }
+    if (e.code == KeyCode.PageUp) {
+      if (e.shift) this.selectPageUp();
+      else this.movePageUp();
+      return;
+    }
+    if (e.code == KeyCode.PageDown) {
+      if (e.shift) this.selectPageDown();
+      else this.movePageDown();
+      return;
+    }
     if (e.code == KeyCode.Home) {
-      this.moveHome();
+      if (e.ctrl && e.shift) this.selectDocStart();
+      else if (e.ctrl) this.moveDocStart();
+      else if (e.shift) this.selectHome();
+      else this.moveHome();
       return;
     }
     if (e.code == KeyCode.End) {
-      this.moveEnd();
+      if (e.ctrl && e.shift) this.selectDocEnd();
+      else if (e.ctrl) this.moveDocEnd();
+      else if (e.shift) this.selectEnd();
+      else this.moveEnd();
       return;
     }
     if (e.code == KeyCode.Enter) {
@@ -457,7 +636,7 @@ export class EditableTextNode extends WrappedTextNode {
       this.preferredX = NaN;
       return;
     }
-    if (e.ctrl || e.alt) return;
+    if (e.ctrl || alt) return;
     const ch = e.key.length == 1 ? e.key.charCodeAt(0) : 0;
     if (ch < 0x20 || ch == 0x7f) return;
     this.preferredX = NaN;
@@ -519,6 +698,14 @@ export class EditableTextNode extends WrappedTextNode {
     this.focusIndex.set(c);
   }
 
+  /** 扩选到 [newPos]：锚点保持（未初始化则取当前光标），焦点移动。 */
+  private extendTo(newPos: number): void {
+    const a =
+      this.anchorIndex.get() >= 0 ? this.anchorIndex.get() : this.cursor();
+    this.anchorIndex.set(a);
+    this.focusIndex.set(Math.min(Math.max(newPos, 0), this.text().length));
+  }
+
   private selectRange(start: number, end: number): void {
     this.anchorIndex.set(Math.min(Math.max(start, 0), this.text().length));
     this.focusIndex.set(Math.min(Math.max(end, 0), this.text().length));
@@ -536,6 +723,34 @@ export class EditableTextNode extends WrappedTextNode {
     if (list.length > 0) return list;
     if (pos > 0) return p.getRectsForRange(pos - 1, pos, RectStyle.TIGHT);
     return [];
+  }
+
+  /** 光标所在软行区间 [start, end)，不含换行符；无布局时 null。
+   *  pos == length 时落在最后一行（半开区间匹配不到行尾光标）。 */
+  private lineRangeAt(pos: number): [number, number] | null {
+    const p = this.paragraph();
+    if (!p) return null;
+    const t = this.text();
+    if (t.length == 0) return null;
+    const lines = p.getLineMetrics();
+    if (lines.length == 0) return null;
+    const clamped = Math.min(Math.max(pos, 0), t.length);
+    const m =
+      lines.find(l => clamped >= l.start && clamped < l.end) ??
+      (clamped == t.length ? lines[lines.length - 1] : null);
+    if (!m) return null;
+    let end = m.end;
+    if (end > m.start && t[end - 1] == '\n') end--;
+    if (end > m.start && t[end - 1] == '\r') end--;
+    return [m.start, end];
+  }
+
+  private lineStart(pos: number): number {
+    return this.lineRangeAt(pos)?.[0] ?? 0;
+  }
+
+  private lineEnd(pos: number): number {
+    return this.lineRangeAt(pos)?.[1] ?? this.text().length;
   }
 
   private verticalMove(dir: 1 | -1): number | null {
