@@ -13,8 +13,13 @@ import {
   SvgElementType,
   svgTagNames,
 } from 'wy-dom-helper';
-import { createOrProxy, emptyArray, EmptyFun, emptyObject } from 'wy-helper';
-import { hookAddResult, hookTrackAttr, OrFun } from 'mve-core';
+import { createOrProxy, emptyObject } from 'wy-helper';
+import {
+  hookAddResult,
+  hookTrackAttr,
+  OrFun,
+  StateHolderWithNode,
+} from 'mve-core';
 import { renderChildren } from './hookChildren';
 
 export function mergeValue(node: any, value: any, setValue: any) {
@@ -41,6 +46,11 @@ export function addWillRemove<T>(
   (node as any)._willRemove_ = willRemove;
 }
 const ignoreKeys = ['plugin', 'willRemove'];
+
+export type FGetNodeChildAttr<T> = FGetChildAttr<
+  T,
+  StateHolderWithNode<T, readonly Node[]>
+>;
 export type FPDomAttributes<T extends DomElementType> = OrFun<
   FDomAttribute<T>
 > &
@@ -48,7 +58,7 @@ export type FPDomAttributes<T extends DomElementType> = OrFun<
   Plugin<DomElement<T>> &
   WillRemove<DomElement<T>>;
 export type FDomAttributes<T extends DomElementType> = FPDomAttributes<T> &
-  FGetChildAttr<DomElement<T>>;
+  FGetNodeChildAttr<DomElement<T>>;
 export function renderFDom<T extends DomElementType>(
   type: T,
   arg: FDomAttributes<T> = emptyObject as any
@@ -68,7 +78,7 @@ export type FPSvgAttributes<T extends SvgElementType> = OrFun<
   Plugin<SvgElement<T>> &
   WillRemove<SvgElement<T>>;
 export type FSvgAttributes<T extends SvgElementType> = FPSvgAttributes<T> &
-  FGetChildAttr<SvgElement<T>>;
+  FGetNodeChildAttr<SvgElement<T>>;
 export function renderFSvg<T extends SvgElementType>(
   type: T,
   arg: FSvgAttributes<T> = emptyObject as any

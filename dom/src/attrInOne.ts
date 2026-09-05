@@ -5,7 +5,6 @@ import {
   DomElementType,
   domTagNames,
   FDomAttribute,
-  FGetChildAttr,
   FSvgAttribute,
   renderMDomAttr,
   renderMSvgAttr,
@@ -15,13 +14,14 @@ import {
   GDomAttribute,
   renderGDomAttr,
 } from 'wy-dom-helper';
-import { createOrProxy, OneOrArray } from 'wy-helper';
+import { createOrProxy } from 'wy-helper';
 import {
   addWillRemove,
   mergeValue,
   WillRemove,
   Plugin,
   addPlugin,
+  FGetNodeChildAttr,
 } from './renderNode';
 import { renderChildren } from './hookChildren';
 import { hookAddResult } from 'mve-core';
@@ -31,7 +31,7 @@ export type ZDomAttributes<T extends DomElementType> = {
   attrs?(m: FDomAttribute<T>): void;
 } & BDomEvent<T> &
   Plugin<DomElement<T>> &
-  FGetChildAttr<DomElement<T>> &
+  FGetNodeChildAttr<DomElement<T>> &
   WillRemove<DomElement<T>>;
 export function renderZDom<T extends DomElementType>(
   type: T,
@@ -50,7 +50,7 @@ export type GDomAttributes<T extends DomElementType> = {
   attrs?(m: GDomAttribute<T>): void;
 } & BDomEvent<T> &
   Plugin<DomElement<T>> &
-  FGetChildAttr<DomElement<T>> &
+  FGetNodeChildAttr<DomElement<T>> &
   WillRemove<DomElement<T>>;
 export function renderGDom<T extends DomElementType>(
   type: T,
@@ -69,7 +69,7 @@ export type ZSvgAttributes<T extends SvgElementType> = {
   attrs?(m: FSvgAttribute<T>): void;
 } & BSvgEvent<T> &
   Plugin<SvgElement<T>> &
-  FGetChildAttr<SvgElement<T>> &
+  FGetNodeChildAttr<SvgElement<T>> &
   WillRemove<SvgElement<T>>;
 export function renderZSvg<T extends SvgElementType>(
   type: T,

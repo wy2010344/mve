@@ -9,3 +9,4 @@ export * from './simpleRouter';
 export * from './bridgeExitAnimate';
 export * from './pop';
 export * from './renderFlyweight';
+export * from './fc';

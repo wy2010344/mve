@@ -4,6 +4,7 @@ import {
   purifyList,
   renderRoot,
   ShareConfig,
+  StateHolderWithNode,
 } from 'mve-core';
 import { alawaysFalse, diffMove, SetValue } from 'wy-helper';
 import { renderChildrenOperate } from 'wy-dom-helper';
@@ -29,9 +30,12 @@ const a = createRenderChildren(
   }
 );
 
-export function renderChildren(n: Node, render: SetValue<Node>) {
+export function renderChildren(
+  n: Node,
+  render: (this: StateHolderWithNode<Node, readonly Node[]>, n: Node) => void
+) {
   a.renderChildren(n, function () {
-    render(this.node);
+    render.call(this, this.node);
   });
 }
 
