@@ -16,7 +16,6 @@
     "dist"
   ],
   "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
   "module": "./dist/index.mjs",
   "repository": {
     "type": "git",
@@ -54,12 +53,13 @@
     "tsdown": "catalog:"
   },
   "peerDependencies": {
-    "mve-core": "workspace:*",
-    "mve-helper": "workspace:*",
+    "mve-core": "workspace:^",
+    "mve-helper": "workspace:^",
     "three": "catalog:",
-    "wy-helper": "workspace:*"
+    "wy-helper": "workspace:^"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

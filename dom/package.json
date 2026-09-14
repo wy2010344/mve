@@ -1,6 +1,6 @@
 {
   "name": "mve-dom",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "description": "DOM renderer for MVE framework",
   "keywords": [
     "mve",
@@ -15,7 +15,6 @@
     "dist"
   ],
   "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
   "module": "./dist/index.mjs",
   "repository": {
     "type": "git",
@@ -51,12 +50,13 @@
     "tsdown": "catalog:"
   },
   "peerDependencies": {
-    "mve-core": "workspace:*",
-    "mve-helper": "workspace:*",
-    "wy-dom-helper": "workspace:*",
-    "wy-helper": "workspace:*"
+    "mve-core": "workspace:^",
+    "mve-helper": "workspace:^",
+    "wy-dom-helper": "workspace:^",
+    "wy-helper": "workspace:^"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

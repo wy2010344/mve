@@ -13,10 +13,10 @@
   ],
   "peerDependencies": {
     "convex": ">=1.24.0",
-    "mve-core": "workspace:*",
-    "mve-helper": "workspace:*",
-    "wy-dom-helper": "workspace:*",
-    "wy-helper": "workspace:*"
+    "mve-core": "workspace:^",
+    "mve-helper": "workspace:^",
+    "wy-dom-helper": "workspace:^",
+    "wy-helper": "workspace:^"
   },
   "scripts": {
     "build": "tsdown",

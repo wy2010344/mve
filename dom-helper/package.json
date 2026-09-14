@@ -13,9 +13,8 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "typings": "dist/index.d.ts",
-  "module": "dist/index.mjs",
-  "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wy2010344/mve.git"
@@ -36,12 +35,6 @@
       "types": "./dist/canvasRender.d.ts",
       "import": "./dist/canvasRender.mjs",
       "require": "./dist/canvasRender.js"
-    },
-    "./canvasEngine": {
-      "development": "./src/canvas-engine/index.ts",
-      "types": "./src/canvas-engine/index.ts",
-      "import": "./dist/canvasEngine.mjs",
-      "require": "./dist/canvasEngine.js"
     },
     "./history": {
       "development": "./src/history/index.ts",
@@ -76,13 +69,14 @@
   },
   "peerDependencies": {
     "history": "catalog:",
-    "mve-core": "workspace:*",
-    "mve-dom": "workspace:*",
-    "mve-helper": "workspace:*",
-    "wy-dom-helper": "workspace:*",
-    "wy-helper": "workspace:*"
+    "mve-core": "workspace:^",
+    "mve-dom": "workspace:^",
+    "mve-helper": "workspace:^",
+    "wy-dom-helper": "workspace:^",
+    "wy-helper": "workspace:^"
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7"
-  }
+  },
+  "types": "./dist/index.d.ts"
 }

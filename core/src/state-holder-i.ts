@@ -102,16 +102,6 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
     this._destroyList.forEach(run);
   }
 
-  removeFromParent(): void {
-    this.parent?.removeChild(this);
-  }
-
-  private removeChild(child: StateHolderI<Node, unknown>): void {
-    if (this._children.delete(child)) {
-      child.destroy();
-    }
-  }
-
   // -- Context --------------------------------------------------------------
 
   provide<T>(context: ContextI<T>, value: T): void {
@@ -161,63 +151,57 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
       arg.createMap || normalMapCreater;
     const duplicateInfo = arg.duplicateInfo ?? 'warn';
     const contextIndex = this.contexts.length;
-    const forEachSignal = memo<ForEachModal<Node, Target, T, K, O>>(
-      old => {
-        const cacheMap =
-          old?.newMap ?? createMap<EachValue<Node, Target, T, K, O>[]>();
-        const newMap = createMap<EachValue<Node, Target, T, K, O>[]>();
-        const thisTimeAdd: EachValue<Node, Target, T, K, O>[] = [];
-        const thisChildren: EachValue<Node, Target, T, K, O>[] = [];
-        let index = 0;
+    const forEachSignal = memo<ForEachModal<Node, Target, T, K, O>>(old => {
+      const cacheMap =
+        old?.newMap ?? createMap<EachValue<Node, Target, T, K, O>[]>();
+      const newMap = createMap<EachValue<Node, Target, T, K, O>[]>();
+      const thisTimeAdd: EachValue<Node, Target, T, K, O>[] = [];
+      const thisChildren: EachValue<Node, Target, T, K, O>[] = [];
+      let index = 0;
 
-        forEach((key, value) => {
-          const holders = cacheMap.get(key);
-          let ev: EachValue<Node, Target, T, K, O>;
+      forEach((key, value) => {
+        const holders = cacheMap.get(key);
+        let ev: EachValue<Node, Target, T, K, O>;
 
-          if (holders?.length) {
-            ev = holders.shift()!;
-          } else {
-            ev = new EachValue(
-              this.config,
-              forEachSignal,
-              this,
-              contextIndex,
-              creater,
-              key,
-              arg
-            );
-            thisTimeAdd.push(ev);
+        if (holders?.length) {
+          ev = holders.shift()!;
+        } else {
+          ev = new EachValue(
+            this.config,
+            forEachSignal,
+            this,
+            contextIndex,
+            creater,
+            key,
+            arg
+          );
+          thisTimeAdd.push(ev);
+        }
+
+        ev._value = value;
+        ev._index = index++;
+
+        const envs = newMap.get(key);
+        if (envs) {
+          envs.push(ev);
+          if (duplicateInfo == 'warn') {
+            console.warn(`重复的key`, key, `出现第${envs.length}次`);
+          } else if (duplicateInfo == 'throw') {
+            throw new DuplicateError(`重复的key出现第${envs.length}次`, key);
           }
+        } else {
+          newMap.set(key, [ev]);
+        }
 
-          ev.value = value;
-          ev.index = index++;
+        thisChildren.push(ev);
+        return ev.invoke;
+      });
 
-          const envs = newMap.get(key);
-          if (envs) {
-            envs.push(ev);
-            if (duplicateInfo == 'warn') {
-              console.warn(`重复的key`, key, `出现第${envs.length}次`);
-            } else if (duplicateInfo == 'throw') {
-              throw new DuplicateError(`重复的key出现第${envs.length}次`, key);
-            }
-          } else {
-            newMap.set(key, [ev]);
-          }
-
-          thisChildren.push(ev);
-          return ev.invoke;
-        });
-
-        return { cacheMap, newMap, thisTimeAdd, thisChildren };
-      },
-      modal => {
-        modal.cacheMap.forEach(oldRemoveStateHolders);
-        modal.thisTimeAdd.forEach(thisTimeAddEach);
-      }
-    );
+      return { cacheMap, newMap, thisTimeAdd, thisChildren };
+    }, afterForEach);
 
     this.nodes.push(() => {
-      return forEachSignal().thisChildren.flatMap(item => item.nodes);
+      return forEachSignal().thisChildren.flatMap(getNodes);
     });
     return forEachSignal;
   }
@@ -253,12 +237,22 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
   }
 }
 
+function afterForEach<Node, Target, T, K, O>(
+  modal: ForEachModal<Node, Target, T, K, O>
+) {
+  modal.cacheMap.forEach(oldRemoveStateHolders);
+  modal.thisTimeAdd.forEach(thisTimeAddEach);
+}
+
+function getNodes<T>(item: { nodes: T }) {
+  return item.nodes;
+}
 export class EachValue<Node, Target, T, K, O>
   extends StateHolderI<Node, Target>
   implements EachTime<T>
 {
-  value: T = null as T;
-  index: number = 0;
+  _value: T = null as T;
+  _index: number = 0;
   private _out!: O;
 
   constructor(
@@ -267,7 +261,7 @@ export class EachValue<Node, Target, T, K, O>
     parent: StateHolderI<unknown, unknown>,
     parentContextIndex: number,
     private readonly _creater: Creater<Node, Target, T, K, O>,
-    private readonly _key: K,
+    readonly key: K,
     arg: RenderForEachArg<K>
   ) {
     super(config, parent, parentContextIndex);
@@ -284,12 +278,12 @@ export class EachValue<Node, Target, T, K, O>
 
   getValue(): T {
     this.getSignal();
-    return this.value;
+    return this._value;
   }
 
   getIndex(): number {
     this.getSignal();
-    return this.index;
+    return this._index;
   }
 
   invoke(): O {
@@ -297,7 +291,15 @@ export class EachValue<Node, Target, T, K, O>
   }
 
   override buildChildren(): void {
-    this._out = this._creater(this._key, this);
+    this._out = this._creater(this.key, this);
+  }
+
+  //这是兼容，供ooc使用
+  value() {
+    return this.getValue();
+  }
+  index() {
+    return this.getIndex();
   }
 }
 

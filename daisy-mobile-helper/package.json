@@ -49,13 +49,13 @@
   },
   "peerDependencies": {
     "history": "catalog:",
-    "mve-core": "workspace:*",
-    "mve-dom": "workspace:*",
-    "mve-dom-helper": "workspace:*",
-    "mve-helper": "workspace:*",
+    "mve-core": "workspace:^",
+    "mve-dom": "workspace:^",
+    "mve-dom-helper": "workspace:^",
+    "mve-helper": "workspace:^",
     "mve-icons": "catalog:",
-    "wy-dom-helper": "workspace:*",
-    "wy-helper": "workspace:*"
+    "wy-dom-helper": "workspace:^",
+    "wy-helper": "workspace:^"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

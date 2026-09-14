@@ -1,5 +1,11 @@
 # mve-dom
 
+## 4.0.4
+
+### Patch Changes
+
+- little change
+
 ## 4.0.3
 
 ### Patch Changes

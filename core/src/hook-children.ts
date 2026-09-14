@@ -30,23 +30,30 @@ export function hookEffectCollect<V>(
   get: GetValue<V>,
   set: SetValue<V, void, any[]>,
   level = 0,
+  noCache?: boolean,
   a?: any,
   b?: any,
   c?: any
 ) {
   const stateHolder = hookCurrentStateHolder(true);
+  const effect = noCache
+    ? () => {
+        if (stateHolder?.destroyed()) {
+          return;
+        }
+        const value = collect(get);
+        if (value != lastValue) {
+          lastValue = value;
+          set(value, a, b, c);
+        }
+      }
+    : () => {
+        if (stateHolder?.destroyed()) {
+          return;
+        }
+        set(collect(get), a, b, c);
+      };
   let lastValue: any = effect;
-  function effect() {
-    if (stateHolder?.destroyed()) {
-      return;
-    }
-    const value = collect(get);
-    if (value != lastValue) {
-      lastValue = value;
-      set(value, a, b, c);
-    }
-  }
-
   const { destroy, collect } = collectSignal(function () {
     addEffect(effect, level);
   });
@@ -56,10 +63,11 @@ export function hookEffectCollect<V>(
 export function hookTrackAttr<V>(
   get: GetValue<V>,
   set: SetValue<V>,
+  noCache?: boolean,
   b?: any,
   f?: any
 ) {
-  hookEffectCollect(get, set, -1, b, f);
+  hookEffectCollect(get, set, -1, noCache, b, f);
 }
 
 export type OrFun<T extends {}> = {
@@ -84,7 +92,7 @@ export function createRenderChildren<T, F>(
         fun.apply(this);
         hookChangeChildren(node, this.target, move);
       });
-      return o.destroy;
+      return o.destroy.bind(o);
     },
     renderPortal(pNode: T, fun: (this: StateHolderWithNode<T, F>) => void) {
       const list = storeRef<F>(move.empty);

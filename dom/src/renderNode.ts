@@ -22,10 +22,15 @@ import {
 } from 'mve-core';
 import { renderChildren } from './hookChildren';
 
-export function mergeValue(node: any, value: any, setValue: any) {
-  const ext = arguments[3];
+export function mergeValue(
+  node: any,
+  value: any,
+  setValue: any,
+  noCache?: boolean
+) {
+  const ext = arguments[4];
   if (typeof value == 'function') {
-    hookTrackAttr(value, setValue, node, ext);
+    hookTrackAttr(value, setValue, noCache, node, ext);
   } else {
     setValue(value, node, ext);
   }
