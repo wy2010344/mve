@@ -1,9 +1,9 @@
 import {
+  AriaAttributes,
   BSvgAttribute,
   BSvgEvent,
   DataAttr,
   updateSvgProps,
-  React,
   SvgElement,
   SvgElementType,
   svgTagNames,
@@ -13,7 +13,7 @@ import { NodeCreater, StyleGetProps, StyleProps } from './node';
 import { OrFun } from 'mve-core';
 
 type SvgAttribute<T extends SvgElementType> = BSvgAttribute<T> &
-  React.AriaAttributes &
+  AriaAttributes &
   DataAttr;
 
 type SvgEffectAttr<T extends SvgElementType> =

@@ -3,7 +3,7 @@
  * 3个核心示例，循序渐进展示框架特性
  */
 
-import { fdom } from 'mve-dom';
+import { fdom, renderTextContent } from 'mve-dom';
 import { renderArray, renderOne } from 'mve-helper';
 import { createSignal } from 'wy-helper';
 

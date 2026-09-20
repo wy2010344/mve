@@ -1,10 +1,10 @@
 import {
+  AriaAttributes,
   BDomAttribute,
   BDomEvent,
   DataAttr,
   DomElement,
   DomElementType,
-  React,
 } from 'wy-dom-helper';
 import { createOrProxy, emptyObject } from 'wy-helper';
 import { domTagNames, updateDomProps } from 'wy-dom-helper';
@@ -16,7 +16,7 @@ function create(type: string) {
 }
 
 type DomAttribute<T extends DomElementType> = BDomAttribute<T> &
-  React.AriaAttributes &
+  AriaAttributes &
   DataAttr;
 /**
  * 静态的

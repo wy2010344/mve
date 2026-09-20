@@ -45,6 +45,10 @@ export function flex3(arg: {
       }
       return 0;
     },
+    ignore(n) {
+      const it = n.findExt(IgnoreFlexChild3);
+      return it ? it.ignore() : false;
+    },
     createLayout(o) {
       return new FlexLayout(arg, o, this);
     },
@@ -61,6 +65,10 @@ export function flex3(arg: {
       },
       outerSize(n) {
         return outerSize.call(n, d);
+      },
+      ignore(n) {
+        const it = n.findExt(IgnoreFlexChild3);
+        return it ? it.ignore() : false;
       },
       createLayout(o) {
         return new StackLayout(arg, o, this);
@@ -150,4 +158,21 @@ export function align3(args: {
   ac.alignY = valueOrGetToGet(args.alignY, ac.alignY);
   ac.alignZ = valueOrGetToGet(args.alignZ, ac.alignZ);
   return ac;
+}
+
+export class IgnoreFlexChild3 {
+  argIgnore(): boolean {
+    return false;
+  }
+  ignore() {
+    return this.argIgnore();
+  }
+}
+
+export function ignoreFlex3(args: {
+  ignore?: ValueOrGet<boolean, IgnoreFlexChild3>;
+}) {
+  const fc = new IgnoreFlexChild3();
+  fc.argIgnore = valueOrGetToGet(args.ignore, fc.argIgnore);
+  return fc;
 }

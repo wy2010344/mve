@@ -11,8 +11,8 @@ import {
 import {
   addEvent,
   CSSProperties,
+  DOMAttributes,
   isEvent,
-  React,
   UpdateProp,
 } from 'wy-dom-helper';
 import {
@@ -213,8 +213,8 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
     this.attrsEffect = v;
     return this;
   }
-  private e: React.DOMAttributes<N> = emptyObject;
-  events(v: React.DOMAttributes<N>) {
+  private e: DOMAttributes<N> = emptyObject;
+  events(v: DOMAttributes<N>) {
     this.e = v;
   }
 

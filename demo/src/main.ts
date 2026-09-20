@@ -1,13 +1,8 @@
-import { createRoot, fdom, svg } from 'mve-dom';
-import todoDemo from './todo-demo';
-import { destroyGlobalHolder } from 'mve-core';
-import canvasRenderDemo from './canvas-render-demo';
-import countDemo from './count-demo';
+import { createRoot, fdom } from 'mve-dom';
 import {
   argForceNumber,
   createTreeRoute,
   getBranchKey,
-  renderArrayKey,
   renderOneKey,
 } from 'mve-helper';
 import { routerProvide } from 'mve-dom-helper/history';
@@ -87,4 +82,4 @@ createRoot(app, () => {
   renderNotification(notifications);
   renderPop();
 });
-window.addEventListener('unload', destroyGlobalHolder);
+// window.addEventListener('unload', destroyGlobalHolder);
