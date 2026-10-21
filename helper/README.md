@@ -1,80 +1,107 @@
 # mve-helper
 
-Helper utilities for MVE framework providing additional functionality and convenience methods.
+MVE 的场景化封装：列表/条件渲染、生命周期、Promise 信号、弹层、虚拟列表与简单路由。
 
-## Installation
+## 安装
 
 ```bash
-npm install mve-helper
-# or
-pnpm add mve-helper
-# or
-yarn add mve-helper
+npm install mve-helper mve-core wy-helper
 ```
 
-## Peer Dependencies
+## 列表与条件渲染
 
-- `mve-core` (workspace dependency)
-- `wy-helper` (workspace dependency)
+```ts
+import { fdom } from 'mve-dom'
+import { renderArrayKey, renderIf } from 'mve-helper'
+import { createSignal } from 'wy-helper'
 
-## Features
+const todos = createSignal([{ id: 1, text: '学习 MVE' }])
+const isLoading = createSignal(false)
 
-- **State Management Helpers** - Utilities for managing complex state
-- **Component Utilities** - Helper functions for component development
-- **Reactive Utilities** - Additional reactive programming helpers
-- **Performance Optimizations** - Tools for optimizing MVE applications
-
-## Usage
-
-```typescript
-import { createStore, useSignal, batch, createResource } from 'mve-helper';
-
-// Create a store for complex state management
-const store = createStore({
-  count: 0,
-  user: { name: 'John', age: 30 },
-});
-
-// Use helper hooks
-const [value, setValue] = useSignal(0);
-
-// Batch multiple updates
-batch(() => {
-  setValue(1);
-  store.count = 10;
-});
-
-// Create async resources
-const [data] = createResource(() => fetch('/api/data'));
+fdom.ul({
+  children() {
+    renderIf(
+      isLoading.get,
+      () => fdom.li({ children: '加载中...' }),
+      () =>
+        renderArrayKey(
+          todos.get,
+          todo => todo.id,
+          (getTodo, getIndex) => {
+            fdom.li({
+              childrenType: 'text',
+              children() {
+                return `${getIndex() + 1}. ${getTodo().text}`
+              },
+            })
+          }
+        )
+    )
+  },
+})
 ```
 
-## Helper Categories
+| API | 说明 |
+| --- | --- |
+| `renderArray(getList, render)` | 以数组值本身作为 key |
+| `renderArrayKey(getList, getKey, render)` | 自定义 key，`render` 收到 `getValue` / `getIndex` / `key` |
+| `renderArrayP(v, render)` | 同时支持静态数组与 getter |
+| `renderRecord` / `renderMap` / `renderSet` | 遍历对象、Map、Set |
+| `renderArrayToMap` / `renderArrayToArray` | 把动态列表映射为 Map / 数组 |
+| `renderIf` / `renderIfP` | 条件渲染 |
+| `renderOne` / `renderOneP` / `renderOneKey` / `renderOrKey` | 单值、联合类型渲染 |
 
-### State Management
+## 生命周期与追踪
 
-- `createStore` - Create reactive stores
-- `useSignal` - Signal hook utility
-- `batch` - Batch multiple updates
+```ts
+import { hookDestroy, hookTrackSignal, hookTrackSignalSkipFirst } from 'mve-helper'
 
-### Component Helpers
+function Timer() {
+  const timer = setInterval(() => tick(), 1000)
 
-- `createComponent` - Component creation utilities
-- `createContext` - Context management
-- `useContext` - Context consumption
+  hookTrackSignal(
+    () => count.get(),
+    newValue => {
+      console.log('count changed:', newValue)
+    }
+  )
 
-### Performance
+  hookDestroy(() => {
+    clearInterval(timer)
+  })
+}
+```
 
-- `memo` - Memoization utilities
-- `lazy` - Lazy loading helpers
-- `suspense` - Suspense utilities
+- `hookTrackSignal(get, set?)` - 组件销毁时自动解除追踪
+- `hookTrackSignalSkipFirst` - 跳过首次回调
+- `hookDestroy(fn)` - 注册销毁回调
+- `useVersion()` - 手动触发组件区域更新
 
-## API Documentation
+## Promise 信号
 
-For detailed API documentation, visit [online docs](https://wy2010344.github.io/mve).
+```ts
+import { hookPromiseSignal } from 'mve-helper'
 
-## Development
+const { get, loading } = hookPromiseSignal(() =>
+  fetch('/api/todos').then(r => r.json())
+)
 
-See the [main README](../README.md) for development setup instructions.
+get() // PromiseResult<T> | undefined
+loading() // 是否仍在请求
+```
+
+- `hookPromiseSignal` - 跟踪 Promise 结果，组件销毁时中止
+- `hookPromiseSignalLoadMore` - 分页加载
+- `promiseSignal` - 非组件环境下的 Promise 信号
+
+## 其它
+
+- `createPop` / `renderPop` - 弹层队列
+- `getExitAnimateArray` / `getExitAnimate` - 离场动画列表
+- `renderFlyweight` - 轻量级渲染
+- `getSubListInfo` - 虚拟列表区间计算
+- `createTreeRoute` - 简单树形路由
+- `fc` - 把普通函数适配为渲染回调
 
 ## License
 

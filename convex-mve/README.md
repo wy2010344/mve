@@ -1,36 +1,26 @@
 # convex-mve
 
-Convex 到 MVE 的桥接库，提供 hooks 将 Convex 的异步操作与 MVE 的响应式信号系统集成。
-
-## 功能
-
-- **useConvexQuery**: 将 Convex query 转换为响应式 signal，支持自动重新获取
-- **useConvexMutation**: 将 Convex mutation 转换为响应式操作
-- **useConvexAction**: 将 Convex action 转换为响应式操作
-- **Provider 模式**: 通过 Context 提供 ConvexHttpClient 给整个应用
+Convex 到 MVE 的桥接库：把 Convex 的 query / mutation / action 接入 MVE 的信号系统。
 
 ## 安装
 
 ```bash
-pnpm add convex-mve
+npm install convex-mve convex
 ```
 
 ## 快速开始
 
-### 1. 设置 Provider
+### 1. 提供客户端
 
-在应用的根部使用 `provideConvexClient` 提供 Convex 客户端：
-
-```typescript
-import { render } from 'mve-core'
-import { fdom } from 'mve-dom'
-import { ConvexHttpClient } from 'convex/browser'
+```ts
+import { createRoot, fdom } from 'mve-dom'
+import { ConvexClient } from 'convex/browser'
 import { provideConvexClient } from 'convex-mve'
 
-const convex = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL)
+const client = new ConvexClient(import.meta.env.VITE_CONVEX_URL)
 
-render(() => {
-  provideConvexClient(convex)
+createRoot(document.body, function () {
+  provideConvexClient(client)
 
   fdom.div({
     children() {
@@ -40,165 +30,97 @@ render(() => {
 })
 ```
 
-### 2. 使用 useConvexQuery
+`provideConvexClient` 走 MVE 的 Context，必须在组件树内调用，否则立即抛错。`useConvexClient()` 在找不到 provider 时也会抛错。
 
-获取数据并自动重新获取：
+### 2. 查询
 
-```typescript
+```ts
 import { fdom } from 'mve-dom'
-import { useConvexQuery } from 'convex-mve'
+import { hookConvexQuery } from 'convex-mve'
 import { api } from '../convex/_generated/api'
 
 function TodoList() {
-  const getTodos = useConvexQuery(api.todos.list)
+  const getTodos = hookConvexQuery(api.todos.list)
 
   fdom.div({
     children() {
       const result = getTodos()
 
-      if (result?.isLoading) {
+      if (!result) {
         fdom.p({ children: '加载中...' })
-      } else if (result?.error) {
-        fdom.p({
-          s_color: 'red',
-          children: `错误: ${result.error.message}`,
-        })
-      } else if (result?.data) {
-        fdom.ul({
-          children() {
-            result.data.forEach((todo: any) => {
-              fdom.li({
-                children: todo.text,
-              })
-            })
-          },
-        })
+        return
       }
+
+      if (result.type === 'error') {
+        fdom.p({ s_color: 'red', children: `错误: ${result.value}` })
+        return
+      }
+
+      fdom.ul({
+        children() {
+          for (const todo of result.value) {
+            fdom.li({ children: todo.text })
+          }
+        },
+      })
     },
   })
 }
 ```
 
-### 3. 使用动态查询参数
+返回值是 `PromiseResult<D> | undefined`，不是 `{ data, isLoading, error }`：
 
-当查询参数改变时自动重新获取：
+```ts
+type PromiseResult<T> =
+  | { type: 'success'; promise: Promise<T>; value: T }
+  | { type: 'error'; promise: Promise<T>; value: any }
+```
 
-```typescript
+`undefined` 表示首次结果尚未到达。
+
+### 3. 动态参数
+
+参数可以是 getter，参数变化时会自动重新订阅：
+
+```ts
 import { createSignal } from 'wy-helper'
-import { fdom } from 'mve-dom'
-import { useConvexQuery } from 'convex-mve'
-import { api } from '../convex/_generated/api'
 
-function UserProfile() {
-  const userId = createSignal('user123')
+const userId = createSignal('user123')
 
-  const getUser = useConvexQuery(api.users.getById, () => ({
-    userId: userId.get(),
-  }))
-
-  fdom.div({
-    children() {
-      const result = getUser()
-
-      if (result?.data) {
-        fdom.h1({ children: result.data.name })
-      }
-    },
-  })
-}
+const getUser = hookConvexQuery(api.users.getById, () => ({
+  userId: userId.get(),
+}))
 ```
 
-### 4. 使用 useConvexMutation
+### 4. Mutation / Action
 
-执行修改操作：
-
-```typescript
+```ts
 import { fdom } from 'mve-dom'
 import { useConvexMutation } from 'convex-mve'
-import { api } from '../convex/_generated/api'
 
 function CreateTodo() {
   const { mutate, get } = useConvexMutation(api.todos.create)
 
-  fdom.div({
-    children() {
-      const state = get()
-
-      fdom.button({
-        onClick: async () => {
-          try {
-            await mutate({ text: '新的待办事项' })
-          } catch (error) {
-            console.error('创建失败:', error)
-          }
-        },
-        childrenType: 'text',
-        children() {
-          return state?.isPending ? '正在保存...' : '创建'
-        },
-      })
-
-      if (state?.error) {
-        fdom.p({
-          s_color: 'red',
-          children: `错误: ${state.error.message}`,
-        })
-      }
-    },
-  })
-}
-```
-
-### 5. 使用 useConvexAction
-
-执行服务器端操作：
-
-```typescript
-import { fdom } from 'mve-dom'
-import { useConvexAction } from 'convex-mve'
-import { api } from '../convex/_generated/api'
-
-function SendEmail() {
-  const { execute, get } = useConvexAction(api.email.send)
-
   fdom.button({
     onClick: async () => {
       try {
-        await execute({ to: 'user@example.com', subject: 'Hello' })
+        await mutate({ text: '新的待办事项' })
       } catch (error) {
-        console.error('发送失败:', error)
+        console.error('创建失败:', error)
       }
     },
     childrenType: 'text',
     children() {
       const state = get()
-      return state?.isPending ? '发送中...' : '发送邮件'
+      return state?.isPending ? '正在保存...' : '创建'
     },
   })
 }
 ```
 
-## API 参考
+`useConvexAction` 用法相同，返回 `{ execute, get }`。mutation / action 的状态为：
 
-### Types
-
-#### `ConvexData<T>`
-
-查询结果的状态对象：
-
-```typescript
-interface ConvexData<T> {
-  data: T
-  isLoading: boolean
-  error?: Error | null
-}
-```
-
-#### `ConvexMutationState<T>`
-
-mutation/action 的状态对象：
-
-```typescript
+```ts
 interface ConvexMutationState<T> {
   data?: T
   isPending: boolean
@@ -206,117 +128,34 @@ interface ConvexMutationState<T> {
 }
 ```
 
-### Functions
+失败时 `mutate` / `execute` 会把错误记录到状态并重新抛出，调用方自行处理。
 
-#### `provideConvexClient(client: ConvexHttpClient): ConvexHttpClient`
+### 5. 自定义信号
 
-在 MVE 组件树中提供 Convex 客户端。必须在其他 hooks 之前调用。
+`options.signal` 需要 `OneSetStoreRef`（只允许取一次 setter）。使用 `createLateSignal`：
 
-```typescript
-provideConvexClient(convex)
+```ts
+import { createLateSignal, PromiseResult } from 'wy-helper'
+import { hookConvexQuery } from 'convex-mve'
+
+const signal = createLateSignal<PromiseResult<Todo[]> | undefined>(undefined)
+
+const getTodos = hookConvexQuery(api.todos.list, undefined, { signal })
 ```
 
-#### `useConvexClient(): ConvexHttpClient`
+不要传 `createSignal(...)`：它的 `getOnlySet` 已被消耗，传入会抛错。
 
-获取提供的 Convex 客户端。
+## API
 
-```typescript
-const client = useConvexClient()
-```
+| API | 说明 |
+| --- | --- |
+| `provideConvexClient(client)` | 在组件树中提供 `ConvexClient` |
+| `useConvexClient()` | 读取当前 `ConvexClient` |
+| `hookConvexQuery(query, args?, options?)` | 订阅 query，返回 `GetValue<PromiseResult<D> \| undefined>` |
+| `useConvexMutation(mutation, options?)` | 返回 `{ mutate, get }` |
+| `useConvexAction(action, options?)` | 返回 `{ execute, get }` |
+| `ConvexHttpClient` | 从 `convex/browser` 透出 |
 
-#### `useConvexQuery<T, D>(query, args?, options?): () => ConvexData<D> | undefined`
-
-执行 Convex query 并返回响应式 signal getter。
-
-- `query`: Convex query 函数
-- `args`: 查询参数（可选），可以是函数以支持动态参数
-- `options.signal`: 自定义 signal（可选）
-
-返回一个 getter 函数，调用它获取当前的 `ConvexData<D>` 值。
-
-```typescript
-const getTodos = useConvexQuery(api.todos.list)
-const result = getTodos() // { data: [...], isLoading: false, error: null }
-```
-
-#### `useConvexMutation<T, D>(mutation, options?): { mutate: (args) => Promise<D>, get: () => ConvexMutationState<D> | undefined }`
-
-执行 Convex mutation。
-
-```typescript
-const { mutate, get } = useConvexMutation(api.todos.create)
-await mutate({ text: 'New todo' })
-```
-
-#### `useConvexAction<T, D>(action, options?): { execute: (args) => Promise<D>, get: () => ConvexMutationState<D> | undefined }`
-
-执行 Convex action。
-
-```typescript
-const { execute, get } = useConvexAction(api.email.send)
-await execute({ to: 'user@example.com' })
-```
-
-## 高级用法
-
-### 自定义 Signal
-
-传入自定义 signal 以获得更多控制：
-
-```typescript
-import { createSignal } from 'wy-helper'
-import { useConvexQuery } from 'convex-mve'
-
-const customSignal = createSignal<ConvexData<Todo[]> | undefined>(undefined)
-const getTodos = useConvexQuery(api.todos.list, undefined, {
-  signal: customSignal,
-})
-```
-
-### 与其他 MVE 特性集成
-
-由于返回的是标准的 MVE signal getter，可以与其他 MVE 特性无缝协作：
-
-```typescript
-import { renderIf, renderArrayKey } from 'mve-helper'
-
-function TodoList() {
-  const getTodos = useConvexQuery(api.todos.list)
-
-  fdom.div({
-    children() {
-      renderIf(
-        () => getTodos()?.isLoading,
-        () => fdom.p({ children: '加载中...' }),
-        () => {
-          const result = getTodos()
-          if (result?.data) {
-            renderArrayKey(
-              () => result.data,
-              (todo) => todo.id,
-              (getItem) => {
-                fdom.li({
-                  children() {
-                    return getItem().text
-                  },
-                })
-              }
-            )
-          }
-        }
-      )
-    },
-  })
-}
-```
-
-## 最佳实践
-
-1. **总是检查 isLoading 状态**: 在访问数据前检查加载状态
-2. **处理错误**: 始终检查并处理可能的错误
-3. **使用动态参数**: 对于依赖状态的查询，使用函数形式的参数
-4. **避免重复调用 get()**: 在单个渲染函数中缓存结果
-
-## 许可证
+## License
 
 MIT

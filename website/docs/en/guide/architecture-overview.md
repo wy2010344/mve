@@ -25,7 +25,8 @@ const count = createSignal(0)
 #### trackSignal - Dependency Tracking Observation
 
 ```typescript
-import { trackSignal, hookTrackSignal } from 'wy-helper'
+import { trackSignal } from 'wy-helper'
+import { hookTrackSignal } from 'mve-helper'
 
 // trackSignal is similar to Vue's watchEffect
 trackSignal(
@@ -46,15 +47,14 @@ function MyComponent() {
   )
 }
 
-// Global usage
-runGlobalHolder(() => {
-  hookTrackSignal(
-    () => count.get(),
-    (newValue) => {
-      document.title = `Count: ${newValue}`
-    }
-  )
-})
+// Outside a component tree, use trackSignal and keep the dispose function
+const destroy = trackSignal(
+  () => count.get(),
+  newValue => {
+    document.title = `Count: ${newValue}`
+  }
+)
+destroy()
 ```
 
 #### memo - Computation Optimization

@@ -164,13 +164,13 @@ hookDraw({
 **及时清理资源**：
 
 ```typescript
-import { hookAddDestroy } from 'mve-core'
+import { hookDestroy } from 'mve-helper'
 
 function ImageGallery() {
   const images = createSignal([])
   
   // 清理不再使用的图片
-  hookAddDestroy(() => {
+  hookDestroy(() => {
     // 清理逻辑
   })
   

@@ -25,7 +25,8 @@ const count = createSignal(0)
 #### trackSignal - 依赖追踪观察
 
 ```typescript
-import { trackSignal, hookTrackSignal } from 'wy-helper'
+import { trackSignal } from 'wy-helper'
+import { hookTrackSignal } from 'mve-helper'
 
 // trackSignal 类似 Vue 的 watchEffect
 trackSignal(
@@ -46,15 +47,14 @@ function MyComponent() {
   )
 }
 
-// 全局使用
-runGlobalHolder(() => {
-  hookTrackSignal(
-    () => count.get(),
-    (newValue) => {
-      document.title = `Count: ${newValue}`
-    }
-  )
-})
+// 不在组件树内时，使用 trackSignal 并自行保存销毁函数
+const destroy = trackSignal(
+  () => count.get(),
+  newValue => {
+    document.title = `Count: ${newValue}`
+  }
+)
+destroy()
 ```
 
 #### memo - 计算优化

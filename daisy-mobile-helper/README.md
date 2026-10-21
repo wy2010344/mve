@@ -1,126 +1,83 @@
 # daisy-mobile-helper
 
-Mobile UI components and helpers using DaisyUI and MVE framework for building responsive mobile
-applications.
+基于 DaisyUI 与 MVE 的移动端 UI 层。分为两组能力：
 
-## Installation
+- `components/*` - 移动端场景封装：导航栏、Tab、页面切换、横向滑动、布局页、日历记录
+- `window/*` - 带主题上下文的 UI 组件与移动端窗口/面板
+
+## 安装
 
 ```bash
-npm install daisy-mobile-helper
-# or
-pnpm add daisy-mobile-helper
-# or
-yarn add daisy-mobile-helper
+npm install daisy-mobile-helper mve-core mve-dom mve-dom-helper mve-helper wy-dom-helper wy-helper
 ```
 
-## Peer Dependencies
-
-- `history` ^5.3.0
-- `mve-core` (workspace dependency)
-- `mve-dom` (workspace dependency)
-- `mve-dom-helper` (workspace dependency)
-- `mve-helper` (workspace dependency)
-- `mve-icons` ^6.0.0
-- `wy-dom-helper` (workspace dependency)
-- `wy-helper` (workspace dependency)
-
-## Features
-
-- **Mobile-First Components** - Responsive UI components optimized for mobile
-- **DaisyUI Integration** - Beautiful components using DaisyUI design system
-- **Touch Gestures** - Touch and gesture support for mobile interactions
-- **Responsive Design** - Adaptive layouts for different screen sizes
-- **Accessibility** - WCAG compliant components with proper ARIA support
-
-## Dependencies
-
-- **TailwindCSS** - Utility-first CSS framework
-- **DaisyUI** - Component library for TailwindCSS
-- **Motion** - Animation library for smooth transitions
-- **Tyme4ts** - Date and time utilities
-
-## Usage
-
-```typescript
-import {
-  MobileButton,
-  MobileCard,
-  MobileModal,
-  MobileNavigation
-} from 'daisy-mobile-helper';
-
-// Create mobile-optimized components
-function App() {
-  return (
-    <div class="mobile-app">
-      <MobileNavigation title="My App" />
-
-      <MobileCard>
-        <h2>Welcome</h2>
-        <p>This is a mobile-optimized card component.</p>
-
-        <MobileButton
-          variant="primary"
-          size="large"
-          onClick={() => console.log('Clicked!')}
-        >
-          Get Started
-        </MobileButton>
-      </MobileCard>
-
-      <MobileModal open={showModal()}>
-        <p>Mobile-friendly modal content</p>
-      </MobileModal>
-    </div>
-  );
-}
-```
-
-## Component Categories
-
-### Navigation
-
-- `MobileNavigation` - Mobile navigation bar
-- `MobileTabBar` - Bottom tab navigation
-- `MobileBreadcrumb` - Breadcrumb navigation
-
-### Layout
-
-- `MobileContainer` - Responsive container
-- `MobileGrid` - Mobile-optimized grid system
-- `MobileCard` - Card component for mobile
-
-### Input
-
-- `MobileButton` - Touch-optimized buttons
-- `MobileInput` - Mobile-friendly input fields
-- `MobileSelect` - Dropdown select component
-
-### Feedback
-
-- `MobileModal` - Mobile modal dialogs
-- `MobileToast` - Toast notifications
-- `MobileLoading` - Loading indicators
-
-## Styling
-
-The components use DaisyUI themes and can be customized through CSS variables:
+同时需要 Tailwind CSS 与 DaisyUI：
 
 ```css
-:root {
-  --mobile-primary: #3b82f6;
-  --mobile-secondary: #64748b;
-  --mobile-accent: #f59e0b;
-}
+@import "tailwindcss";
+@plugin "daisyui";
 ```
 
-## API Documentation
+组件样式随包提供：
 
-For detailed API documentation, visit [online docs](https://wy2010344.github.io/mve).
+```ts
+import 'daisy-mobile-helper/style.css'
+```
 
-## Development
+## 示例
 
-See the [main README](../README.md) for development setup instructions.
+```ts
+import 'daisy-mobile-helper/style.css'
+import { createRoot, fdom } from 'mve-dom'
+import { Button, Card, renderNavbar } from 'daisy-mobile-helper'
+
+createRoot(document.body, function () {
+  renderNavbar({ title: '我的应用', index: true })
+
+  Card({
+    title: '欢迎',
+    subtitle: 'DaisyUI + MVE',
+    children() {
+      fdom.p({ children: '这是一个移动端卡片。' })
+      Button({
+        children: '开始',
+        onClick() {
+          console.log('clicked')
+        },
+      })
+    },
+  })
+})
+```
+
+## 组件
+
+### 基础组件（`window/themeContext`）
+
+- 按钮：`Button`、`IconButton`
+- 表单：`Input`、`Textarea`、`Select`、`Checkbox`、`Radio`、`FormGroup`
+- 布局：`Container`、`Grid`、`Flex`、`Card`
+- 反馈：`Notification`、`Badge`、`Alert`、`Progress`
+- 其它：`Switch`、`Tag`、`Avatar`、`Rating`、`Skeleton`
+
+### 场景封装（`components`）
+
+- `button(props)` - 带 loading 状态的按钮（class 前缀 `daisy-btn`）
+- `createTabList({ options, value, onChange, renderChild })` - Tab 列表
+- `hookTabLayout` - Tab 切换位移动画
+- `linkTab({ href, children })` - 与路由联动的 Tab
+- `hookXScroll(div, tabs, get, set)` - 横向分页滑动
+- `renderNavbar({ title, right, index })` - 顶部导航栏
+- `hookPage(div, config)` / `hookTabPage` - 页面进出场动画
+- `renderLayoutPage` / `renderMovePage` - 布局页与分页容器
+- `dailyRecord(arg)` - 日历/每日记录视图
+- `pluginLayoutIndex` / `hookTrackLayout` - 布局索引与追踪
+
+### 窗口与面板（`window`）
+
+- `panel` - 移动端面板（底部弹层/全屏页）
+- `renderWindows` / `createWindow` - 窗口队列
+- `hookTheme` / `hookRewriteTheme` - 主题 token 生成
 
 ## License
 

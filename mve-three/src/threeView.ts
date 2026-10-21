@@ -57,6 +57,7 @@ export function renderThreeView({
   const renderer = new THREE.WebGLRenderer(args);
   const scene = new THREE.Scene();
   hookDestroy(() => {
+    renderer.setAnimationLoop(null);
     renderer.dispose();
   });
   const w = valueOrGetToGet(width);
@@ -81,7 +82,11 @@ export function renderThreeView({
     renderer.setSize(w(), h());
   });
   hookAddResult(renderer.domElement);
-  renderChildren(scene, render as any);
+  // renderChildren 只把 scene 作为父节点，回调本身不会收到 scene 参数，
+  // 这里显式传入，保持与 render(scene) 的类型声明一致
+  renderChildren(scene, function (this: any) {
+    render.call(this, scene);
+  });
   renderer.setAnimationLoop(function (time, frame) {
     if (!notRender) {
       renderer.render(scene, camera);
@@ -99,6 +104,9 @@ export function hookOrbitControls() {
   const controls = new OrbitControls(camera, domElement);
   hookAnimationLoop(() => {
     controls.update();
+  });
+  hookDestroy(() => {
+    controls.dispose();
   });
   return controls;
 }

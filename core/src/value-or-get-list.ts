@@ -10,7 +10,7 @@ export function purifyList<T>(
       purifyList((child as () => ValueOrGetList<T>[])(), list, ignore);
     } else {
       if (ignore(child)) {
-        return;
+        continue;
       }
       list.push(child);
     }
@@ -27,7 +27,7 @@ export function purifySet<T>(
       purifySet((child as () => ValueOrGetList<T>[])(), list, ignore);
     } else {
       if (ignore(child)) {
-        return;
+        continue;
       }
       list.add(child);
     }

@@ -44,11 +44,10 @@
     },
     "./package.json": "./package.json"
   },
+  "sideEffects": false,
   "files": [
     "dist",
-    "src",
-    "canvasRender",
-    "history"
+    "src"
   ],
   "scripts": {
     "build": "tsdown",

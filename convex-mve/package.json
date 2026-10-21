@@ -2,7 +2,24 @@
   "name": "convex-mve",
   "type": "module",
   "version": "0.0.3",
-  "description": "A simple example library built by tsdown",
+  "description": "Convex bindings for the MVE framework",
+  "author": "wy2010344",
+  "license": "MIT",
+  "keywords": [
+    "mve",
+    "convex",
+    "reactive",
+    "query"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wy2010344/mve.git"
+  },
+  "homepage": "https://github.com/wy2010344/mve#readme",
+  "bugs": {
+    "url": "https://github.com/wy2010344/mve/issues"
+  },
+  "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
@@ -20,7 +37,9 @@
   },
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "lint:check": "eslint src/",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "tsdown": "catalog:"

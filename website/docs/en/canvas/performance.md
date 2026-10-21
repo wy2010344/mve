@@ -103,9 +103,9 @@ hookDraw({ withPath: true, draw({ ctx }) { ctx.fill(circlePath) } })
 ## Memory Management
 
 ```typescript
-import { hookAddDestroy } from 'mve-core'
+import { hookDestroy } from 'mve-helper'
 
-hookAddDestroy(() => {
+hookDestroy(() => {
   // cleanup logic
 })
 ```

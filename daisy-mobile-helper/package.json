@@ -22,9 +22,11 @@
   "bugs": {
     "url": "https://github.com/wy2010344/mve/issues"
   },
+  "sideEffects": false,
   "files": [
     "src",
-    "dist"
+    "dist",
+    "style.css"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -36,6 +38,7 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./style.css": "./style.css",
     "./package.json": "./package.json"
   },
   "scripts": {

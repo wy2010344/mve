@@ -203,7 +203,10 @@ export function mergeEvents(events: any, node: any) {
 }
 
 export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
-  static instance = new NodeCreater();
+  /** 每次都返回新实例,避免 dom.div/dom.span 共用可变单例 */
+  static get instance() {
+    return new NodeCreater<string, Element, any>();
+  }
   public type!: T;
   public create!: (n: T) => N;
   public updateProps!: (value: any, node: N, key: string) => void;
@@ -216,6 +219,7 @@ export class NodeCreater<T extends string, N extends Element, Attr extends {}> {
   private e: DOMAttributes<N> = emptyObject;
   events(v: DOMAttributes<N>) {
     this.e = v;
+    return this;
   }
 
   private useHelper() {

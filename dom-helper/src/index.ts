@@ -1,15 +1,15 @@
-import { hookDestroy, hookTrackSignalSkipFirst } from 'mve-helper';
-import { observerAnimateSignal, subscribeEventListener } from 'wy-dom-helper';
+import { hookDestroy } from 'mve-helper';
+import { observerAnimateSignal } from 'wy-dom-helper';
 import {
   AnimateFrameSignalConfig,
   createSignal,
   emptyObject,
+  getGlobalThis,
   GetValue,
   memo,
   StoreRef,
 } from 'wy-helper';
 export * from './canvasRender';
-export * from './absoluteRender';
 export * from './renderInput';
 export * from './renderCode';
 export * from './useContentEditable';
@@ -18,7 +18,6 @@ export * from './centerPicker';
 export * from './movePage';
 export * from './scroll';
 export * from './pop';
-export * from './three';
 export * from './cns';
 export * from './fakeRoute';
 export * from './tsxSupport';
@@ -45,56 +44,111 @@ export type StorageSignalArg = {
   storage?: Storage;
   json?: boolean;
 };
+
+type StorageSignalItem = {
+  raw: StoreRef<string | null>;
+  json: boolean;
+  defValue: unknown;
+};
+
+/** 同一 storage + key 共享同一个底层 signal，保证同标签页内各组件同步 */
+const storageSignalCache = new WeakMap<
+  Storage,
+  Map<string, StorageSignalItem>
+>();
+let storageListening = false;
+
+function getStorageItem(
+  storage: Storage,
+  key: string,
+  defValue: unknown,
+  json: boolean
+): StorageSignalItem {
+  let map = storageSignalCache.get(storage);
+  if (!map) {
+    map = new Map();
+    storageSignalCache.set(storage, map);
+  }
+  let item = map.get(key);
+  if (!item) {
+    item = {
+      raw: createSignal(storage.getItem(key)),
+      json,
+      defValue,
+    };
+    map.set(key, item);
+  }
+  return item;
+}
+
+function ensureStorageListener() {
+  const win = getGlobalThis().window;
+  if (storageListening || !win) {
+    return;
+  }
+  storageListening = true;
+  win.addEventListener('storage', e => {
+    if (!e.storageArea || !e.key) {
+      return;
+    }
+    const item = storageSignalCache.get(e.storageArea)?.get(e.key);
+    if (item) {
+      item.raw.set(e.newValue);
+    }
+  });
+}
+
 /**
- * 这个必须在内部
- * @param key
- * @param defValue
- * @param storage
- * @param json
- * @returns
+ * 同一 storage + key 的信号会共享，因此在同一标签页内也会同步。
+ * 必须在 StateHolder 内调用。
  */
 export function hookStorageSignal<V>(
   key: string,
   defValue: V,
-  {
-    storage = localStorage,
-    json = defValue && typeof defValue != 'string',
-  }: StorageSignalArg = emptyObject
+  { storage, json }: StorageSignalArg = emptyObject
 ): StoreRef<V> {
-  const value = createSignal(storage.getItem(key));
-  hookDestroy(
-    subscribeEventListener(window, 'storage', e => {
-      if (e.storageArea == storage && e.key == key) {
-        value.set(e.newValue);
-      }
-    })
+  const targetStorage = storage ?? getGlobalThis().localStorage;
+  if (!targetStorage) {
+    // SSR / Node 下没有 localStorage，退化为内存 signal
+    const local = createSignal(defValue);
+    return {
+      get: local.get,
+      set: local.set,
+    };
+  }
+  ensureStorageListener();
+  const item = getStorageItem(
+    targetStorage,
+    key,
+    defValue,
+    json ?? (!!defValue && typeof defValue != 'string')
   );
+  const fallback = item.defValue as V;
   return {
-    get: (json
+    get: (item.json
       ? memo(() => {
-          const v = value.get();
+          const v = item.raw.get();
           if (v == null) {
-            return defValue;
+            return fallback;
           }
           try {
             return JSON.parse(v);
           } catch {
             console.warn('not a valid storage for ' + key);
-            return defValue;
+            return fallback;
           }
         })
-      : () => value.get() ?? defValue) as GetValue<V>,
-    set: json
+      : () => item.raw.get() ?? fallback) as GetValue<V>,
+    set: item.json
       ? (v: V) => {
-          //因为
           const vs = JSON.stringify(v);
-          storage.setItem(key, vs);
-          value.set(vs);
+          targetStorage.setItem(key, vs);
+          item.raw.set(vs);
           return v;
         }
       : (v: V) => {
-          storage.setItem(key, v as any);
-          value.set(v as any);
+          targetStorage.setItem(key, v as any);
+          item.raw.set(v as any);
           return v;
         },
   };

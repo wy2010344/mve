@@ -52,6 +52,8 @@ export function renderArray<T>(
     {
       createMap,
       bindIndex: true,
+      // 数组值允许重复,重复 key 不应污染生产日志
+      duplicateInfo: 'ignore',
     }
   );
 }
@@ -278,6 +280,7 @@ export function renderArrayToArray<T, O>(
       bindOut: true,
       bindIndex: true,
       createMap,
+      duplicateInfo: 'ignore',
     }
   );
   return function () {

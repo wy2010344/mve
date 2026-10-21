@@ -69,18 +69,25 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
   protected buildChildren(): void {}
 
   create(): void {
+    if (this._destroyed) {
+      throw new Error('holder 已销毁,无法初始化');
+    }
     if (this._endBuild) {
       throw new Error('已经初始化过了');
     }
     const before = hookAlterStateHolder(this);
-    this.buildChildren();
-    hookAlterStateHolder(before);
+    try {
+      this.buildChildren();
+    } finally {
+      // 只复位全局 holder,构建错误继续向上抛
+      hookAlterStateHolder(before);
+    }
     this._endBuild = true;
   }
 
   addNode(n: Node): void {
     if (this._destroyed) {
-      throw new Error('已经结构构建，无法再继续添加');
+      throw new Error('holder 已销毁,无法再添加节点');
     }
     this.nodes.push(n);
   }
@@ -98,13 +105,27 @@ export class StateHolderI<Node, Target> implements StateHolder<Node, Target> {
       return;
     }
     this._destroyed = true;
-    this._children.forEach(destroyHolder);
-    this._destroyList.forEach(run);
+    // 提前销毁(如renderForEach的key切换)时,仍会留在父级的_children里,
+    // 父级销毁时会再次销毁本节点,这里主动摘除
+    this.parent?._children.delete(this);
+    try {
+      this._children.forEach(destroyHolder);
+      this._destroyList.forEach(run);
+    } finally {
+      // 某个销毁回调抛错时也要释放内部引用,错误本身继续向上抛
+      this._children.clear();
+      this._destroyList.length = 0;
+      this.nodes.length = 0;
+      this.contexts.length = 0;
+    }
   }
 
   // -- Context --------------------------------------------------------------
 
   provide<T>(context: ContextI<T>, value: T): void {
+    if (this._destroyed) {
+      throw new Error('holder 已销毁,无法再 provide');
+    }
     if (this._endBuild) {
       throw new Error('已经初始化后不希望再provide');
     }

@@ -10,6 +10,7 @@
   ],
   "author": "wy2010344",
   "license": "MIT",
+  "sideEffects": false,
   "files": [
     "src",
     "dist"

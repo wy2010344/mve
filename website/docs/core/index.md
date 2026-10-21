@@ -70,13 +70,16 @@ function MyComponent() {
   ) // 组件销毁时自动清理
 }
 
-import { runGlobalHolder } from 'mve-core'
-// 全局使用
-runGlobalHolder(() => {
-  hookTrackSignal(signal.get, (newValue, oldValue, inited) => {
+import { trackSignal } from 'wy-helper'
+// 不在组件树内时，直接使用 trackSignal，并自行保存销毁函数
+const destroy = trackSignal(
+  () => signal.get(),
+  newValue => {
     document.title = `Signal: ${newValue}`
-  })
-})
+  }
+)
+// 不再需要时
+destroy()
 ```
 
 ## addEffect - 批量更新后回调
