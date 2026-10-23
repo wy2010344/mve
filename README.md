@@ -2,6 +2,11 @@
 
 A signal-based frontend framework for building reactive user interfaces.
 
+▶ **[Live Demos (50+ real-world examples)](https://wy2010344.github.io/mve-vite-demo/)** ｜ 📖 [API Docs](https://wy2010344.github.io/mve/)
+
+![demo](assets/demo.gif)
+
+
 ## Packages
 
 - **mve-core** - Core MVE framework with signal-based reactivity
