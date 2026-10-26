@@ -36,6 +36,12 @@
       "import": "./dist/canvasRender.mjs",
       "require": "./dist/canvasRender.js"
     },
+    "./canvasRender2": {
+      "development": "./src/canvasRender2/index.ts",
+      "types": "./dist/canvasRender2.d.ts",
+      "import": "./dist/canvasRender2.mjs",
+      "require": "./dist/canvasRender2.js"
+    },
     "./history": {
       "development": "./src/history/index.ts",
       "types": "./dist/history.d.ts",

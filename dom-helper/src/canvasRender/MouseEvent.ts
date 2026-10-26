@@ -5,7 +5,7 @@ export class MouseEvent {
     readonly x: number,
     readonly y: number,
     readonly globalX: number,
-    readonly globalY: number,
+    readonly globalY: number
   ) {}
 
   stopPropagation(): void {

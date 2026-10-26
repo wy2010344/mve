@@ -41,7 +41,10 @@ export class Scroll {
   }
 
   value(): number {
-    return Math.min(Math.max(this.getSignal(), 0), maxScroll.call(this.container, this.direction));
+    return Math.min(
+      Math.max(this.getSignal(), 0),
+      maxScroll.call(this.container, this.direction)
+    );
   }
 
   setValue(v: number): void {
@@ -50,7 +53,10 @@ export class Scroll {
 
   scroll(delta: number): number {
     const cur = this.value();
-    const next = Math.min(Math.max(cur + delta, 0), maxScroll.call(this.container, this.direction));
+    const next = Math.min(
+      Math.max(cur + delta, 0),
+      maxScroll.call(this.container, this.direction)
+    );
     const realDelta = next - cur;
     this.setSignal(next);
     return realDelta;
@@ -60,7 +66,10 @@ export class Scroll {
    * length 滚动的长度
    * return <尺寸，位置>
    */
-  scrollBarSize(direction: PointKey, length: number = 0): ScrollBarCalculate | void {
+  scrollBarSize(
+    direction: PointKey,
+    length: number = 0
+  ): ScrollBarCalculate | void {
     const len = length > 0 ? length : innerSize.call(this.container, direction);
     const v = innerSize.call(this.container, direction);
     const c = contentSize.call(this.container, direction);
@@ -93,7 +102,10 @@ export function registerScroll(scroll: Scroll): void {
  * 最大可滚动
  */
 export function maxScroll(this: LayoutNode, direction: PointKey): number {
-  return Math.max(0, contentSize.call(this, direction) - innerSize.call(this, direction));
+  return Math.max(
+    0,
+    contentSize.call(this, direction) - innerSize.call(this, direction)
+  );
 }
 
 /**
@@ -109,11 +121,38 @@ export function contentSize(this: LayoutNode, direction: PointKey): number {
 }
 
 export interface ScrollContentArg<T = ScrollContent> extends RectNodeArg<T> {}
+/**
+ * 滚动内容（对标 Kotlin ScrollContent 子类）：
+ * - 绘制裁剪由自身重写 [drawAtParent] 实现（在父坐标系上按容器 inner 区裁剪），
+ *   基类 `Node.draw` 只负责调用该钩子，不含任何滚动语义；
+ * - 命中测试限制在容器 inner 区（视口外的子节点不响应事件）。
+ */
 export class ScrollContent extends RectNode {
-  isScrollContent = true;
-
-  constructor(context: StateHolder<Node, readonly Node[]>, args: ScrollContentArg) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]>,
+    args: ScrollContentArg
+  ) {
     super(context, args as any);
+  }
+
+  /**
+   * 父坐标系上的预绘制钩子：把绘制裁剪到滚动容器的 inner 区
+   * （对标 Kotlin ScrollContent 重写 drawAtParent；
+   * 旧版是 Node.draw 里判 `isScrollContent` 硬编码，现已下沉到子节点自身）。
+   */
+  drawAtParent(ctx: CanvasRenderingContext2D): void {
+    const p = this.layoutParent;
+    if (!p) {
+      return;
+    }
+    ctx.beginPath();
+    ctx.rect(
+      p.paddingInlineStart(),
+      p.paddingBlockStart(),
+      p.innerWidth(),
+      p.innerHeight()
+    );
+    ctx.clip();
   }
 
   acceptClip(x: number, y: number): boolean {

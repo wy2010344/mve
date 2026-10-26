@@ -1,7 +1,14 @@
 export type ColorInt = number;
 
-export function rgba(r: number, g: number, b: number, a: number = 255): ColorInt {
-  return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+export function rgba(
+  r: number,
+  g: number,
+  b: number,
+  a: number = 255
+): ColorInt {
+  return (
+    ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+  );
 }
 
 export function colorToCSS(color: ColorInt): string {

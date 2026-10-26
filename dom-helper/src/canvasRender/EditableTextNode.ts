@@ -115,7 +115,9 @@ export class EditableTextNode extends WrappedTextNode {
           ed.composingText.set(t);
           ed.composingCursorPos.set(p);
           if (t.length == 0) {
-            ed.cancelComposition();
+            // 空串＝本轮组合已结束（提交或取消）：保留已上屏文本。
+            // 早期实现走 cancelComposition 会把组合前的文本回滚，等于"撤销"掉刚上屏的字。
+            ed.commitComposition();
             return;
           }
           ed.onComposing('', t, p);
@@ -153,6 +155,11 @@ export class EditableTextNode extends WrappedTextNode {
       this.replaceSel(inserted);
       return;
     }
+    this.insertAtCursor(inserted);
+  }
+
+  /** 无选区时按光标插入（与 replaceSel 的解耦点，避免两者相互递归） */
+  private insertAtCursor(inserted: string): void {
     const pos = this.cursor();
     this.undoRedo.push(new InsertTextAction(pos, inserted));
     this.setText(insert(this.text(), pos, inserted));
@@ -196,7 +203,8 @@ export class EditableTextNode extends WrappedTextNode {
 
   moveRight(): void {
     const p = this.cursor();
-    if (p < this.text().length) this.setCursor(Graphemes.nextBoundary(this.text(), p));
+    if (p < this.text().length)
+      this.setCursor(Graphemes.nextBoundary(this.text(), p));
   }
 
   moveHome(): void {
@@ -265,16 +273,12 @@ export class EditableTextNode extends WrappedTextNode {
 
   movePrevWord(): void {
     this.preferredX = NaN;
-    this.setCursor(
-      Words.prevBoundary(this.text(), this.cursor())
-    );
+    this.setCursor(Words.prevBoundary(this.text(), this.cursor()));
   }
 
   moveNextWord(): void {
     this.preferredX = NaN;
-    this.setCursor(
-      Words.nextBoundary(this.text(), this.cursor())
-    );
+    this.setCursor(Words.nextBoundary(this.text(), this.cursor()));
   }
 
   selectPrevWord(): void {
@@ -458,7 +462,7 @@ export class EditableTextNode extends WrappedTextNode {
 
   commitComposingText(committed: string): void {
     if (this.compositionBase == null) {
-      this.insertText(committed);
+      if (committed.length > 0) this.insertText(committed);
       return;
     }
     this.onComposing(committed, '', 0);
@@ -509,8 +513,8 @@ export class EditableTextNode extends WrappedTextNode {
   private replaceSel(replacement: string): void {
     const s = this.selStart();
     const e = this.selEnd();
-    if (s == e) {
-      this.insertText(replacement);
+    if (s >= e) {
+      this.insertAtCursor(replacement);
       return;
     }
     const orig = this.text().substring(s, e);
@@ -637,10 +641,12 @@ export class EditableTextNode extends WrappedTextNode {
       return;
     }
     if (e.ctrl || alt) return;
+    // 组合态下键盘归输入法独占（此时 key 多为 'Process'），不再按可打印字符插入
+    if (this.inComposing()) return;
+    // 只认单字符：'Shift' / 'CapsLock' / 'F5' / 'Process' 等键名一律不录入
     const ch = e.key.length == 1 ? e.key.charCodeAt(0) : 0;
     if (ch < 0x20 || ch == 0x7f) return;
     this.preferredX = NaN;
-    this.composingText.set('');
     this.insertText(e.key);
   }
 
@@ -667,13 +673,21 @@ export class EditableTextNode extends WrappedTextNode {
     this.insertText(t);
   }
 
+  /**
+   * 选区两端统一按 [0, length] 钳制后再比较/取用：
+   * 文本被外部改短时残留的越界端点不应被当成"有选区"，否则 replaceSel 的
+   * s == e 分支会回落到 insertText 形成相互递归（栈溢出）。
+   */
   private selStart(): number {
-    return Math.max(Math.min(this.anchorIndex.get(), this.focusIndex.get()), 0);
+    return Math.min(
+      Math.max(Math.min(this.anchorIndex.get(), this.focusIndex.get()), 0),
+      this.text().length
+    );
   }
 
   private selEnd(): number {
     return Math.min(
-      Math.max(this.anchorIndex.get(), this.focusIndex.get()),
+      Math.max(Math.max(this.anchorIndex.get(), this.focusIndex.get()), 0),
       this.text().length
     );
   }
@@ -682,7 +696,7 @@ export class EditableTextNode extends WrappedTextNode {
     return (
       this.anchorIndex.get() >= 0 &&
       this.focusIndex.get() >= 0 &&
-      this.anchorIndex.get() != this.focusIndex.get()
+      this.selEnd() > this.selStart()
     );
   }
 

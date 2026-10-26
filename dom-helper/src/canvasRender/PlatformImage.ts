@@ -26,7 +26,11 @@ function decodeViaImageElement(blob: Blob): Promise<PlatformImage | null> {
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      resolve({ width: img.naturalWidth, height: img.naturalHeight, source: img });
+      resolve({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+        source: img,
+      });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);

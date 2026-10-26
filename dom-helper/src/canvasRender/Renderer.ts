@@ -166,7 +166,6 @@ export class Renderer extends LayoutNode {
     args: RendererArgs,
     context?: StateHolder<Node, readonly Node[]>
   ) {
-    console.log('have context', context);
     const register = new Register();
     if (context) {
       register.provide(context);

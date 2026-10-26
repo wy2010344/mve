@@ -2,7 +2,13 @@ import { memo, ValueOrGet, valueOrGetToGet } from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import { Node } from './Node';
 import { RectNode, RectNodeArg } from './RectNode';
-import { LayoutSize, LayoutSizeDirection, layoutSize, padding, roundRectPath } from './LayoutNode';
+import {
+  LayoutSize,
+  LayoutSizeDirection,
+  layoutSize,
+  padding,
+  roundRectPath,
+} from './LayoutNode';
 import { PlatformImage } from './PlatformImage';
 
 export interface ImageNodeArg<T = ImageNode> extends RectNodeArg<T> {
@@ -34,8 +40,10 @@ export class ImageNode extends RectNode {
     (): readonly [number, number] => {
       const img = this.image();
       if (!img) return [0, 0];
-      const padX = padding.call(this, 'x', 'start') + padding.call(this, 'x', 'end');
-      const padY = padding.call(this, 'y', 'start') + padding.call(this, 'y', 'end');
+      const padX =
+        padding.call(this, 'x', 'start') + padding.call(this, 'x', 'end');
+      const padY =
+        padding.call(this, 'y', 'start') + padding.call(this, 'y', 'end');
       const ow = Math.max(1, this.originalWidth());
       const oh = Math.max(1, this.originalHeight());
       const s = this.imageSize();
@@ -49,11 +57,20 @@ export class ImageNode extends RectNode {
     }
   );
 
-  constructor(context: StateHolder<Node, readonly Node[]>, args: ImageNodeArg = {}) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]>,
+    args: ImageNodeArg = {}
+  ) {
     super(context, args as any);
     this.image = valueOrGetToGet(args.image, this.image);
-    this.originalWidth = valueOrGetToGet(args.originalWidth, this.originalWidth);
-    this.originalHeight = valueOrGetToGet(args.originalHeight, this.originalHeight);
+    this.originalWidth = valueOrGetToGet(
+      args.originalWidth,
+      this.originalWidth
+    );
+    this.originalHeight = valueOrGetToGet(
+      args.originalHeight,
+      this.originalHeight
+    );
     this.radius = valueOrGetToGet(args.radius, this.radius);
     this.imageSize = valueOrGetToGet(args.imageSize, this.imageSize);
   }

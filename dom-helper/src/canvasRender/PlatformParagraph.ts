@@ -8,19 +8,41 @@ import type {
 import { getCanvasKit } from './CanvasKit';
 import type { ColorInt } from './Draw';
 
+/**
+ * 文本装饰线（对标 Kotlin TextDecoration）：渲染为文字同色实线；
+ * 平台（CanvasKit 单值 decoration）不支持组合时按下划线优先，静默降级。
+ */
+export interface TextDecoration {
+  underline?: boolean;
+  lineThrough?: boolean;
+}
+
+/** 无装饰线（对标 Kotlin TextDecoration.None） */
+export const textDecorationNone: TextDecoration = {};
+
 export interface RichTextStyle {
   fontFamily?: string | null;
   fontSize?: number;
   fontWeight?: number;
+  /** 斜体（对标 Kotlin RichTextStyle.italic） */
+  italic?: boolean;
   color?: ColorInt;
   letterSpacing?: number;
   wordSpacing?: number;
   lineHeightMultiplier?: number | null;
+  /** 下划线 / 删除线（对标 Kotlin RichTextStyle.decoration） */
+  decoration?: TextDecoration;
 }
 
 export interface RichTextSpan {
   text: string;
   style?: RichTextStyle;
+  /**
+   * 链接目标（对标 Kotlin PlatformSpan.url）：非空时该片段可点击，
+   * 由 RichTextNode 命中判定后经 UrlOpener 的平台实现打开；
+   * 仅引擎层元数据，不参与 CanvasKit 样式（外观由 style 驱动）。
+   */
+  url?: string;
 }
 
 export enum RectStyle {
@@ -48,10 +70,12 @@ const DEFAULT_STYLE: RichTextStyle = {
   fontFamily: null,
   fontSize: 16,
   fontWeight: 400,
+  italic: false,
   color: 0xff000000,
   letterSpacing: 0,
   wordSpacing: 0,
   lineHeightMultiplier: null,
+  decoration: textDecorationNone,
 };
 
 function normalizeStyle(style: RichTextStyle = {}): Required<
@@ -65,10 +89,12 @@ function normalizeStyle(style: RichTextStyle = {}): Required<
     fontFamily: s.fontFamily ?? null,
     fontSize: s.fontSize ?? 16,
     fontWeight: s.fontWeight ?? 400,
+    italic: s.italic ?? false,
     color: s.color ?? 0xff000000,
     letterSpacing: s.letterSpacing ?? 0,
     wordSpacing: s.wordSpacing ?? 0,
     lineHeightMultiplier: s.lineHeightMultiplier ?? null,
+    decoration: s.decoration ?? textDecorationNone,
   };
 }
 
@@ -109,10 +135,11 @@ function getFontCollection(ck: CanvasKit): FontCollection {
   return collection;
 }
 
+/** CanvasKit 的颜色是 0~1 浮点的 Float32Array（RGBA），不是 0~255 整数 */
 function colorToInputColor(color: ColorInt): number[] {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
+  const r = ((color >> 16) & 0xff) / 255;
+  const g = ((color >> 8) & 0xff) / 255;
+  const b = (color & 0xff) / 255;
   const a = ((color >> 24) & 0xff) / 255;
   return [r, g, b, a];
 }
@@ -163,7 +190,7 @@ function makeTextStyle(ck: CanvasKit, style: RichTextStyle = {}): TextStyle {
     fontStyle: {
       weight: toFontWeight(ck, s.fontWeight),
       width: ck.FontWidth.Normal,
-      slant: ck.FontSlant.Upright,
+      slant: s.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright,
     },
   };
   if (s.fontFamily) {
@@ -180,6 +207,12 @@ function makeTextStyle(ck: CanvasKit, style: RichTextStyle = {}): TextStyle {
   }
   if (s.lineHeightMultiplier != null) {
     ts.heightMultiplier = s.lineHeightMultiplier;
+  }
+  // 装饰线：CanvasKit 的 decoration 是单值常量，组合时下划线优先（静默降级）
+  if (s.decoration?.underline) {
+    ts.decoration = ck.UnderlineDecoration;
+  } else if (s.decoration?.lineThrough) {
+    ts.decoration = ck.LineThroughDecoration;
   }
   return ts;
 }

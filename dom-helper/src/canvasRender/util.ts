@@ -10,10 +10,6 @@ export function insert(str: string, index: number, text: string): string {
   return str.substring(0, index) + text + str.substring(index);
 }
 
-export function removeRange(
-  str: string,
-  start: number,
-  end: number
-): string {
+export function removeRange(str: string, start: number, end: number): string {
   return str.substring(0, start) + str.substring(end);
 }

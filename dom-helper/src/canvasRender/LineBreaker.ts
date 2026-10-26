@@ -11,8 +11,13 @@ export function lineBreakOpportunities(
   if (text.length == 0) return [];
   const result: number[] = [];
   if (typeof Intl.Segmenter == 'function') {
-    const segmenter = new Intl.Segmenter(locale, { granularity: 'line' as any });
-    for (const seg of segmenter.segment(text) as Iterable<{ index: number; isBreakable: boolean }>) {
+    const segmenter = new Intl.Segmenter(locale, {
+      granularity: 'line' as any,
+    });
+    for (const seg of segmenter.segment(text) as Iterable<{
+      index: number;
+      isBreakable: boolean;
+    }>) {
       if (seg.index > 0 && seg.isBreakable) {
         result.push(seg.index);
       }

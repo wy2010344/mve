@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     canvasRender: './src/canvasRender/index.ts',
+    canvasRender2: './src/canvasRender2/index.ts',
     history: './src/history/index.ts',
   },
   platform: 'neutral',

@@ -1,6 +1,9 @@
 import { EmptyFun } from 'wy-helper';
 import { Context, createContext } from 'mve-core';
+import type { CursorType } from '../canvasCore/Cursor';
 import type { Node, NodeWithPosition } from './Node';
+
+export { CursorType } from '../canvasCore/Cursor';
 
 export interface GlobalMouseEvent {
   x: number;
@@ -47,13 +50,12 @@ export interface KeyEvent {
 }
 
 export type KeyPressCallback = (e: KeyEvent) => void;
-export type ComposingTextCallback = (text: string, cursorPosition: number) => void;
+export type ComposingTextCallback = (
+  text: string,
+  cursorPosition: number
+) => void;
 
-export enum CursorType {
-  DEFAULT = 'default',
-  POINTER = 'pointer',
-  TEXT = 'text',
-}
+/** 鼠标光标类型：实现在 `canvasCore/Cursor`，两套树共用一份（见文件顶部 re-export） */
 
 export interface EngineGlobal {
   registerMouseDown(callback: MouseCallback): EmptyFun;
@@ -70,7 +72,13 @@ export interface EngineGlobal {
   setFocused(node: Node | null): void;
 
   /** 请求平台在指定屏幕坐标显示原生输入控件（隐藏的 textarea），用于代理文本输入和 IME 组合 */
-  requestInputOverlay(x: number, y: number, w: number, h: number, fontSize: number): void;
+  requestInputOverlay(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fontSize: number
+  ): void;
 
   /** 隐藏原生输入控件 */
   hideInputOverlay(): void;

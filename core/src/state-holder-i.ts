@@ -270,7 +270,7 @@ function getNodes<T>(item: { nodes: T }) {
 }
 export class EachValue<Node, Target, T, K, O>
   extends StateHolderI<Node, Target>
-  implements EachTime<T>
+  implements EachTime<T, K>
 {
   _value: T = null as T;
   _index: number = 0;

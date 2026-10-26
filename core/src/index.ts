@@ -15,6 +15,7 @@ export type {
   StateHolder,
   StateHolderWithNode,
   ShareConfig,
+  Creater,
 } from './state-holder';
 
 export function renderForEach<T, K = T, O = void>(

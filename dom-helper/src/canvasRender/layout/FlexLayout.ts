@@ -15,71 +15,89 @@ import {
 } from 'wy-helper';
 import { LayoutNode, outerSize } from '../LayoutNode';
 
-export function flex(arg: {
-  direction?: ValueOrGet<PointKey>;
-  alignItem?: ValueOrGet<AlignItem>;
-  alignFix?: ValueOrGet<boolean>;
-  directionJustify?: ValueOrGet<DirectionJustify>;
-  reverse?: ValueOrGet<boolean>;
-  gap?: ValueOrGet<number>;
-  directionFixBetweenWhenOne?: ValueOrGet<DirectionFixBetweenWhenOne>;
+export function createFlex<
+  AbsLayoutNode extends {
+    layoutIndex(): number;
+  },
+>(x: {
+  size(n: AbsLayoutNode, d: PointKey): number;
+  findExt<T>(n: AbsLayoutNode, c: new (...vs: any[]) => T): T | undefined;
 }) {
-  const direction = valueOrGetToGet(arg.direction ?? 'y');
-  const main: LayoutFun<LayoutNode> & FlexChildConvert<LayoutNode> = {
-    outerSize(n) {
-      return outerSize.call(n, direction());
-    },
-    index(n) {
-      return n.layoutIndex();
-    },
-    grow(n) {
-      const grow = n.findExt(GrowChild);
-      if (grow) {
-        if (direction() == 'x') {
-          return grow.growX();
+  return function flex(arg: {
+    direction?: ValueOrGet<PointKey>;
+    alignItem?: ValueOrGet<AlignItem>;
+    alignFix?: ValueOrGet<boolean>;
+    directionJustify?: ValueOrGet<DirectionJustify>;
+    reverse?: ValueOrGet<boolean>;
+    gap?: ValueOrGet<number>;
+    directionFixBetweenWhenOne?: ValueOrGet<DirectionFixBetweenWhenOne>;
+  }) {
+    const direction = valueOrGetToGet(arg.direction ?? 'y');
+    const main: LayoutFun<AbsLayoutNode> & FlexChildConvert<AbsLayoutNode> = {
+      outerSize(n) {
+        return x.size(n, direction());
+      },
+      index(n) {
+        return n.layoutIndex();
+      },
+      grow(n) {
+        const grow = x.findExt(n, GrowChild);
+        if (grow) {
+          if (direction() == 'x') {
+            return grow.growX();
+          }
+          return grow.growY();
         }
-        return grow.growY();
-      }
-      return 0;
-    },
-    ignore(n) {
-      const it = n.findExt(IgnoreFlexChild);
-      return it ? it.ignore() : false;
-    },
-    createLayout(o) {
-      return new FlexLayout(arg, o, this);
-    },
-  };
-  const cross: LayoutFun<LayoutNode> & StackChildConvert<LayoutNode> = {
-    align(n) {
-      const align = n.findExt(AlignChild);
-      if (align) {
-        if (direction() == 'x') {
-          return align.alignY();
+        return 0;
+      },
+      ignore(n) {
+        const it = x.findExt(n, IgnoreFlexChild);
+        return it ? it.ignore() : false;
+      },
+      createLayout(o) {
+        return new FlexLayout(arg, o, this);
+      },
+    };
+    const cross: LayoutFun<AbsLayoutNode> & StackChildConvert<AbsLayoutNode> = {
+      align(n) {
+        const align = x.findExt(n, AlignChild);
+        if (align) {
+          if (direction() == 'x') {
+            return align.alignY();
+          }
+          return align.alignX();
         }
-        return align.alignX();
-      }
-    },
-    outerSize(n) {
-      return outerSize.call(n, toOpposite(direction()));
-    },
-    ignore(n) {
-      const it = n.findExt(IgnoreFlexChild);
-      return it ? it.ignore() : false;
-    },
-    createLayout(o) {
-      return new StackLayout(arg, o, this);
-    },
-  };
-  return {
-    layout(n: PointKey) {
-      if (direction() == n) {
-        return main;
-      }
-      return cross;
-    },
+      },
+      outerSize(n) {
+        return x.size(n, toOpposite(direction()));
+      },
+      ignore(n) {
+        const it = x.findExt(n, IgnoreFlexChild);
+        return it ? it.ignore() : false;
+      },
+      createLayout(o) {
+        return new StackLayout(arg, o, this);
+      },
+    };
+    return {
+      layout(n: PointKey) {
+        if (direction() == n) {
+          return main;
+        }
+        return cross;
+      },
+    };
   };
 }
+
+export const flex = createFlex<LayoutNode>({
+  size(n, d) {
+    return outerSize.call(n, d);
+  },
+  findExt(n, c) {
+    return n.findExt(c);
+  },
+});
 
 export class GrowChild {
   argGrow(n: PointKey): number {
@@ -137,7 +155,9 @@ export class IgnoreFlexChild {
   }
 }
 
-export function ignoreFlex(args: { ignore?: ValueOrGet<boolean, IgnoreFlexChild> }) {
+export function ignoreFlex(args: {
+  ignore?: ValueOrGet<boolean, IgnoreFlexChild>;
+}) {
   const fc = new IgnoreFlexChild();
   fc.argIgnore = valueOrGetToGet(args.ignore, fc.argIgnore);
   return fc;

@@ -1,4 +1,10 @@
-import { createSignal, emptyArray, memo, ValueOrGet, valueOrGetToGet } from 'wy-helper';
+import {
+  createSignal,
+  emptyArray,
+  memo,
+  ValueOrGet,
+  valueOrGetToGet,
+} from 'wy-helper';
 import { StateHolder } from 'mve-core';
 import { absolutePosition, Node } from './Node';
 import { RectNode, RectNodeArg } from './RectNode';
@@ -61,10 +67,16 @@ export class RichTextNode extends RectNode {
 
   protected onMouseDown = false;
 
-  constructor(context: StateHolder<Node, readonly Node[]>, args: RichTextNodeArg = {}) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]>,
+    args: RichTextNodeArg = {}
+  ) {
     super(context, args as any);
     this.spans = valueOrGetToGet(args.spans, this.spans);
-    this.selectionColor = valueOrGetToGet(args.selectionColor, this.selectionColor);
+    this.selectionColor = valueOrGetToGet(
+      args.selectionColor,
+      this.selectionColor
+    );
     this.autoWidth = valueOrGetToGet(args.autoWidth, this.autoWidth);
     this.maxLines = valueOrGetToGet(args.maxLines, this.maxLines);
     this.ellipsis = valueOrGetToGet(args.ellipsis, this.ellipsis);
@@ -163,7 +175,12 @@ export class RichTextNode extends RectNode {
       }
     }
 
-    drawParagraph(p.paragraph, ctx, this.paddingInlineStart(), this.paddingBlockStart());
+    drawParagraph(
+      p.paragraph,
+      ctx,
+      this.paddingInlineStart(),
+      this.paddingBlockStart()
+    );
     super.draw(ctx);
   }
 }

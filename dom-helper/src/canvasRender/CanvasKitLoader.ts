@@ -11,6 +11,8 @@ interface ParagraphRaster {
 
 const rasterCache = new WeakMap<Paragraph, ParagraphRaster>();
 
+let warnedZeroSize = false;
+
 export interface DrawParagraphOptions {
   alpha?: number;
   /** 离屏栅格化缩放，用于高分屏清晰渲染；绘制到目标时的尺寸仍为段落逻辑尺寸 */
@@ -30,7 +32,17 @@ export function drawParagraph(
 ): void {
   const w = p.getLongestLine();
   const h = p.getHeight();
-  if (!(w > 0) || !(h > 0)) return;
+  if (!(w > 0) || !(h > 0)) {
+    // 典型原因：未注册字体（registerFont）——wasm 版 CanvasKit 没有系统默认字体，
+    // 没有字体会量出 0 宽 0 高，文本静默不绘制
+    if (!warnedZeroSize) {
+      warnedZeroSize = true;
+      console.warn(
+        'drawParagraph: 段落宽高为 0，已跳过绘制。常见原因：未注册字体（registerFont），或 maxWidth 过小'
+      );
+    }
+    return;
+  }
   const ck = getCanvasKit();
   if (!ck) {
     return;

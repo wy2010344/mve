@@ -1,32 +1,10 @@
-export async function clipboardGetText(): Promise<string | null> {
-  try {
-    if (navigator.clipboard?.readText) {
-      return await navigator.clipboard.readText();
-    }
-  } catch (err) {
-    console.error('读取剪贴板失败', err);
-  }
-  return null;
-}
-
-export async function clipboardSetText(text: string): Promise<void> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-  } catch (err) {
-    console.error('写入剪贴板失败，回退到 execCommand', err);
-  }
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.appendChild(textarea);
-  textarea.select();
-  try {
-    document.execCommand('copy');
-  } finally {
-    document.body.removeChild(textarea);
-  }
-}
+/**
+ * 剪贴板 —— 实现已抽到 `canvasCore/Clipboard`，两套树共用一份。
+ *
+ * 本目录（canvasRender）的编辑器以**系统剪贴板**为准，因此转发到异步 API；
+ * `canvasRender2` 走同步内存 API。两者语义与签名都不同，故 core 里分名并存。
+ */
+export {
+  clipboardGetTextAsync as clipboardGetText,
+  clipboardSetTextAsync as clipboardSetText,
+} from '../canvasCore/Clipboard';

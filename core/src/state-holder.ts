@@ -17,7 +17,7 @@ import { ValueOrGetList } from './value-or-get-list';
 export type Creater<Node, Target, T, K, O> = (
   this: StateHolder<Node, Target>,
   key: K,
-  eachTime: EachTime<T>
+  eachTime: EachTime<T, K>
 ) => O;
 
 export type RenderForEachArg<K> = {

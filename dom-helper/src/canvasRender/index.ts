@@ -22,7 +22,7 @@ import {
 } from './WrappedTextNode';
 import { ImageNode, ImageNodeArg } from './ImageNode';
 import { decodeImage } from './PlatformImage';
-import { SimpleScrollBar } from './helper/SimpleScrollBar';
+import { SimpleScrollBar, SimpleScrollBarArg } from './helper/SimpleScrollBar';
 
 // Core types
 export type { ColorInt } from './Draw';
@@ -45,11 +45,14 @@ export { engineGlobalContext, KeyCode, CursorType } from './EngineGlobal';
 export { hitest, absolutePosition, collectIndex } from './Node';
 export type { Node, NodeWithPosition } from './Node';
 export { RectNode } from './RectNode';
+export { roundRectPath } from './LayoutNode';
 export { Renderer } from './Renderer';
 
 // Text nodes
 export { RichTextNode } from './RichTextNode';
 export type { RichTextNodeArg } from './RichTextNode';
+export type { RichTextSpan, RichTextStyle } from './PlatformParagraph';
+export { TextAlign } from './PlatformParagraph';
 export { WrappedTextNode, WordBreak } from './WrappedTextNode';
 export type { WrappedTextNodeArg } from './WrappedTextNode';
 export { EditableTextNode, getActiveEditor } from './EditableTextNode';
@@ -103,12 +106,7 @@ export { drag } from './helper/drag';
 export { SimpleScrollBar } from './helper/SimpleScrollBar';
 export * from './layout/FlexLayout';
 
-export function renderCanvas(
-  canvas: HTMLCanvasElement,
-  args: Omit<RendererArgs, 'frameCallback' | 'x' | 'y' | 'position'>
-) {
-  const stateHolder = hookCurrentStateHolder(true);
-
+export function syncCanvasSize(canvas: HTMLCanvasElement) {
   const w = createSignal(canvas.clientWidth);
   const h = createSignal(canvas.clientHeight);
   function syncSize() {
@@ -122,15 +120,28 @@ export function renderCanvas(
     syncSize();
   });
   ob.observe(canvas);
-  stateHolder.addDestroy(() => {
-    ob.disconnect();
-  });
+  return {
+    width: w.get,
+    height: h.get,
+    destroy() {
+      ob.disconnect();
+    },
+  };
+}
 
+export function renderCanvas(
+  canvas: HTMLCanvasElement,
+  args: Omit<RendererArgs, 'frameCallback' | 'x' | 'y' | 'position'>
+) {
+  const stateHolder = hookCurrentStateHolder(true);
+
+  const { width, height, destroy } = syncCanvasSize(canvas);
+  stateHolder.addDestroy(destroy);
   const render = new Renderer(
     {
       ...args,
-      width: w.get,
-      height: h.get,
+      width,
+      height,
       frameCallback() {
         debounceRequestBatchAnimationFrame(redraw);
       },
@@ -159,6 +170,10 @@ export function renderCanvas(
     render.dispatchMouseWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY);
   });
   return render;
+}
+
+export function renderScrollBar(args: SimpleScrollBarArg) {
+  return new SimpleScrollBar(hookCurrentStateHolder(true), args);
 }
 
 export function renderNode(args: NodeArg) {

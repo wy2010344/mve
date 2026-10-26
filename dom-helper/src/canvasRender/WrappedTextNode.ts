@@ -11,7 +11,9 @@ export enum WordBreak {
   ANY_CHAR = 'ANY_CHAR',
 }
 
-export interface WrappedTextNodeArg<T = WrappedTextNode> extends RichTextNodeArg<T> {
+export interface WrappedTextNodeArg<
+  T = WrappedTextNode,
+> extends RichTextNodeArg<T> {
   text?: ValueOrGet<string, T>;
   fontFamily?: ValueOrGet<string | null, T>;
   fontSize?: ValueOrGet<number, T>;
@@ -48,15 +50,24 @@ export class WrappedTextNode extends RichTextNode {
     return 0;
   }
 
-  constructor(context: StateHolder<Node, readonly Node[]>, args: WrappedTextNodeArg = {}) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]>,
+    args: WrappedTextNodeArg = {}
+  ) {
     super(context, args as RichTextNodeArg);
     this.text = valueOrGetToGet(args.text, this.text);
     this.fontFamily = valueOrGetToGet(args.fontFamily, this.fontFamily);
     this.fontSize = valueOrGetToGet(args.fontSize, this.fontSize);
     this.fontWeight = valueOrGetToGet(args.fontWeight, this.fontWeight);
     this.color = valueOrGetToGet(args.color, this.color);
-    this.lineHeightMultiplier = valueOrGetToGet(args.lineHeightMultiplier, this.lineHeightMultiplier);
-    this.letterSpacing = valueOrGetToGet(args.letterSpacing, this.letterSpacing);
+    this.lineHeightMultiplier = valueOrGetToGet(
+      args.lineHeightMultiplier,
+      this.lineHeightMultiplier
+    );
+    this.letterSpacing = valueOrGetToGet(
+      args.letterSpacing,
+      this.letterSpacing
+    );
     this.wordSpacing = valueOrGetToGet(args.wordSpacing, this.wordSpacing);
   }
 

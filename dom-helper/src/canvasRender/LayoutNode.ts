@@ -37,16 +37,37 @@ export interface LayoutNodeArg<T = LayoutNode> extends NodeArg<T> {
   notInLayout?: ValueOrGet<boolean, T>;
 }
 export class LayoutNode extends Node {
-  constructor(context: StateHolder<Node, readonly Node[]> | void, args: LayoutNodeArg) {
+  constructor(
+    context: StateHolder<Node, readonly Node[]> | void,
+    args: LayoutNodeArg
+  ) {
     super(context, args as any);
 
     this.argPadding = valueOrGetToGet(args.padding, this.argPadding);
-    this.argPaddingBlock = valueOrGetToGet(args.paddingBlock, this.argPaddingBlock);
-    this.argPaddingInline = valueOrGetToGet(args.paddingInline, this.argPaddingInline);
-    this.paddingBlockStart = valueOrGetToGet(args.paddingBlockStart, this.paddingBlockStart);
-    this.paddingBlockEnd = valueOrGetToGet(args.paddingBlockEnd, this.paddingBlockEnd);
-    this.paddingInlineStart = valueOrGetToGet(args.paddingInlineStart, this.paddingInlineStart);
-    this.paddingInlineEnd = valueOrGetToGet(args.paddingInlineEnd, this.paddingInlineEnd);
+    this.argPaddingBlock = valueOrGetToGet(
+      args.paddingBlock,
+      this.argPaddingBlock
+    );
+    this.argPaddingInline = valueOrGetToGet(
+      args.paddingInline,
+      this.argPaddingInline
+    );
+    this.paddingBlockStart = valueOrGetToGet(
+      args.paddingBlockStart,
+      this.paddingBlockStart
+    );
+    this.paddingBlockEnd = valueOrGetToGet(
+      args.paddingBlockEnd,
+      this.paddingBlockEnd
+    );
+    this.paddingInlineStart = valueOrGetToGet(
+      args.paddingInlineStart,
+      this.paddingInlineStart
+    );
+    this.paddingInlineEnd = valueOrGetToGet(
+      args.paddingInlineEnd,
+      this.paddingInlineEnd
+    );
 
     this.argSize = valueOrGetToGet(args.size, this.argSize);
     this.argWidth = valueOrGetToGet(args.width, this.argWidth);
@@ -237,26 +258,22 @@ export function paddingStart(this: LayoutNode, d: PointKey) {
 export function paddingEnd(this: LayoutNode, d: PointKey) {
   return padding.call(this, d, 'end');
 }
-export function outerSize(this: LayoutNode, d: PointKey) {
-  const n = argSize.call(this, d);
-  if (typeof n == 'number') {
-    return Math.max(0, n);
-  }
-  if (n.fromInside) {
-    return Math.max(0, n.value + paddingStart.call(this, d) + paddingEnd.call(this, d));
-  }
-  return Math.max(0, n.value);
-}
 
 export function innerSize(this: LayoutNode, d: PointKey) {
   const n = argSize.call(this, d);
   if (typeof n == 'number') {
-    return Math.max(0, n - paddingStart.call(this, d) - paddingEnd.call(this, d));
+    return Math.max(
+      0,
+      n - paddingStart.call(this, d) - paddingEnd.call(this, d)
+    );
   }
   if (n.fromInside) {
     return Math.max(0, n.value);
   }
-  return Math.max(0, n.value - paddingStart.call(this, d) - paddingEnd.call(this, d));
+  return Math.max(
+    0,
+    n.value - paddingStart.call(this, d) - paddingEnd.call(this, d)
+  );
 }
 
 function findLayoutChildren(n: Node, list: LayoutNode[]) {
@@ -289,7 +306,11 @@ export function sizeFromChildren(this: LayoutNode, d: PointKey): LayoutSize {
   };
 }
 
-export function absoluteInInner(this: LayoutNode, x: number, y: number): boolean {
+export function absoluteInInner(
+  this: LayoutNode,
+  x: number,
+  y: number
+): boolean {
   return (
     inRange(
       absolutePosition.call(this, 'x') + this.paddingInlineStart(),
@@ -314,7 +335,12 @@ export function fillInnerRect(
   color: ColorInt = rgba(0, 0, 0)
 ) {
   ctx.fillStyle = colorToCSS(color);
-  ctx.fillRect(this.paddingInlineStart(), this.paddingBlockStart(), innerSize.call(this, 'x'), innerSize.call(this, 'y'));
+  ctx.fillRect(
+    this.paddingInlineStart(),
+    this.paddingBlockStart(),
+    innerSize.call(this, 'x'),
+    innerSize.call(this, 'y')
+  );
 }
 
 export function fillOuterRect(
@@ -378,7 +404,14 @@ export function fillOuterRoundRect(
   color: ColorInt = rgba(0, 0, 0)
 ) {
   ctx.fillStyle = colorToCSS(color);
-  roundRectPath(ctx, 0, 0, outerSize.call(this, 'x'), outerSize.call(this, 'y'), radius);
+  roundRectPath(
+    ctx,
+    0,
+    0,
+    outerSize.call(this, 'x'),
+    outerSize.call(this, 'y'),
+    radius
+  );
   ctx.fill();
 }
 
@@ -409,7 +442,14 @@ export function strokeOuterRoundRect(
 ) {
   ctx.strokeStyle = colorToCSS(color);
   ctx.lineWidth = strokeWidth;
-  roundRectPath(ctx, 0, 0, outerSize.call(this, 'x'), outerSize.call(this, 'y'), radius);
+  roundRectPath(
+    ctx,
+    0,
+    0,
+    outerSize.call(this, 'x'),
+    outerSize.call(this, 'y'),
+    radius
+  );
   ctx.stroke();
 }
 
@@ -488,6 +528,19 @@ export function strokeOuterOval(
   ctx.stroke();
 }
 
+export function outerSize(this: LayoutNode, d: PointKey) {
+  const n = argSize.call(this, d);
+  if (typeof n == 'number') {
+    return Math.max(0, n);
+  }
+  if (n.fromInside) {
+    return Math.max(
+      0,
+      n.value + paddingStart.call(this, d) + paddingEnd.call(this, d)
+    );
+  }
+  return Math.max(0, n.value);
+}
 export function strokeInnerOval(
   this: LayoutNode,
   ctx: CanvasRenderingContext2D,

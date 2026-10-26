@@ -7,17 +7,12 @@ import {
 import { emptyArray, PointKey, ValueOrGet, valueOrGetToGet } from 'wy-helper';
 import { MouseEvent } from './MouseEvent';
 import { EngineGlobal, engineGlobalContext } from './EngineGlobal';
-import type { LayoutNode } from './LayoutNode';
 
 export interface NodeWithPosition {
   node: Node;
   x: number;
   y: number;
   next: NodeWithPosition | null;
-}
-
-interface ScrollContentLike extends LayoutNode {
-  isScrollContent: true;
 }
 
 export function include(this: NodeWithPosition, node: Node): boolean {
@@ -73,10 +68,14 @@ export interface NodeArg<T = Node> {
   mouseMoveCapture?(this: T, e: MouseEvent): void;
 }
 
-function flatten(list: readonly ValueOrGetList<Node>[], out: Node[]): void {
+export function flatten<
+  N extends {
+    hide(): any;
+  },
+>(list: readonly ValueOrGetList<N>[], out: N[]): void {
   for (const child of list) {
     if (typeof child == 'function') {
-      flatten((child as () => ValueOrGetList<Node>[])(), out);
+      flatten((child as () => ValueOrGetList<N>[])(), out);
     } else if (!child.hide()) {
       out.push(child);
     }
@@ -229,15 +228,9 @@ export class Node {
         continue;
       }
       ctx.save();
-      const sc = child as ScrollContentLike;
-      if (sc.isScrollContent) {
-        const p = sc.layoutParent!;
-        const x = p.paddingInlineStart();
-        const y = p.paddingBlockStart();
-        ctx.beginPath();
-        ctx.rect(x, y, p.innerWidth(), p.innerHeight());
-        ctx.clip();
-      }
+      // 子节点在父坐标系上的预绘制钩子（对标 Kotlin Node.draw 里的
+      // child.drawAtParent(canvas)）：裁剪等行为由子节点自己重写（如 ScrollContent
+      // 按容器 inner 区裁剪），基类只负责调用，不感知任何具体语义。
       child.drawAtParent(ctx);
       ctx.translate(child.x(), child.y());
       child.draw(ctx);
@@ -294,7 +287,11 @@ export function absoluteY(this: Node): number {
   return absolutePosition.call(this, 'y');
 }
 
-export function collectIndex(list: readonly Node[]): void {
+export function collectIndex<
+  N extends {
+    _index: number;
+  },
+>(list: readonly N[]): void {
   let index = 0;
   for (const node of list) {
     node._index = index++;
