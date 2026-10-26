@@ -121,14 +121,18 @@ export interface Node2 extends Node2Parent {
   mouseUpCapture?(event: MouseEvent2): void;
   mouseMoveCapture?(event: MouseEvent2): void;
   /** 鼠标光标（悬停时）；不指定时由引擎按"编辑器→text / 可聚焦→pointer"派生 */
-  cursor?: CursorType2 | GetValue<CursorType2>;
+  cursor?: GetValue<CursorType2>;
   // ---------- 焦点子系统（对标 Kotlin focusable/focusOrder/focusTrap） ----------
-  /** 是否可被 Tab 焦点遍历拾取（相当于 web 的 tabindex >= 0） */
-  focusable: boolean;
-  /** Tab 遍历的显式顺序（值越小越先遍历；null 走文档序） */
-  focusOrder: number | null;
-  /** 是否圈定焦点（模态弹出层；Tab 只在圈定子树内循环） */
-  focusTrap: boolean;
+  /**
+   * 是否可被 Tab 焦点遍历拾取（相当于 web 的 tabindex >= 0）。
+   * 读取式：焦点遍历 / 命中 / 光标派生每次都重新求值，可随状态动态变化
+   * （如只读时的编辑器、带条件的可聚焦控件），不需要重建节点。
+   */
+  focusable(): boolean;
+  /** Tab 遍历的显式顺序（值越小越先遍历；null 走文档序），读取式 */
+  focusOrder(): number | null;
+  /** 是否圈定焦点（模态弹出层；Tab 只在圈定子树内循环），读取式 */
+  focusTrap(): boolean;
   /** 当前是否持有焦点（读取全局焦点信号，响应式） */
   isFocused(): boolean;
   /** 请求获得焦点（登记为活跃编辑器若为编辑器节点） */
@@ -314,6 +318,8 @@ export function absoluteInInner(node: Node2, x: number, y: number): boolean {
 }
 
 export const alaways0 = () => 0;
+/** 共享的空 getter（`focusOrder` 默认值；与 `alawaysFalse` 同族） */
+export const alawaysNull = () => null;
 
 export interface Node2Arg {
   //外部显式传递node,可能一些参数配置好了,当this来使用
@@ -332,12 +338,12 @@ export interface Node2Arg {
   layout?: LayoutDirection2;
   notInLayout?: GetValue<boolean>;
   selectionEnabled?: GetValue<boolean>;
-  /** 是否可被 Tab 焦点遍历拾取（默认 false） */
-  focusable?: boolean;
-  /** Tab 遍历显式顺序（默认 null，走文档序） */
-  focusOrder?: number | null;
-  /** 是否圈定焦点（模态弹出层；默认 false） */
-  focusTrap?: boolean;
+  /** 是否可被 Tab 焦点遍历拾取（默认 false）；可动态改变 */
+  focusable?: GetValue<boolean>;
+  /** Tab 遍历显式顺序（默认 null，走文档序）；可动态改变 */
+  focusOrder?: GetValue<number | null>;
+  /** 是否圈定焦点（模态弹出层；默认 false）；可动态改变 */
+  focusTrap?: GetValue<boolean>;
   /** 键盘事件处理（编辑器实现；非编辑器默认不消费） */
   handleKey?: (e: KeyEvent2) => boolean;
   /** 布局扩展对象（grow/align 等），经 flex 的 findExt 识别 */
@@ -359,7 +365,7 @@ export interface Node2Arg {
   mouseUpCapture?(event: MouseEvent2): void;
   mouseMoveCapture?(event: MouseEvent2): void;
   /** 鼠标光标（悬停时）；不指定时由引擎按"编辑器→text / 可聚焦→pointer"派生 */
-  cursor?: CursorType2 | GetValue<CursorType2>;
+  cursor?: GetValue<CursorType2>;
 
   size?(s: PointKey): LayoutSize;
   paddingInline?(s: StartEnd): number;
@@ -496,6 +502,20 @@ export function buildChildren(
 ) {
   children.forEach(child => child(ctx));
 }
+/**
+ * 补齐焦点相关默认实现（node2 工厂与 renderCanvas 的根节点共用）。
+ * 三个焦点字段都是读取式（GetValue）：焦点遍历 / 命中 / 光标派生每次重新求值，
+ * 因此节点创建后状态变化（只读、条件可聚焦）能立即生效，无需重建节点。
+ */
+export function applyFocusDefaults(node: Node2) {
+  node.focusable = node.focusable || alawaysFalse;
+  node.focusOrder = node.focusOrder || alawaysNull;
+  node.focusTrap = node.focusTrap || alawaysFalse;
+  if (!node.isFocused) node.isFocused = () => focusIsFocused(node);
+  if (!node.requestFocus) node.requestFocus = () => focusRequest(node);
+  if (!node.handleKey) node.handleKey = () => false;
+}
+
 export const node2 = tfc(function (
   ctx,
   node,
@@ -514,12 +534,7 @@ export const node2 = tfc(function (
   Object.assign(node, rest);
   node.parent = parent;
   // 焦点字段与默认方法（对齐 Kotlin focusable/focusOrder/focusTrap/requestFocus）
-  node.focusable = node.focusable ?? false;
-  node.focusOrder = node.focusOrder ?? null;
-  node.focusTrap = node.focusTrap ?? false;
-  if (!node.isFocused) node.isFocused = () => focusIsFocused(node);
-  if (!node.requestFocus) node.requestFocus = () => focusRequest(node);
-  if (!node.handleKey) node.handleKey = () => false;
+  applyFocusDefaults(node);
   if (!argSize) {
     argSize = d => defaultSize(node, d);
   }

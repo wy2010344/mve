@@ -1,4 +1,4 @@
-import { createSignal, GetValue, memo } from 'wy-helper';
+import { alawaysTrue, createSignal, GetValue, memo } from 'wy-helper';
 import { ColorInt, colorToCSS, rgba } from '../canvasRender/Draw';
 import {
   INT_MAX_VALUE,
@@ -82,8 +82,8 @@ export interface EditableTextNodeArg {
   padding?: any;
   paddingInline?: any;
   paddingBlock?: any;
-  focusable?: boolean;
-  focusOrder?: number | null;
+  focusable?: GetValue<boolean>;
+  focusOrder?: GetValue<number | null>;
   x?: GetValue<number>;
   y?: GetValue<number>;
 }
@@ -143,8 +143,8 @@ export const editableTextNode = tfc(function (
     Selectable2 &
     EditableTextHandle & { mouseDown?: (e: MouseEvent2) => void };
 
-  // 编辑器默认可聚焦
-  node.focusable = true;
+  // 编辑器默认可聚焦（读取式：arg 里的 focusable 会经 rest 覆盖它，故这里也给 getter）
+  node.focusable = alawaysTrue;
 
   /** 单行默认 1 行，多行默认不限（对齐 Kotlin EditableTextNode 构造） */
   const maxLines = maxLinesArg ?? (() => (singleLine() ? 1 : INT_MAX_VALUE));

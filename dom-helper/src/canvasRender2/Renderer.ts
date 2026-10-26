@@ -15,6 +15,7 @@ import {
 } from 'wy-helper';
 import { debounceRequestBatchAnimationFrame } from 'wy-dom-helper';
 import {
+  applyFocusDefaults,
   commonNode,
   createMouseEvent2,
   CursorType2,
@@ -152,6 +153,8 @@ export function renderCanvas({
     width,
     height,
   } as Node2;
+  // 根节点是手工构造的，同样要补焦点默认实现（读取式 focusable/focusOrder/focusTrap）
+  applyFocusDefaults(node);
 
   // 全局鼠标注册表，经 context 提供给节点树
   const downCallbacks = new Set<(x: number, y: number) => void>();
@@ -214,7 +217,7 @@ export function renderCanvas({
     const list: Node2[] = [];
     const walk = (n: Node2) => {
       if (n.hide?.()) return;
-      if (n.focusable) list.push(n);
+      if (n.focusable()) list.push(n);
       for (const c of n.children?.() ?? []) walk(c);
     };
     walk(node);
@@ -225,7 +228,7 @@ export function renderCanvas({
   function closestTrap(from: Node2): Node2 | null {
     let cur: Node2 | null = from;
     while (cur) {
-      if (cur.focusTrap) return cur;
+      if (cur.focusTrap()) return cur;
       cur = (cur.parent ?? null) as Node2 | null;
     }
     return null;
@@ -254,10 +257,10 @@ export function renderCanvas({
       const inTrap = all.filter(n => n === trap || isDescendantOf(n, trap));
       if (inTrap.length) scope = inTrap;
     }
-    // focusOrder 显式排序优先（未指定者保持文档序）
-    if (scope.some(n => n.focusOrder != null)) {
-      scope = scope
-        .map((n, i) => ({ n, i, order: n.focusOrder }))
+    // focusOrder 显式排序优先（未指定者保持文档序）；读取式，每项只求值一次
+    const ordered = scope.map((n, i) => ({ n, i, order: n.focusOrder() }));
+    if (ordered.some(it => it.order != null)) {
+      scope = ordered
         .sort((a, b) => {
           const ao = a.order ?? Number.MAX_SAFE_INTEGER;
           const bo = b.order ?? Number.MAX_SAFE_INTEGER;
@@ -283,7 +286,7 @@ export function renderCanvas({
     if (!hit) return null;
     for (let i = hit.chain.length - 1; i >= 0; i--) {
       const n = hit.chain[i].node as Node2;
-      if (n.focusable && !n.hide?.()) return n;
+      if (n.focusable() && !n.hide?.()) return n;
     }
     return null;
   }
@@ -434,13 +437,11 @@ export function renderCanvas({
     if (chain) {
       // 叶子优先（chain[0] 为根，末位为命中最深节点）
       for (let i = chain.length - 1; i >= 0; i--) {
-        const n = chain[i].node as Node2 & {
-          cursor?: CursorType2 | (() => CursorType2);
-        };
-        const c = typeof n.cursor === 'function' ? n.cursor() : n.cursor;
+        const n = chain[i].node as Node2;
+        const c = n.cursor?.();
         if (c) return c;
         if (isEditorHandle(n)) return CursorType2.TEXT;
-        if (n.focusable) pointer = true;
+        if (n.focusable()) pointer = true;
       }
     }
     return pointer ? CursorType2.POINTER : CursorType2.DEFAULT;

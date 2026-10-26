@@ -278,7 +278,7 @@ const { selectionManager } = renderCanvas({
         onTextChange: v => t1.set(v),
         placeholder: () => '单行',
         singleLine: () => true,
-        focusOrder: 1,
+        focusOrder: () => 1,
         onSubmit() {
           submitCount++;
         },
@@ -290,7 +290,7 @@ const { selectionManager } = renderCanvas({
         text: t2.get,
         onTextChange: v => t2.set(v),
         placeholder: () => '多行',
-        focusOrder: 2,
+        focusOrder: () => 2,
       },
       1
     ),
@@ -301,7 +301,7 @@ const { selectionManager } = renderCanvas({
         placeholder: () => '掩码',
         singleLine: () => true,
         obscure: () => true,
-        focusOrder: 3,
+        focusOrder: () => 3,
       },
       2
     ),
@@ -586,7 +586,7 @@ renderCanvas({
     rectNode.of({
       width: () => 60,
       height: () => 20,
-      focusable: true,
+      focusable: () => true,
       background: () => 0xff000000,
     }),
   ],
@@ -601,7 +601,7 @@ renderCanvas({
     rectNode.of({
       width: () => 60,
       height: () => 20,
-      focusable: true,
+      focusable: () => true,
       background: () => 0xff000000,
     }),
   ],
@@ -738,6 +738,102 @@ ved.handleKey(vkey('ArrowDown'));
 const w1 = vcaret();
 check('软折行：下键越过当前行', w1 > w0, true);
 check('软折行：下键只走一行（未跨到第三行）', w1 < w0 + 35, true);
+
+console.log('— 焦点 / 光标属性是读取式：随信号变化，无需重建节点 —');
+const dynShow = createSignal(true);
+const dynOrderB = createSignal(2);
+const dynCursor = createSignal(null);
+const dynCanvas = makeCanvasStub(200, 90);
+let dynA = null;
+let dynB = null;
+let dynC = null;
+const dynRect = (extra, setNode) =>
+  nodeOf(n => {
+    setNode(n);
+    return rectNode.create({
+      width: () => 120,
+      height: () => 30,
+      background: () => 0xff334455,
+      ...extra,
+    });
+  });
+renderCanvas({
+  canvas: dynCanvas,
+  layout: flex({ direction: 'y' }),
+  children: [
+    dynRect(
+      { focusable: dynShow.get, focusOrder: () => 1, cursor: dynCursor.get },
+      n => (dynA = n)
+    ),
+    dynRect(
+      { focusable: () => true, focusOrder: dynOrderB.get },
+      n => (dynB = n)
+    ),
+    dynRect({ focusable: () => true, focusOrder: () => 3 }, n => (dynC = n)),
+  ],
+});
+await flush();
+const tabKey = shift => ({
+  key: 'Tab',
+  code: 'Tab',
+  shiftKey: !!shift,
+  ctrlKey: false,
+  metaKey: false,
+  altKey: false,
+  preventDefault() {},
+});
+
+check(
+  'focusable / focusOrder / focusTrap 都以方法形式挂在节点上',
+  [typeof dynA.focusable, typeof dynA.focusOrder, typeof dynA.focusTrap].join(
+    ','
+  ),
+  'function,function,function'
+);
+check('focusOrder 读取当前值', dynB.focusOrder(), 2);
+check('focusTrap 默认读取为 false', dynA.focusTrap(), false);
+
+requestFocus(dynC);
+dynCanvas.dispatch('keydown', tabKey());
+check(
+  'focusOrder=2 时顺序 A,B,C：末位 Tab 回绕到 A',
+  focusedSignal.get(),
+  dynA
+);
+
+// 只改信号、不 flush、不重建节点，遍历顺序立即改变
+dynOrderB.set(4);
+requestFocus(dynC);
+dynCanvas.dispatch('keydown', tabKey());
+check('focusOrder 改大后顺序变为 A,C,B', focusedSignal.get(), dynB);
+
+dynOrderB.set(2);
+dynShow.set(false);
+requestFocus(dynC);
+dynCanvas.dispatch('keydown', tabKey());
+check(
+  'focusable 关闭后 A 被遍历跳过（末位 Tab 到 B）',
+  focusedSignal.get(),
+  dynB
+);
+check('focusable 读取式反映关闭状态', dynA.focusable(), false);
+
+// cursor 同为读取式：同一节点、无重建，光标随信号立即变化
+dynShow.set(true);
+dynCursor.set(null);
+dynCanvas.dispatch('mousemove', mouseEvent(10, 15));
+check('可聚焦节点上光标为 pointer', dynCanvas.style.cursor, 'pointer');
+dynCursor.set('crosshair');
+dynCanvas.dispatch('mousemove', mouseEvent(10, 15));
+check('cursor 信号变化后立即生效', dynCanvas.style.cursor, 'crosshair');
+dynCursor.set(null);
+dynShow.set(false);
+dynCanvas.dispatch('mousemove', mouseEvent(10, 15));
+check(
+  '不可聚焦且无显式 cursor 时回 default',
+  dynCanvas.style.cursor,
+  'default'
+);
 
 console.log(
   `\n通过 ${passed} 项，失败 ${failed} 项${failed ? '（有失败项）' : '（全部通过）'}`
