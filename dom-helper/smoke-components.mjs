@@ -199,6 +199,7 @@ const {
   renderCanvas,
   scrollBar,
   scrollContent,
+  isScrollContentNode,
   wrappedTextNode,
 } = await import('./dist/canvasRender2.mjs');
 
@@ -277,7 +278,7 @@ await flush();
 // ---------- 6. 定位节点 ----------
 
 const container = root.children()[0];
-const content = container.children().find(c => c.isScrollContent);
+const content = container.children().find(c => isScrollContentNode(c));
 const track = container.children().find(c => c !== content);
 const thumb = track.children()[0];
 const firstItem = content.children()[0];

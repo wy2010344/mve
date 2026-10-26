@@ -49,17 +49,24 @@ export interface Scroll2 {
 }
 
 /**
- * 滚动内容节点（对标 Kotlin ScrollContent 子类）：
- * `isScrollContent` 仅是类型标记（对应 Kotlin `it is ScrollContent` 判定），
- * 供 contentSize/maxScroll 从子节点里识别内容；绘制裁剪由节点自身经
- * drawAtParent 钩子完成（对应 Kotlin 的 drawAtParent 重写），基类零感知。
+ * 滚动内容标记（放进 node.exts，而非节点字段）。
+ * 与 flex 的 GrowChild/AlignChild 同一套扩展机制：经 exts 数组识别，
+ * 不污染节点结构本身 —— 强类型语言（如 Rust）给节点结构体加字段难以
+ * 复刻，放进可扩展的 exts 集合后即可移植到第 3 套方案。
  */
-export interface ScrollContentNode2 extends Node2 {
-  isScrollContent: true;
-}
+export class ScrollContentExt {}
 
-export function isScrollContentNode(node: Node2): node is ScrollContentNode2 {
-  return (node as ScrollContentNode2).isScrollContent === true;
+/** 共享单例：所有滚动内容节点复用同一个标记实例，无需每节点新建 */
+export const scrollContentExt = new ScrollContentExt();
+
+/**
+ * 滚动内容节点（对标 Kotlin ScrollContent 子类）：
+ * 绘制裁剪由节点自身经 drawAtParent 钩子完成（对应 Kotlin 的 drawAtParent 重写），
+ * 基类零感知；"是否滚动内容"经 exts 里的 ScrollContentExt 标记识别，
+ * 供 contentSize/maxScroll 从子节点里挑出内容。
+ */
+export function isScrollContentNode(node: Node2): boolean {
+  return !!node.exts?.some(x => x instanceof ScrollContentExt);
 }
 
 /** 内容区尺寸：容器内第一个滚动内容子节点的外尺寸 */
@@ -167,8 +174,8 @@ export interface ScrollContentArg extends Node2Arg {
 /**
  * 滚动内容节点（对标旧版 ScrollContent + renderScrollContent）：
  * - drawAtParent 重写：在父坐标系上按容器 inner 区裁剪，内容滚出视口的部分不绘制
- *   （对标 Kotlin ScrollContent.drawAtParent；isScrollContent 仅作类型标记供
- *   contentSize/maxScroll 识别）；
+ *   （对标 Kotlin ScrollContent.drawAtParent；是否滚动内容经 exts 里的
+ *   ScrollContentExt 标记识别，供 contentSize/maxScroll 使用）；
  * - 滚动轴位置恒为 -scroll.value() 叠加容器 padding 起点（交叉轴走默认布局位置）；
  * - acceptClip 把命中测试限制在容器 inner 区内（视口外的子节点不响应事件）。
  *
@@ -177,17 +184,17 @@ export interface ScrollContentArg extends Node2Arg {
  *   registerScroll(scroll);
  *   nodeOf(node => scrollContent({
  *     scroll,
- *     exts: [grow({ argGrow: 1 })],   // 交叉轴撑满容器
+ *     exts: [grow({ argGrow: 1 })],   // 交叉轴撑满容器（与滚动标记合并）
  *     children: [...],                // 可滚动内容
  *   }))
  */
 export const scrollContent = tfc(function (ctx, node, arg: ScrollContentArg) {
-  const { scroll, position, ...rest } = arg;
-  // 类型标记（对应 Kotlin `it is ScrollContent`）：供 contentSize/maxScroll
-  // 从容器子节点里识别内容；提前于 node2 挂上（create 返回 TFc，之后无机会）
-  (node as ScrollContentNode2).isScrollContent = true;
+  const { scroll, position, exts, ...rest } = arg;
+  // 把"滚动内容"标记挂进 exts（对应 Kotlin `it is ScrollContent` 判定），
+  // 经 ScrollContentExt 识别，不污染节点字段本身；与用户传入的 exts 合并。
   node2.create({
     ...rest,
+    exts: [...(exts ?? []), scrollContentExt],
     // 滚动轴位置由 scroll 接管（覆盖用户传入的 position，避免破坏偏移语义）：
     // 容器 inner 原点（父 padding start）减去滚动值
     position(d: PointKey): number {

@@ -185,6 +185,7 @@ const {
   rectNode,
   renderCanvas,
   scrollContent,
+  isScrollContentNode,
   wrappedTextNode,
 } = await import('./dist/canvasRender2.mjs');
 
@@ -292,8 +293,8 @@ const { node: root } = renderCanvas({
 await flush();
 
 const container = root.children()[0];
-const content = container.children().find(c => c.isScrollContent);
-const entries = () => content.children().filter(c => !c.isScrollContent);
+const content = container.children().find(c => isScrollContentNode(c));
+const entries = () => content.children().filter(c => !isScrollContentNode(c));
 
 // ---------- 6. 初始渲染 ----------
 
