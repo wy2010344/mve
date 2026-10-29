@@ -106,6 +106,11 @@ export { drag } from './helper/drag';
 export { SimpleScrollBar } from './helper/SimpleScrollBar';
 export * from './layout/FlexLayout';
 
+// 共用层（与树形态无关，两套树共用同一份实现）
+export * from '../canvasCore/Timer';
+export * from '../canvasCore/ImageLoader';
+export * from '../canvasCore/Placement';
+
 export function syncCanvasSize(canvas: HTMLCanvasElement) {
   const w = createSignal(canvas.clientWidth);
   const h = createSignal(canvas.clientHeight);
@@ -169,6 +174,7 @@ export function renderCanvas(
   canvas.addEventListener('wheel', e => {
     render.dispatchMouseWheel(e.offsetX, e.offsetY, e.deltaX, e.deltaY);
   });
+  redraw();
   return render;
 }
 

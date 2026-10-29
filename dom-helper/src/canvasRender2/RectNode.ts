@@ -1,18 +1,35 @@
-import { GetValue } from 'wy-helper';
-import { ColorInt, colorToCSS } from '../canvasRender/Draw';
-import { roundRectPath } from '../canvasRender/LayoutNode';
-import { Node2, Node2Arg, node2, tfc } from './Node';
+import { emptyFun, GetValue, StoreRef } from 'wy-helper';
+import { ColorInt, colorToCSS } from '../canvasCore/Draw';
+import { roundRectPath } from '../canvasCore/Draw';
+import { merge, Node2, node2, tfc } from './Node';
+import { Node2Arg } from './NodeArg';
 
-export interface RectNodeArg extends Node2Arg {
-  /** 背景色（ColorInt，0xAARRGGBB）；getter 返回 null 表示不填充 */
+/**
+ * 矩形节点的参数消息（没写的由 [rectNodeDefaults] 兜底）。
+ *
+ * 与 ooc 一一对应：ooc 里没有"可选成员"，所以参数对象永远配一份 defaults，
+ * `p = merge $ arg defaults` 之后 `p background` / `p radius` 一定答得出来。
+ */
+export interface RectNodeArg extends Partial<Node2Arg> {
+  /** 背景色（ColorInt，0xAARRGGBB）；返回 null 表示不填充 */
   background?: GetValue<ColorInt | null>;
-  /** 边框色；getter 返回 null 表示不描边 */
+  /** 边框色；返回 null 表示不描边 */
   borderColor?: GetValue<ColorInt | null>;
-  /** 边框宽度（线宽居中于盒子外沿），默认 1 */
+  /** 边框宽度（线宽居中于盒子外沿） */
   borderWidth?: GetValue<number>;
-  /** 圆角半径，默认 0 */
+  /** 圆角半径 */
   radius?: GetValue<number>;
 }
+
+/** 参数消息的兜底实现（ooc: 顶层 `rectDefaults = { … }`） */
+export const rectNodeDefaults = {
+  background: (): ColorInt | null => null,
+  borderColor: (): ColorInt | null => null,
+  borderWidth: () => 1,
+  radius: () => 0,
+  /** 用户自己的绘制回调（默认什么都不画） */
+  draw: emptyFun as (ctx2: CanvasRenderingContext2D, n: Node2) => void,
+};
 
 /**
  * canvasRender2 版的矩形节点：背景 + 边框 + 圆角的可视化 convenience 节点
@@ -23,57 +40,62 @@ export interface RectNodeArg extends Node2Arg {
  * - 边框沿盒子外沿描边，线宽居中（内缩 borderWidth/2 保证 crisp）；
  * - radius > 0 时背景与边框都走圆角路径。
  *
- * 用法：nodeOf(node => rectNode({
- *   background: () => 0xfff1f5f9,
- *   borderColor: () => 0xffcbd5e1,
- *   radius: () => 8,
- *   padding: () => 8,
- *   children: [...],
- * }))
+ * 装配三步（与 ooc 同形）：
+ * ```ooc
+ * p = merge $ arg rectNodeDefaults;      // 参数 + 兜底
+ * n = merge $ { draw { … } } p;          // 节点自有消息优先
+ * node2 create n
+ * ```
+ *
+ * 用法：`nodeOf(node => rectNode({ background: () => 0xfff1f5f9, radius: () => 8 }))`
  */
-export const rectNode = tfc(function (ctx, node, arg: RectNodeArg) {
-  const {
-    background,
-    borderColor,
-    borderWidth = () => 1,
-    radius = () => 0,
-    ...rest
-  } = arg;
-  node2.create({
-    ...rest,
-    draw(ctx2: CanvasRenderingContext2D, n) {
-      const w = node.width();
-      const h = node.height();
-      if (w <= 0 || h <= 0) return;
-      const bw = borderWidth();
-      const bg = background?.() ?? null;
-      const bc = borderColor?.() ?? null;
-      const hasBorder = bc != null && bw > 0;
-      const r = radius();
-      // 边框线宽居中：盒子外沿内缩 bw/2
-      const [x, y, bw2, bh2] = hasBorder
-        ? [bw / 2, bw / 2, Math.max(0, w - bw), Math.max(0, h - bw)]
-        : [0, 0, w, h];
-      if (bg != null) {
-        ctx2.fillStyle = colorToCSS(bg);
-        if (r > 0) {
-          roundRectPath(ctx2, x, y, bw2, bh2, r);
-          ctx2.fill();
-        } else {
-          ctx2.fillRect(x, y, bw2, bh2);
-        }
-      }
-      if (hasBorder) {
-        ctx2.strokeStyle = colorToCSS(bc);
-        ctx2.lineWidth = bw;
-        if (r > 0) {
-          roundRectPath(ctx2, x, y, bw2, bh2, r);
-          ctx2.stroke();
-        } else {
-          ctx2.strokeRect(x, y, bw2, bh2);
-        }
-      }
-      rest.draw?.(ctx2, n);
-    },
-  })(node)(ctx);
+export const rectNode = tfc(function (
+  ctx,
+  ref: StoreRef<Node2>,
+  arg: RectNodeArg
+) {
+  const p = merge(arg, rectNodeDefaults);
+  node2.create(
+    merge(
+      {
+        draw(ctx2: CanvasRenderingContext2D, n: Node2) {
+          const w = n.width();
+          const h = n.height();
+          if (w <= 0 || h <= 0) return;
+          const bw = p.borderWidth();
+          const bg = p.background();
+          const bc = p.borderColor();
+          const hasBorder = bc != null && bw > 0;
+          const r = p.radius();
+          // 边框线宽居中：盒子外沿内缩 bw/2
+          const x = hasBorder ? bw / 2 : 0;
+          const y = hasBorder ? bw / 2 : 0;
+          const boxW = hasBorder ? Math.max(0, w - bw) : w;
+          const boxH = hasBorder ? Math.max(0, h - bw) : h;
+          if (bg != null) {
+            ctx2.fillStyle = colorToCSS(bg);
+            if (r > 0) {
+              roundRectPath(ctx2, x, y, boxW, boxH, r);
+              ctx2.fill();
+            } else {
+              ctx2.fillRect(x, y, boxW, boxH);
+            }
+          }
+          if (hasBorder) {
+            ctx2.strokeStyle = colorToCSS(bc);
+            ctx2.lineWidth = bw;
+            if (r > 0) {
+              roundRectPath(ctx2, x, y, boxW, boxH, r);
+              ctx2.stroke();
+            } else {
+              ctx2.strokeRect(x, y, boxW, boxH);
+            }
+          }
+          // 用户回调（默认空实现）：发消息即可，不必判断有没有
+          p.draw(ctx2, n);
+        },
+      },
+      p
+    )
+  )(ref)(ctx);
 });

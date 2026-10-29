@@ -9,8 +9,8 @@
 import {
   DeleteTextAction,
   InsertTextAction,
-  Path2,
-  RectF,
+  createPath2,
+  rectOf,
   ReplaceRangeAction,
   ReplaceSelectionAction,
   SPACES_PER_TAB,
@@ -116,15 +116,15 @@ console.log('2. UndoRedo 栈语义');
 
 console.log('3. TextDefaults 默认色与 setter');
 {
-  check('默认正文色 rgba(30,41,59)', textDefaults.text, rgba(30, 41, 59));
-  check('默认占位色 rgba(148,163,184)', textDefaults.placeholder, rgba(148, 163, 184));
-  textDefaults.text = rgba(226, 232, 240);
-  check('setter 回写正文色', textDefaults.text, rgba(226, 232, 240));
-  textDefaults.placeholder = rgba(100, 116, 139);
-  check('setter 回写占位色', textDefaults.placeholder, rgba(100, 116, 139));
+  check('默认正文色 rgba(30,41,59)', textDefaults.text(), rgba(30, 41, 59));
+  check('默认占位色 rgba(148,163,184)', textDefaults.placeholder(), rgba(148, 163, 184));
+  textDefaults.setText(rgba(226, 232, 240));
+  check('setter 回写正文色', textDefaults.text(), rgba(226, 232, 240));
+  textDefaults.setPlaceholder(rgba(100, 116, 139));
+  check('setter 回写占位色', textDefaults.placeholder(), rgba(100, 116, 139));
   // 还原，避免影响同进程后续断言
-  textDefaults.text = rgba(30, 41, 59);
-  textDefaults.placeholder = rgba(148, 163, 184);
+  textDefaults.setText(rgba(30, 41, 59));
+  textDefaults.setPlaceholder(rgba(148, 163, 184));
 }
 
 // ---------- 3. UrlOpener ----------
@@ -180,43 +180,43 @@ console.log('5. TabRender 展开与索引映射');
 
 console.log('6. RectF');
 {
-  const r = new RectF(10, 20, 30, 50);
-  check('width', r.width, 20);
-  check('height', r.height, 30);
-  check('centerX', r.centerX, 20);
-  check('centerY', r.centerY, 35);
+  const r = rectOf(10, 20, 30, 50);
+  check('width', r.width(), 20);
+  check('height', r.height(), 30);
+  check('centerX', r.centerX(), 20);
+  check('centerY', r.centerY(), 35);
   check('contains 内部', r.contains(15, 25), true);
   check('contains 边界含', r.contains(10, 50), true);
   check('contains 外部', r.contains(31, 25), false);
-  check('intersects 相交', r.intersects(new RectF(25, 45, 40, 60)), true);
-  check('intersects 相离', r.intersects(new RectF(100, 100, 110, 110)), false);
-  check('intersects 边相邻不算', r.intersects(new RectF(30, 20, 40, 50)), false);
-  check('offset', JSON.stringify(r.offset(1, 2)), JSON.stringify(new RectF(11, 22, 31, 52)));
-  check('inflate', JSON.stringify(r.inflate(5)), JSON.stringify(new RectF(5, 15, 35, 55)));
+  check('intersects 相交', r.intersects(rectOf(25, 45, 40, 60)), true);
+  check('intersects 相离', r.intersects(rectOf(100, 100, 110, 110)), false);
+  check('intersects 边相邻不算', r.intersects(rectOf(30, 20, 40, 50)), false);
+  check('offset', JSON.stringify(r.offset(1, 2)), JSON.stringify(rectOf(11, 22, 31, 52)));
+  check('inflate', JSON.stringify(r.inflate(5)), JSON.stringify(rectOf(5, 15, 35, 55)));
 
-  const u = unionRect(new RectF(0, 0, 10, 10), new RectF(5, 5, 20, 8));
-  check('unionRect 并集', JSON.stringify(u), JSON.stringify(new RectF(0, 0, 20, 10)));
+  const u = unionRect(rectOf(0, 0, 10, 10), rectOf(5, 5, 20, 8));
+  check('unionRect 并集', JSON.stringify(u), JSON.stringify(rectOf(0, 0, 20, 10)));
 }
 
 // ---------- 6. Geometry：Path2 ----------
 
 console.log('7. Path2 录制与元信息');
 {
-  const empty = new Path2();
-  check('空路径 isEmpty', empty.isEmpty, true);
-  check('空路径 lastX 兜底', empty.lastX, 0);
+  const empty = createPath2();
+  check('空路径 isEmpty', empty.isEmpty(), true);
+  check('空路径 lastX 兜底', empty.lastX(), 0);
 
-  const p = new Path2();
-  check('仅 moveTo 也算空', p.moveTo(1, 2).isEmpty, true);
-  check('moveTo 后 lastX/lastY', JSON.stringify([p.lastX, p.lastY]), JSON.stringify([1, 2]));
+  const p = createPath2();
+  check('仅 moveTo 也算空', p.moveTo(1, 2).isEmpty(), true);
+  check('moveTo 后 lastX/lastY', JSON.stringify([p.lastX(), p.lastY()]), JSON.stringify([1, 2]));
   p.lineTo(3, 4).close();
-  check('有线段后非空', p.isEmpty, false);
-  check('close 不改变 lastPosition', JSON.stringify([p.lastX, p.lastY]), JSON.stringify([3, 4]));
+  check('有线段后非空', p.isEmpty(), false);
+  check('close 不改变 lastPosition', JSON.stringify([p.lastX(), p.lastY()]), JSON.stringify([3, 4]));
 
-  const q = new Path2().moveTo(0, 0).quadTo(5, 10, 10, 0);
-  check('quadTo 后终点', JSON.stringify([q.lastX, q.lastY]), JSON.stringify([10, 0]));
-  const c = new Path2().moveTo(0, 0).cubicTo(1, 2, 3, 4, 5, 6);
-  check('cubicTo 后终点', JSON.stringify([c.lastX, c.lastY]), JSON.stringify([5, 6]));
+  const q = createPath2().moveTo(0, 0).quadTo(5, 10, 10, 0);
+  check('quadTo 后终点', JSON.stringify([q.lastX(), q.lastY()]), JSON.stringify([10, 0]));
+  const c = createPath2().moveTo(0, 0).cubicTo(1, 2, 3, 4, 5, 6);
+  check('cubicTo 后终点', JSON.stringify([c.lastX(), c.lastY()]), JSON.stringify([5, 6]));
 
   const rec = [];
   const mockCtx = {
@@ -227,7 +227,7 @@ console.log('7. Path2 录制与元信息');
     bezierCurveTo: (a, b, c2, d, x, y) => rec.push(['bezierCurveTo', a, b, c2, d, x, y]),
     closePath: () => rec.push(['closePath']),
   };
-  new Path2().moveTo(1, 1).lineTo(2, 2).quadTo(3, 3, 4, 4).cubicTo(5, 5, 6, 6, 7, 7).close().applyTo(mockCtx);
+  createPath2().moveTo(1, 1).lineTo(2, 2).quadTo(3, 3, 4, 4).cubicTo(5, 5, 6, 6, 7, 7).close().applyTo(mockCtx);
   check('applyTo 回放命令数', rec.length, 6);
   check('applyTo 首命令 beginPath', rec[0][0], 'beginPath');
   check('applyTo moveTo', JSON.stringify(rec[1]), JSON.stringify(['moveTo', 1, 1]));
@@ -235,23 +235,23 @@ console.log('7. Path2 录制与元信息');
   check('applyTo cubicTo → bezierCurveTo', JSON.stringify(rec[4]), JSON.stringify(['bezierCurveTo', 5, 5, 6, 6, 7, 7]));
   check('applyTo close → closePath', rec[5][0], 'closePath');
 
-  const reset = new Path2().moveTo(1, 1).lineTo(2, 2).reset();
-  check('reset 后 commands 清空', reset.commands.length, 0);
-  check('reset 后 isEmpty', reset.isEmpty, true);
+  const reset = createPath2().moveTo(1, 1).lineTo(2, 2).reset();
+  check('reset 后 commands 清空', reset.commands().length, 0);
+  check('reset 后 isEmpty', reset.isEmpty(), true);
 }
 
 console.log('8. Path2 命中（偶数规则）');
 {
-  const rect = new Path2();
+  const rect = createPath2();
   appendRoundedRect(rect, 0, 0, 100, 60, 8);
-  check('命令数（moveTo + 4×(边+角弧) + close）', rect.commands.length, 10);
+  check('命令数（moveTo + 4×(边+角弧) + close）', rect.commands().length, 10);
   check('矩形中心命中', rect.contains(50, 30), true);
   check('矩形外不命中', rect.contains(150, 30), false);
   check('圆角缺口不命中（曲线扁平化）', rect.contains(1, 1), false);
   check('圆角内侧命中', rect.contains(8, 8), true);
 
   // 圆：四段三次贝塞尔弧近似（k ≈ 0.5523），半径 50，圆心 (50,50)
-  const circle = new Path2();
+  const circle = createPath2();
   const k = 0.5523 * 50;
   circle.moveTo(100, 50);
   circle.cubicTo(100, 50 + k, 50 + k, 100, 50, 100);
@@ -266,14 +266,14 @@ console.log('8. Path2 命中（偶数规则）');
   check('圆外对角不命中', circle.contains(5, 5), false);
 
   // 甜甜圈：外框与内框同向（顺时针）——偶数规则下内洞算“外部”
-  const donut = new Path2();
+  const donut = createPath2();
   appendRoundedRect(donut, 0, 0, 100, 100, 0);
   appendRoundedRect(donut, 30, 30, 40, 40, 0);
   check('环上命中', donut.contains(10, 50), true);
   check('内洞按偶数规则为外部', donut.contains(50, 50), false);
 
   // 空路径不命中任何点
-  check('空路径不命中', new Path2().contains(0, 0), false);
+  check('空路径不命中', createPath2().contains(0, 0), false);
 }
 
 // ---------- 汇总 ----------

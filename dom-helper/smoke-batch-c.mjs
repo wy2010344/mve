@@ -62,7 +62,8 @@ globalThis.document = {
       listeners.get(type)?.delete(fn);
     };
     c.dispatch = (type, event) => {
-      listeners.get(type)?.forEach(fn => fn(event));
+      const e = { preventDefault: () => {}, ...event };
+      listeners.get(type)?.forEach(fn => fn(e));
     };
     c.focus = () => {
       c.focused = true;
@@ -129,6 +130,7 @@ const ctx2d = {
   fillRect() {},
   drawImage() {},
   beginPath() {},
+  rect() {},
   closePath() {},
   moveTo() {},
   lineTo() {},
@@ -158,7 +160,8 @@ function makeCanvasStub(w, h) {
     listeners.get(type)?.delete(fn);
   };
   c.dispatch = (type, event) => {
-    listeners.get(type)?.forEach(fn => fn(event));
+    const e = { preventDefault: () => {}, ...event };
+    listeners.get(type)?.forEach(fn => fn(e));
   };
   return c;
 }
@@ -186,9 +189,12 @@ const {
   Words,
   focusedSignal,
   activeEditorSignal,
+  getActiveEditor,
   requestFocus,
   clearFocus,
   isEditorHandle,
+  asEditorHandle2,
+  asSelectable2,
   clipboardSetText,
   clipboardGetText,
 } = await import('./dist/canvasRender2.mjs');
@@ -235,14 +241,15 @@ clipboardSetText('hello');
 check('clipboardGetText 回读', clipboardGetText(), 'hello');
 
 console.log('— Focus 子系统 —');
-const probeNode = { focusable: true };
+// 普通对象：只有一个可聚焦标记，扩展消息一律答 undefined
+const probeNode = { focusable: true, findExt: () => undefined };
 check('isEditorHandle(普通对象)', isEditorHandle(probeNode), false);
 requestFocus(probeNode);
 check('requestFocus 后 focusedSignal', focusedSignal.get(), probeNode);
 check(
   'requestFocus 非编辑器不登记 activeEditor',
   activeEditorSignal.get(),
-  null
+  undefined
 );
 clearFocus();
 check('clearFocus 清空焦点', focusedSignal.get(), null);
@@ -310,11 +317,23 @@ const { selectionManager } = renderCanvas({
 
 await flush();
 
-const ed = editors[0];
-const ed2 = editors[1];
-const ed3 = editors[2];
+// nodeOf 新语义：回调拿到的是 StoreRef，渲染完成后要 .get() 才是节点；
+// selectable / 编辑器句柄不再挂在节点上，改从 exts 取（asSelectable2 / asEditorHandle2）。
+const ed = editors[0].get();
+const ed2 = editors[1].get();
+const ed3 = editors[2].get();
+const edH = asEditorHandle2(ed);
+const edH2 = asEditorHandle2(ed2);
+const edH3 = asEditorHandle2(ed3);
 check('编辑器节点已创建', editors.filter(Boolean).length, 3);
 check('编辑器实现 EditableTextHandle', isEditorHandle(ed), true);
+// 装配契约：exts / children / layout 是构建设置，不进消息对象，也不落到节点字段上
+check('节点不暴露 exts 字段（只经 findExt）', 'exts' in ed, false);
+check(
+  '节点 children/layout 仍是方法',
+  [typeof ed.children, typeof ed.layout].join(),
+  'function,function'
+);
 
 const key = (k, opts = {}) => ({
   key: k,
@@ -324,56 +343,57 @@ const key = (k, opts = {}) => ({
   alt: false,
   meta: !!opts.meta,
 });
-const typeText = (editor, s) => {
-  for (const ch of s) editor.handleKey(key(ch));
+const typeText = (editorNode, s) => {
+  const h = asEditorHandle2(editorNode);
+  for (const ch of s) h.handleKey(key(ch));
 };
 
 console.log('— EditableTextNode：输入 / 退格 / 撤销重做 —');
 requestFocus(ed);
-check('requestFocus 编辑器登记 activeEditor', activeEditorSignal.get(), ed);
-check('未定位时光标 SelPair 为空', ed.cursorSelPair(), null);
+check('requestFocus 编辑器登记 activeEditor', getActiveEditor(), edH);
+check('未定位时光标 SelPair 为空', edH.cursorSelPair(), null);
 
 typeText(ed, 'abc');
 check('逐字输入', t1.get(), 'abc');
-check('输入后光标 SelPair 非空', ed.cursorSelPair() != null, true);
-ed.handleKey(key('', { code: 'Backspace' }));
+check('输入后光标 SelPair 非空', edH.cursorSelPair() != null, true);
+edH.handleKey(key('', { code: 'Backspace' }));
 check('退格删一个字素', t1.get(), 'ab');
-ed.handleKey(key('z', { ctrl: true }));
+edH.handleKey(key('z', { ctrl: true }));
 check('Ctrl+Z 撤销退格', t1.get(), 'abc');
-ed.handleKey(key('z', { ctrl: true, shift: true }));
+edH.handleKey(key('z', { ctrl: true, shift: true }));
 check('Ctrl+Shift+Z 重做退格', t1.get(), 'ab');
-ed.handleKey(key('y', { ctrl: true }));
+edH.handleKey(key('y', { ctrl: true }));
 check('重做栈已空时 Ctrl+Y 无变化', t1.get(), 'ab');
 
 console.log('— EditableTextNode：全选 / 复制 / 粘贴 —');
-ed.selectAll();
+edH.selectAll();
 await flush();
-check('全选后 selectedText', selectionManager.selectedText, t1.get());
-ed.copy();
+check('全选后 selectedText', selectionManager.selectedText(), t1.get());
+edH.copy();
 check('copy 写入剪贴板', clipboardGetText(), t1.get());
 clipboardSetText('Z');
-ed.paste();
+edH.paste();
 check('paste 插入剪贴板内容', t1.get(), 'Z');
 typeText(ed, 'xy');
 check('粘贴后可继续输入', t1.get(), 'Zxy');
 
 console.log('— EditableTextNode：单行提交 / 多行换行 —');
 const before = t1.get();
-ed.handleKey(key('', { code: 'Enter' }));
+edH.handleKey(key('', { code: 'Enter' }));
 check('单行回车触发 onSubmit', submitCount, 1);
 check('单行回车不插入换行', t1.get(), before);
 requestFocus(ed2);
 typeText(ed2, 'ab');
-ed2.handleKey(key('', { code: 'Enter' }));
+edH2.handleKey(key('', { code: 'Enter' }));
 check('多行回车插入换行', t2.get(), 'ab\n');
-ed2.handleKey(key('', { code: 'Enter', ctrl: true }));
+edH2.handleKey(key('', { code: 'Enter', ctrl: true }));
 check('多行 Ctrl+Enter 不插入换行', t2.get(), 'ab\n');
 
 console.log('— EditableTextNode：掩码字段 —');
 requestFocus(ed3);
 typeText(ed3, 'abc');
 check('掩码字段仍存明文', t3.get(), 'abc');
-check('掩码字段文本长度可测', ed3.textLength(), 3);
+check('掩码字段文本长度可测', asSelectable2(ed3).textLength(), 3);
 
 console.log('— Renderer 焦点派发：点击聚焦 + Tab 遍历 —');
 clearFocus();
@@ -445,7 +465,7 @@ canvasStub.dispatch('keydown', {
   preventDefault() {},
 });
 await flush();
-check('Ctrl+A 全选编辑器文本', selectionManager.selectedText, t1.get());
+check('Ctrl+A 全选编辑器文本', selectionManager.selectedText(), t1.get());
 clipboardSetText('');
 canvasStub.dispatch('keydown', {
   key: 'c',
@@ -692,7 +712,9 @@ const { selectionManager: vsel } = renderCanvas({
   ],
 });
 await flush();
-requestFocus(ved);
+const vedNode = ved.get();
+const vedH = asEditorHandle2(vedNode);
+requestFocus(vedNode);
 const vkey = (code, extra = {}) => ({
   key: '',
   code,
@@ -702,27 +724,27 @@ const vkey = (code, extra = {}) => ({
   meta: false,
   ...extra,
 });
-const vcaret = () => ved.cursorSelPair()?.focus.offset ?? -1;
+const vcaret = () => vedH.cursorSelPair()?.focus.offset ?? -1;
 
-ved.handleKey(vkey('Home', { ctrl: true }));
+vedH.handleKey(vkey('Home', { ctrl: true }));
 check('Ctrl+Home 回到文首', vcaret(), 0);
-ved.handleKey(vkey('ArrowDown'));
+vedH.handleKey(vkey('ArrowDown'));
 check('下键只走一行（第 2 行行首）', vcaret(), 4);
-ved.handleKey(vkey('ArrowDown'));
+vedH.handleKey(vkey('ArrowDown'));
 check('再下键到第 3 行', vcaret(), 8);
-ved.handleKey(vkey('ArrowUp'));
+vedH.handleKey(vkey('ArrowUp'));
 check('上键退回第 2 行', vcaret(), 4);
-ved.handleKey(vkey('ArrowDown', { shift: true }));
+vedH.handleKey(vkey('ArrowDown', { shift: true }));
 await flush();
-check('Shift+Down 只扩选一行', vsel.selectedText, 'bbb\n');
-ved.handleKey(vkey('Home', { ctrl: true }));
-ved.handleKey(vkey('PageDown'));
+check('Shift+Down 只扩选一行', vsel.selectedText(), 'bbb\n');
+vedH.handleKey(vkey('Home', { ctrl: true }));
+vedH.handleKey(vkey('PageDown'));
 check('PageDown 落到末行行首', vcaret(), 16);
 
 vlh.set(1.4);
 await flush();
-ved.handleKey(vkey('Home', { ctrl: true }));
-ved.handleKey(vkey('ArrowDown'));
+vedH.handleKey(vkey('Home', { ctrl: true }));
+vedH.handleKey(vkey('ArrowDown'));
 check('行高 1.4 时下键同样只走一行', vcaret(), 4);
 vlh.set(1);
 await flush();
@@ -730,11 +752,11 @@ await flush();
 // 软折行：行距由行盒决定，不能拿光标矩形高度当步长
 vt.set('中'.repeat(45));
 await flush();
-requestFocus(ved);
-ved.handleKey(vkey('Home', { ctrl: true }));
-for (let i = 0; i < 5; i++) ved.handleKey(vkey('ArrowRight'));
+requestFocus(vedNode);
+vedH.handleKey(vkey('Home', { ctrl: true }));
+for (let i = 0; i < 5; i++) vedH.handleKey(vkey('ArrowRight'));
 const w0 = vcaret();
-ved.handleKey(vkey('ArrowDown'));
+vedH.handleKey(vkey('ArrowDown'));
 const w1 = vcaret();
 check('软折行：下键越过当前行', w1 > w0, true);
 check('软折行：下键只走一行（未跨到第三行）', w1 < w0 + 35, true);
@@ -773,6 +795,10 @@ renderCanvas({
   ],
 });
 await flush();
+// nodeOf 回调拿到的 StoreRef 在渲染后 .get() 才是节点
+dynA = dynA.get();
+dynB = dynB.get();
+dynC = dynC.get();
 const tabKey = shift => ({
   key: 'Tab',
   code: 'Tab',

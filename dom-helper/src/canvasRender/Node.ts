@@ -1,12 +1,8 @@
-import {
-  ShareConfig,
-  StateHolder,
-  StateHolderWithNode,
-  ValueOrGetList,
-} from 'mve-core';
+import { ShareConfig, StateHolder, StateHolderWithNode } from 'mve-core';
 import { emptyArray, PointKey, ValueOrGet, valueOrGetToGet } from 'wy-helper';
 import { MouseEvent } from './MouseEvent';
 import { EngineGlobal, engineGlobalContext } from './EngineGlobal';
+import { collectIndex, flatten } from '../canvasCore/List';
 
 export interface NodeWithPosition {
   node: Node;
@@ -68,19 +64,7 @@ export interface NodeArg<T = Node> {
   mouseMoveCapture?(this: T, e: MouseEvent): void;
 }
 
-export function flatten<
-  N extends {
-    hide(): any;
-  },
->(list: readonly ValueOrGetList<N>[], out: N[]): void {
-  for (const child of list) {
-    if (typeof child == 'function') {
-      flatten((child as () => ValueOrGetList<N>[])(), out);
-    } else if (!child.hide()) {
-      out.push(child);
-    }
-  }
-}
+export * from '../canvasCore/List';
 
 export const nodeConfig: ShareConfig<Node, readonly Node[]> = {
   after: collectIndex,
@@ -287,13 +271,3 @@ export function absoluteY(this: Node): number {
   return absolutePosition.call(this, 'y');
 }
 
-export function collectIndex<
-  N extends {
-    _index: number;
-  },
->(list: readonly N[]): void {
-  let index = 0;
-  for (const node of list) {
-    node._index = index++;
-  }
-}

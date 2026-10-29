@@ -10,8 +10,16 @@ import {
   LayoutInsideObject,
 } from 'wy-helper';
 import { Node, NodeArg, absolutePosition } from './Node';
-import { ColorInt, rgba, colorToCSS } from './Draw';
+import {
+  ColorInt,
+  rgba,
+  colorToCSS,
+  roundRectPath,
+  fillRoundRect,
+} from '../canvasCore/Draw';
 import { inRange } from './util';
+
+export { roundRectPath, fillRoundRect } from '../canvasCore/Draw';
 
 export type { Layout, LayoutFun };
 
@@ -377,24 +385,6 @@ export function strokeOuterRect(
   ctx.strokeStyle = colorToCSS(color);
   ctx.lineWidth = strokeWidth;
   ctx.strokeRect(0, 0, outerSize.call(this, 'x'), outerSize.call(this, 'y'));
-}
-
-export function roundRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
-  const rr = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
 }
 
 export function fillOuterRoundRect(

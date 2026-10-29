@@ -1,5 +1,10 @@
-import { ColorInt, colorToCSS, rgba } from '../canvasRender/Draw';
+import { ColorInt, colorToCSS, rgba } from '../canvasCore/Draw';
 import { Node2 } from './Node';
+
+export {
+  MAX_LAYOUT_WIDTH,
+  inkShiftYOf,
+} from '../canvasCore/TextMetric';
 
 export function fillOuterRect(
   node: Node2,

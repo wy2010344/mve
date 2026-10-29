@@ -132,7 +132,8 @@ function makeCanvasStub(w, h) {
     listeners.get(type)?.delete(fn);
   };
   c.dispatch = (type, event) => {
-    listeners.get(type)?.forEach(fn => fn(event));
+    const e = { preventDefault: () => {}, ...event };
+    listeners.get(type)?.forEach(fn => fn(e));
   };
   return c;
 }
@@ -149,8 +150,16 @@ async function flush() {
 const { loadCanvasKit, registerFont, colorToCSS, rgba } = await import(
   './dist/canvasRender.mjs'
 );
-const { renderCanvas, richTextNode, flex, nodeOf, node2, absoluteX, absoluteY } =
-  await import('./dist/canvasRender2.mjs');
+const {
+  renderCanvas,
+  richTextNode,
+  flex,
+  nodeOf,
+  node2,
+  asSelectable2,
+  absoluteX,
+  absoluteY,
+} = await import('./dist/canvasRender2.mjs');
 
 await loadCanvasKit('/canvas-kit/canvaskit.js');
 registerFont('Noto Sans SC', readFileSync(FONT_FILE));
@@ -215,16 +224,20 @@ const children = root.children();
 const bar = children[0];
 const A = children[1];
 const B = children[2];
-check('发现两个富文本可选节点', typeof A.positionForPoint, 'function');
-check('A 文本', A.textInRange(0, A.textLength()), 'Hello world');
-check('B 文本', B.textInRange(0, B.textLength()), 'Second text');
+// 可选能力在 exts 里（SelectableExt），节点本身不再挂 positionForPoint
+const selA = asSelectable2(A);
+const selB = asSelectable2(B);
+check('发现两个富文本可选节点', typeof selA?.positionForPoint, 'function');
+check('A 文本', selA.textInRange(0, selA.textLength()), 'Hello world');
+check('B 文本', selB.textInRange(0, selB.textLength()), 'Second text');
 
 /** positionForPoint 单调不减：从左缘逐像素找到第一个给出目标偏移的 x */
 function xFor(node, offset, y) {
+  const sel = asSelectable2(node);
   const left = absoluteX(node);
   const right = left + node.width();
   for (let x = left; x <= right; x++) {
-    if (node.positionForPoint(x, y) >= offset) return x;
+    if (sel.positionForPoint(x, y) >= offset) return x;
   }
   return right;
 }
@@ -240,7 +253,7 @@ const bx5 = xFor(B, 5, by);
 // 模拟 view.ts 的上报路径
 let reported = null;
 canvasStub.addEventListener('mouseup', () => {
-  reported = selectionManager.selectedText ?? '';
+  reported = selectionManager.selectedText() ?? '';
 });
 
 function mouse(type, x, y, shiftKey = false) {
@@ -250,14 +263,14 @@ function mouse(type, x, y, shiftKey = false) {
 // ---------- 6. 初始态 ----------
 
 console.log('6. 初始态');
-check('初始无选区', selectionManager.selectedText, null);
+check('初始无选区', selectionManager.selectedText(), null);
 
 // ---------- 7. 跨组件拖选 A(2) → B(3) ----------
 
 console.log('7. 跨组件拖选（真实渲染管线）');
 mouse('mousedown', ax2, ay);
 mouse('mousemove', bx3, by);
-check('按住中实时 selectedText', selectionManager.selectedText, 'llo worldSec');
+check('按住中实时 selectedText', selectionManager.selectedText(), 'llo worldSec');
 await flush();
 check('高亮 fillStyle 使用选区色', recorded.some(r => r[0] == 'fillStyle' && r[1] == SEL_CSS), true);
 const highlight = recorded.findIndex(
@@ -276,21 +289,21 @@ check(
 );
 
 mouse('mouseup', bx3, by);
-check('松手定格 selectedText', selectionManager.selectedText, 'llo worldSec');
+check('松手定格 selectedText', selectionManager.selectedText(), 'llo worldSec');
 check('mouseup 上报选区文本', reported, 'llo worldSec');
-check('rangeOf(A)', JSON.stringify(selectionManager.rangeOf(A)), '[2,11]');
-check('rangeOf(B)', JSON.stringify(selectionManager.rangeOf(B)), '[0,3]');
+check('rangeOf(A)', JSON.stringify(selectionManager.rangeOf(selA)), '[2,11]');
+check('rangeOf(B)', JSON.stringify(selectionManager.rangeOf(selB)), '[0,3]');
 
 // 定格后 hover 不影响
 mouse('mousemove', ax8, ay);
-check('hover 不影响定格选区', selectionManager.selectedText, 'llo worldSec');
+check('hover 不影响定格选区', selectionManager.selectedText(), 'llo worldSec');
 
 // ---------- 8. 空白按下清除 ----------
 
 console.log('8. 空白按下清除');
 mouse('mousedown', 5, absoluteY(bar) + 2);
 mouse('mouseup', 5, absoluteY(bar) + 2);
-check('点分隔条后清除', selectionManager.selectedText, null);
+check('点分隔条后清除', selectionManager.selectedText(), null);
 
 // ---------- 9. 双击选词 + 词拖扩展 ----------
 
@@ -298,16 +311,16 @@ console.log('9. 双击选词与词拖');
 mouse('mousedown', ax8, ay);
 mouse('mouseup', ax8, ay);
 mouse('mousedown', ax8, ay); // 同点连击 → count=2
-check('双击选中整词', selectionManager.selectedText, 'world');
+check('双击选中整词', selectionManager.selectedText(), 'world');
 mouse('mousemove', ax2, ay); // 词拖：锚词 world[6,11) 向左扩展到 Hello[0,5)
-check('词拖向左扩展', selectionManager.selectedText, 'Hello world');
+check('词拖向左扩展', selectionManager.selectedText(), 'Hello world');
 mouse('mouseup', ax2, ay);
 
 // ---------- 10. 三击选段 ----------
 
 console.log('10. 三击选段');
 mouse('mousedown', ax8, ay); // 同点第三次 → count=3
-check('三击选中整段', selectionManager.selectedText, 'Hello world');
+check('三击选中整段', selectionManager.selectedText(), 'Hello world');
 mouse('mouseup', ax8, ay);
 
 // ---------- 11. Shift 锚点继承 ----------
@@ -315,11 +328,11 @@ mouse('mouseup', ax8, ay);
 console.log('11. Shift 锚点继承');
 mouse('mousedown', ax2, ay);
 mouse('mouseup', ax2, ay); // 定格在 A(2)，塌缩无选区
-check('锚点会话已建立', selectionManager.selectedText, null);
+check('锚点会话已建立', selectionManager.selectedText(), null);
 mouse('mousedown', bx3, by, true); // Shift+按在 B：复用上一会话 press=A(2)
 mouse('mousemove', bx5, by);
 mouse('mouseup', bx5, by);
-check('Shift 继承锚点后 selectedText', selectionManager.selectedText, 'llo worldSecon');
+check('Shift 继承锚点后 selectedText', selectionManager.selectedText(), 'llo worldSecon');
 
 // ---------- 12. 跨节点反向 ----------
 
@@ -327,7 +340,7 @@ console.log('12. 反向拖选 B(5) → A(2)');
 mouse('mousedown', bx5, by);
 mouse('mousemove', ax2, ay);
 mouse('mouseup', ax2, ay);
-check('反向拖选 selectedText', selectionManager.selectedText, 'llo worldSecon');
+check('反向拖选 selectedText', selectionManager.selectedText(), 'llo worldSecon');
 
 // ---------- 汇总 ----------
 

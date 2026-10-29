@@ -155,7 +155,8 @@ function makeCanvasStub(w, h) {
     listeners.get(type)?.delete(fn);
   };
   c.dispatch = (type, event) => {
-    listeners.get(type)?.forEach(fn => fn(event));
+    const e = { preventDefault: () => {}, ...event };
+    listeners.get(type)?.forEach(fn => fn(e));
   };
   return c;
 }
@@ -173,10 +174,11 @@ const { loadCanvasKit, registerFont, colorToCSS } = await import(
   './dist/canvasRender.mjs'
 );
 const {
-  Path2,
+  createPath2,
   absoluteX,
   absoluteY,
   appendRoundedRect,
+  asSelectable2,
   flex,
   grow,
   node2,
@@ -257,7 +259,7 @@ const { node: root } = renderCanvas({
       layout: flex({ direction: 'x' }),
       children: [
         (() => {
-          const box = new Path2();
+          const box = createPath2();
           appendRoundedRect(box, 0.75, 0.75, 16.5, 16.5, 4);
           return node2.of({
             size: () => 18,
@@ -303,9 +305,10 @@ check(
 // ---------- 7. Tab 展开（管线口径） ----------
 
 console.log('2. TabRender 段落展开');
-check('Tab 文本可参与选择（Selectable2 挂载）', typeof tabText.positionForPoint, 'function');
-check('textLength 按展开后口径', tabText.textLength(), 6);
-check('textInRange 展开为 4 空格', tabText.textInRange(0, 6), 'A    B');
+const tabTextSel = asSelectable2(tabText);
+check('Tab 文本可参与选择（Selectable2 经 exts 挂载）', typeof tabTextSel?.positionForPoint, 'function');
+check('textLength 按展开后口径', tabTextSel.textLength(), 6);
+check('textInRange 展开为 4 空格', tabTextSel.textInRange(0, 6), 'A    B');
 
 // ---------- 8. 链接点击 ----------
 
@@ -357,4 +360,6 @@ check('复选框外点击不触发', boxHits.get(), 1);
 // ---------- 汇总 ----------
 
 console.log(`\n${passed} 通过, ${failed} 失败`);
-if (failed > 0) process.exitCode = 1;
+// canvaskit-wasm / wy-helper 的批处理通道（MessageChannel）会一直挂着事件循环，
+// 这里显式退出，否则进程跑完所有断言也不结束
+process.exit(failed > 0 ? 1 : 0);

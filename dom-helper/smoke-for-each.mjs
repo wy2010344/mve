@@ -158,7 +158,8 @@ function makeCanvasStub(w, h) {
     listeners.get(type)?.delete(fn);
   };
   c.dispatch = (type, event) => {
-    listeners.get(type)?.forEach(fn => fn(event));
+    const e = { preventDefault: () => {}, ...event };
+    listeners.get(type)?.forEach(fn => fn(e));
   };
   return c;
 }
@@ -186,6 +187,7 @@ const {
   renderCanvas,
   scrollContent,
   isScrollContentNode,
+  asSelectable2,
   wrappedTextNode,
 } = await import('./dist/canvasRender2.mjs');
 
@@ -305,8 +307,8 @@ check('maxScroll = 224 - 244 < 0 → 0', maxScroll(container, 'y'), 0);
 check('首条目高', entries()[0].height(), 40);
 check('首条目含文本子节点', entries()[0].children().length, 1);
 check(
-  '文本可参与选择（Selectable2 数据面）',
-  typeof entries()[0].children()[0].positionForPoint,
+  '文本可参与选择（Selectable2 经 exts 数据面）',
+  typeof asSelectable2(entries()[0].children()[0])?.positionForPoint,
   'function'
 );
 
@@ -431,4 +433,6 @@ check('内容 86 < 视口 → 不可滚动', maxScroll(container, 'y'), 0);
 // ---------- 汇总 ----------
 
 console.log(`\n${passed} 通过, ${failed} 失败`);
-if (failed > 0) process.exitCode = 1;
+// canvaskit-wasm / wy-helper 的批处理通道（MessageChannel）会一直挂着事件循环，
+// 这里显式退出，否则进程跑完所有断言也不结束
+process.exit(failed > 0 ? 1 : 0);

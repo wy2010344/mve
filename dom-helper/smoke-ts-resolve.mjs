@@ -2,6 +2,10 @@
  * ESM 解析钩子：让 node 能直接 import demo 的 TS 模块（vite 风格的无扩展名相对导入）。
  * 仅用于 smoke-canvas-render-todo.mjs，不参与构建产物。
  */
+import { register } from 'node:module';
+// 自登记为解析钩子（node 不会自动启用 --import 文件里导出的 resolve/load）
+register(import.meta.url, import.meta.url);
+
 export async function resolve(specifier, context, nextResolve) {
   try {
     return await nextResolve(specifier, context);

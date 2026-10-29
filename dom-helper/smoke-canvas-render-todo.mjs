@@ -10,6 +10,15 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { register } from 'node:module';
+
+// demo 的 .ts 之间是 vite 风格的无扩展名相对导入（'./todo-item'），
+// node 的 ESM 解析器要求完整路径 —— 自登记解析钩子补 .ts / /index.ts 后缀，
+// 这样 `node --experimental-strip-types smoke-canvas-render-todo.mjs` 直接可跑
+register(
+  new URL('./smoke-ts-resolve.mjs', import.meta.url).href,
+  import.meta.url
+);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WASM_DIR = path.join(HERE, 'node_modules/canvaskit-wasm/bin');
