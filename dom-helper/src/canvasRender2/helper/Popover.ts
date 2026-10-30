@@ -1,6 +1,6 @@
 import type { StateHolder } from 'mve-core';
 import type { GetValue, PointKey, StoreRef } from 'wy-helper';
-import { emptyArray, emptyFun } from 'wy-helper';
+import { emptyArray, emptyFun, storeRef } from 'wy-helper';
 import type { EmptyFun } from 'wy-helper';
 import {
   Fc,
@@ -13,7 +13,7 @@ import {
   resolveMessages,
   nodeMessageDefaults,
   sizeFromChildren,
-  tfc,
+  fc,
 } from '../Node';
 import type { LayoutSize } from '../Node';
 import type { Node2Arg } from '../NodeArg';
@@ -21,10 +21,7 @@ import { flex } from '../flex';
 import type { Pop2, PopRegistry } from '../Pop';
 import { usePopRegistry } from '../Pop';
 import { globalMouse2Context } from '../tree/globalMouse';
-import type {
-  Placement,
-  PlacementRect,
-} from '../../canvasCore/Placement';
+import type { Placement, PlacementRect } from '../../canvasCore/Placement';
 import { resolvePlacement } from '../../canvasCore/Placement';
 
 /**
@@ -71,18 +68,17 @@ export interface PopoverArg extends Partial<Node2Arg>, PopoverPlacement {
  *   翻转 + 贴边），因此父布局的容器无需为它留位置；
  * - **尺寸由内容推导**：走默认尺寸逻辑（自己的布局），不写死。
  */
-const popoverPanel = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: PopoverArg
-) {
+const popoverPanel = fc(function (ctx, arg: PopoverArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   // 视口 = 父节点（根）的 inner：浮层与 TreeNode 同坐标系
   const view = ctx.getParent() as Node2;
   // 只取节点消息（放置参数 / children / onPanel 是配置，不进 p）
   const p = resolveMessages(arg, nodeMessageDefaults);
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         notInLayout: () => true,
         layout: arg.layout ?? defaultPanelLayout,
         children: arg.children ?? emptyArray,
@@ -107,7 +103,7 @@ const popoverPanel = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
   arg.onPanel(ref.get());
 });
 
@@ -163,7 +159,7 @@ export function showPopover(
   const placement = merge(arg, popoverPlacementDefaults);
   let panel: Node2 | null = null;
   const pop: Pop2 = registry.appendPop(
-    popoverPanel.of({
+    popoverPanel({
       ...arg,
       anchor: arg.anchor,
       placement: placement.placement,

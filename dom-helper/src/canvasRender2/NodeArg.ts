@@ -1,4 +1,4 @@
-import { LayoutFun, PointKey } from 'wy-helper';
+import { LayoutFun, PointKey, StoreRef } from 'wy-helper';
 import {
   CursorType2,
   Fc,
@@ -33,4 +33,6 @@ export interface Node2Config {
 }
 
 /** 工厂入参：消息契约 + 构建设置 */
-export interface Node2Arg extends Node2Messages, Node2Config {}
+export interface Node2Arg extends Node2Messages, Node2Config {
+  nodeRef?: StoreRef<Node2>;
+}

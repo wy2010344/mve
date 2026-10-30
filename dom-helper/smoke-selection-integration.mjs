@@ -175,7 +175,8 @@ const { node: root, selectionManager } = renderCanvas({
   children: [
     // 顶部 4px 分隔条：不可选，用于“空白按下清除”
     nodeOf(node =>
-      node2.create({
+      node2({
+        nodeRef: node,
         width: () => 400,
         height: () => 4,
         draw(ctx) {
@@ -185,7 +186,8 @@ const { node: root, selectionManager } = renderCanvas({
       })
     ),
     nodeOf(node =>
-      richTextNode.create({
+      richTextNode({
+        nodeRef: node,
         width: () => 380,
         padding: () => 8,
         spans: () => [
@@ -201,7 +203,8 @@ const { node: root, selectionManager } = renderCanvas({
       })
     ),
     nodeOf(node =>
-      richTextNode.create({
+      richTextNode({
+        nodeRef: node,
         width: () => 380,
         padding: () => 8,
         spans: () => [

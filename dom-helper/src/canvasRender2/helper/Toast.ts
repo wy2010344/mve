@@ -99,7 +99,7 @@ const toastContainerFc = fc(function (
   // `layoutParent?.innerSize(direction)`）。本节点要等 node2 装配完才存在，
   // 所以这里只能经 ctx.getParent() 取父级，不能读自身。
   const parent = ctx.getParent() as Node2;
-  node2.of(
+  node2(
     merge(
       {
         notInLayout: () => true,
@@ -110,7 +110,7 @@ const toastContainerFc = fc(function (
           (innerCtx: StateHolder<Node2, readonly Node2[]>) => {
             const container = innerCtx.getParent() as Node2;
             const scroll = createScroll(container, 'y');
-            scrollContent.of({
+            scrollContent({
               scroll,
               exts: [grow({ argGrow: 1 })],
               layout: p.contentLayout,

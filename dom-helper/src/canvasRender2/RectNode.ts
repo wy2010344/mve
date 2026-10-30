@@ -1,7 +1,7 @@
 import { emptyFun, GetValue, StoreRef } from 'wy-helper';
 import { ColorInt, colorToCSS } from '../canvasCore/Draw';
 import { roundRectPath } from '../canvasCore/Draw';
-import { merge, Node2, node2, tfc } from './Node';
+import { fc, merge, Node2, node2 } from './Node';
 import { Node2Arg } from './NodeArg';
 
 /**
@@ -47,15 +47,11 @@ export const rectNodeDefaults = {
  * node2 create n
  * ```
  *
- * 用法：`nodeOf(node => rectNode({ background: () => 0xfff1f5f9, radius: () => 8 }))`
+ * 用法：`nodeOf(node => rectNode({ background: () => 0xfff1f5f9, radius: () => 8, nodeRef: node }))`
  */
-export const rectNode = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: RectNodeArg
-) {
+export const rectNode = fc(function (ctx, arg: RectNodeArg) {
   const p = merge(arg, rectNodeDefaults);
-  node2.create(
+  node2(
     merge(
       {
         draw(ctx2: CanvasRenderingContext2D, n: Node2) {
@@ -97,5 +93,5 @@ export const rectNode = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

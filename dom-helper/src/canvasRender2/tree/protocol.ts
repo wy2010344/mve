@@ -398,7 +398,5 @@ export interface Node2 extends Node2Parent {
   debugName(): string | null;
 }
 
-/** 子表达式：向当前上下文建节点（返回 `void | TFc`，见 `tfc`） */
-export type Fc = (ctx: StateHolder<Node2, readonly Node2[]>) => void | TFc;
-/** 两段式工厂的第二段：拿到父节点后产出子表达式 */
-export type TFc = (n: Node2) => Fc;
+/** 子表达式：向当前上下文建节点；组件经 `fc` 包成 `create(arg) => Fc`，调用返回 `void` */
+export type Fc = (ctx: StateHolder<Node2, readonly Node2[]>) => void;

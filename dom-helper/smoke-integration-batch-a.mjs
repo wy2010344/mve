@@ -215,13 +215,13 @@ const { node: root } = renderCanvas({
   layout: flex({ gap: 10, alignFix: true }),
   children: [
     // 文本卡：grow 文本（含链接片段）+ Tab 文本
-    rectNode.of({
+    rectNode({
       width: () => 300,
       height: () => 60,
       padding: () => 8,
       layout: flex({ direction: 'x', gap: 8, alignItem: 'stretch', alignFix: true }),
       children: [
-        wrappedTextNode.of({
+        wrappedTextNode({
           exts: [grow({ argGrow: 1 })],
           spans: () => [
             {
@@ -243,7 +243,7 @@ const { node: root } = renderCanvas({
             textClicks.set(textClicks.get() + 1);
           },
         }),
-        wrappedTextNode.of({
+        wrappedTextNode({
           autoWidth: () => true,
           text: () => 'A\tB',
           fontFamily: () => 'Noto Sans SC',
@@ -252,7 +252,7 @@ const { node: root } = renderCanvas({
       ],
     }),
     // 复选框卡：Path2 圆角命中
-    rectNode.of({
+    rectNode({
       width: () => 300,
       height: () => 40,
       padding: () => 8,
@@ -261,7 +261,7 @@ const { node: root } = renderCanvas({
         (() => {
           const box = createPath2();
           appendRoundedRect(box, 0.75, 0.75, 16.5, 16.5, 4);
-          return node2.of({
+          return node2({
             size: () => 18,
             acceptHit(x, y) {
               return box.contains(x, y);

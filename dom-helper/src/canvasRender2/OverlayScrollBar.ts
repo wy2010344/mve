@@ -1,16 +1,16 @@
 import type { GetValue, PointKey, StoreRef } from 'wy-helper';
-import { createSignal } from 'wy-helper';
+import { createSignal, storeRef } from 'wy-helper';
 import type { ColorInt } from '../canvasCore/Draw';
 import { colorToCSS, rgba } from '../canvasCore/Draw';
 import { roundRectPath } from '../canvasCore/Draw';
 import {
   absolutePosition,
+  fc,
   getPadding,
   innerSize,
   layoutSize,
   merge,
   node2,
-  tfc,
 } from './Node';
 import type { MouseEvent2, Node2 } from './Node';
 import type { Node2Arg } from './NodeArg';
@@ -154,13 +154,10 @@ interface ThumbGeo2 {
  * 几何全部由容器的 `innerSize / contentSize / maxScroll` 推导，不含写死像素位置。
  *
  * 用法（容器内，与 scrollContent 并列）：
- * `nodeOf(() => overlayScrollBar({ scroll }))(ctx)`
+ * `nodeOf(node => overlayScrollBar({ scroll, nodeRef: node }))(ctx)`
  */
-export const overlayScrollBar = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: OverlayScrollBarArg
-) {
+export const overlayScrollBar = fc(function (ctx, arg: OverlayScrollBarArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   const p = merge(arg, overlayScrollBarDefaults);
   const d = p.scroll.direction;
 
@@ -306,9 +303,11 @@ export const overlayScrollBar = tfc(function (
     });
   }
 
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         // 浮层：两个方向都不占布局空间，内容区拿满可用尺寸
         size: () => layoutSize(0, true),
         position: positionOf,
@@ -373,5 +372,5 @@ export const overlayScrollBar = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

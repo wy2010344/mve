@@ -1,7 +1,7 @@
-import { GetValue, StoreRef } from 'wy-helper';
+import { GetValue } from 'wy-helper';
 import { ColorInt } from '../canvasCore/Draw';
 import { RichTextSpan } from '../canvasCore/Paragraph';
-import { Node2, merge, tfc } from './Node';
+import { merge, fc } from './Node';
 import { textDefaults } from './TextDefaults';
 import { RichTextNodeArg, richTextNode } from './RichTextNode';
 
@@ -55,11 +55,10 @@ export const wrappedTextNodeDefaults = {
  * 因此自动获得 richTextNode 的全部能力（自动换行、autoWidth、
  * 跨组件文本选择、双击选词等）。
  *
- * 用法：`nodeOf(node => wrappedTextNode({ width: () => 200, text: () => '…' }))`
+ * 用法：`nodeOf(node => wrappedTextNode({ width: () => 200, text: () => '…', nodeRef: node }))`
  */
-export const wrappedTextNode = tfc(function (
+export const wrappedTextNode = fc(function (
   ctx,
-  ref: StoreRef<Node2>,
   arg: WrappedTextNodeArg
 ) {
   const p = merge(arg, wrappedTextNodeDefaults);
@@ -81,12 +80,12 @@ export const wrappedTextNode = tfc(function (
 
   // 委托给 richTextNode：本节点只做参数合成，节点身份由 richTextNode 创建。
   // 显式给出的 spans 优先（merge 的第一个参数优先），nil 时用合成片段。
-  richTextNode.create(
+  richTextNode(
     merge(
       {
         spans: (): readonly RichTextSpan[] => p.spans() ?? [singleSpan()],
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

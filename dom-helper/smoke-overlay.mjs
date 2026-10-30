@@ -270,7 +270,7 @@ const { node: root, popRegistry } = renderCanvas({
   canvas,
   layout: flex({ directionJustify: 'center', alignFix: true }),
   children: [
-    rectNode.of({
+    rectNode({
       width: () => 100,
       height: () => 50,
       debugName: () => 'content',
@@ -295,7 +295,7 @@ check('Toast 容器铺满视口高', toastBox.height(), 300);
 const toastHandle = showToast(popRegistry, {
   durationMs: 0, // 不自动关闭
   content: ctx =>
-    rectNode.of({
+    rectNode({
       width: () => 120,
       height: () => 40,
       debugName: () => 'toast',
@@ -323,7 +323,7 @@ check('toast 尺寸由内容推导', toastContent.width(), 120);
   showToast(popRegistry, {
     durationMs: 2000,
     content: ctx =>
-      rectNode.of({
+      rectNode({
         width: () => 60,
         height: () => 20,
         debugName: () => 'toast2',
@@ -357,7 +357,7 @@ console.log('=== 5. Popover：锚定放置 + 点外面关闭 ===');
     gap: () => 6,
     debugName: () => 'panel',
     children: [
-      rectNode.of({
+      rectNode({
         width: () => 90,
         height: () => 70,
         debugName: () => 'panel-body',
@@ -398,7 +398,7 @@ console.log('=== 6. LayoutAudit：探测判环（不崩溃） ===');
     canvas: canvas2,
     layout: flex({ directionJustify: 'center', alignFix: true }),
     children: [
-      rectNode.of({
+      rectNode({
         width: () => 200,
         debugName: () => 'container',
         layout: flex({ direction: 'y' }),
@@ -406,7 +406,8 @@ console.log('=== 6. LayoutAudit：探测判环（不崩溃） ===');
           // 坏小子：默认布局是绝对定位（不能由子项推尺寸），尺寸只能问父级要。
           // 父级是 flex，测量时又会读回它 → 成环。
           nodeOf(self =>
-            node2.create({
+            node2({
+              nodeRef: self,
               debugName: () => 'bad-child',
               size: d =>
                 d === 'y' && bad
@@ -450,19 +451,21 @@ console.log('=== 6. LayoutAudit：探测判环（不崩溃） ===');
     canvas: canvas3,
     layout: flex({ directionJustify: 'center', alignFix: true }),
     children: [
-      rectNode.of({
+      rectNode({
         debugName: () => 'container',
         layout: flex({ direction: 'y' }),
         children: [
           // 面板：尺寸一律由自己的子项推导（与 Popover 面板同款写法）
           nodeOf(self =>
-            node2.create({
+            node2({
+              nodeRef: self,
               debugName: () => 'panel',
               layout: flex({ direction: 'y' }),
               size: d => sizeFromChildren(self.get(), d),
               children: [
                 nodeOf(child =>
-                  node2.create({
+                  node2({
+                    nodeRef: child,
                     debugName: () => 'bad-grandchild',
                     // 位置自算：这样父级布局**只**在 sizeFromChildren 里被求值
                     // （走默认 position 的话，defaultPosition 那条已包 withReader，

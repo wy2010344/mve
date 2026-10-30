@@ -218,7 +218,7 @@ const itemIndexes = Array.from({ length: 24 }, (_, i) => i);
 
 /** 滚动内容（scrollContent + 24 条固定高度条目），两个容器共用 */
 function itemsOf(scroll) {
-  return scrollContent.of({
+  return scrollContent({
     scroll,
     exts: [grow({ argGrow: 1 })],
     // alignFix：cross 尺寸锁定为自身 inner（避免与子项宽度循环推导）；
@@ -229,14 +229,14 @@ function itemsOf(scroll) {
         cb => itemIndexes.forEach(i => cb(i, i)),
         function (key, eachTime) {
           const i = eachTime.getValue();
-          rectNode.of({
+          rectNode({
             height: () => 34,
             background: () => (i % 2 ? 0xffffffff : 0xffeef2ff),
             radius: () => 4,
             paddingInline: () => 8,
             layout: flex({ direction: 'x' }),
             children: [
-              wrappedTextNode.of({
+              wrappedTextNode({
                 text: () => `第 ${i + 1} 项`,
                 fontFamily: () => 'Noto Sans SC',
                 fontSize: () => 13,
@@ -266,7 +266,8 @@ const { node: root, selectionManager } = renderCanvas({
   children: [
     // 容器一：传统占位式滚动条（吃掉 10px 布局宽度）
     nodeOf(container =>
-      rectNode.create({
+      rectNode({
+        nodeRef: container,
         width: () => 320,
         height: () => 220,
         background: () => 0xfff1f5f9,
@@ -287,14 +288,15 @@ const { node: root, selectionManager } = renderCanvas({
             const scroll = createScroll(ctx.getParent(), 'y');
             // 滚轮由 scrollContent / scrollBar 沿命中链自己接管，无需任何注册
             itemsOf(scroll)(ctx);
-            scrollBar.of({ scroll })(ctx);
+            scrollBar({ scroll })(ctx);
           },
         ],
       })
     ),
     // 容器二：macOS 风格浮层滚动条（不占布局宽度 + 自动隐藏）
     nodeOf(container =>
-      rectNode.create({
+      rectNode({
+        nodeRef: container,
         width: () => 200,
         height: () => 150,
         background: () => 0xfff1f5f9,
@@ -307,7 +309,7 @@ const { node: root, selectionManager } = renderCanvas({
           ctx => {
             const scroll = createScroll(ctx.getParent(), 'y');
             itemsOf(scroll)(ctx);
-            overlayScrollBar.of({ scroll, style: () => testBarStyle })(ctx);
+            overlayScrollBar({ scroll, style: () => testBarStyle })(ctx);
           },
         ],
       })

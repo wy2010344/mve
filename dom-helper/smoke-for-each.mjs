@@ -212,7 +212,7 @@ const { node: root } = renderCanvas({
   layout: flex({ directionJustify: 'flex-start', gap: 10, alignFix: true }),
   children: [
     // forEachNode 直接作为容器 children 的一项（Fc 组件，不产生自己的节点）
-    rectNode.of({
+    rectNode({
       width: () => 360,
       height: () => 260,
       background: () => 0xffffffff,
@@ -229,7 +229,7 @@ const { node: root } = renderCanvas({
         ctx => {
           const container = ctx.getParent();
           const scroll = createScroll(container, 'y');
-          scrollContent.of({
+          scrollContent({
             scroll,
             exts: [grow({ argGrow: 1 })],
             layout: flex({ alignFix: true, alignItem: 'stretch', gap: 6 }),
@@ -241,7 +241,7 @@ const { node: root } = renderCanvas({
                   // 箭头包裹保持 eachTime 绑定（getValue 内部读 getSignal）
                   const item = () => eachTime.getValue();
                   rectNode
-                    .of({
+                    ({
                       height: () => 40,
                       paddingInline: () => 10,
                       paddingBlock: () => 11,
@@ -262,7 +262,7 @@ const { node: root } = renderCanvas({
                         );
                       },
                       children: [
-                        wrappedTextNode.of({
+                        wrappedTextNode({
                           exts: [grow({ argGrow: 1 })],
                           spans: () => [
                             {

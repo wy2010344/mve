@@ -4,6 +4,7 @@ import {
   GetValue,
   memo,
   PointKey,
+  storeRef,
   StoreRef,
 } from 'wy-helper';
 import { ColorInt, colorToCSS, rgba } from '../canvasCore/Draw';
@@ -20,6 +21,7 @@ import {
   absoluteX,
   absoluteY,
   defaultSize,
+  fc,
   innerSize,
   LayoutSize,
   layoutSize,
@@ -27,7 +29,6 @@ import {
   MouseEvent2,
   Node2,
   node2,
-  tfc,
 } from './Node';
 import { expandTabs } from './TabRender';
 import { openUrl } from './UrlOpener';
@@ -88,13 +89,10 @@ export const richTextNodeDefaults = {
  * - 因此天然支持**跨组件选择**：从一个富文本节点拖到另一个节点，
  *   选区按文档序自动分配到各节点，selectedText 按序聚合。
  *
- * 用法：`nodeOf(node => richTextNode({ spans }))`
+ * 用法：`nodeOf(node => richTextNode({ spans, nodeRef: node }))`
  */
-export const richTextNode = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: RichTextNodeArg
-) {
+export const richTextNode = fc(function (ctx, arg: RichTextNodeArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   const p = merge(arg, richTextNodeDefaults);
 
   /** 全文（tab 展开后的显示文本；对标 Kotlin fullText memo） */
@@ -256,9 +254,11 @@ export const richTextNode = tfc(function (
   // 不往节点对象上挂未知字段：经 exts 里的 SelectableExt 标记
   // （asSelectable2 从 exts 识别），节点结构体保持干净、可移植。
 
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         // 可选文本能力经 exts 声明（与用户传入的 exts 合并），而非节点字段
         exts: p.exts.concat([new SelectableExt(selectable)]),
         // 点击：用户回调先行（对标 Kotlin super.onPointerClick），
@@ -325,5 +325,5 @@ export const richTextNode = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

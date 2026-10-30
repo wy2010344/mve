@@ -18,7 +18,7 @@
 
 具体落点：
 
-- **`Fc` / `TFc` 就是 `@Composable` / `View`**：纯函数、可组合、不含实例状态；状态一律走 `StoreRef`（= `mutableStateOf` / `@State`）。
+- **`Fc` 就是 `@Composable` / `View`**：纯函数、可组合、不含实例状态；状态一律走 `StoreRef`（= `mutableStateOf` / `@State`）。
 - **`Node2` 是 retained 渲染树**（≈ Flutter RenderObject / Compose LayoutNode）：结构消息 + 布局/绘制，不承载业务状态。
 - **捕获/冒泡只是传播机制**，不是语义目标。需要"拦截"时像 Flutter 手势那样考虑是否该用命中测试/手势竞争，而不是无脑 `stopPropagation`。禁止引入 `preventDefault` 这类 DOM 概念到节点语义里。
 - **滚轮/滚动**按 Flutter `Scrollable` 的语义：容器只消费与自身滚动轴同向的增量，交叉轴增量交还外层（见 §4「滚轮」）。
@@ -36,14 +36,15 @@
 
 ```ts
 const p = merge(arg, xxxNodeDefaults); // ① 参数 + 兜底 → 每条参数消息都答得出来
-node2.create(
+node2(
   merge(
     {
       /* 节点自有消息 */
     },
-    p
-  ) // ② 自有消息优先，其余落到 p
-)(ref)(ctx); // ③ 组装（结构消息由 shell 提供）
+    p,
+    { nodeRef } // 需要节点句柄时：调用方自建 storeRef 填进 arg.nodeRef
+  ) // ② 自有消息优先，其余落到 p（nodeRef 透传最底层 node2）
+)(ctx); // ③ 组装（结构消息由 shell 提供，node2 末尾 ref.set(node)）
 ```
 
 ```ooc
@@ -56,14 +57,15 @@ node2 create $ (merge $ { draw { … } } p) ref ctx;
 | TS                                            | ooc                                    |
 | --------------------------------------------- | -------------------------------------- |
 | `merge(a, b)`（a 优先、b 兜底，两侧成员都在） | `merge $ a b`                          |
-| `tfc(f)` 的 `of(arg)` / `create(arg)(ref)`    | 同形；`of` 自建 `storage ref`          |
+| `fc(f)` 的 `component(arg)`（直接返回 `Fc`）   | 同形；句柄经 `arg.nodeRef` 传入        |
 | `defaults` 里的 `this.xxx()`                  | `this xxx`（`this` 回读整条 merge 链） |
 | `defaults` 里的闭包（`ref.get()`）            | 对象字面量里声明的 `storage ref`       |
 
-**不需要句柄的组件用 `fc`。** `fc(f)` 的 `f` 只收 `(ctx, ...vs)`，`create(...vs)` 直接返回
-`Fc`（对标 Compose 无状态 `@Composable` / SwiftUI `View`），省掉 `ref` 分配，调用处也不用
-`.of(...)`。一旦节点消息里要读**自身**尺寸/位置（`size` / `position` 里 `ref.get()`），
-或需要 `create(...)(ref)` 由外部先给 ref、或工厂内部要 `ref.set(node)` 收尾，就必须用 `tfc`。
+**所有组件统一用 `fc`。** `fc(f)` 的 `f` 收 `(ctx, arg, ...vs)`，`component(arg)` 直接返回
+`Fc`（对标 Compose 无状态 `@Composable` / SwiftUI `View` / ooc 的 composable）。需要节点
+句柄时，调用方自建 `storeRef` 填进 `arg.nodeRef`，最底层 `node2` 负责 `ref.set(node)` 收尾；
+组件内部读自身尺寸/位置用 `arg.nodeRef!.get()`（延迟求值，构建末尾才就绪）。不再有 `of` /
+`create` 两段式柯里化——与 ooc「组件即普通函数、参数直接传」完全同形，便于迁移。
 
 **`this` 回读**只在 defaults 里用一次：`maxLines` 的默认值依赖同层的 `singleLine`，写成
 `maxLines(this) { this.singleLine() ? 1 : INT_MAX }`——ooc 里就是
@@ -75,10 +77,10 @@ node2 create $ (merge $ { draw { … } } p) ref ctx;
 | ------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
 | `Node.ts`                                                     | 门面，re-export `tree/*`                                            | 一个入口文件                   |
 | `NodeArg.ts`                                                  | 参数消息契约 `Node2Messages` + 构建设置 `Node2Config`               | `#type`                        |
-| `tree/protocol.ts`                                            | 节点消息契约、`MouseEvent2`、`Fc`/`TFc`                             | `#type` + 事件对象             |
+| `tree/protocol.ts`                                            | 节点消息契约、`MouseEvent2`、`Fc`                                    | `#type` + 事件对象             |
 | `tree/geometry.ts`                                            | 尺寸/位置/绝对坐标/命中链 + **布局成环诊断**（纯消息）              | 直接照抄，全是消息             |
 | `tree/messages.ts`                                            | `merge` / `resolveMessages` / `nodeMessageDefaults`                 | 宿主 `merge` + 顶层 defaults   |
-| `tree/tfc.ts`                                                 | `tfc`（带句柄）/ `fc`（无句柄）组件工厂                             | 同形（`storage ref`）          |
+| `tree/tfc.ts`                                                 | `fc` 组件工厂（`create(arg) => Fc`；句柄经 `arg.nodeRef`）            | 同形（`storage ref`）          |
 | `tree/assemble.ts`                                            | `nodeShell` + `assembleNode` + `node2` 工厂                         | 节点骨架 + 工厂                |
 | `tree/dispatch.ts`                                            | 指针派发（8 类型 × 捕获/冒泡）、光标派生                            | 照抄                           |
 | `tree/focusWalk.ts`                                           | Tab 遍历（圈定/排序）                                               | 照抄                           |

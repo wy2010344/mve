@@ -6,7 +6,7 @@ import { collectIndex, flatten } from '../../canvasCore/List';
 import type { Fc, Node2, Node2Messages } from './protocol';
 import { createLayout, layoutDep } from './geometry';
 import { merge, nodeMessageDefaults, resolveMessages } from './messages';
-import { tfc } from './tfc';
+import { fc } from './tfc';
 
 /** 恒定 getter（根节点位置默认值；与 `alawaysFalse` 同族） */
 export const alaways0 = () => 0;
@@ -168,11 +168,7 @@ export const nodeConfig: ShareConfig<Node2, readonly Node2[]> = {
  * 最普通的节点工厂：没有组件语义，只有「参数消息 + 子节点」。
  * 其余节点（Rect / RichText / Scroll…）都在它之上再叠一层自己的消息。
  */
-export const node2 = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: Partial<Node2Arg>
-) {
+export const node2 = fc(function (ctx, arg: Partial<Node2Arg>) {
   const parent = ctx.getParent() as Node2;
   // 子表达式列表是构建设置（不是消息），由工厂自己消费
   const children = arg.children ?? emptyArray;
@@ -192,6 +188,7 @@ export const node2 = tfc(function (
     )
   );
   ctx.addNode(node);
+  const ref = arg.nodeRef ?? storeRef<Node2>(undefined!);
   // ref 最后指向节点（对齐 Rust `Rc::new(...)` 收尾）：children 构建期不需要本节点，
   // 需要父节点时一律走 ctx.getParent()（如 createScroll(container)），不必提前 set。
   // 布局 / 绘制在整棵树建完之后才发生，届时 ref.get() 已就绪（ooc 侧同样：节点组装

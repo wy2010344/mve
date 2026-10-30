@@ -1,14 +1,14 @@
-import { GetValue, memo, PointKey, StoreRef } from 'wy-helper';
+import { GetValue, memo, PointKey, storeRef, StoreRef } from 'wy-helper';
 import { PlatformImage } from '../canvasCore/Image';
 import { roundRectPath } from '../canvasCore/Draw';
 import {
   LayoutSize,
   LayoutSizeDirection,
   Node2,
+  fc,
   layoutSize,
   merge,
   node2,
-  tfc,
 } from './Node';
 import { Node2Arg } from './NodeArg';
 
@@ -39,13 +39,10 @@ export const imageNodeDefaults = {
  * 尺寸恒由图片内容推导（`imageSize` 可约束单边、另一边按比例推算），
  * 外部传入的 `size` 不生效；绘制时支持圆角裁剪，内容画在 padding 之内。
  *
- * 用法：`nodeOf(node => imageNode({ image, radius: () => 8 }))`
+ * 用法：`nodeOf(node => imageNode({ image, radius: () => 8, nodeRef: node }))`
  */
-export const imageNode = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: ImageNodeArg
-) {
+export const imageNode = fc(function (ctx, arg: ImageNodeArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   const p = merge(arg, imageNodeDefaults);
 
   /** 图片内容尺寸（不含 padding），带信号缓存 */
@@ -71,9 +68,11 @@ export const imageNode = tfc(function (
     }
   );
 
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         size(d: PointKey): LayoutSize {
           const s = contentSize();
           return layoutSize(d === 'x' ? s[0] : s[1], true);
@@ -101,5 +100,5 @@ export const imageNode = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

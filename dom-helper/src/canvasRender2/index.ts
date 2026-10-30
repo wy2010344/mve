@@ -1,5 +1,5 @@
 import { storeRef, StoreRef } from 'wy-helper';
-import { Fc, Node2, TFc } from './Node';
+import { Fc, Node2 } from './Node';
 
 /**
  * canvasRender2 的公开出口。
@@ -49,11 +49,7 @@ export * from '../canvasCore/Timer';
 export * from '../canvasCore/ImageLoader';
 export * from '../canvasCore/Placement';
 
-export function nodeOf<A, B>(
-  callback: (ref: StoreRef<A>) => (node: StoreRef<A>) => B
-) {
+export function nodeOf<A, B>(callback: (ref: StoreRef<A>) => B) {
   const node = storeRef<A>(undefined!);
-  // 第一次传递，充当this，供回调访问最终结果，
-  // 第二次传递，在真实场合去应用
-  return callback(node)(node);
+  return callback(node);
 }

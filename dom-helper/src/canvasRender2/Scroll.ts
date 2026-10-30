@@ -4,18 +4,19 @@ import {
   emptyArray,
   PointKey,
   run,
+  storeRef,
   StoreRef,
 } from 'wy-helper';
 import {
   MouseEvent2,
   Node2,
   defaultPosition,
+  fc,
   getPadding,
   innerSize,
   merge,
   node2,
   size,
-  tfc,
 } from './Node';
 import { Node2Arg } from './NodeArg';
 
@@ -197,7 +198,7 @@ export function createScroll(
  * 用法：把返回值放进容器节点的参数对象
  * ```ts
  * const scroll = createScroll(container, 'y', undefined, parentScroll);
- * node2.of({ ..., mouseWheel: scrollWheel(scroll) })
+ * node2({ ..., mouseWheel: scrollWheel(scroll) })
  * ```
  *
  * 之所以是"返回一个消息实现"而不是"注册到全局"：滚轮必须走命中链，
@@ -244,21 +245,20 @@ function scrollContentDefaults(ref: StoreRef<Node2>) {
  * 用法（容器内，与 scrollBar 并列）：
  * ```ts
  * const scroll = createScroll(container, 'y');
- * scrollContent.of({ scroll, exts: [grow({ argGrow: 1 })], children: [...] })(ctx);
+ * scrollContent({ scroll, exts: [grow({ argGrow: 1 })], children: [...] })(ctx);
  * ```
  *
  * 滚轮不需要任何注册：scrollContent 自己挂载了 `mouseWheel`，沿命中链收到滚轮
  * 就消费（滚动条同理）。
  */
-export const scrollContent = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: ScrollContentArg
-) {
+export const scrollContent = fc(function (ctx, arg: ScrollContentArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   const p = merge(arg, scrollContentDefaults(ref));
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         // 把"滚动内容"标记挂进 exts（对应 Kotlin `it is ScrollContent` 判定）
         exts: p.exts.concat([scrollContentExt]),
         // 滚轮沿命中链到达内容区时由本节点消费，并拦住外层（嵌套滚动的"内层优先"）
@@ -303,5 +303,5 @@ export const scrollContent = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

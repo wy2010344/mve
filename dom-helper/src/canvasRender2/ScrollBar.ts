@@ -1,16 +1,16 @@
-import { GetValue, PointKey, StoreRef } from 'wy-helper';
+import { GetValue, PointKey, storeRef, StoreRef } from 'wy-helper';
 import { ColorInt, colorToCSS, rgba } from '../canvasCore/Draw';
 import { roundRectPath } from '../canvasCore/Draw';
 import {
   LayoutSize,
   Node2,
   defaultSize,
+  fc,
   innerSize,
   layoutSize,
   merge,
   node2,
   paddingStart,
-  tfc,
 } from './Node';
 import { Node2Arg } from './NodeArg';
 import { dragMouse } from './tree/globalMouse';
@@ -54,21 +54,19 @@ function crossAxisOf(direction: PointKey): PointKey {
  * 注意尺寸/位置一律重写 **`size` / `position`**，而不是 `width` / `x`：
  * 布局测量走 `size`、绘制走 `width`（= 由 size 派生），只改后者会让两边对不上。
  *
- * 用法（容器内，与 scrollContent 并列）：`nodeOf(node => scrollBar({ scroll }))`
+ * 用法（容器内，与 scrollContent 并列）：`nodeOf(node => scrollBar({ scroll, nodeRef: node }))`
  */
-export const scrollBar = tfc(function (
-  ctx,
-  ref: StoreRef<Node2>,
-  arg: ScrollBarArg
-) {
+export const scrollBar = fc(function (ctx, arg: ScrollBarArg) {
+  const ref = arg.nodeRef ?? storeRef(undefined!);
   const p = merge(arg, scrollBarDefaults);
   const d = p.scroll.direction;
   const cross = crossAxisOf(d);
   const calc = () => p.scroll.scrollBarSize(d);
-
-  node2.create(
+  node2(
     merge(
       {
+        // 句柄经 arg.nodeRef 入场，node2 负责 ref.set(node)（对齐旧 tfc 的 node2.create(...)(ref)）
+        nodeRef: ref,
         // 指针落在滚动条上滚轮也该滚（轨道与滑块都算容器的一部分）
         mouseWheel: scrollWheel(p.scroll),
         // 交叉轴固定厚度；滚动轴不指定，走父布局分配。
@@ -101,7 +99,7 @@ export const scrollBar = tfc(function (
         children: [
           // 滑块不继承轨道的参数对象（尤其 children，否则会把自己再当子节点）：
           // 它需要的几项（scroll / 颜色 / 圆角）直接经闭包读轨道的 p。
-          node2.of({
+          node2({
             // 滚动轴：尺寸/偏移由 scrollBarSize 派生；交叉轴撑满轨道 inner
             size(axis: PointKey): LayoutSize {
               if (axis === d) {
@@ -153,5 +151,5 @@ export const scrollBar = tfc(function (
       },
       p
     )
-  )(ref)(ctx);
+  )(ctx);
 });

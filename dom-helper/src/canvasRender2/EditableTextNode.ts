@@ -1,4 +1,4 @@
-import { StoreRef } from 'wy-helper';
+import { storeRef } from 'wy-helper';
 import { colorToCSS, rgba } from '../canvasCore/Draw';
 import { RectStyle } from '../canvasCore/Paragraph';
 import { drawParagraph } from '../canvasCore/DrawParagraph';
@@ -10,7 +10,7 @@ import {
   layoutSize,
   merge,
   node2,
-  tfc,
+  fc,
 } from './Node';
 import { EditorHandleExt } from './tree/protocol';
 import { RichEditableHandleExt, focusedSignal } from './Focus';
@@ -37,25 +37,25 @@ import { CURSOR_WIDTH, createEditableEditor } from './editable/editor';
  * - 编辑器本地光标经 activeEditorSignal 喂给 SelectionManager 的
  *   activeEditorSelPair，键盘扩选 / 双击选词时优先级更高。
  *
- * 用法：`nodeOf(node => editableTextNode({ text, onTextChange, singleLine: () => true }))`
+ * 用法：`nodeOf(node => editableTextNode({ text, onTextChange, singleLine: () => true, nodeRef: node }))`
  */
-export const editableTextNode = tfc(function (
+export const editableTextNode = fc(function (
   ctx,
-  ref: StoreRef<Node2>,
   arg: EditableTextNodeArg
 ) {
   // 参数对象 + 兜底：之后每条参数消息都答得出来，不再判断"有没有传"
   const p: EditableParams = merge(arg, editableTextNodeDefaults);
+  const nodeRef = arg.nodeRef ?? storeRef<Node2>(undefined!);
   const selectionManager = ctx.consume(selectionManagerContext);
 
   const editor = createEditableEditor({
     arg: p,
-    node: () => ref.get(),
+    node: () => nodeRef.get(),
     selectionManager: () => selectionManager,
     addDestroy: fn => ctx.addDestroy(fn),
   });
 
-  node2.create(
+  node2(
     merge(
       {
         // 可选文本 + 编辑器句柄都经 exts 标记（asSelectable2 / asEditorHandle2 识别），
@@ -196,9 +196,9 @@ export const editableTextNode = tfc(function (
           ctx2.restore();
         },
       },
-      p
+      merge(p, { nodeRef })
     )
-  )(ref)(ctx);
+  )(ctx);
 });
 
 /** 组合串底色（半透明淡蓝） */

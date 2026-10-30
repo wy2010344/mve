@@ -179,9 +179,9 @@ const { loadCanvasKit, registerFont } = await import('./dist/canvasRender.mjs');
 const {
   renderCanvas,
   flex,
+  fc,
   nodeOf,
   node2,
-  tfc,
   globalMouse2Context,
   rectNode,
   editableTextNode,
@@ -266,12 +266,13 @@ const canvasStub = makeCanvasStub(400, 400);
 const field = (arg, i) =>
   nodeOf(n => {
     editors[i] = n;
-    return editableTextNode.create({
+    return editableTextNode({
       width: () => 300,
       height: () => 20,
       fontFamily: () => 'Noto Sans SC',
       fontSize: () => 14,
       ...arg,
+      nodeRef: n,
     });
   });
 
@@ -518,7 +519,7 @@ const mouseEvent = (x, y, extra = {}) => ({
 renderCanvas({
   canvas: canvas2,
   children: [
-    rectNode.of({
+    rectNode({
       width: () => 200,
       height: () => 100,
       mouseDownCapture() {
@@ -528,7 +529,7 @@ renderCanvas({
         order.push('outer-bubble');
       },
       children: [
-        rectNode.of({
+        rectNode({
           width: () => 100,
           height: () => 50,
           mouseDownCapture() {
@@ -556,7 +557,7 @@ const canvas3 = makeCanvasStub(200, 120);
 renderCanvas({
   canvas: canvas3,
   children: [
-    rectNode.of({
+    rectNode({
       width: () => 200,
       height: () => 100,
       mouseDownCapture() {
@@ -566,7 +567,7 @@ renderCanvas({
         order.push('outer-bubble');
       },
       children: [
-        rectNode.of({
+        rectNode({
           width: () => 100,
           height: () => 50,
           mouseDownCapture() {
@@ -595,7 +596,7 @@ renderCanvas({
   canvas: canvas4,
   layout: flex({ direction: 'y' }),
   children: [
-    editableTextNode.of({
+    editableTextNode({
       text: t4.get,
       onTextChange: v => t4.set(v),
       width: () => 120,
@@ -603,7 +604,7 @@ renderCanvas({
       fontFamily: () => 'Noto Sans SC',
       fontSize: () => 14,
     }),
-    rectNode.of({
+    rectNode({
       width: () => 60,
       height: () => 20,
       focusable: () => true,
@@ -618,7 +619,7 @@ const canvas4b = makeCanvasStub(200, 80);
 renderCanvas({
   canvas: canvas4b,
   children: [
-    rectNode.of({
+    rectNode({
       width: () => 60,
       height: () => 20,
       focusable: () => true,
@@ -635,15 +636,15 @@ check('离开 canvas 光标复位 default', canvas4.style.cursor, 'default');
 console.log('— GlobalMouse2：registerMouseDown —');
 const canvas5 = makeCanvasStub(100, 60);
 let globalMouse = null;
-const probe = tfc(function (ctx, node) {
+const probe = fc(function (ctx) {
   globalMouse = ctx.consume(globalMouse2Context);
-  return node2.create({
+  return node2({
     width: () => 50,
     height: () => 20,
     acceptHit: () => true,
   });
 });
-renderCanvas({ canvas: canvas5, children: [probe.of()] });
+renderCanvas({ canvas: canvas5, children: [probe()] });
 await flush();
 const downs = [];
 const offDown = globalMouse?.registerMouseDown((x, y) => downs.push([x, y]));
@@ -698,7 +699,7 @@ const { selectionManager: vsel } = renderCanvas({
   children: [
     nodeOf(n => {
       ved = n;
-      return editableTextNode.create({
+      return editableTextNode({
         width: () => 300,
         height: () => 120,
         fontFamily: () => 'Noto Sans SC',
@@ -707,6 +708,7 @@ const { selectionManager: vsel } = renderCanvas({
         lineHeightMultiplier: vlh.get,
         text: vt.get,
         onTextChange: v => vt.set(v),
+        nodeRef: n,
       });
     }),
   ],
@@ -772,11 +774,12 @@ let dynC = null;
 const dynRect = (extra, setNode) =>
   nodeOf(n => {
     setNode(n);
-    return rectNode.create({
+    return rectNode({
       width: () => 120,
       height: () => 30,
       background: () => 0xff334455,
       ...extra,
+      nodeRef: n,
     });
   });
 renderCanvas({
